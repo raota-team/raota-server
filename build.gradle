@@ -1,7 +1,7 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '3.5.7'
-	id 'io.spring.dependency-management' version '1.1.7'
+    id 'java'
+    id 'org.springframework.boot' version '3.5.7'
+    id 'io.spring.dependency-management' version '1.1.7'
 }
 
 group = 'com'
@@ -38,9 +38,9 @@ dependencies {
     testImplementation 'org.assertj:assertj-core:3.27.6'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'io.rest-assured:rest-assured'
-    //json 칼럼용
+
     implementation "com.vladmihalcea:hibernate-types-60:2.21.1"
-    //테스트 컨테이너
+
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'
     testImplementation 'org.testcontainers:junit-jupiter'
     testImplementation 'org.testcontainers:mysql'
@@ -48,26 +48,4 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
-    exclude '**/*E2E*Test.class'
-}
-
-//test 소스셋에 E2E 폴더 추가
-sourceSets {
-    test {
-        java.srcDir 'src/E2E/java'
-        resources.srcDir 'src/E2E/resources'
-    }
-}
-
-//E2E 전용 Test task
-tasks.register('E2ETest', Test) {
-    description = "Run E2E tests"
-    group = "verification"
-
-    useJUnitPlatform()
-
-    testClassesDirs = sourceSets.test.output.classesDirs
-    classpath = sourceSets.test.runtimeClasspath
-
-    include '**/*E2E*Test.class'
 }
