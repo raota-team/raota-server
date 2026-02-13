@@ -1,5 +1,6 @@
 package com.raota.domain.proofPicture.controller;
 
+import com.raota.domain.proofPicture.controller.contract.RamenProofPictureApi;
 import com.raota.domain.proofPicture.controller.response.ProofPictureInfoResponse;
 import com.raota.domain.proofPicture.controller.response.RamenShopProofPictureResponse;
 import com.raota.global.auth.LoginMember;
@@ -22,10 +23,11 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/photos")
 @RequiredArgsConstructor
-public class RamenProofPictureController {
+public class RamenProofPictureController implements RamenProofPictureApi {
 
     private final RamenProofPictureService proofPictureService;
 
+    @Override
     @PostMapping("/{shopId}")
     public ResponseEntity<ApiResponse<ProofPictureInfoResponse>> addProofPicture(
             @PathVariable Long shopId,
@@ -36,6 +38,7 @@ public class RamenProofPictureController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    @Override
     @GetMapping("/{shopId}")
     public ResponseEntity<ApiResponse<Page<RamenShopProofPictureResponse>>> getProofPicture(
             @PathVariable Long shopId,

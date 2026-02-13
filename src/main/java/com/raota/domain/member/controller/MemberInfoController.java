@@ -1,5 +1,6 @@
 package com.raota.domain.member.controller;
 
+import com.raota.domain.member.controller.contract.MemberInfoApi;
 import com.raota.domain.member.controller.request.UpdateProfileRequest;
 import com.raota.domain.member.controller.response.BookmarkSummaryResponse;
 import com.raota.domain.member.controller.response.MyProfileResponse;
@@ -21,15 +22,17 @@ import org.springframework.web.bind.annotation.RestController;
 @AllArgsConstructor
 @RestController
 @RequestMapping("/users")
-public class MemberInfoController {
+public class MemberInfoController implements MemberInfoApi {
     private final MemberInfoService memberInfoService;
 
+    @Override
     @GetMapping("/me/profile")
     public ResponseEntity<ApiResponse<MyProfileResponse>> getUserProfile(
             @LoginMember Long memberId) {
         return ResponseEntity.ok(ApiResponse.success(memberInfoService.getMyProfile(memberId)));
     }
 
+    @Override
     @PatchMapping("/me/profile")
     public ResponseEntity<ApiResponse<MyProfileResponse>> updateMyProfile(
             @RequestBody UpdateProfileRequest request,
@@ -40,6 +43,7 @@ public class MemberInfoController {
         return ResponseEntity.ok(ApiResponse.success(updated));
     }
 
+    @Override
     @GetMapping("/me/photos")
     public ResponseEntity<ApiResponse<Page<PhotoSummaryResponse>>> getUserPhoto(
             @LoginMember Long memberId,
@@ -48,6 +52,7 @@ public class MemberInfoController {
         return ResponseEntity.ok(ApiResponse.success(photos));
     }
 
+    @Override
     @GetMapping("/me/bookmarks")
     public ResponseEntity<ApiResponse<Page<BookmarkSummaryResponse>>> getMyBookmarks(
             @LoginMember Long memberId,
@@ -56,6 +61,7 @@ public class MemberInfoController {
         return ResponseEntity.ok(ApiResponse.success(page));
     }
 
+    @Override
     @GetMapping("/me/visits")
     public ResponseEntity<ApiResponse<Page<VisitSummaryResponse>>> getMyVisits(
             @LoginMember Long memberId,
