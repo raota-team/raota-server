@@ -2,6 +2,8 @@ package com.raota.domain.member.controller.contract;
 
 import com.raota.domain.member.controller.request.UpdateProfileRequest;
 import com.raota.domain.member.controller.response.BookmarkSummaryResponse;
+import com.raota.domain.member.controller.response.MyCommentSummaryResponse;
+import com.raota.domain.member.controller.response.MyPostSummaryResponse;
 import com.raota.domain.member.controller.response.MyProfileResponse;
 import com.raota.domain.member.controller.response.PhotoSummaryResponse;
 import com.raota.domain.member.controller.response.VisitSummaryResponse;
@@ -54,6 +56,22 @@ public interface MemberInfoApi {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
     ResponseEntity<ApiResponse<Page<VisitSummaryResponse>>> getMyVisits(
+            @Parameter(hidden = true) Long memberId,
+            @ParameterObject Pageable pageable);
+
+    @Operation(summary = "내 글 목록 조회", description = "로그인 사용자의 글 목록을 페이징으로 조회합니다. 기본 size는 5입니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    ResponseEntity<ApiResponse<Page<MyPostSummaryResponse>>> getMyPosts(
+            @Parameter(hidden = true) Long memberId,
+            @ParameterObject Pageable pageable);
+
+    @Operation(summary = "내 댓글 목록 조회", description = "댓글 내용과 댓글이 속한 글의 제목/작성일시를 페이징으로 조회합니다. 기본 size는 5입니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    ResponseEntity<ApiResponse<Page<MyCommentSummaryResponse>>> getMyComments(
             @Parameter(hidden = true) Long memberId,
             @ParameterObject Pageable pageable);
 }

@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 @Component
-@Profile({"local", "test","testserver"})
+@Profile("!prod")
 public class LocalFileUploader implements FileUploader{
     @Override
     public String upload(MultipartFile file, String dirName) {

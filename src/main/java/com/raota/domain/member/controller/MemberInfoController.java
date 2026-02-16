@@ -3,6 +3,8 @@ package com.raota.domain.member.controller;
 import com.raota.domain.member.controller.contract.MemberInfoApi;
 import com.raota.domain.member.controller.request.UpdateProfileRequest;
 import com.raota.domain.member.controller.response.BookmarkSummaryResponse;
+import com.raota.domain.member.controller.response.MyCommentSummaryResponse;
+import com.raota.domain.member.controller.response.MyPostSummaryResponse;
 import com.raota.domain.member.controller.response.MyProfileResponse;
 import com.raota.domain.member.controller.response.PhotoSummaryResponse;
 import com.raota.domain.member.controller.response.VisitSummaryResponse;
@@ -12,6 +14,8 @@ import com.raota.global.common.ApiResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -68,5 +72,21 @@ public class MemberInfoController implements MemberInfoApi {
             Pageable pageable) {
         Page<VisitSummaryResponse> page = memberInfoService.getMyVisits(memberId, pageable);
         return ResponseEntity.ok(ApiResponse.success(page));
+    }
+
+    @Override
+    @GetMapping("/me/posts")
+    public ResponseEntity<ApiResponse<Page<MyPostSummaryResponse>>> getMyPosts(
+            @LoginMember Long memberId,
+            @PageableDefault(size = 5, direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(Page.empty(pageable)));
+    }
+
+    @Override
+    @GetMapping("/me/comments")
+    public ResponseEntity<ApiResponse<Page<MyCommentSummaryResponse>>> getMyComments(
+            @LoginMember Long memberId,
+            @PageableDefault(size = 5, direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(Page.empty(pageable)));
     }
 }

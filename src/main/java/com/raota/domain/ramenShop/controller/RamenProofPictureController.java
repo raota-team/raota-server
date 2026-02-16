@@ -1,4 +1,4 @@
-package com.raota.domain.proofPicture.controller;
+package com.raota.domain.ramenShop.controller;
 
 import com.raota.domain.proofPicture.controller.contract.RamenProofPictureApi;
 import com.raota.domain.proofPicture.controller.response.ProofPictureInfoResponse;
@@ -21,14 +21,14 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/photos")
+@RequestMapping("/ramen-shops/{shopId}/photos")
 @RequiredArgsConstructor
 public class RamenProofPictureController implements RamenProofPictureApi {
 
     private final RamenProofPictureService proofPictureService;
 
     @Override
-    @PostMapping("/{shopId}")
+    @PostMapping
     public ResponseEntity<ApiResponse<ProofPictureInfoResponse>> addProofPicture(
             @PathVariable Long shopId,
             @RequestPart("file") MultipartFile file,
@@ -39,10 +39,10 @@ public class RamenProofPictureController implements RamenProofPictureApi {
     }
 
     @Override
-    @GetMapping("/{shopId}")
+    @GetMapping
     public ResponseEntity<ApiResponse<Page<RamenShopProofPictureResponse>>> getProofPicture(
             @PathVariable Long shopId,
-            @PageableDefault(size = 12, direction = Sort.Direction.DESC) Pageable pageable) {
+            @PageableDefault(size = 6, direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success(proofPictureService.findProofPicture(shopId,pageable)));
     }
 }

@@ -12,23 +12,25 @@ public interface RamenShopRepository extends JpaRepository<RamenShop, Long> {
 
     @Query(
             value = """
-                    select new com.raota.domain.ramenShop.controller.response.StoreSummaryResponse(
-                        s.id,
-                        s.name,
-                        concat(s.address.city, concat(' ', s.address.district)),
-                        s.tags,
-                        s.imageUrl
-                    )
-                    from RamenShop s
-                    where (:region is null or concat(s.address.city, concat(' ', s.address.district)) = :region)
-                      and (:keyword is null or s.name like concat('%', :keyword, '%'))
-                    """,
+        select new com.raota.domain.ramenShop.controller.response.StoreSummaryResponse(
+            s.id,
+            s.name,
+            null,
+            concat(s.address.city, concat(' ', s.address.district)),
+            null,
+            s.imageUrl,
+            s.stats.bookmarkCount
+        )
+        from RamenShop s
+        where (:region is null or :region = '' or concat(s.address.city, concat(' ', s.address.district)) = :region)
+          and (:keyword is null or :keyword = '' or s.name like concat('%', :keyword, '%'))
+        """,
             countQuery = """
-                    select count(s)
-                    from RamenShop s
-                    where (:region is null or concat(s.address.city, concat(' ', s.address.district)) = :region)
-                      and (:keyword is null or s.name like concat('%', :keyword, '%'))
-                    """
+        select count(s)
+        from RamenShop s
+        where (:region is null or :region = '' or concat(s.address.city, concat(' ', s.address.district)) = :region)
+          and (:keyword is null or :keyword = '' or s.name like concat('%', :keyword, '%'))
+        """
     )
     Page<StoreSummaryResponse> searchStores(@Param("region") String region,
                                             @Param("keyword") String keyword,

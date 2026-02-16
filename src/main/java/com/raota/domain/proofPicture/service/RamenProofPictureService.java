@@ -42,10 +42,9 @@ public class RamenProofPictureService {
         RamenProofPicture saved = proofPictureRepository.save(picture);
 
         return new ProofPictureInfoResponse(
-                saved.getId(),
-                saved.getImageUrl(),
-                saved.getMemberProfile().getNickname(),
-                saved.getUploadAt()
+                null,
+                null,
+                null
         );
     }
 
