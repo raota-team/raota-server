@@ -1,8 +1,8 @@
 package com.raota.domain.ramenShop.controller;
 
 import com.raota.domain.ramenShop.controller.response.VotingStatusResponse;
-import com.raota.domain.vote.controller.contract.MenuVoteApi;
-import com.raota.domain.vote.service.MenuVoteService;
+import com.raota.domain.ramenShop.controller.contract.MenuVoteApi;
+import com.raota.domain.ramenShop.service.MenuVoteService;
 import com.raota.global.auth.LoginMember;
 import com.raota.global.common.ApiResponse;
 import lombok.AllArgsConstructor;

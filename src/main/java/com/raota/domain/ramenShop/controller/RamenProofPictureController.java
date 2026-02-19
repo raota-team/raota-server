@@ -1,11 +1,11 @@
 package com.raota.domain.ramenShop.controller;
 
-import com.raota.domain.proofPicture.controller.contract.RamenProofPictureApi;
-import com.raota.domain.proofPicture.controller.response.ProofPictureInfoResponse;
-import com.raota.domain.proofPicture.controller.response.RamenShopProofPictureResponse;
+import com.raota.domain.ramenShop.controller.contract.RamenProofPictureApi;
+import com.raota.domain.ramenShop.controller.response.ProofPictureInfoResponse;
+import com.raota.domain.ramenShop.controller.response.RamenShopProofPictureResponse;
 import com.raota.global.auth.LoginMember;
 import com.raota.global.common.ApiResponse;
-import com.raota.domain.proofPicture.service.RamenProofPictureService;
+import com.raota.domain.ramenShop.service.RamenProofPictureService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
