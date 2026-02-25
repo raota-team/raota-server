@@ -3,12 +3,12 @@ package com.raota.domain.ramenShop.controller.contract;
 import com.raota.domain.ramenShop.controller.response.ProofPictureInfoResponse;
 import com.raota.domain.ramenShop.controller.response.RamenShopProofPictureResponse;
 import com.raota.global.common.ApiResponse;
+import com.raota.global.common.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,7 +29,7 @@ public interface RamenProofPictureApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<Page<RamenShopProofPictureResponse>>> getProofPicture(
+    ResponseEntity<ApiResponse<PageResponse<RamenShopProofPictureResponse>>> getProofPicture(
             @Parameter(description = "가게 ID", required = true) Long shopId,
             @ParameterObject Pageable pageable);
 }

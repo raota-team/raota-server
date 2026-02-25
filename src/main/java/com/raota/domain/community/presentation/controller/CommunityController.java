@@ -9,6 +9,7 @@ import com.raota.domain.community.presentation.response.CommunityPostDetailRespo
 import com.raota.domain.community.presentation.response.CommunityRamenShopOptionResponse;
 import com.raota.global.auth.LoginMember;
 import com.raota.global.common.ApiResponse;
+import com.raota.global.common.PageResponse;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,10 +31,10 @@ public class CommunityController implements CommunityApi {
 
     @Override
     @GetMapping("/posts")
-    public ResponseEntity<ApiResponse<Page<CommunityPostCardResponse>>> getCommunityPosts(
+    public ResponseEntity<ApiResponse<PageResponse<CommunityPostCardResponse>>> getCommunityPosts(
             @PageableDefault(size = 10, direction = Sort.Direction.DESC) Pageable pageable,
             CommunityPostSearchRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(Page.empty(pageable)));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(Page.empty(pageable))));
     }
 
     @Override
@@ -55,9 +56,9 @@ public class CommunityController implements CommunityApi {
 
     @Override
     @GetMapping("/ramen-shops")
-    public ResponseEntity<ApiResponse<Page<CommunityRamenShopOptionResponse>>> getRamenShopOptions(
+    public ResponseEntity<ApiResponse<PageResponse<CommunityRamenShopOptionResponse>>> getRamenShopOptions(
             @PageableDefault(size = 10, direction = Sort.Direction.DESC) Pageable pageable,
             CommunityRamenShopSearchRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(Page.empty(pageable)));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(Page.empty(pageable))));
     }
 }

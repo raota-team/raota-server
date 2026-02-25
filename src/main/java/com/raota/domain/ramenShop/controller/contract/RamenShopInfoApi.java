@@ -4,12 +4,12 @@ import com.raota.domain.ramenShop.controller.request.RamenShopSearchRequest;
 import com.raota.domain.ramenShop.controller.response.RamenShopBasicInfoResponse;
 import com.raota.domain.ramenShop.controller.response.StoreSummaryResponse;
 import com.raota.global.common.ApiResponse;
+import com.raota.global.common.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
@@ -27,7 +27,7 @@ public interface RamenShopInfoApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<Page<StoreSummaryResponse>>> getShopDetailInfo(
+    ResponseEntity<ApiResponse<PageResponse<StoreSummaryResponse>>> getShopDetailInfo(
             @ParameterObject Pageable pageable,
             @ParameterObject RamenShopSearchRequest request);
 }

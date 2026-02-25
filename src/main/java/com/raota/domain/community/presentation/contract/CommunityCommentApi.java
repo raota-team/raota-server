@@ -5,12 +5,12 @@ import com.raota.domain.community.presentation.request.CommunityCommentUpdateReq
 import com.raota.domain.community.presentation.response.CommunityCommentItemResponse;
 import com.raota.domain.community.presentation.response.CommunityCommentThreadResponse;
 import com.raota.global.common.ApiResponse;
+import com.raota.global.common.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
@@ -22,7 +22,7 @@ public interface CommunityCommentApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<Page<CommunityCommentThreadResponse>>> getComments(
+    ResponseEntity<ApiResponse<PageResponse<CommunityCommentThreadResponse>>> getComments(
             @Parameter(description = "글 ID", required = true) Long postId,
             @ParameterObject Pageable pageable);
 

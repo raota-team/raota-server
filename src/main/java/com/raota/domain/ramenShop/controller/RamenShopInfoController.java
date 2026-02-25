@@ -3,6 +3,7 @@ package com.raota.domain.ramenShop.controller;
 import com.raota.domain.ramenShop.controller.contract.RamenShopInfoApi;
 import com.raota.domain.ramenShop.controller.request.RamenShopSearchRequest;
 import com.raota.global.common.ApiResponse;
+import com.raota.global.common.PageResponse;
 import com.raota.domain.ramenShop.controller.response.RamenShopBasicInfoResponse;
 import com.raota.domain.ramenShop.controller.response.StoreSummaryResponse;
 import com.raota.domain.ramenShop.service.RamenShopInfoService;
@@ -33,10 +34,10 @@ public class RamenShopInfoController implements RamenShopInfoApi {
 
     @Override
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<StoreSummaryResponse>>> getShopDetailInfo(
+    public ResponseEntity<ApiResponse<PageResponse<StoreSummaryResponse>>> getShopDetailInfo(
             @PageableDefault(size = 12, direction = Sort.Direction.DESC) Pageable pageable,
             RamenShopSearchRequest request) {
         Page<StoreSummaryResponse> response = ramenShopInfoService.getRamenShopList(request.getRegion(),request.getKeyword(), pageable);
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(response)));
     }
 }
