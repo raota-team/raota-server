@@ -7,6 +7,7 @@ import com.raota.domain.community.presentation.response.CommunityCommentItemResp
 import com.raota.domain.community.presentation.response.CommunityCommentThreadResponse;
 import com.raota.global.auth.LoginMember;
 import com.raota.global.common.ApiResponse;
+import com.raota.global.common.PageResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -27,10 +28,10 @@ public class CommunityCommentController implements CommunityCommentApi {
 
     @Override
     @GetMapping("/posts/{postId}/comments")
-    public ResponseEntity<ApiResponse<Page<CommunityCommentThreadResponse>>> getComments(
+    public ResponseEntity<ApiResponse<PageResponse<CommunityCommentThreadResponse>>> getComments(
             @PathVariable Long postId,
             @PageableDefault(size = 10, direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(Page.empty(pageable)));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(Page.empty(pageable))));
     }
 
     @Override

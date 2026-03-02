@@ -17,10 +17,11 @@ import lombok.NoArgsConstructor;
 public class MemberProfile {
 
     @Builder
-    public MemberProfile(Long id, String imageUrl, String nickname,MemberActivityStats stats) {
+    public MemberProfile(Long id, String imageUrl, String backgroundImageUrl, String nickname, MemberActivityStats stats) {
         verifyNicknameBlank(nickname);
         this.id = id;
         this.imageUrl = imageUrl;
+        this.backgroundImageUrl = backgroundImageUrl;
         this.nickname = nickname;
         this.memberActivityStats = stats;
     }
@@ -34,16 +35,19 @@ public class MemberProfile {
 
     private String imageUrl;
 
+    private String backgroundImageUrl;
+
     @Embedded
     private MemberActivityStats memberActivityStats;
 
-    public void updateProfile(String nickname, String imageUrl) {
+    public void updateProfile(String nickname, String imageUrl, String backgroundImageUrl) {
         if (nickname == null || nickname.isBlank()) {
             throw new IllegalArgumentException("닉네임은 null 또는 빈 값일 수 없습니다.");
         }
 
         this.nickname = nickname;
         this.imageUrl = imageUrl;
+        this.backgroundImageUrl = backgroundImageUrl;
     }
 
     private void verifyNicknameBlank(String nickname) {

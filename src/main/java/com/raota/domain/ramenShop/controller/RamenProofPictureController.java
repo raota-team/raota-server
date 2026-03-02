@@ -5,6 +5,7 @@ import com.raota.domain.ramenShop.controller.response.ProofPictureInfoResponse;
 import com.raota.domain.ramenShop.controller.response.RamenShopProofPictureResponse;
 import com.raota.global.auth.LoginMember;
 import com.raota.global.common.ApiResponse;
+import com.raota.global.common.PageResponse;
 import com.raota.domain.ramenShop.service.RamenProofPictureService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -40,9 +41,9 @@ public class RamenProofPictureController implements RamenProofPictureApi {
 
     @Override
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<RamenShopProofPictureResponse>>> getProofPicture(
+    public ResponseEntity<ApiResponse<PageResponse<RamenShopProofPictureResponse>>> getProofPicture(
             @PathVariable Long shopId,
             @PageableDefault(size = 6, direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(proofPictureService.findProofPicture(shopId,pageable)));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(proofPictureService.findProofPicture(shopId,pageable))));
     }
 }

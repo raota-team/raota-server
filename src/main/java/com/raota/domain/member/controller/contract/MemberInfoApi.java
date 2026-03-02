@@ -8,12 +8,12 @@ import com.raota.domain.member.controller.response.MyProfileResponse;
 import com.raota.domain.member.controller.response.PhotoSummaryResponse;
 import com.raota.domain.member.controller.response.VisitSummaryResponse;
 import com.raota.global.common.ApiResponse;
+import com.raota.global.common.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
@@ -27,7 +27,7 @@ public interface MemberInfoApi {
     ResponseEntity<ApiResponse<MyProfileResponse>> getUserProfile(
             @Parameter(hidden = true) Long memberId);
 
-    @Operation(summary = "내 프로필 수정", description = "닉네임/프로필 이미지를 수정합니다.")
+    @Operation(summary = "내 프로필 수정", description = "닉네임/프로필 이미지/백그라운드 이미지를 수정합니다.")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
@@ -39,7 +39,7 @@ public interface MemberInfoApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<Page<PhotoSummaryResponse>>> getUserPhoto(
+    ResponseEntity<ApiResponse<PageResponse<PhotoSummaryResponse>>> getUserPhoto(
             @Parameter(hidden = true) Long memberId,
             @ParameterObject Pageable pageable);
 
@@ -47,7 +47,7 @@ public interface MemberInfoApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<Page<BookmarkSummaryResponse>>> getMyBookmarks(
+    ResponseEntity<ApiResponse<PageResponse<BookmarkSummaryResponse>>> getMyBookmarks(
             @Parameter(hidden = true) Long memberId,
             @ParameterObject Pageable pageable);
 
@@ -55,7 +55,7 @@ public interface MemberInfoApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<Page<VisitSummaryResponse>>> getMyVisits(
+    ResponseEntity<ApiResponse<PageResponse<VisitSummaryResponse>>> getMyVisits(
             @Parameter(hidden = true) Long memberId,
             @ParameterObject Pageable pageable);
 
@@ -63,7 +63,7 @@ public interface MemberInfoApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<Page<MyPostSummaryResponse>>> getMyPosts(
+    ResponseEntity<ApiResponse<PageResponse<MyPostSummaryResponse>>> getMyPosts(
             @Parameter(hidden = true) Long memberId,
             @ParameterObject Pageable pageable);
 
@@ -71,7 +71,7 @@ public interface MemberInfoApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<Page<MyCommentSummaryResponse>>> getMyComments(
+    ResponseEntity<ApiResponse<PageResponse<MyCommentSummaryResponse>>> getMyComments(
             @Parameter(hidden = true) Long memberId,
             @ParameterObject Pageable pageable);
 }
