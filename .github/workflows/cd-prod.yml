@@ -63,6 +63,8 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Configure OCI CLI
+        env:
+          SUPPRESS_LABEL_WARNING: "True"
         run: |
           set -euo pipefail
           mkdir -p "$HOME/.oci"
@@ -79,6 +81,7 @@ jobs:
 
       - name: Rolling replace instances in pool
         env:
+          COMPARTMENT_OCID: ${{ secrets.OCI_COMPARTMENT_OCID }}
           INSTANCE_POOL_OCID: ${{ secrets.OCI_INSTANCE_POOL_OCID }}
           LB_OCID: ${{ secrets.OCI_LB_OCID }}
           LB_BACKEND_SET_NAME: ${{ secrets.OCI_LB_BACKEND_SET_NAME }}
@@ -90,6 +93,11 @@ jobs:
 
           if [[ -z "${INSTANCE_POOL_OCID:-}" ]]; then
             echo "OCI_INSTANCE_POOL_OCID secret is required."
+            exit 1
+          fi
+
+          if [[ -z "${COMPARTMENT_OCID:-}" ]]; then
+            echo "OCI_COMPARTMENT_OCID secret is required."
             exit 1
           fi
 
@@ -112,6 +120,7 @@ jobs:
 
           list_running_ids() {
             oci compute-management instance-pool list-instances \
+              --compartment-id "$COMPARTMENT_OCID" \
               --instance-pool-id "$INSTANCE_POOL_OCID" \
               --all | jq -r '.data[] | select(."lifecycle-state"=="Running") | .id'
           }
