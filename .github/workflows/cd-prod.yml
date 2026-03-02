@@ -137,7 +137,12 @@ jobs:
             oci compute-management instance-pool list-instances \
               --compartment-id "$COMPARTMENT_OCID" \
               --instance-pool-id "$INSTANCE_POOL_OCID" \
-              --all | jq -r '.data[] | select(."lifecycle-state"=="Running") | .id'
+              --all | jq -r '
+                .data[]
+                | ((."lifecycle-state" // ."lifecycleState" // .state // .status // "") | ascii_downcase) as $s
+                | select($s == "running")
+                | .id
+              '
           }
 
           state_summary() {
@@ -148,7 +153,10 @@ jobs:
                 if (.data | length) == 0 then
                   "no-instances"
                 else
-                  ([.data[] | ."lifecycle-state"] | group_by(.) | map("\(.[0]):\(length)") | join(", "))
+                  ([
+                    .data[]
+                    | (."lifecycle-state" // ."lifecycleState" // .state // .status // "unknown")
+                  ] | group_by(.) | map("\(.[0]):\(length)") | join(", "))
                 end
               '
           }
