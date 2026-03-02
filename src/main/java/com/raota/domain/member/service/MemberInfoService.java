@@ -6,7 +6,7 @@ import com.raota.domain.member.controller.response.PhotoSummaryResponse;
 import com.raota.domain.member.controller.response.VisitSummaryResponse;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
-import com.raota.domain.proofPicture.repository.RamenProofPictureRepository;
+import com.raota.domain.ramenShop.repository.RamenProofPictureRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,10 +23,15 @@ public class MemberInfoService {
         return memberRepository.findMemberDetailInfo(memberId);
     }
 
-    public MyProfileResponse updateMyProfile(String updateNickname,String updateImage,Long memberId) {
+    public MyProfileResponse updateMyProfile(
+            String updateNickname,
+            String updateImage,
+            String updateBackgroundImage,
+            Long memberId
+    ) {
         MemberProfile member = memberRepository.findById(memberId).orElseThrow(()-> new IllegalArgumentException("없는 유저 정보 입니다."));
 
-        member.updateProfile(updateNickname,updateImage);
+        member.updateProfile(updateNickname, updateImage, updateBackgroundImage);
         memberRepository.save(member);
 
         return getMyProfile(memberId);

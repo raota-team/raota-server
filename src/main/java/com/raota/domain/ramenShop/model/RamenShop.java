@@ -1,6 +1,5 @@
 package com.raota.domain.ramenShop.model;
 
-import com.vladmihalcea.hibernate.type.json.JsonType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -13,7 +12,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Type;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @AllArgsConstructor
@@ -40,7 +40,7 @@ public class RamenShop {
     @Builder.Default
     private ShopStats stats = ShopStats.init();
 
-    @Type(JsonType.class)
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "tags",columnDefinition = "json")
     private List<String> tags;
 

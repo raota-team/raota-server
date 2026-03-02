@@ -13,20 +13,24 @@ import org.springframework.data.repository.query.Param;
 
 public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
     @Query("""
-            select new com.raota.domain.member.controller.response.MyProfileResponse(
-                m.id,
-                m.nickname,
-                m.imageUrl,
-                new com.raota.domain.member.dto.UserStatsDto(
-                    m.memberActivityStats.visitedRestaurantCount,
-                    m.memberActivityStats.photoCount,
-                    m.memberActivityStats.bookmarkCount
-                )
-            )
-            from MemberProfile m
-            where m.id = :id
-            """)
-    MyProfileResponse findMemberDetailInfo(Long id);
+    select new com.raota.domain.member.controller.response.MyProfileResponse(
+        m.id,
+        m.nickname,
+        m.imageUrl,
+        m.backgroundImageUrl,
+        m.nickname,
+        new com.raota.domain.member.dto.UserStatsDto(
+            m.memberActivityStats.visitedRestaurantCount,
+            m.memberActivityStats.photoCount,
+            m.memberActivityStats.bookmarkCount,
+            m.memberActivityStats.photoCount,
+            m.memberActivityStats.visitedRestaurantCount
+        )
+    )
+    from MemberProfile m
+    where m.id = :id
+""")
+    MyProfileResponse findMemberDetailInfo(@Param("id") Long id);
 
     @Query(value = """
             select new com.raota.domain.member.controller.response.VisitSummaryResponse(
@@ -78,20 +82,21 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
     Page<BookmarkSummaryResponse> findMyBookmarks(@Param("memberId") Long memberId, Pageable pageable);
 
     @Query(value = """
-            select new com.raota.domain.member.controller.response.PhotoSummaryResponse(
-                p.id,
-                p.imageUrl,
-                p.ramenShop.id,
-                p.ramenShop.name,
-                p.uploadAt
-                )
-            from RamenProofPicture p
-            where p.memberProfile.id = :memberId
-            """,
+    select new com.raota.domain.member.controller.response.PhotoSummaryResponse(
+        p.id,
+        p.imageUrl,
+        p.imageName,
+        p.ramenShop.id,
+        p.ramenShop.name,
+        p.uploadAt
+    )
+    from RamenProofPicture p
+    where p.memberProfile.id = :memberId
+""",
             countQuery = """
-                        select count(p)
-                        from RamenProofPicture p
-                        where p.memberProfile.id = :memberId
-                    """)
+    select count(p)
+    from RamenProofPicture p
+    where p.memberProfile.id = :memberId
+""")
     Page<PhotoSummaryResponse> findMyPhotos(@Param("memberId") Long memberId, Pageable pageable);
 }
