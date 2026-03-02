@@ -65,6 +65,7 @@ jobs:
       - name: Configure OCI CLI
         env:
           SUPPRESS_LABEL_WARNING: "True"
+          OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING: "True"
         run: |
           set -euo pipefail
           mkdir -p "$HOME/.oci"
@@ -78,9 +79,12 @@ jobs:
             echo "region=${{ secrets.OCI_CLI_REGION }}"
             echo "key_file=$HOME/.oci/oci_api_key.pem"
           } > "$HOME/.oci/config"
+          chmod 600 "$HOME/.oci/config"
 
       - name: Rolling replace instances in pool
         env:
+          SUPPRESS_LABEL_WARNING: "True"
+          OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING: "True"
           COMPARTMENT_OCID: ${{ secrets.OCI_COMPARTMENT_OCID }}
           INSTANCE_POOL_OCID: ${{ secrets.OCI_INSTANCE_POOL_OCID }}
           LB_OCID: ${{ secrets.OCI_LB_OCID }}
@@ -136,6 +140,19 @@ jobs:
               --all | jq -r '.data[] | select(."lifecycle-state"=="Running") | .id'
           }
 
+          state_summary() {
+            oci compute-management instance-pool list-instances \
+              --compartment-id "$COMPARTMENT_OCID" \
+              --instance-pool-id "$INSTANCE_POOL_OCID" \
+              --all | jq -r '
+                if (.data | length) == 0 then
+                  "no-instances"
+                else
+                  ([.data[] | ."lifecycle-state"] | group_by(.) | map("\(.[0]):\(length)") | join(", "))
+                end
+              '
+          }
+
           contains_id() {
             local needle="$1"
             shift || true
@@ -182,7 +199,7 @@ jobs:
             for attempt in {1..80}; do
               mapfile -t now_ids < <(list_running_ids)
               now_count=${#now_ids[@]}
-              log "Scale-out wait attempt=${attempt}, running=${now_count}, target=${target_size}"
+              log "Scale-out wait attempt=${attempt}, running=${now_count}, target=${target_size}, states=$(state_summary)"
               if (( now_count >= target_size )); then
                 surge_applied="$effective_surge"
                 min_running="$target_size"
@@ -214,7 +231,7 @@ jobs:
             for attempt in {1..80}; do
               mapfile -t now_ids < <(list_running_ids)
               now_count=${#now_ids[@]}
-              log "Replace wait old=${old_id} attempt=${attempt}, running=${now_count}, min_running=${min_running}, ids=${now_ids[*]}"
+              log "Replace wait old=${old_id} attempt=${attempt}, running=${now_count}, min_running=${min_running}, states=$(state_summary), ids=${now_ids[*]}"
 
               if contains_id "$old_id" "${now_ids[@]}"; then
                 sleep 15
@@ -286,7 +303,7 @@ jobs:
             for attempt in {1..80}; do
               mapfile -t now_ids < <(list_running_ids)
               now_count=${#now_ids[@]}
-              log "Scale-in wait attempt=${attempt}, running=${now_count}, target=${desired_count}"
+              log "Scale-in wait attempt=${attempt}, running=${now_count}, target=${desired_count}, states=$(state_summary)"
               if (( now_count == desired_count )); then
                 echo "Scale-in completed. Running count: ${now_count}"
                 break
