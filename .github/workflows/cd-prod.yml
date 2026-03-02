@@ -90,6 +90,14 @@ jobs:
           SURGE_WHEN_BELOW: ${{ secrets.OCI_SURGE_WHEN_BELOW }}
         run: |
           set -euo pipefail
+          set -x
+
+          log() {
+            echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')] [rolling] $*"
+          }
+
+          trap 'rc=$?; log "FAILED (line=${LINENO}, exit=${rc})"; exit $rc' ERR
+          log "Starting rolling replace step"
 
           if [[ -z "${INSTANCE_POOL_OCID:-}" ]]; then
             echo "OCI_INSTANCE_POOL_OCID secret is required."
@@ -118,7 +126,10 @@ jobs:
             exit 1
           fi
 
+          log "Input summary: pool=${INSTANCE_POOL_OCID}, compartment=${COMPARTMENT_OCID}, app_port=${APP_PORT}, rolling_surge=${ROLLING_SURGE}, surge_when_below=${SURGE_WHEN_BELOW}"
+
           list_running_ids() {
+            log "Query RUNNING instances from instance pool"
             oci compute-management instance-pool list-instances \
               --compartment-id "$COMPARTMENT_OCID" \
               --instance-pool-id "$INSTANCE_POOL_OCID" \
@@ -162,14 +173,16 @@ jobs:
             target_size=$((desired_count + effective_surge))
             echo "Scaling out instance pool for surge: ${desired_count} -> ${target_size}"
 
+            log "Calling instance-pool update (scale out)"
             oci compute-management instance-pool update \
               --instance-pool-id "$INSTANCE_POOL_OCID" \
               --size "$target_size" \
               --force >/dev/null
 
-            for _ in {1..80}; do
+            for attempt in {1..80}; do
               mapfile -t now_ids < <(list_running_ids)
               now_count=${#now_ids[@]}
+              log "Scale-out wait attempt=${attempt}, running=${now_count}, target=${target_size}"
               if (( now_count >= target_size )); then
                 surge_applied="$effective_surge"
                 min_running="$target_size"
@@ -189,16 +202,19 @@ jobs:
             echo "Replacing old instance: ${old_id}"
 
             mapfile -t before_ids < <(list_running_ids)
+            log "Before detach running IDs: ${before_ids[*]}"
 
+            log "Detaching instance ${old_id}"
             oci compute-management instance-pool detach-instance \
               --instance-pool-id "$INSTANCE_POOL_OCID" \
               --instance-id "$old_id" \
               --is-auto-terminate true
 
             new_id=""
-            for _ in {1..80}; do
+            for attempt in {1..80}; do
               mapfile -t now_ids < <(list_running_ids)
               now_count=${#now_ids[@]}
+              log "Replace wait old=${old_id} attempt=${attempt}, running=${now_count}, min_running=${min_running}, ids=${now_ids[*]}"
 
               if contains_id "$old_id" "${now_ids[@]}"; then
                 sleep 15
@@ -235,11 +251,12 @@ jobs:
               echo "Checking LB backend health for ${backend_name}"
 
               healthy="false"
-              for _ in {1..40}; do
+              for attempt in {1..40}; do
                 status="$(oci lb backend-health get \
                   --load-balancer-id "$LB_OCID" \
                   --backend-set-name "$LB_BACKEND_SET_NAME" \
                   --backend-name "$backend_name" | jq -r '.data.status // empty')"
+                log "LB health attempt=${attempt}, backend=${backend_name}, status=${status}"
 
                 if [[ "$status" == "OK" ]]; then
                   healthy="true"
@@ -260,14 +277,16 @@ jobs:
 
           if (( surge_applied > 0 )); then
             echo "Scaling instance pool back to original size: ${desired_count}"
+            log "Calling instance-pool update (scale in)"
             oci compute-management instance-pool update \
               --instance-pool-id "$INSTANCE_POOL_OCID" \
               --size "$desired_count" \
               --force >/dev/null
 
-            for _ in {1..80}; do
+            for attempt in {1..80}; do
               mapfile -t now_ids < <(list_running_ids)
               now_count=${#now_ids[@]}
+              log "Scale-in wait attempt=${attempt}, running=${now_count}, target=${desired_count}"
               if (( now_count == desired_count )); then
                 echo "Scale-in completed. Running count: ${now_count}"
                 break
