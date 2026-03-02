@@ -50,6 +50,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-testcontainers:4.0.2'
     testImplementation 'org.testcontainers:testcontainers-junit-jupiter:2.0.3'
     testImplementation 'org.testcontainers:mysql:1.21.4'
+
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 }
 
 tasks.named('test') {

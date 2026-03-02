@@ -1,22 +1,22 @@
 server:
-  port: ${SERVER_PORT:8080}
+  port: 8080
   shutdown: graceful
 
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${DB_HOST:db}:${DB_PORT:3306}/${DB_NAME:raota_db}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=${DB_TIMEZONE:Asia/Seoul}&characterEncoding=UTF-8
-    username: ${DB_USERNAME:raota}
-    password: ${DB_PASSWORD:raota-pass}
-    hikari:
-      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
-      minimum-idle: ${DB_POOL_MIN_IDLE:5}
-      idle-timeout: 30000
-      connection-timeout: 30000
+    url: ${SPRING_DATASOURCE_URL}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST}
+      port: ${SPRING_DATA_REDIS_PORT}
 
   jpa:
     hibernate:
-      ddl-auto: ${JPA_DDL_AUTO:update}
+      ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
@@ -26,8 +26,8 @@ spring:
 
 logging:
   level:
-    org.hibernate.SQL: ${LOG_LEVEL_HIBERNATE_SQL:info}
-    org.hibernate.type.descriptor.sql.BasicBinder: ${LOG_LEVEL_HIBERNATE_BINDER:trace}
+    org.hibernate.SQL: info
+    org.hibernate.type.descriptor.sql.BasicBinder: trace
 
 management:
   endpoints:
