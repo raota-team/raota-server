@@ -296,7 +296,10 @@ jobs:
                 status="$(oci lb backend-health get \
                   --load-balancer-id "$LB_OCID" \
                   --backend-set-name "$LB_BACKEND_SET_NAME" \
-                  --backend-name "$backend_name" | jq -r '.data.status // empty')"
+                  --backend-name "$backend_name" 2>/dev/null | jq -r '.data.status // empty' || true)"
+                if [[ -z "$status" ]]; then
+                  status="PENDING_OR_NOT_FOUND"
+                fi
                 log "LB health attempt=${attempt}, backend=${backend_name}, status=${status}"
 
                 if [[ "$status" == "OK" ]]; then
