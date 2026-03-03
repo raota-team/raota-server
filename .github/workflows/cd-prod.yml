@@ -96,11 +96,27 @@ jobs:
           set -euo pipefail
           set -x
 
+          desired_count=0
+          surge_applied=0
+
           log() {
-            echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')] [rolling] $*"
+            echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')] [rolling] $*" >&2
           }
 
-          trap 'rc=$?; log "FAILED (line=${LINENO}, exit=${rc})"; exit $rc' ERR
+          rollback_on_error() {
+            local rc=$?
+            if (( rc != 0 )) && (( surge_applied > 0 )) && (( desired_count > 0 )); then
+              log "Error detected. Best-effort scale rollback to original size=${desired_count}"
+              oci compute-management instance-pool update \
+                --instance-pool-id "$INSTANCE_POOL_OCID" \
+                --size "$desired_count" \
+                --force >/dev/null || true
+            fi
+            log "FAILED (line=${LINENO}, exit=${rc})"
+            exit "$rc"
+          }
+
+          trap rollback_on_error ERR
           log "Starting rolling replace step"
 
           if [[ -z "${INSTANCE_POOL_OCID:-}" ]]; then
@@ -183,7 +199,6 @@ jobs:
 
           echo "Initial RUNNING instances (${desired_count}): ${initial_ids[*]}"
 
-          surge_applied=0
           min_running="$desired_count"
           effective_surge=0
 
@@ -230,9 +245,10 @@ jobs:
             log "Before detach running IDs: ${before_ids[*]}"
 
             log "Detaching instance ${old_id}"
-            oci compute-management instance-pool detach-instance \
+            oci compute-management instance-pool-instance detach \
               --instance-pool-id "$INSTANCE_POOL_OCID" \
               --instance-id "$old_id" \
+              --is-decrement-size false \
               --is-auto-terminate true
 
             new_id=""
