@@ -93,7 +93,7 @@ jobs:
           ROLLING_SURGE: ${{ secrets.OCI_ROLLING_SURGE }}
           SURGE_WHEN_BELOW: ${{ secrets.OCI_SURGE_WHEN_BELOW }}
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
           set -x
 
           desired_count=0
@@ -117,16 +117,20 @@ jobs:
           }
 
           trap rollback_on_error ERR
+
+          fail() {
+            log "$*"
+            false
+          }
+
           log "Starting rolling replace step"
 
           if [[ -z "${INSTANCE_POOL_OCID:-}" ]]; then
-            echo "OCI_INSTANCE_POOL_OCID secret is required."
-            exit 1
+            fail "OCI_INSTANCE_POOL_OCID secret is required."
           fi
 
           if [[ -z "${COMPARTMENT_OCID:-}" ]]; then
-            echo "OCI_COMPARTMENT_OCID secret is required."
-            exit 1
+            fail "OCI_COMPARTMENT_OCID secret is required."
           fi
 
           if [[ -z "${APP_PORT:-}" ]]; then
@@ -142,8 +146,7 @@ jobs:
           fi
 
           if ! command -v jq >/dev/null 2>&1; then
-            echo "jq is required in runner."
-            exit 1
+            fail "jq is required in runner."
           fi
 
           log "Input summary: pool=${INSTANCE_POOL_OCID}, compartment=${COMPARTMENT_OCID}, app_port=${APP_PORT}, rolling_surge=${ROLLING_SURGE}, surge_when_below=${SURGE_WHEN_BELOW}"
@@ -193,8 +196,7 @@ jobs:
           desired_count=${#initial_ids[@]}
 
           if (( desired_count == 0 )); then
-            echo "No RUNNING instances in pool."
-            exit 1
+            fail "No RUNNING instances in pool."
           fi
 
           echo "Initial RUNNING instances (${desired_count}): ${initial_ids[*]}"
@@ -233,8 +235,7 @@ jobs:
             done
 
             if (( surge_applied == 0 )); then
-              echo "Failed to scale out to surge size. Check instance pool max size / autoscaling policy."
-              exit 1
+              fail "Failed to scale out to surge size. Check instance pool max size / autoscaling policy."
             fi
           fi
 
@@ -280,8 +281,7 @@ jobs:
             done
 
             if [[ -z "$new_id" ]]; then
-              echo "Failed to detect replacement instance for ${old_id}"
-              exit 1
+              fail "Failed to detect replacement instance for ${old_id}"
             fi
 
             echo "Replacement instance is RUNNING: ${new_id}"
@@ -310,8 +310,7 @@ jobs:
               done
 
               if [[ "$healthy" != "true" ]]; then
-                echo "New instance ${new_id} is not healthy in LB backend set."
-                exit 1
+                fail "New instance ${new_id} is not healthy in LB backend set."
               fi
             else
               echo "LB secrets not set. Waiting 60s for app warm-up."
