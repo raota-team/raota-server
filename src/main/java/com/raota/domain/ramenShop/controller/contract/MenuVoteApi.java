@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 
-@Tag(name = "Vote", description = "메뉴 투표 API")
+@Tag(name = "메뉴 투표", description = "메뉴 투표 API")
 public interface MenuVoteApi {
 
     @Operation(summary = "투표 현황 조회", description = "가게별 투표 현황을 조회합니다.")

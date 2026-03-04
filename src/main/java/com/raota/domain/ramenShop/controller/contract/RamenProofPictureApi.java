@@ -13,7 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
-@Tag(name = "ProofPicture", description = "라멘 인증샷 API")
+@Tag(name = "인증샷", description = "라멘 인증샷 API")
 public interface RamenProofPictureApi {
 
     @Operation(summary = "인증샷 업로드", description = "가게 인증샷을 업로드합니다.")

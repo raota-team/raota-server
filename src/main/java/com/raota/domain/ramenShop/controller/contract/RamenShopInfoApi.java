@@ -13,7 +13,7 @@ import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
-@Tag(name = "RamenShop", description = "라멘 가게 조회/방문 API")
+@Tag(name = "라멘 가게", description = "라멘 가게 조회/방문 API")
 public interface RamenShopInfoApi {
 
     @Operation(summary = "가게 상세 조회", description = "가게의 기본 정보와 메뉴, 통계를 조회합니다.")
