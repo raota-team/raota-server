@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import java.util.List;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -66,5 +67,31 @@ public class RamenShop {
     public void addEventMenu(EventMenu eventMenu){
         eventMenus.add(eventMenu);
         eventMenu.setShop(this);
+    }
+
+    public void updateBasicInfo(String name, Address address, BusinessHours businessHours,
+                                List<String> tags, String instagramUrl, String imageUrl) {
+        this.name = Objects.requireNonNull(name, "name");
+        this.address = Objects.requireNonNull(address, "address");
+        this.businessHours = businessHours;
+        this.tags = tags;
+        this.instagramUrl = instagramUrl;
+        this.imageUrl = imageUrl;
+    }
+
+    public void replaceNormalMenus(List<NormalMenu> menus) {
+        if (normalMenus == null) {
+            normalMenus = NormalMenus.init();
+        }
+        normalMenus.clear();
+        menus.forEach(this::addNormalMenu);
+    }
+
+    public void replaceEventMenus(List<EventMenu> menus) {
+        if (eventMenus == null) {
+            eventMenus = EventMenus.init();
+        }
+        eventMenus.clear();
+        menus.forEach(this::addEventMenu);
     }
 }

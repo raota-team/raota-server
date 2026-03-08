@@ -24,23 +24,38 @@ public class NormalMenus {
     }
 
     public List<NormalMenuDto> getNormalMenusInfo(){
-        return values.stream().map(NormalMenuDto::from).toList();
+        return menus().stream().map(NormalMenuDto::from).toList();
     }
 
     public void add(NormalMenu normalMenu){
         verifyMenuNameDuplicate(normalMenu.getName());
-        values.add(normalMenu);
+        menus().add(normalMenu);
     }
 
     public Optional<NormalMenu> findMenuById(Long menuId){
-        return values.stream()
+        return menus().stream()
                 .filter(menu -> menu.getId().equals(menuId))
                 .findFirst();
     }
 
+    public List<NormalMenu> getValues() {
+        return List.copyOf(menus());
+    }
+
+    public void clear() {
+        menus().clear();
+    }
+
     private void verifyMenuNameDuplicate(String name){
-        if (values.stream().anyMatch(menu -> menu.getName().equals(name))) {
+        if (menus().stream().anyMatch(menu -> menu.getName().equals(name))) {
             throw new IllegalArgumentException("이미 존재하는 메뉴 이름입니다: " + name);
         }
+    }
+
+    private List<NormalMenu> menus() {
+        if (values == null) {
+            values = new ArrayList<>();
+        }
+        return values;
     }
 }
