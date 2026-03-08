@@ -18,11 +18,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
-@Tag(name = "Community", description = "커뮤니티 API")
+@Tag(name = "커뮤니티", description = "커뮤니티 API")
 public interface CommunityApi {
 
     @Operation(summary = "커뮤니티 글 목록 조회",
-            description = "카테고리 필터와 페이징으로 커뮤니티 글 목록을 조회합니다. 기본 size는 10입니다.")
+            description = "카테고리 필터와 페이징으로 커뮤니티 글 목록을 조회합니다. 기본 페이지 크기는 10입니다.")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
@@ -52,7 +52,7 @@ public interface CommunityApi {
             @Parameter(hidden = true) Long memberId);
 
     @Operation(summary = "커뮤니티 글 작성용 라멘집 목록 조회",
-            description = "맛집후기 카테고리 작성 시 선택할 라멘집 목록을 검색/페이징으로 조회합니다. 기본 size는 10입니다.")
+            description = "맛집후기 카테고리 작성 시 선택할 라멘집 목록을 검색/페이징으로 조회합니다. 기본 페이지 크기는 10입니다.")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })

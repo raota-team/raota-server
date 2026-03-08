@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>라멘집 어드민</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #f5efe6;
+            --panel: rgba(255, 252, 246, 0.95);
+            --line: #d8c8b4;
+            --ink: #26170c;
+            --accent: #b33f1d;
+            --accent-soft: #f0c7b1;
+            --accent-dark: #7e2208;
+            --muted: #7a6656;
+            --danger: #b42318;
+            --shadow: 0 18px 36px rgba(38, 23, 12, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+            color: var(--ink);
+            background:
+                    radial-gradient(circle at top left, rgba(255, 255, 255, 0.6), transparent 32%),
+                    linear-gradient(135deg, #efe2cf, #f8f4ec 48%, #ead2bc);
+            min-height: 100vh;
+        }
+
+        .shell {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 32px 20px 40px;
+        }
+
+        .hero {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: end;
+            margin-bottom: 24px;
+        }
+
+        .hero h1 {
+            margin: 0;
+            font-size: clamp(2rem, 2.7vw, 3rem);
+            letter-spacing: -0.04em;
+        }
+
+        .hero p {
+            margin: 8px 0 0;
+            color: var(--muted);
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+            gap: 20px;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid rgba(126, 34, 8, 0.12);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .sidebar-header,
+        .content-header {
+            padding: 22px 24px 18px;
+            border-bottom: 1px solid rgba(126, 34, 8, 0.08);
+        }
+
+        .sidebar-header h2,
+        .content-header h2 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .sidebar-header p,
+        .content-header p {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 0.94rem;
+        }
+
+        .shop-actions {
+            padding: 18px 24px 0;
+        }
+
+        .shop-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 18px 18px 22px;
+            max-height: calc(100vh - 260px);
+            overflow: auto;
+        }
+
+        .shop-card {
+            display: grid;
+            grid-template-columns: 72px minmax(0, 1fr);
+            gap: 14px;
+            align-items: center;
+            padding: 12px;
+            border-radius: 18px;
+            color: inherit;
+            text-decoration: none;
+            border: 1px solid transparent;
+            background: rgba(255, 255, 255, 0.58);
+            transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+        }
+
+        .shop-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(179, 63, 29, 0.18);
+        }
+
+        .shop-card.active {
+            border-color: rgba(179, 63, 29, 0.45);
+            background: rgba(240, 199, 177, 0.65);
+        }
+
+        .thumb {
+            width: 72px;
+            height: 72px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #f5d5b8, #e7a96e);
+            background-size: cover;
+            background-position: center;
+        }
+
+        .thumb.placeholder {
+            display: grid;
+            place-items: center;
+            color: rgba(38, 23, 12, 0.5);
+            font-size: 0.82rem;
+        }
+
+        .shop-card strong {
+            display: block;
+            font-size: 1rem;
+        }
+
+        .shop-card span {
+            display: block;
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 0.88rem;
+            line-height: 1.4;
+        }
+
+        .empty {
+            padding: 16px 18px;
+            margin: 0 18px 20px;
+            border-radius: 18px;
+            border: 1px dashed rgba(126, 34, 8, 0.18);
+            color: var(--muted);
+            background: rgba(255, 255, 255, 0.55);
+        }
+
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: start;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-size: 0.88rem;
+            color: var(--accent-dark);
+            background: rgba(240, 199, 177, 0.7);
+        }
+
+        form {
+            padding: 24px;
+        }
+
+        .message {
+            margin: 0 24px;
+            padding: 14px 16px;
+            border-radius: 16px;
+            font-size: 0.94rem;
+        }
+
+        .message.success {
+            background: rgba(44, 132, 63, 0.12);
+            color: #1d6f32;
+        }
+
+        .message.error {
+            background: rgba(180, 35, 24, 0.1);
+            color: var(--danger);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .field,
+        .field-wide {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .field-wide {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-weight: 700;
+            font-size: 0.94rem;
+        }
+
+        .hint {
+            color: var(--muted);
+            font-size: 0.82rem;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            border: 1px solid rgba(126, 34, 8, 0.16);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.84);
+            padding: 12px 14px;
+            font: inherit;
+            color: inherit;
+        }
+
+        input:focus,
+        textarea:focus {
+            outline: 2px solid rgba(179, 63, 29, 0.18);
+            border-color: rgba(179, 63, 29, 0.5);
+        }
+
+        textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        .error-text {
+            color: var(--danger);
+            font-size: 0.82rem;
+        }
+
+        .section {
+            margin-top: 28px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(126, 34, 8, 0.1);
+        }
+
+        .section-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .section-head h3 {
+            margin: 0;
+            font-size: 1.02rem;
+        }
+
+        .menu-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .menu-card {
+            border: 1px solid rgba(126, 34, 8, 0.12);
+            border-radius: 18px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.72);
+        }
+
+        .menu-card-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .menu-card-grid .full {
+            grid-column: 1 / -1;
+        }
+
+        .checkbox {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            padding-top: 10px;
+        }
+
+        .checkbox input {
+            width: 18px;
+            height: 18px;
+            padding: 0;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 28px;
+        }
+
+        button,
+        .button-link {
+            border: 0;
+            border-radius: 999px;
+            padding: 12px 18px;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.18s ease, opacity 0.18s ease;
+        }
+
+        button:hover,
+        .button-link:hover {
+            transform: translateY(-1px);
+        }
+
+        .button-primary {
+            background: var(--accent);
+            color: #fffaf7;
+        }
+
+        .button-secondary {
+            background: rgba(38, 23, 12, 0.08);
+            color: var(--ink);
+        }
+
+        .button-danger {
+            background: rgba(180, 35, 24, 0.12);
+            color: var(--danger);
+        }
+
+        .button-ghost {
+            background: rgba(255, 255, 255, 0.74);
+            color: var(--accent-dark);
+            border: 1px solid rgba(179, 63, 29, 0.16);
+        }
+
+        .remove-row {
+            margin-top: 12px;
+            padding: 10px 14px;
+        }
+
+        .delete-form {
+            margin: 0;
+            padding: 0;
+        }
+
+        @media (max-width: 1024px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .shop-list {
+                max-height: none;
+            }
+        }
+
+        @media (max-width: 720px) {
+            .hero,
+            .content-header,
+            .section-head,
+            .button-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .grid,
+            .menu-card-grid {
+                grid-template-columns: 1fr;
+            }
+
+            form,
+            .sidebar-header,
+            .content-header,
+            .shop-actions {
+                padding-left: 18px;
+                padding-right: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="shell">
+    <section class="hero">
+        <div>
+            <h1>라멘집 상세 관리</h1>
+            <p>라멘집 정보, 대표 이미지, 운영시간, 메뉴를 한 화면에서 추가하고 수정할 수 있다.</p>
+        </div>
+        <div class="badge" th:text="${editMode} ? '수정 모드' : '신규 등록 모드'"></div>
+    </section>
+
+    <div class="layout">
+        <aside class="panel">
+            <div class="sidebar-header">
+                <h2>가게 목록</h2>
+                <p>수정할 라멘집을 선택하거나 새 항목을 추가한다.</p>
+            </div>
+            <div class="shop-actions">
+                <a class="button-link button-primary" th:href="@{/admin/ramen-shops}">새 라멘집 등록</a>
+            </div>
+            <div class="shop-list" th:if="${!#lists.isEmpty(shops)}">
+                <a class="shop-card"
+                   th:each="shop : ${shops}"
+                   th:href="@{/admin/ramen-shops(shopId=${shop.id})}"
+                   th:classappend="${selectedShopId == shop.id} ? ' active'">
+                    <div class="thumb"
+                         th:if="${shop.imageUrl != null and !shop.imageUrl.isBlank()}"
+                         th:style="'background-image:url(' + ${shop.imageUrl} + ');'"></div>
+                    <div class="thumb placeholder" th:unless="${shop.imageUrl != null and !shop.imageUrl.isBlank()}">NO IMAGE</div>
+                    <div>
+                        <strong th:text="${shop.name}"></strong>
+                        <span th:text="${shop.address}"></span>
+                    </div>
+                </a>
+            </div>
+            <div class="empty" th:if="${#lists.isEmpty(shops)}">
+                아직 등록된 라멘집이 없다. 오른쪽 폼에서 첫 가게를 추가하면 된다.
+            </div>
+        </aside>
+
+        <main class="panel">
+            <div class="content-header">
+                <div>
+                    <h2 th:text="${editMode} ? '라멘집 수정' : '라멘집 등록'"></h2>
+                    <p th:text="${editMode} ? '선택한 라멘집 정보를 바꾸고 삭제할 수 있다.' : '새 라멘집 상세 페이지에 노출할 정보를 입력한다.'"></p>
+                </div>
+                <form class="delete-form"
+                      th:if="${editMode}"
+                      th:action="@{/admin/ramen-shops/{id}/delete(id=${selectedShopId})}"
+                      method="post">
+                    <button class="button-danger" type="submit" onclick="return confirm('이 라멘집을 삭제할까요?');">삭제</button>
+                </form>
+            </div>
+
+            <div class="message success" th:if="${successMessage}" th:text="${successMessage}"></div>
+
+            <form th:object="${form}"
+                  th:action="${editMode} ? @{/admin/ramen-shops/{id}(id=${selectedShopId})} : @{/admin/ramen-shops}"
+                  enctype="multipart/form-data"
+                  method="post">
+
+                <div class="message error" th:if="${#fields.hasGlobalErrors()}">
+                    <div th:each="error : ${#fields.globalErrors()}" th:text="${error.defaultMessage}"></div>
+                </div>
+
+                <div class="grid">
+                    <div class="field">
+                        <label for="name">가게 이름</label>
+                        <input id="name" type="text" th:field="*{name}" placeholder="멘야 하쿠">
+                        <div class="error-text" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                    </div>
+                    <div class="field">
+                        <label for="tags">태그</label>
+                        <input id="tags" type="text" th:field="*{tags}" placeholder="진한국물, 츠케멘, 혼밥">
+                        <div class="hint">쉼표로 구분하면 상세 페이지 태그 목록으로 저장된다.</div>
+                    </div>
+
+                    <div class="field">
+                        <label for="city">도시</label>
+                        <input id="city" type="text" th:field="*{city}" placeholder="서울">
+                        <div class="error-text" th:if="${#fields.hasErrors('city')}" th:errors="*{city}"></div>
+                    </div>
+                    <div class="field">
+                        <label for="district">구/동네</label>
+                        <input id="district" type="text" th:field="*{district}" placeholder="마포구">
+                    </div>
+
+                    <div class="field">
+                        <label for="street">도로명 주소</label>
+                        <input id="street" type="text" th:field="*{street}" placeholder="월드컵북로 12길 19">
+                        <div class="error-text" th:if="${#fields.hasErrors('street')}" th:errors="*{street}"></div>
+                    </div>
+                    <div class="field">
+                        <label for="detail">상세 주소</label>
+                        <input id="detail" type="text" th:field="*{detail}" placeholder="1층">
+                    </div>
+
+                    <div class="field">
+                        <label for="closedDays">휴무일</label>
+                        <input id="closedDays" type="text" th:field="*{closedDays}" placeholder="월요일">
+                    </div>
+                    <div class="field">
+                        <label for="instagramUrl">인스타그램 URL</label>
+                        <input id="instagramUrl" type="url" th:field="*{instagramUrl}" placeholder="https://instagram.com/...">
+                    </div>
+
+                    <div class="field">
+                        <label for="openTime">오픈 시간</label>
+                        <input id="openTime" type="time" th:field="*{openTime}">
+                    </div>
+                    <div class="field">
+                        <label for="closeTime">마감 시간</label>
+                        <input id="closeTime" type="time" th:field="*{closeTime}">
+                    </div>
+
+                    <div class="field">
+                        <label for="breakStart">브레이크 시작</label>
+                        <input id="breakStart" type="time" th:field="*{breakStart}">
+                    </div>
+                    <div class="field">
+                        <label for="breakEnd">브레이크 종료</label>
+                        <input id="breakEnd" type="time" th:field="*{breakEnd}">
+                    </div>
+
+                    <div class="field-wide">
+                        <label for="imageFile">대표 이미지 파일</label>
+                        <input id="imageFile" type="file" th:field="*{imageFile}" accept="image/*">
+                        <div class="hint">파일을 올리지 않고 저장하면 대표 이미지는 `null`로 저장된다.</div>
+                        <div class="hint" th:if="${form.currentImageUrl != null and !form.currentImageUrl.isBlank()}">
+                            현재 이미지:
+                            <a th:href="${form.currentImageUrl}" th:text="${form.currentImageUrl}" target="_blank" rel="noopener noreferrer"></a>
+                        </div>
+                    </div>
+                </div>
+
+                <section class="section">
+                    <div class="section-head">
+                        <div>
+                            <h3>일반 메뉴</h3>
+                            <div class="hint">상세 페이지의 기본 메뉴 목록으로 사용된다.</div>
+                        </div>
+                        <button type="button" class="button-ghost" data-add-row="normal-menu-list" data-template="normal-menu-template">행 추가</button>
+                    </div>
+                    <div class="menu-list" id="normal-menu-list">
+                        <div class="menu-card" th:each="menu, stat : *{normalMenus}">
+                            <div class="menu-card-grid">
+                                <div>
+                                    <label>메뉴명</label>
+                                    <input type="text" th:name="'normalMenus[' + ${stat.index} + '].name'" th:value="${menu.name}" placeholder="시오 라멘">
+                                </div>
+                                <div>
+                                    <label>가격</label>
+                                    <input type="number" min="0" th:name="'normalMenus[' + ${stat.index} + '].price'" th:value="${menu.price}" placeholder="11000">
+                                </div>
+                                <div class="full">
+                                    <label>이미지 URL</label>
+                                    <input type="url" th:name="'normalMenus[' + ${stat.index} + '].imageUrl'" th:value="${menu.imageUrl}" placeholder="https://...">
+                                </div>
+                                <label class="checkbox full">
+                                    <input type="checkbox" th:name="'normalMenus[' + ${stat.index} + '].signature'" th:checked="${menu.signature}">
+                                    시그니처 메뉴
+                                </label>
+                            </div>
+                            <button type="button" class="button-secondary remove-row">이 행 삭제</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <div class="section-head">
+                        <div>
+                            <h3>이벤트 메뉴</h3>
+                            <div class="hint">한정 메뉴, 콜라보 메뉴, 시즌 메뉴를 입력한다.</div>
+                        </div>
+                        <button type="button" class="button-ghost" data-add-row="event-menu-list" data-template="event-menu-template">행 추가</button>
+                    </div>
+                    <div class="menu-list" id="event-menu-list">
+                        <div class="menu-card" th:each="menu, stat : *{eventMenus}">
+                            <div class="menu-card-grid">
+                                <div>
+                                    <label>메뉴명</label>
+                                    <input type="text" th:name="'eventMenus[' + ${stat.index} + '].name'" th:value="${menu.name}" placeholder="한정 츠케멘">
+                                </div>
+                                <div>
+                                    <label>가격</label>
+                                    <input type="number" min="0" th:name="'eventMenus[' + ${stat.index} + '].price'" th:value="${menu.price}" placeholder="14000">
+                                </div>
+                                <div>
+                                    <label>배지 텍스트</label>
+                                    <input type="text" th:name="'eventMenus[' + ${stat.index} + '].badgeText'" th:value="${menu.badgeText}" placeholder="LIMITED">
+                                </div>
+                                <div>
+                                    <label>이미지 URL</label>
+                                    <input type="url" th:name="'eventMenus[' + ${stat.index} + '].imageUrl'" th:value="${menu.imageUrl}" placeholder="https://...">
+                                </div>
+                                <div>
+                                    <label>시작일</label>
+                                    <input type="date" th:name="'eventMenus[' + ${stat.index} + '].startDate'" th:value="${menu.startDate}">
+                                </div>
+                                <div>
+                                    <label>종료일</label>
+                                    <input type="date" th:name="'eventMenus[' + ${stat.index} + '].endDate'" th:value="${menu.endDate}">
+                                </div>
+                                <div class="full">
+                                    <label>설명</label>
+                                    <textarea th:name="'eventMenus[' + ${stat.index} + '].description'" th:text="${menu.description}" placeholder="국물 특징, 토핑, 한정 기간 설명"></textarea>
+                                </div>
+                            </div>
+                            <button type="button" class="button-secondary remove-row">이 행 삭제</button>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="button-row">
+                    <button class="button-primary" type="submit" th:text="${editMode} ? '저장하기' : '등록하기'"></button>
+                    <a class="button-link button-secondary" th:href="@{/admin/ramen-shops}">초기화</a>
+                </div>
+            </form>
+        </main>
+    </div>
+</div>
+
+<template id="normal-menu-template">
+    <div class="menu-card">
+        <div class="menu-card-grid">
+            <div>
+                <label>메뉴명</label>
+                <input type="text" name="normalMenus[__INDEX__].name" placeholder="시오 라멘">
+            </div>
+            <div>
+                <label>가격</label>
+                <input type="number" min="0" name="normalMenus[__INDEX__].price" placeholder="11000">
+            </div>
+            <div class="full">
+                <label>이미지 URL</label>
+                <input type="url" name="normalMenus[__INDEX__].imageUrl" placeholder="https://...">
+            </div>
+            <label class="checkbox full">
+                <input type="checkbox" name="normalMenus[__INDEX__].signature">
+                시그니처 메뉴
+            </label>
+        </div>
+        <button type="button" class="button-secondary remove-row">이 행 삭제</button>
+    </div>
+</template>
+
+<template id="event-menu-template">
+    <div class="menu-card">
+        <div class="menu-card-grid">
+            <div>
+                <label>메뉴명</label>
+                <input type="text" name="eventMenus[__INDEX__].name" placeholder="한정 츠케멘">
+            </div>
+            <div>
+                <label>가격</label>
+                <input type="number" min="0" name="eventMenus[__INDEX__].price" placeholder="14000">
+            </div>
+            <div>
+                <label>배지 텍스트</label>
+                <input type="text" name="eventMenus[__INDEX__].badgeText" placeholder="LIMITED">
+            </div>
+            <div>
+                <label>이미지 URL</label>
+                <input type="url" name="eventMenus[__INDEX__].imageUrl" placeholder="https://...">
+            </div>
+            <div>
+                <label>시작일</label>
+                <input type="date" name="eventMenus[__INDEX__].startDate">
+            </div>
+            <div>
+                <label>종료일</label>
+                <input type="date" name="eventMenus[__INDEX__].endDate">
+            </div>
+            <div class="full">
+                <label>설명</label>
+                <textarea name="eventMenus[__INDEX__].description" placeholder="국물 특징, 토핑, 한정 기간 설명"></textarea>
+            </div>
+        </div>
+        <button type="button" class="button-secondary remove-row">이 행 삭제</button>
+    </div>
+</template>
+
+<script>
+    const nextIndex = (container, field) => {
+        const selector = '[name^="' + field + '["]';
+        const pattern = new RegExp("\\[(\\d+)\\]");
+        const indices = Array.from(container.querySelectorAll(selector))
+            .map((element) => element.name.match(pattern))
+            .filter(Boolean)
+            .map((match) => Number(match[1]));
+        return indices.length ? Math.max(...indices) + 1 : 0;
+    };
+
+    document.querySelectorAll("[data-add-row]").forEach((button) => {
+        button.addEventListener("click", () => {
+            const container = document.getElementById(button.dataset.addRow);
+            const template = document.getElementById(button.dataset.template);
+            const field = button.dataset.addRow === "normal-menu-list" ? "normalMenus" : "eventMenus";
+            const index = nextIndex(container, field);
+            const html = template.innerHTML.replaceAll("__INDEX__", String(index));
+            container.insertAdjacentHTML("beforeend", html);
+        });
+    });
+
+    document.addEventListener("click", (event) => {
+        if (!event.target.classList.contains("remove-row")) {
+            return;
+        }
+        event.target.closest(".menu-card")?.remove();
+    });
+</script>
+</body>
+</html>

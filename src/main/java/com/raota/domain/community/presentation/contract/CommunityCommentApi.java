@@ -14,11 +14,11 @@ import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
-@Tag(name = "CommunityComment", description = "커뮤니티 댓글 API")
+@Tag(name = "커뮤니티 댓글", description = "커뮤니티 댓글 API")
 public interface CommunityCommentApi {
 
     @Operation(summary = "커뮤니티 댓글 목록 조회",
-            description = "글의 댓글 목록을 조회합니다. 답글은 depth 1까지만 포함합니다.")
+            description = "글의 댓글 목록을 조회합니다. 답글은 1단계까지만 포함합니다.")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })

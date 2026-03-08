@@ -1,0 +1,116 @@
+package com.raota.admin.ramenShop.service;
+
+import com.raota.admin.ramenShop.request.RamenShopAdminForm;
+import com.raota.admin.ramenShop.response.RamenShopAdminSummaryResponse;
+import com.raota.domain.ramenShop.model.EventMenus;
+import com.raota.domain.ramenShop.model.NormalMenus;
+import com.raota.domain.ramenShop.model.RamenShop;
+import com.raota.domain.ramenShop.repository.RamenShopRepository;
+import com.raota.global.file.FileUploader;
+import java.util.List;
+import java.util.stream.Stream;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+@Service
+@RequiredArgsConstructor
+public class RamenShopAdminService {
+
+    private final RamenShopRepository ramenShopRepository;
+    private final FileUploader fileUploader;
+
+    @Transactional(readOnly = true)
+    public List<RamenShopAdminSummaryResponse> getShopSummaries() {
+        return ramenShopRepository.findAll(Sort.by(Sort.Direction.ASC, "name")).stream()
+                .map(shop -> new RamenShopAdminSummaryResponse(
+                        shop.getId(),
+                        shop.getName(),
+                        shop.getAddress() == null ? "" : Stream.of(
+                                        shop.getAddress().city(),
+                                        shop.getAddress().district(),
+                                        shop.getAddress().street(),
+                                        shop.getAddress().detail()
+                                )
+                                .filter(value -> value != null && !value.isBlank())
+                                .reduce((left, right) -> left + " " + right)
+                                .orElse(""),
+                        shop.getImageUrl()
+                ))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public RamenShopAdminForm getForm(Long shopId) {
+        return RamenShopAdminForm.from(getShop(shopId));
+    }
+
+    @Transactional
+    public Long createShop(RamenShopAdminForm form) {
+        RamenShop ramenShop = RamenShop.builder()
+                .name(form.getName().trim())
+                .address(form.toAddress())
+                .businessHours(form.toBusinessHours())
+                .tags(form.toTags())
+                .instagramUrl(blankToNull(form.getInstagramUrl()))
+                .imageUrl(uploadImage(form.getImageFile()))
+                .normalMenus(NormalMenus.init())
+                .eventMenus(EventMenus.init())
+                .build();
+
+        ramenShop.replaceNormalMenus(form.toNormalMenus());
+        ramenShop.replaceEventMenus(form.toEventMenus());
+
+        return ramenShopRepository.save(ramenShop).getId();
+    }
+
+    @Transactional
+    public void updateShop(Long shopId, RamenShopAdminForm form) {
+        RamenShop ramenShop = getShop(shopId);
+        String nextImageUrl = uploadImage(form.getImageFile());
+        if (ramenShop.getImageUrl() != null) {
+            fileUploader.delete(ramenShop.getImageUrl());
+        }
+        ramenShop.updateBasicInfo(
+                form.getName().trim(),
+                form.toAddress(),
+                form.toBusinessHours(),
+                form.toTags(),
+                blankToNull(form.getInstagramUrl()),
+                nextImageUrl
+        );
+        ramenShop.replaceNormalMenus(form.toNormalMenus());
+        ramenShop.replaceEventMenus(form.toEventMenus());
+    }
+
+    @Transactional
+    public void deleteShop(Long shopId) {
+        RamenShop ramenShop = getShop(shopId);
+        if (ramenShop.getImageUrl() != null) {
+            fileUploader.delete(ramenShop.getImageUrl());
+        }
+        ramenShopRepository.delete(ramenShop);
+    }
+
+    private RamenShop getShop(Long shopId) {
+        return ramenShopRepository.findById(shopId)
+                .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
+    }
+
+    private String blankToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isBlank() ? null : trimmed;
+    }
+
+    private String uploadImage(MultipartFile imageFile) {
+        if (imageFile == null || imageFile.isEmpty()) {
+            return null;
+        }
+        return fileUploader.upload(imageFile, "ramen-shop");
+    }
+}
