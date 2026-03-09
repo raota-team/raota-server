@@ -1,3 +1,15 @@
+oci:
+  vault:
+    enabled: true
+    region: ap-chuncheon-1
+    vault-id: ocid1.vault.oc1.ap-chuncheon-1.gju25j3taaark.ab4w4ljrvayyfb3dk5dp2yu45i7aw5u6jvl73tfjxaqfxgeq3do6izft5szq
+  storage:
+    namespace: ${OCI_STORAGE_NAMESPACE:}
+    bucket: ${OCI_STORAGE_BUCKET:}
+    region: ${OCI_STORAGE_REGION:}
+    access-key: ${OCI_STORAGE_ACCESS_KEY:}
+    secret-key: ${OCI_STORAGE_SECRET_KEY:}
+
 server:
   port: 8080
   shutdown: graceful
