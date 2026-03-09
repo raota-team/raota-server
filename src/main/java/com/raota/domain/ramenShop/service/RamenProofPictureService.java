@@ -30,7 +30,7 @@ public class RamenProofPictureService {
         MemberProfile member = memberRepository.findById(memberId).orElseThrow(()->new IllegalArgumentException("없는 유저 입니다."));
         RamenShop ramenShop = ramenShopRepository.findById(shopId).orElseThrow(()->new IllegalArgumentException("없는 라멘집 입니다."));
 
-        String imageUrl = fileUploader.upload(file,"ramen");
+        String imageUrl = fileUploader.getPresignedUrl("ramen", ".png").imgUrl();
 
         RamenProofPicture picture = RamenProofPicture.builder()
                 .ramenShop(ramenShop)

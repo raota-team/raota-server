@@ -90,7 +90,8 @@ class RamenShopAdminControllerTest {
         List<RamenShop> shops = ramenShopRepository.findAll();
         assertThat(shops).hasSize(1);
         assertThat(shops.getFirst().getName()).isEqualTo("신규 라멘");
-        assertThat(shops.getFirst().getImageUrl()).isEqualTo("https://mock.cdn.com/uploaded/702.jpg");
+        assertThat(shops.getFirst().getImageUrl()).startsWith("https://mock.cdn.com/ramen-shop/");
+        assertThat(shops.getFirst().getImageUrl()).endsWith(".jpg");
         assertThat(shops.getFirst().getNormalMenus().getValues()).hasSize(1);
         assertThat(shops.getFirst().getEventMenus().getValues()).hasSize(1);
     }
