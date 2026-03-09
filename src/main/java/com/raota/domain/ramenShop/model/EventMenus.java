@@ -22,17 +22,32 @@ public class EventMenus {
     }
 
     public List<EventMenuDto> getEventMenusInfo(){
-        return values.stream().map(EventMenuDto::from).toList();
+        return menus().stream().map(EventMenuDto::from).toList();
     }
 
     public void add(EventMenu eventMenu){
         verifyMenuNameDuplicate(eventMenu.getName());
-        values.add(eventMenu);
+        menus().add(eventMenu);
+    }
+
+    public List<EventMenu> getValues() {
+        return List.copyOf(menus());
+    }
+
+    public void clear() {
+        menus().clear();
     }
 
     private void verifyMenuNameDuplicate(String name){
-        if (values.stream().anyMatch(menu -> menu.getName().equals(name))) {
+        if (menus().stream().anyMatch(menu -> menu.getName().equals(name))) {
             throw new IllegalArgumentException("이미 존재하는 메뉴 이름입니다: " + name);
         }
+    }
+
+    private List<EventMenu> menus() {
+        if (values == null) {
+            values = new ArrayList<>();
+        }
+        return values;
     }
 }
