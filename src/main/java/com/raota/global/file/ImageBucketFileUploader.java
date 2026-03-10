@@ -1,6 +1,7 @@
 package com.raota.global.file;
 
 import java.io.IOException;
+import java.net.URI;
 import java.time.Duration;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,8 +11,11 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
@@ -82,6 +86,31 @@ public class ImageBucketFileUploader implements FileUploader{
     }
 
     @Override
+    public String getAccessibleUrl(String filePath) {
+        if (!StringUtils.hasText(filePath)) {
+            return filePath;
+        }
+
+        String objectKey = extractObjectKey(filePath.trim());
+        if (!StringUtils.hasText(objectKey)) {
+            return filePath;
+        }
+
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(bucketName)
+                .key(objectKey)
+                .build();
+
+        GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                .signatureDuration(Duration.ofMinutes(30))
+                .getObjectRequest(getObjectRequest)
+                .build();
+
+        PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(presignRequest);
+        return presignedRequest.url().toString();
+    }
+
+    @Override
     public void delete(String filePath) {
         // TODO: S3Client를 이용한 삭제 로직 구현
     }
@@ -93,6 +122,38 @@ public class ImageBucketFileUploader implements FileUploader{
     private String toImageUrl(String objectKey) {
         return String.format("https://objectstorage.%s.oraclecloud.com/n/%s/b/%s/o/%s",
                 region, namespace, bucketName, objectKey);
+    }
+
+    private String extractObjectKey(String filePath) {
+        if (!StringUtils.hasText(filePath)) {
+            return null;
+        }
+
+        if (!filePath.startsWith("http://") && !filePath.startsWith("https://")) {
+            return filePath;
+        }
+
+        try {
+            URI uri = URI.create(filePath);
+            String path = uri.getPath();
+            if (!StringUtils.hasText(path)) {
+                return null;
+            }
+
+            String objectPathPrefix = "/n/" + namespace + "/b/" + bucketName + "/o/";
+            int objectPathIndex = path.indexOf(objectPathPrefix);
+            if (objectPathIndex >= 0) {
+                return path.substring(objectPathIndex + objectPathPrefix.length());
+            }
+
+            String compatPrefix = "/" + bucketName + "/";
+            if (path.startsWith(compatPrefix)) {
+                return path.substring(compatPrefix.length());
+            }
+            return null;
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
     }
 
     private String resolveExtension(MultipartFile file) {

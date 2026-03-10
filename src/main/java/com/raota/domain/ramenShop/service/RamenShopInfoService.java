@@ -4,6 +4,7 @@ import com.raota.domain.ramenShop.controller.response.RamenShopBasicInfoResponse
 import com.raota.domain.ramenShop.controller.response.StoreSummaryResponse;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
+import com.raota.global.file.FileUploader;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,13 +14,23 @@ import org.springframework.stereotype.Service;
 @AllArgsConstructor
 public class RamenShopInfoService {
     private final RamenShopRepository ramenShopRepository;
+    private final FileUploader fileUploader;
 
     public RamenShopBasicInfoResponse getShopDetailInfo(Long shopId) {
         RamenShop ramenShop = ramenShopRepository.findById(shopId).orElseThrow(()-> new IllegalArgumentException("없는 라멘가게 입니다."));
-        return RamenShopBasicInfoResponse.from(ramenShop);
+        return RamenShopBasicInfoResponse.from(ramenShop, fileUploader.getAccessibleUrl(ramenShop.getImageUrl()));
     }
 
     public Page<StoreSummaryResponse> getRamenShopList(String region, String keyword, Pageable pageable) {
-        return ramenShopRepository.searchStores(region, keyword, pageable);
+        return ramenShopRepository.searchStores(region, keyword, pageable)
+                .map(store -> new StoreSummaryResponse(
+                        store.id(),
+                        store.name(),
+                        store.tagLine(),
+                        store.region(),
+                        store.tags(),
+                        fileUploader.getAccessibleUrl(store.thumbnailUrl()),
+                        store.votes()
+                ));
     }
 }

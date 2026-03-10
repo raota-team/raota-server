@@ -548,9 +548,9 @@
                         <input id="imageFile" type="file" accept="image/*" data-current-image-url="" th:attr="data-current-image-url=*{imageUrl}">
                         <div class="hint">저장 시 presigned URL로 먼저 업로드한 뒤, 최종 이미지 URL만 서버에 저장한다.</div>
                         <div class="hint" id="image-upload-status"></div>
-                        <div class="hint" th:if="${form.imageUrl != null and !form.imageUrl.isBlank()}">
+                        <div class="hint" th:if="${form.currentImageUrl != null and !form.currentImageUrl.isBlank()}">
                             현재 이미지:
-                            <a th:href="${form.imageUrl}" th:text="${form.imageUrl}" target="_blank" rel="noopener noreferrer"></a>
+                            <a th:href="${form.currentImageUrl}" th:text="${form.currentImageUrl}" target="_blank" rel="noopener noreferrer"></a>
                         </div>
                     </div>
                 </div>

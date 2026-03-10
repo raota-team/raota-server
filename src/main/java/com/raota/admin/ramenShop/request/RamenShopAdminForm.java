@@ -55,6 +55,7 @@ public class RamenShopAdminForm {
     private String parkingInfo;
 
     private String imageUrl;
+    private String currentImageUrl;
 
     private String tags;
 

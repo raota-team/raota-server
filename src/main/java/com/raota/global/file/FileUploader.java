@@ -12,5 +12,7 @@ public interface FileUploader {
 
     PresignedUrlResponse getPresignedUrl(String dirName, String extension, String contentType);
 
+    String getAccessibleUrl(String filePath);
+
     void delete(String filePath);
 }

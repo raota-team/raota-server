@@ -23,11 +23,11 @@ public record RamenShopBasicInfoResponse(
         List<NormalMenuDto> normal_menus,
         List<EventMenuDto> event_menus) {
 
-    public static RamenShopBasicInfoResponse from(RamenShop ramenShop){
+    public static RamenShopBasicInfoResponse from(RamenShop ramenShop, String imageUrl){
         return new RamenShopBasicInfoResponse(
                 ramenShop.getId(),
                 ramenShop.getName(),
-                ramenShop.getImageUrl(),
+                imageUrl,
                 ramenShop.getAddress().fullAddress(),
                 ramenShop.getInstagramUrl(),
                 ramenShop.getCatchTableUrl(),

@@ -26,6 +26,11 @@ public class LocalFileUploader implements FileUploader{
     }
 
     @Override
+    public String getAccessibleUrl(String filePath) {
+        return filePath;
+    }
+
+    @Override
     public void delete(String filePath) {
         System.out.println("로컬 파일 삭제 모킹: " + filePath);
     }

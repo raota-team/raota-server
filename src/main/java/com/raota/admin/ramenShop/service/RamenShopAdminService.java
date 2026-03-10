@@ -36,14 +36,17 @@ public class RamenShopAdminService {
                                 .filter(value -> value != null && !value.isBlank())
                                 .reduce((left, right) -> left + " " + right)
                                 .orElse(""),
-                        shop.getImageUrl()
+                        fileUploader.getAccessibleUrl(shop.getImageUrl())
                 ))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public RamenShopAdminForm getForm(Long shopId) {
-        return RamenShopAdminForm.from(getShop(shopId));
+        RamenShop ramenShop = getShop(shopId);
+        RamenShopAdminForm form = RamenShopAdminForm.from(ramenShop);
+        form.setCurrentImageUrl(fileUploader.getAccessibleUrl(ramenShop.getImageUrl()));
+        return form;
     }
 
     @Transactional
