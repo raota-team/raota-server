@@ -19,7 +19,7 @@ public class LocalFileUploader implements FileUploader{
     public PresignedUrlResponse getPresignedUrl(String dirName, String extension) {
         // 로컬 테스트용 가짜 응답
         String dummyFilename = dirName + "/" + UUID.randomUUID() + extension;
-        String mockUploadUrl = "http://localhost:8080/mock-upload-endpoint"; // 아무데나 던져도 무시할 가짜 주소
+        String mockUploadUrl = "/files/mock-upload-endpoint";
         String mockImageUrl = "https://mock.cdn.com/" + dummyFilename;
 
         return new PresignedUrlResponse(mockUploadUrl, mockImageUrl);

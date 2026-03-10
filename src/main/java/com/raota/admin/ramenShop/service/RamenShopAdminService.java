@@ -13,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -57,7 +56,7 @@ public class RamenShopAdminService {
                 .instagramUrl(blankToNull(form.getInstagramUrl()))
                 .catchTableUrl(blankToNull(form.getCatchTableUrl()))
                 .description(blankToNull(form.getDescription()))
-                .imageUrl(uploadImage(form.getImageFile()))
+                .imageUrl(blankToNull(form.getImageUrl()))
                 .normalMenus(NormalMenus.init())
                 .eventMenus(EventMenus.init())
                 .build();
@@ -71,8 +70,10 @@ public class RamenShopAdminService {
     @Transactional
     public void updateShop(Long shopId, RamenShopAdminForm form) {
         RamenShop ramenShop = getShop(shopId);
-        String nextImageUrl = uploadImage(form.getImageFile());
-        if (ramenShop.getImageUrl() != null) {
+        String nextImageUrl = blankToNull(form.getImageUrl());
+        if (nextImageUrl != null
+                && ramenShop.getImageUrl() != null
+                && !ramenShop.getImageUrl().equals(nextImageUrl)) {
             fileUploader.delete(ramenShop.getImageUrl());
         }
         ramenShop.updateBasicInfo(
@@ -109,12 +110,5 @@ public class RamenShopAdminService {
         }
         String trimmed = value.trim();
         return trimmed.isBlank() ? null : trimmed;
-    }
-
-    private String uploadImage(MultipartFile imageFile) {
-        if (imageFile == null || imageFile.isEmpty()) {
-            return null;
-        }
-        return fileUploader.upload(imageFile, "ramen-shop");
     }
 }

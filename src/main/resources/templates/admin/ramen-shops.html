@@ -460,8 +460,8 @@
             <div class="message success" th:if="${successMessage}" th:text="${successMessage}"></div>
 
             <form th:object="${form}"
+                  id="ramen-shop-form"
                   th:action="${editMode} ? @{/admin/ramen-shops/{id}(id=${selectedShopId})} : @{/admin/ramen-shops}"
-                  enctype="multipart/form-data"
                   method="post">
 
                 <div class="message error" th:if="${#fields.hasGlobalErrors()}">
@@ -544,11 +544,13 @@
 
                     <div class="field-wide">
                         <label for="imageFile">대표 이미지 파일</label>
-                        <input id="imageFile" type="file" th:field="*{imageFile}" accept="image/*">
-                        <div class="hint">파일을 올리지 않고 저장하면 대표 이미지는 `null`로 저장된다.</div>
-                        <div class="hint" th:if="${form.currentImageUrl != null and !form.currentImageUrl.isBlank()}">
+                        <input id="imageUrl" type="hidden" th:field="*{imageUrl}">
+                        <input id="imageFile" type="file" accept="image/*" data-current-image-url="" th:attr="data-current-image-url=*{imageUrl}">
+                        <div class="hint">저장 시 presigned URL로 먼저 업로드한 뒤, 최종 이미지 URL만 서버에 저장한다.</div>
+                        <div class="hint" id="image-upload-status"></div>
+                        <div class="hint" th:if="${form.imageUrl != null and !form.imageUrl.isBlank()}">
                             현재 이미지:
-                            <a th:href="${form.currentImageUrl}" th:text="${form.currentImageUrl}" target="_blank" rel="noopener noreferrer"></a>
+                            <a th:href="${form.imageUrl}" th:text="${form.imageUrl}" target="_blank" rel="noopener noreferrer"></a>
                         </div>
                     </div>
                 </div>
@@ -701,6 +703,11 @@
 </template>
 
 <script>
+    const adminForm = document.getElementById("ramen-shop-form");
+    const imageFileInput = document.getElementById("imageFile");
+    const imageUrlInput = document.getElementById("imageUrl");
+    const imageUploadStatus = document.getElementById("image-upload-status");
+
     const nextIndex = (container, field) => {
         const selector = '[name^="' + field + '["]';
         const pattern = new RegExp("\\[(\\d+)\\]");
@@ -728,6 +735,61 @@
         }
         event.target.closest(".menu-card")?.remove();
     });
+
+    if (imageFileInput && imageUrlInput) {
+        imageFileInput.addEventListener("change", () => {
+            if (!imageFileInput.files || imageFileInput.files.length === 0) {
+                imageUrlInput.value = imageFileInput.dataset.currentImageUrl || "";
+                imageUploadStatus.textContent = "";
+                return;
+            }
+            imageUploadStatus.textContent = "새 이미지를 저장할 준비가 됐다. 저장 버튼을 누르면 업로드한다.";
+        });
+    }
+
+    if (adminForm && imageFileInput && imageUrlInput) {
+        adminForm.addEventListener("submit", async (event) => {
+            if (!imageFileInput.files || imageFileInput.files.length === 0) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const file = imageFileInput.files[0];
+            const extension = (() => {
+                const dotIndex = file.name.lastIndexOf(".");
+                return dotIndex >= 0 ? file.name.substring(dotIndex) : ".png";
+            })();
+
+            try {
+                imageUploadStatus.textContent = "대표 이미지를 업로드하고 있다...";
+
+                const presignedResponse = await fetch(
+                    "/files/presigned-url?dirName=ramen-shop&extension=" + encodeURIComponent(extension)
+                );
+                if (!presignedResponse.ok) {
+                    throw new Error("presigned-url");
+                }
+
+                const { uploadUrl, imgUrl } = await presignedResponse.json();
+                const uploadResponse = await fetch(uploadUrl, {
+                    method: "PUT",
+                    headers: file.type ? { "Content-Type": file.type } : {},
+                    body: file
+                });
+                if (!uploadResponse.ok) {
+                    throw new Error("upload");
+                }
+
+                imageUrlInput.value = imgUrl;
+                imageFileInput.dataset.currentImageUrl = imgUrl;
+                imageUploadStatus.textContent = "대표 이미지 업로드가 완료됐다. 저장을 계속한다.";
+                adminForm.submit();
+            } catch (error) {
+                imageUploadStatus.textContent = "대표 이미지 업로드에 실패했다. 다시 시도해달라.";
+            }
+        });
+    }
 </script>
 </body>
 </html>

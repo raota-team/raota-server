@@ -1,8 +1,10 @@
 package com.raota.global.file;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,5 +26,10 @@ public class FIleController {
 
         // 2. 발급된 URL 정보 반환
         return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/mock-upload-endpoint")
+    public ResponseEntity<Void> mockUpload() {
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

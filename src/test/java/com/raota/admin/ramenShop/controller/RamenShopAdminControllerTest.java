@@ -2,7 +2,6 @@ package com.raota.admin.ramenShop.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
@@ -22,7 +21,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -59,15 +57,7 @@ class RamenShopAdminControllerTest {
 
     @Test
     void createShop() throws Exception {
-        MockMultipartFile imageFile = new MockMultipartFile(
-                "imageFile",
-                "shop.jpg",
-                "image/jpeg",
-                "fake-image".getBytes()
-        );
-
-        mockMvc.perform(multipart("/admin/ramen-shops")
-                        .file(imageFile)
+        mockMvc.perform(post("/admin/ramen-shops")
                         .param("name", "신규 라멘")
                         .param("city", "서울")
                         .param("district", "성동구")
@@ -80,6 +70,7 @@ class RamenShopAdminControllerTest {
                         .param("instagramUrl", "https://instagram.com/new-ramen")
                         .param("catchTableUrl", "https://app.catchtable.co.kr/ct/shop/new-ramen")
                         .param("description", "진한 돈코츠 국물과 차슈가 강점인 가게")
+                        .param("imageUrl", "https://mock.cdn.com/ramen-shop/test.jpg")
                         .param("tags", "진한국물, 혼밥")
                         .param("normalMenus[0].name", "돈코츠 라멘")
                         .param("normalMenus[0].price", "11000")
@@ -93,8 +84,7 @@ class RamenShopAdminControllerTest {
         List<RamenShop> shops = ramenShopRepository.findAll();
         assertThat(shops).hasSize(1);
         assertThat(shops.getFirst().getName()).isEqualTo("신규 라멘");
-        assertThat(shops.getFirst().getImageUrl()).startsWith("https://mock.cdn.com/ramen-shop/");
-        assertThat(shops.getFirst().getImageUrl()).endsWith(".jpg");
+        assertThat(shops.getFirst().getImageUrl()).isEqualTo("https://mock.cdn.com/ramen-shop/test.jpg");
         assertThat(shops.getFirst().getCatchTableUrl()).isEqualTo("https://app.catchtable.co.kr/ct/shop/new-ramen");
         assertThat(shops.getFirst().getDescription()).isEqualTo("진한 돈코츠 국물과 차슈가 강점인 가게");
         assertThat(shops.getFirst().getBusinessHours().parkingInfo()).isEqualTo("불가");
@@ -104,7 +94,7 @@ class RamenShopAdminControllerTest {
 
     @Test
     void createShopWithoutImageStoresNull() throws Exception {
-        mockMvc.perform(multipart("/admin/ramen-shops")
+        mockMvc.perform(post("/admin/ramen-shops")
                         .param("name", "이미지 없는 라멘")
                         .param("city", "서울")
                         .param("district", "성동구")
@@ -120,10 +110,10 @@ class RamenShopAdminControllerTest {
     }
 
     @Test
-    void updateShopWithoutImageClearsImageUrl() throws Exception {
+    void updateShopWithoutImageKeepsImageUrl() throws Exception {
         RamenShop savedShop = ramenShopRepository.save(sampleShop("수정 전"));
 
-        mockMvc.perform(multipart("/admin/ramen-shops/{shopId}", savedShop.getId())
+        mockMvc.perform(post("/admin/ramen-shops/{shopId}", savedShop.getId())
                         .param("name", "수정 후")
                         .param("city", "서울")
                         .param("district", "마포구")
@@ -147,17 +137,14 @@ class RamenShopAdminControllerTest {
                         .param("eventMenus[0].description", "특제 토핑 포함")
                         .param("eventMenus[0].startDate", "2026-03-01")
                         .param("eventMenus[0].endDate", "2026-03-31")
-                        .with(request -> {
-                            request.setMethod("POST");
-                            return request;
-                        }))
+                        .param("imageUrl", "https://example.com/original.jpg"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrlPattern("/admin/ramen-shops?shopId=*"));
 
         RamenShop updatedShop = ramenShopRepository.findById(savedShop.getId()).orElseThrow();
         assertThat(updatedShop.getName()).isEqualTo("수정 후");
         assertThat(updatedShop.getAddress().district()).isEqualTo("마포구");
-        assertThat(updatedShop.getImageUrl()).isNull();
+        assertThat(updatedShop.getImageUrl()).isEqualTo("https://example.com/original.jpg");
         assertThat(updatedShop.getCatchTableUrl()).isEqualTo("https://app.catchtable.co.kr/ct/shop/updated-shop");
         assertThat(updatedShop.getDescription()).isEqualTo("츠케멘과 한정 메뉴 구성이 강한 라멘집");
         assertThat(updatedShop.getBusinessHours().parkingInfo()).isEqualTo("매장 앞 1대 가능");

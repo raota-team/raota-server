@@ -14,7 +14,6 @@ import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.web.multipart.MultipartFile;
 
 @Getter
 @Setter
@@ -55,9 +54,7 @@ public class RamenShopAdminForm {
 
     private String parkingInfo;
 
-    private String currentImageUrl;
-
-    private MultipartFile imageFile;
+    private String imageUrl;
 
     private String tags;
 
@@ -93,7 +90,7 @@ public class RamenShopAdminForm {
         form.setInstagramUrl(ramenShop.getInstagramUrl());
         form.setCatchTableUrl(ramenShop.getCatchTableUrl());
         form.setDescription(ramenShop.getDescription());
-        form.setCurrentImageUrl(ramenShop.getImageUrl());
+        form.setImageUrl(ramenShop.getImageUrl());
         form.setTags(String.join(", ", ramenShop.getTags() == null ? List.of() : ramenShop.getTags()));
         form.setNormalMenus(new ArrayList<>(
                 (ramenShop.getNormalMenus() == null ? List.<NormalMenu>of() : ramenShop.getNormalMenus().getValues()).stream()
