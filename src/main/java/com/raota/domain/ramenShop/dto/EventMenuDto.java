@@ -15,12 +15,16 @@ public class EventMenuDto {
     private String badge_text;
 
     public static EventMenuDto from(EventMenu eventMenu){
+        return from(eventMenu, eventMenu.getImageUrl());
+    }
+
+    public static EventMenuDto from(EventMenu eventMenu, String imageUrl){
         return new EventMenuDto(
                 eventMenu.getId(),
                 eventMenu.getName(),
                 eventMenu.getDescription(),
                 eventMenu.getPrice(),
-                eventMenu.getImageUrl(),
+                imageUrl,
                 eventMenu.getBadgeText()
         );
     }

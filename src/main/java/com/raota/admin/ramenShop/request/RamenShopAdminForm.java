@@ -187,6 +187,7 @@ public class RamenShopAdminForm {
         private Integer price;
         private boolean signature;
         private String imageUrl;
+        private String currentImageUrl;
 
         public static NormalMenuForm from(NormalMenu menu) {
             NormalMenuForm form = new NormalMenuForm();
@@ -194,6 +195,7 @@ public class RamenShopAdminForm {
             form.setPrice(menu.getPrice());
             form.setSignature(Boolean.TRUE.equals(menu.getIsSignature()));
             form.setImageUrl(menu.getImageUrl());
+            form.setCurrentImageUrl(menu.getImageUrl());
             return form;
         }
 
@@ -229,6 +231,7 @@ public class RamenShopAdminForm {
         private LocalDate endDate;
 
         private String imageUrl;
+        private String currentImageUrl;
 
         public static EventMenuForm from(EventMenu menu) {
             EventMenuForm form = new EventMenuForm();
@@ -239,6 +242,7 @@ public class RamenShopAdminForm {
             form.setStartDate(menu.getStartDate());
             form.setEndDate(menu.getEndDate());
             form.setImageUrl(menu.getImageUrl());
+            form.setCurrentImageUrl(menu.getImageUrl());
             return form;
         }
 

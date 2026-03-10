@@ -14,6 +14,9 @@ public class ShopStatDto {
     private int bookmark_count;
 
     public static ShopStatDto from(ShopStats stats) {
+        if (stats == null) {
+            return new ShopStatDto(0, 0);
+        }
         return new ShopStatDto(
                 stats.visitCount(),
                 stats.bookmarkCount()

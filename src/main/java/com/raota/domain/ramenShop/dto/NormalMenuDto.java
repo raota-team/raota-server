@@ -14,12 +14,16 @@ public class NormalMenuDto {
     private String image_url;
 
     public static NormalMenuDto from(NormalMenu normalMenu){
+        return from(normalMenu, normalMenu.getImageUrl());
+    }
+
+    public static NormalMenuDto from(NormalMenu normalMenu, String imageUrl){
         return new NormalMenuDto(
                 normalMenu.getId(),
                 normalMenu.getName(),
                 normalMenu.getPrice(),
                 normalMenu.getIsSignature(),
-                normalMenu.getImageUrl()
+                imageUrl
         );
     }
 }

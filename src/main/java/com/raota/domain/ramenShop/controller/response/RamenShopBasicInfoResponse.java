@@ -23,7 +23,12 @@ public record RamenShopBasicInfoResponse(
         List<NormalMenuDto> normal_menus,
         List<EventMenuDto> event_menus) {
 
-    public static RamenShopBasicInfoResponse from(RamenShop ramenShop, String imageUrl){
+    public static RamenShopBasicInfoResponse from(
+            RamenShop ramenShop,
+            String imageUrl,
+            List<NormalMenuDto> normalMenus,
+            List<EventMenuDto> eventMenus
+    ){
         return new RamenShopBasicInfoResponse(
                 ramenShop.getId(),
                 ramenShop.getName(),
@@ -35,8 +40,8 @@ public record RamenShopBasicInfoResponse(
                 BusinessHoursDto.from(ramenShop.getBusinessHours()),
                 ShopStatDto.from(ramenShop.getStats()),
                 ramenShop.getTags(),
-                ramenShop.getNormalMenus().getNormalMenusInfo(),
-                ramenShop.getEventMenus().getEventMenusInfo()
+                normalMenus,
+                eventMenus
         );
     }
 }

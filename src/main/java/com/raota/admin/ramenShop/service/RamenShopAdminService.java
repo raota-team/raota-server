@@ -46,6 +46,8 @@ public class RamenShopAdminService {
         RamenShop ramenShop = getShop(shopId);
         RamenShopAdminForm form = RamenShopAdminForm.from(ramenShop);
         form.setCurrentImageUrl(fileUploader.getAccessibleUrl(ramenShop.getImageUrl()));
+        form.getNormalMenus().forEach(menu -> menu.setCurrentImageUrl(fileUploader.getAccessibleUrl(menu.getImageUrl())));
+        form.getEventMenus().forEach(menu -> menu.setCurrentImageUrl(fileUploader.getAccessibleUrl(menu.getImageUrl())));
         return form;
     }
 
