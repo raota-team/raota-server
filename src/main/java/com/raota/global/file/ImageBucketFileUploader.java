@@ -46,7 +46,7 @@ public class ImageBucketFileUploader implements FileUploader{
                 .build();
 
         try {
-            s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+            s3Client.putObject(putObjectRequest, RequestBody.fromBytes(file.getBytes()));
         } catch (IOException exception) {
             throw new IllegalArgumentException("이미지 업로드에 실패했습니다.", exception);
         }
