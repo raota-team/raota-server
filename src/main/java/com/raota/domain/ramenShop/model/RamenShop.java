@@ -48,6 +48,12 @@ public class RamenShop {
     @Column(name = "instagram_url")
     private String instagramUrl;
 
+    @Column(name = "catch_table_url")
+    private String catchTableUrl;
+
+    @Column(name = "description", columnDefinition = "text")
+    private String description;
+
     @Column(name = "image_url")
     private String imageUrl;
 
@@ -70,12 +76,15 @@ public class RamenShop {
     }
 
     public void updateBasicInfo(String name, Address address, BusinessHours businessHours,
-                                List<String> tags, String instagramUrl, String imageUrl) {
+                                List<String> tags, String instagramUrl, String catchTableUrl,
+                                String description, String imageUrl) {
         this.name = Objects.requireNonNull(name, "name");
         this.address = Objects.requireNonNull(address, "address");
         this.businessHours = businessHours;
         this.tags = tags;
         this.instagramUrl = instagramUrl;
+        this.catchTableUrl = catchTableUrl;
+        this.description = description;
         this.imageUrl = imageUrl;
     }
 

@@ -55,6 +55,8 @@ public class RamenShopAdminService {
                 .businessHours(form.toBusinessHours())
                 .tags(form.toTags())
                 .instagramUrl(blankToNull(form.getInstagramUrl()))
+                .catchTableUrl(blankToNull(form.getCatchTableUrl()))
+                .description(blankToNull(form.getDescription()))
                 .imageUrl(uploadImage(form.getImageFile()))
                 .normalMenus(NormalMenus.init())
                 .eventMenus(EventMenus.init())
@@ -79,6 +81,8 @@ public class RamenShopAdminService {
                 form.toBusinessHours(),
                 form.toTags(),
                 blankToNull(form.getInstagramUrl()),
+                blankToNull(form.getCatchTableUrl()),
+                blankToNull(form.getDescription()),
                 nextImageUrl
         );
         ramenShop.replaceNormalMenus(form.toNormalMenus());

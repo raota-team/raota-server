@@ -20,7 +20,10 @@ public record BusinessHours(
         LocalTime breakStart,
 
         @Column(name = "break_end")
-        LocalTime breakEnd
+        LocalTime breakEnd,
+
+        @Column(name = "parking_info", length = 100)
+        String parkingInfo
 ) {
     public BusinessHours {
         if (openTime != null && closeTime != null && !closeTime.isAfter(openTime)) {
@@ -28,14 +31,22 @@ public record BusinessHours(
         }
     }
 
-    public static BusinessHours of(String closedDays, LocalTime open, LocalTime close, LocalTime breakStart, LocalTime breakEnd) {
-        return new BusinessHours(closedDays, open, close, breakStart, breakEnd);
+    public static BusinessHours of(
+            String closedDays,
+            LocalTime open,
+            LocalTime close,
+            LocalTime breakStart,
+            LocalTime breakEnd,
+            String parkingInfo
+    ) {
+        return new BusinessHours(closedDays, open, close, breakStart, breakEnd, parkingInfo);
     }
 
     public String toDisplayString() {
-        return "%s %s~%s (Break %s~%s)".formatted(
+        return "%s %s~%s (Break %s~%s, Parking %s)".formatted(
                 closedDays != null ? closedDays : "없음",
                 openTime, closeTime, breakStart, breakEnd
+                , parkingInfo != null ? parkingInfo : "없음"
         );
     }
 }

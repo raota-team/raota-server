@@ -76,7 +76,10 @@ class RamenShopAdminControllerTest {
                         .param("closedDays", "월요일")
                         .param("openTime", "11:00")
                         .param("closeTime", "20:30")
+                        .param("parkingInfo", "불가")
                         .param("instagramUrl", "https://instagram.com/new-ramen")
+                        .param("catchTableUrl", "https://app.catchtable.co.kr/ct/shop/new-ramen")
+                        .param("description", "진한 돈코츠 국물과 차슈가 강점인 가게")
                         .param("tags", "진한국물, 혼밥")
                         .param("normalMenus[0].name", "돈코츠 라멘")
                         .param("normalMenus[0].price", "11000")
@@ -92,6 +95,9 @@ class RamenShopAdminControllerTest {
         assertThat(shops.getFirst().getName()).isEqualTo("신규 라멘");
         assertThat(shops.getFirst().getImageUrl()).startsWith("https://mock.cdn.com/ramen-shop/");
         assertThat(shops.getFirst().getImageUrl()).endsWith(".jpg");
+        assertThat(shops.getFirst().getCatchTableUrl()).isEqualTo("https://app.catchtable.co.kr/ct/shop/new-ramen");
+        assertThat(shops.getFirst().getDescription()).isEqualTo("진한 돈코츠 국물과 차슈가 강점인 가게");
+        assertThat(shops.getFirst().getBusinessHours().parkingInfo()).isEqualTo("불가");
         assertThat(shops.getFirst().getNormalMenus().getValues()).hasSize(1);
         assertThat(shops.getFirst().getEventMenus().getValues()).hasSize(1);
     }
@@ -128,7 +134,10 @@ class RamenShopAdminControllerTest {
                         .param("closeTime", "21:00")
                         .param("breakStart", "15:00")
                         .param("breakEnd", "17:00")
+                        .param("parkingInfo", "매장 앞 1대 가능")
                         .param("instagramUrl", "https://instagram.com/updated-shop")
+                        .param("catchTableUrl", "https://app.catchtable.co.kr/ct/shop/updated-shop")
+                        .param("description", "츠케멘과 한정 메뉴 구성이 강한 라멘집")
                         .param("tags", "츠케멘, 진한국물")
                         .param("normalMenus[0].name", "츠케멘")
                         .param("normalMenus[0].price", "13000")
@@ -149,6 +158,9 @@ class RamenShopAdminControllerTest {
         assertThat(updatedShop.getName()).isEqualTo("수정 후");
         assertThat(updatedShop.getAddress().district()).isEqualTo("마포구");
         assertThat(updatedShop.getImageUrl()).isNull();
+        assertThat(updatedShop.getCatchTableUrl()).isEqualTo("https://app.catchtable.co.kr/ct/shop/updated-shop");
+        assertThat(updatedShop.getDescription()).isEqualTo("츠케멘과 한정 메뉴 구성이 강한 라멘집");
+        assertThat(updatedShop.getBusinessHours().parkingInfo()).isEqualTo("매장 앞 1대 가능");
         assertThat(updatedShop.getNormalMenus().getValues()).hasSize(1);
         assertThat(updatedShop.getNormalMenus().getValues().getFirst().getName()).isEqualTo("츠케멘");
         assertThat(updatedShop.getEventMenus().getValues()).hasSize(1);
@@ -170,10 +182,12 @@ class RamenShopAdminControllerTest {
         RamenShop ramenShop = RamenShop.builder()
                 .name(name)
                 .address(Address.of("서울", "강남구", "강남대로 1", "1층"))
-                .businessHours(BusinessHours.of("일요일", LocalTime.of(11, 0), LocalTime.of(20, 0), null, null))
+                .businessHours(BusinessHours.of("일요일", LocalTime.of(11, 0), LocalTime.of(20, 0), null, null, "불가"))
                 .tags(List.of("돈코츠"))
                 .imageUrl("https://example.com/original.jpg")
                 .instagramUrl("https://instagram.com/original")
+                .catchTableUrl("https://app.catchtable.co.kr/ct/shop/original")
+                .description("기본기가 좋은 정통 돈코츠 라멘집")
                 .normalMenus(NormalMenus.init())
                 .eventMenus(EventMenus.init())
                 .build();

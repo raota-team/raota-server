@@ -510,6 +510,11 @@
                     </div>
 
                     <div class="field">
+                        <label for="catchTableUrl">캐치테이블 URL</label>
+                        <input id="catchTableUrl" type="url" th:field="*{catchTableUrl}" placeholder="https://app.catchtable.co.kr/...">
+                    </div>
+
+                    <div class="field">
                         <label for="openTime">오픈 시간</label>
                         <input id="openTime" type="time" th:field="*{openTime}">
                     </div>
@@ -525,6 +530,16 @@
                     <div class="field">
                         <label for="breakEnd">브레이크 종료</label>
                         <input id="breakEnd" type="time" th:field="*{breakEnd}">
+                    </div>
+
+                    <div class="field">
+                        <label for="parkingInfo">주차</label>
+                        <input id="parkingInfo" type="text" th:field="*{parkingInfo}" placeholder="불가 / 가능 / 무료 1시간">
+                    </div>
+
+                    <div class="field-wide">
+                        <label for="description">가게 설명</label>
+                        <textarea id="description" th:field="*{description}" placeholder="가게 분위기, 국물 특징, 웨이팅 팁 등을 적는다."></textarea>
                     </div>
 
                     <div class="field-wide">

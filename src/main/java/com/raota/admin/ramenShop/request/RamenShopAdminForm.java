@@ -49,6 +49,12 @@ public class RamenShopAdminForm {
 
     private String instagramUrl;
 
+    private String catchTableUrl;
+
+    private String description;
+
+    private String parkingInfo;
+
     private String currentImageUrl;
 
     private MultipartFile imageFile;
@@ -82,8 +88,11 @@ public class RamenShopAdminForm {
             form.setCloseTime(ramenShop.getBusinessHours().closeTime());
             form.setBreakStart(ramenShop.getBusinessHours().breakStart());
             form.setBreakEnd(ramenShop.getBusinessHours().breakEnd());
+            form.setParkingInfo(ramenShop.getBusinessHours().parkingInfo());
         }
         form.setInstagramUrl(ramenShop.getInstagramUrl());
+        form.setCatchTableUrl(ramenShop.getCatchTableUrl());
+        form.setDescription(ramenShop.getDescription());
         form.setCurrentImageUrl(ramenShop.getImageUrl());
         form.setTags(String.join(", ", ramenShop.getTags() == null ? List.of() : ramenShop.getTags()));
         form.setNormalMenus(new ArrayList<>(
@@ -110,10 +119,11 @@ public class RamenShopAdminForm {
     }
 
     public BusinessHours toBusinessHours() {
-        if (nullable(closedDays) == null && openTime == null && closeTime == null && breakStart == null && breakEnd == null) {
+        if (nullable(closedDays) == null && openTime == null && closeTime == null
+                && breakStart == null && breakEnd == null && nullable(parkingInfo) == null) {
             return null;
         }
-        return BusinessHours.of(nullable(closedDays), openTime, closeTime, breakStart, breakEnd);
+        return BusinessHours.of(nullable(closedDays), openTime, closeTime, breakStart, breakEnd, nullable(parkingInfo));
     }
 
     public List<String> toTags() {
