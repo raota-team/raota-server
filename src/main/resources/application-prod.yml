@@ -15,6 +15,11 @@ server:
   shutdown: graceful
 
 spring:
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: ${SPRING_DATASOURCE_URL}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
