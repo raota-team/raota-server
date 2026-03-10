@@ -22,13 +22,13 @@ public interface RamenShopRepository extends JpaRepository<RamenShop, Long> {
             s.stats.bookmarkCount
         )
         from RamenShop s
-        where (:region is null or :region = '' or concat(s.address.city, concat(' ', s.address.district)) = :region)
+        where (:region is null or :region = '' or s.address.city = :region)
           and (:keyword is null or :keyword = '' or s.name like concat('%', :keyword, '%'))
         """,
             countQuery = """
         select count(s)
         from RamenShop s
-        where (:region is null or :region = '' or concat(s.address.city, concat(' ', s.address.district)) = :region)
+        where (:region is null or :region = '' or s.address.city = :region)
           and (:keyword is null or :keyword = '' or s.name like concat('%', :keyword, '%'))
         """
     )
