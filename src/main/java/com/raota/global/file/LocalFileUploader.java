@@ -16,7 +16,7 @@ public class LocalFileUploader implements FileUploader{
     }
 
     @Override
-    public PresignedUrlResponse getPresignedUrl(String dirName, String extension) {
+    public PresignedUrlResponse getPresignedUrl(String dirName, String extension, String contentType) {
         // 로컬 테스트용 가짜 응답
         String dummyFilename = dirName + "/" + UUID.randomUUID() + extension;
         String mockUploadUrl = "/files/mock-upload-endpoint";

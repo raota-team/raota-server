@@ -19,10 +19,11 @@ public class FIleController {
     @GetMapping("/presigned-url")
     public ResponseEntity<PresignedUrlResponse> getPresignedUrl(
             @RequestParam String dirName,
-            @RequestParam String extension
+            @RequestParam String extension,
+            @RequestParam(required = false) String contentType
     ){
         // 1. Uploader에게 URL 발급 요청
-        PresignedUrlResponse response = fileUploader.getPresignedUrl(dirName, extension);
+        PresignedUrlResponse response = fileUploader.getPresignedUrl(dirName, extension, contentType);
 
         // 2. 발급된 URL 정보 반환
         return ResponseEntity.ok(response);

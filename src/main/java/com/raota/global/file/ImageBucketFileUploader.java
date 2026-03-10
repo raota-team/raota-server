@@ -55,13 +55,18 @@ public class ImageBucketFileUploader implements FileUploader{
     }
 
     @Override
-    public PresignedUrlResponse getPresignedUrl(String dirName, String extension) {
+    public PresignedUrlResponse getPresignedUrl(String dirName, String extension, String contentType) {
         String uniqueFilename = createObjectKey(dirName, extension);
 
-        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+        PutObjectRequest.Builder putObjectRequestBuilder = PutObjectRequest.builder()
                 .bucket(bucketName)
-                .key(uniqueFilename)
-                .build();
+                .key(uniqueFilename);
+
+        if (StringUtils.hasText(contentType)) {
+            putObjectRequestBuilder.contentType(contentType);
+        }
+
+        PutObjectRequest putObjectRequest = putObjectRequestBuilder.build();
 
         PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
                 .signatureDuration(Duration.ofMinutes(5)) // 5분 한정 티켓

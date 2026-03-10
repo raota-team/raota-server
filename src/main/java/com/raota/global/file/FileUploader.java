@@ -6,7 +6,11 @@ public interface FileUploader {
 
     String upload(MultipartFile file, String dirName);
 
-    PresignedUrlResponse getPresignedUrl(String dirName, String extension);
+    default PresignedUrlResponse getPresignedUrl(String dirName, String extension) {
+        return getPresignedUrl(dirName, extension, null);
+    }
+
+    PresignedUrlResponse getPresignedUrl(String dirName, String extension, String contentType);
 
     void delete(String filePath);
 }
