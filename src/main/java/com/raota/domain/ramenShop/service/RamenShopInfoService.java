@@ -16,6 +16,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @AllArgsConstructor
@@ -23,6 +24,7 @@ public class RamenShopInfoService {
     private final RamenShopRepository ramenShopRepository;
     private final FileUploader fileUploader;
 
+    @Transactional(readOnly = true)
     public RamenShopBasicInfoResponse getShopDetailInfo(Long shopId) {
         RamenShop ramenShop = ramenShopRepository.findById(shopId).orElseThrow(()-> new IllegalArgumentException("없는 라멘가게 입니다."));
         return RamenShopBasicInfoResponse.from(
@@ -37,6 +39,7 @@ public class RamenShopInfoService {
         );
     }
 
+    @Transactional(readOnly = true)
     public Page<StoreSummaryResponse> getRamenShopList(String region, String keyword, Pageable pageable) {
         return ramenShopRepository.searchStores(region, keyword, pageable)
                 .map(store -> new StoreSummaryResponse(
