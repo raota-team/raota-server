@@ -51,9 +51,16 @@
 - **핵심**: 소셜 로그인 성공 시 우리 서비스의 JWT 발급, Redis에 Refresh Token 저장, HttpOnly 쿠키 생성.
 - **테스트**: `AuthServiceTest` (로그아웃 시 Redis 삭제 포함), `OAuth2SuccessHandlerTest` (리다이렉트 URL 검증).
 
-### ✅ Commit 3: @LoginMember 리졸버 및 최종 통합 검증 (완료)
+### ✅ Commit 3: 리졸버 및 최종 통합 검증 (완료)
 - **내용**: `LoginMemberArgumentResolver`, `GlobalExceptionHandler`, `AuthControllerIntegrationTest`.
 - **핵심**: 컨트롤러 파라미터 주입 편의성 확보 및 API 레벨의 전체 인증 흐름(RestAssured) 검증.
+
+### ✅ Commit 4: 라멘 상세 페이지 부가 기능 구현 (완료)
+- **내용**: `MenuVoteService`, `RamenProofPictureService` 로직 고도화.
+- **핵심**:
+    - **메뉴 투표**: 1인 1표(가게당) 원칙 구현 및 중복 투표 방지 로직(`existsByMemberIdAndShopId`) 추가.
+    - **인증샷**: 파일 확장자 기반 Presigned URL 발급 및 실제 저장 정보 기반의 `ProofPictureInfoResponse` 반환 로직 완성.
+- **검증**: `IllegalStateException`을 통한 중복 투표 예외 처리 및 업로드 정보 정합성 확보.
 
 ---
 
