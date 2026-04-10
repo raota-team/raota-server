@@ -11,6 +11,7 @@
 - **우발적 복잡도 적극 해결**: 환경 설정, 버전 충돌, 난해한 설정 오류 등 로직 외적인 장벽은 빠르게 넘을 수 있도록 명확한 해결책을 제시합니다.
 - **독립적인 예시로 개념 설명**: 개념 설명 시 프로젝트 코드를 건드리지 않고, 별도의 단순한 예제 코드로 동작 원리를 설명합니다.
 - **디버깅 방향 제시**: 수정된 코드를 주기 전에, 어느 파일의 몇 번째 줄을 유심히 봐야 할지, 혹은 어떤 도구(Log, Debugger)를 쓸지 조언합니다.
+- **문서 동기화**: 모든 작업(피처 추가, 버그 수정 등) 완료 후에는 반드시 `GEMINI.md`의 [현재 진행 상황 및 커밋 로드맵]을 최신 상태로 업데이트해야 합니다.
 
 ---
 
@@ -39,19 +40,19 @@
 
 ## 📋 현재 진행 상황 및 커밋 로드맵
 
-현재 **인증(Auth) 및 보안 인프라 구축** 작업을 진행 중이며, 총 3단계의 커밋 전략 중 1단계를 완료했습니다.
+현재 **인증(Auth) 및 보안 인프라 구축** 작업을 진행 중이며, 계획된 모든 보안 인프라 구축을 완료했습니다.
 
 ### ✅ Commit 1: JWT 보안 인프라 및 인증 필터 (완료)
 - **내용**: `SecurityConfig`, `JwtTokenProvider`, `JwtAuthenticationFilter` 등 기초 보안 공사 완료.
 - **검증**: `JwtAuthenticationFilterTest` (성공/실패/형식/미포함 4대 시나리오 완료).
 
 ### ✅ Commit 2: OAuth2 소셜 로그인 및 토큰 비즈니스 로직 (완료)
-- **대상**: `AuthService`, `OAuth2AuthenticationSuccessHandler`, `RefreshTokenCookieManager` 등.
+- **내용**: `AuthService`, `OAuth2AuthenticationSuccessHandler`, `RefreshTokenCookieManager` 등.
 - **핵심**: 소셜 로그인 성공 시 우리 서비스의 JWT 발급, Redis에 Refresh Token 저장, HttpOnly 쿠키 생성.
 - **테스트**: `AuthServiceTest` (로그아웃 시 Redis 삭제 포함), `OAuth2SuccessHandlerTest` (리다이렉트 URL 검증).
 
-### 🔜 Commit 3: @LoginMember 리졸버 및 최종 통합 검증 (진행 예정)
-- **대상**: `LoginMemberArgumentResolver`, `GlobalExceptionHandler`, `AuthControllerIntegrationTest`.
+### ✅ Commit 3: @LoginMember 리졸버 및 최종 통합 검증 (완료)
+- **내용**: `LoginMemberArgumentResolver`, `GlobalExceptionHandler`, `AuthControllerIntegrationTest`.
 - **핵심**: 컨트롤러 파라미터 주입 편의성 확보 및 API 레벨의 전체 인증 흐름(RestAssured) 검증.
 
 ---
@@ -67,7 +68,7 @@
     *   `@WebMvcTest`: 컨트롤러, 리졸버, 필터 등 웹 계층 검증.
     *   `@DataJpaTest`: 레포지토리 및 쿼리 검증.
 3.  **통합 테스트 (Integration Test)**:
-    *   **RestAssured + `@SpringBootTest`**: 실제 HTTP 요청부터 DB/Redis까지의 전 과정을 검증.
+    *   **RestAssured + @SpringBootTest**: 실제 HTTP 요청부터 DB/Redis까지의 전 과정을 검증.
     *   **Testcontainers**: 실제 MySQL/Redis 환경을 사용하여 테스트의 신뢰도 확보.
 
 ---
