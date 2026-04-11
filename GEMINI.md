@@ -62,19 +62,20 @@
     - **인증샷**: 파일 확장자 기반 Presigned URL 발급 및 실제 저장 정보 기반의 `ProofPictureInfoResponse` 반환 로직 완성.
 - **검증**: `IllegalStateException`을 통한 중복 투표 예외 처리 및 업로드 정보 정합성 확보.
 
-### 🚧 Commit 5: 커뮤니티 통합 기능 개발 (진행 중)
-- **내용**: `Post`, `Comment` 엔티티 설계 및 게시글/댓글 CRUD 기능 통합 개발.
+### ✅ Commit 5: 커뮤니티 통합 기능 개발 (완료)
+- **내용**: `Post`, `Comment` 엔티티 설계 및 게시글/댓글 CRUD 기능 통합 개발 완료.
 - **핵심**: 
-    - **데이터 연동**: `MemberProfile`, `RamenShop`과의 JPA 연관 관계 설정 및 QueryDSL/JPQL 프로젝션 적용.
-    - **이미지 처리**: S3 기반의 썸네일 및 본문 이미지 업로드 프로세스 구축.
-- **브랜치**: `feat/#5` (Parent: `feat/#4`)
+    - **DDD 아키텍처**: 도메인 모델과 JPA 엔티티를 분리하여 비즈니스 로직의 순수성 확보.
+    - **CQRS 적용**: `command`(JPA)와 `query`(JOOQ) 패키지를 물리적으로 분리하여 조회 성능 최적화 기반 마련.
+    - **이미지 처리**: S3 기반의 썸네일 및 본문 이미지 업로드 프로세스 (`PostService`) 구축.
+- **검증**: `PostRepository`, `CommentRepository`를 통한 데이터 정합성 확인.
 
-### 📅 Commit 6: 마이페이지 활동 내역 및 통계 연동 (계획)
-- **내용**: 사용자의 커뮤니티 활동(글/댓글) 내역 조회 및 `MemberActivityStats` 연동.
+### ✅ Commit 6: 마이페이지 활동 내역 및 통계 연동 (완료)
+- **내용**: 사용자의 커뮤니티 활동(글/댓글) 실시간 통계 반영 및 내 활동 내역 조회 기능 완성.
 - **핵심**:
-    - **통계 자동화**: 글/댓글 작성 시 실시간 통계 수치(`postCount`, `commentCount`) 반영 로직.
-    - **내 활동 탭**: 사용자가 작성한 전체 글과 댓글 목록을 페이징으로 제공.
-- **브랜치**: `feat/#6` (Parent: `feat/#5`)
+    - **통계 자동화**: 글/댓글 작성/삭제 시 `MemberActivityStats`(`postCount`, `commentCount`) 실시간 증감 로직 연동.
+    - **내 활동 탭**: 사용자가 작성한 전체 글과 댓글 목록을 JPQL 생성자 프로젝션으로 고성능 페이징 조회.
+- **연동**: `PostService`, `CommentService`와 `MemberProfile` 간의 도메인 협력 관계 구축.
 
 ---
 
