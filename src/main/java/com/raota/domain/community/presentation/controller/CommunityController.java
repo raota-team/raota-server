@@ -7,11 +7,13 @@ import com.raota.domain.community.presentation.request.CommunityRamenShopSearchR
 import com.raota.domain.community.presentation.response.CommunityPostCardResponse;
 import com.raota.domain.community.presentation.response.CommunityPostDetailResponse;
 import com.raota.domain.community.presentation.response.CommunityRamenShopOptionResponse;
+import com.raota.domain.community.repository.query.PostQueryRepository;
+import com.raota.domain.community.service.PostService;
 import com.raota.global.auth.LoginMember;
 import com.raota.global.common.ApiResponse;
 import com.raota.global.common.PageResponse;
 import java.util.List;
-import org.springframework.data.domain.Page;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -27,21 +29,25 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/community")
+@RequiredArgsConstructor
 public class CommunityController implements CommunityApi {
+
+    private final PostService postService;
+    private final PostQueryRepository postQueryRepository;
 
     @Override
     @GetMapping("/posts")
     public ResponseEntity<ApiResponse<PageResponse<CommunityPostCardResponse>>> getCommunityPosts(
             @PageableDefault(size = 10, direction = Sort.Direction.DESC) Pageable pageable,
             CommunityPostSearchRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(Page.empty(pageable))));
+        return ResponseEntity.ok(ApiResponse.success(postQueryRepository.searchPostCards(request, pageable)));
     }
 
     @Override
     @GetMapping("/posts/{postId}")
     public ResponseEntity<ApiResponse<CommunityPostDetailResponse>> getCommunityPostDetail(
             @PathVariable Long postId) {
-        return ResponseEntity.ok(ApiResponse.success(null));
+        return ResponseEntity.ok(ApiResponse.success(postQueryRepository.getPostDetail(postId)));
     }
 
     @Override
@@ -51,7 +57,9 @@ public class CommunityController implements CommunityApi {
             @RequestPart(value = "thumbnail", required = false) MultipartFile thumbnail,
             @RequestPart(value = "contentImages", required = false) List<MultipartFile> contentImages,
             @LoginMember Long memberId) {
-        return ResponseEntity.ok(ApiResponse.success(null));
+        
+        Long postId = postService.createPost(request, thumbnail, contentImages, memberId);
+        return ResponseEntity.ok(ApiResponse.success(postQueryRepository.getPostDetail(postId)));
     }
 
     @Override
@@ -59,6 +67,6 @@ public class CommunityController implements CommunityApi {
     public ResponseEntity<ApiResponse<PageResponse<CommunityRamenShopOptionResponse>>> getRamenShopOptions(
             @PageableDefault(size = 10, direction = Sort.Direction.DESC) Pageable pageable,
             CommunityRamenShopSearchRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(Page.empty(pageable))));
+        return ResponseEntity.ok(ApiResponse.success(postQueryRepository.getRamenShopOptions(request, pageable)));
     }
 }
