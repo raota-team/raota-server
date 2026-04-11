@@ -50,6 +50,22 @@ public class MemberProfile {
         this.backgroundImageUrl = backgroundImageUrl;
     }
 
+    public void increasePostCount() {
+        this.memberActivityStats = this.memberActivityStats.increasePost();
+    }
+
+    public void decreasePostCount() {
+        this.memberActivityStats = this.memberActivityStats.decreasePost();
+    }
+
+    public void increaseCommentCount() {
+        this.memberActivityStats = this.memberActivityStats.increaseComment();
+    }
+
+    public void decreaseCommentCount() {
+        this.memberActivityStats = this.memberActivityStats.decreaseComment();
+    }
+
     private void verifyNicknameBlank(String nickname) {
         if (nickname.isBlank()) {
             throw new IllegalArgumentException("닉네임은 공백일수 없습니다.");

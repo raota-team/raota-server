@@ -4,6 +4,8 @@ import com.raota.domain.community.model.Post;
 import com.raota.domain.community.model.PostCategory;
 import com.raota.domain.community.presentation.request.CommunityPostCreateRequest;
 import com.raota.domain.community.repository.command.PostRepository;
+import com.raota.domain.member.model.MemberProfile;
+import com.raota.domain.member.repository.MemberRepository;
 import com.raota.global.file.FileUploader;
 import java.util.List;
 import java.util.Objects;
@@ -18,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Transactional
 public class PostService {
     private final PostRepository postRepository;
+    private final MemberRepository memberRepository;
     private final FileUploader fileUploader;
 
     public Long createPost(
@@ -26,19 +29,17 @@ public class PostService {
             List<MultipartFile> contentImages, 
             Long authorId
     ) {
-        // 1. 이미지 업로드 처리 (S3 등)
+        // 1. 이미지 업로드 처리
         String thumbnailUrl = request.getThumbnailUrl();
         if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
             thumbnailUrl = fileUploader.upload(thumbnailFile);
         }
 
-        // 본문 이미지들의 URL 추출 (필요 시 본문 내용 치환 로직 추가 가능)
         if (contentImages != null && !contentImages.isEmpty()) {
-            List<String> imageUrls = contentImages.stream()
+            contentImages.stream()
                     .map(file -> file.isEmpty() ? null : fileUploader.upload(file))
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
-            // TODO: 명세서에 따라 본문 내 이미지 URL을 imageUrls로 치환하는 로직을 넣을 수 있습니다.
         }
 
         // 2. 도메인 모델 생성 및 저장
@@ -52,7 +53,14 @@ public class PostService {
                 request.getRamenShopId()
         );
 
-        return postRepository.save(post).getId();
+        Long postId = postRepository.save(post).getId();
+
+        // 3. 마이페이지 통계 업데이트 (추가!)
+        MemberProfile author = memberRepository.findById(authorId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        author.increasePostCount();
+
+        return postId;
     }
 
     public void deletePost(Long postId, Long authorId) {
@@ -64,5 +72,10 @@ public class PostService {
         }
 
         postRepository.delete(postId);
+
+        // 4. 마이페이지 통계 업데이트 (삭제 시 감소!)
+        MemberProfile author = memberRepository.findById(authorId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        author.decreasePostCount();
     }
 }

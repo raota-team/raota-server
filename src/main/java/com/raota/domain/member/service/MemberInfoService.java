@@ -48,4 +48,12 @@ public class MemberInfoService {
     public Page<VisitSummaryResponse> getMyVisits(Long memberId,Pageable pageable) {
         return memberRepository.findMyVisitRestaurant(memberId,pageable);
     }
+
+    public Page<com.raota.domain.community.presentation.response.CommunityPostCardResponse> getMyPosts(Long memberId, Pageable pageable) {
+        return memberRepository.findMyPosts(memberId, pageable);
+    }
+
+    public Page<com.raota.domain.community.presentation.response.CommunityCommentItemResponse> getMyComments(Long memberId, Pageable pageable) {
+        return memberRepository.findMyComments(memberId, pageable);
+    }
 }
