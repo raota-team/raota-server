@@ -39,6 +39,10 @@ public class MenuVoteService {
 
     @Transactional
     public VotingStatusResponse voteTheMenu(Long shopId, Long menuId, Long memberId) {
+        if (voteRepository.existsByMemberIdAndShopId(memberId, shopId)) {
+            throw new IllegalStateException("이미 이 가게의 메뉴에 투표하셨습니다.");
+        }
+
         RamenShop ramenShop = ramenShopRepository.findById(shopId)
                 .orElseThrow(()-> new IllegalArgumentException("찾을수 없는 라멘가게 입니다."));
         NormalMenu menu = ramenShop.getNormalMenus().findMenuById(menuId)

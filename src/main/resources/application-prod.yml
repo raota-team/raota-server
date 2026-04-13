@@ -15,6 +15,39 @@ server:
   shutdown: graceful
 
 spring:
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - openid
+              - profile
+              - email
+          kakao:
+            client-id: ${KAKAO_CLIENT_ID}
+            client-secret: ${KAKAO_CLIENT_SECRET}
+            client-authentication-method: client_secret_post
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope:
+              - profile_nickname
+              - profile_image
+              - account_email
+            client-name: Kakao
+            provider: kakao
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: ${SPRING_DATASOURCE_URL}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
@@ -50,3 +83,22 @@ management:
       probes:
         enabled: true
       show-details: never
+
+app:
+  auth:
+    issuer: raota
+    access-token-secret: ${APP_AUTH_ACCESS_TOKEN_SECRET}
+    access-token-expiry-seconds: ${APP_AUTH_ACCESS_TOKEN_EXPIRY_SECONDS:1800}
+    refresh-token-expiry-seconds: ${APP_AUTH_REFRESH_TOKEN_EXPIRY_SECONDS:1209600}
+    refresh-token:
+      store-type: ${APP_AUTH_REFRESH_TOKEN_STORE_TYPE:redis}
+    oauth2:
+      redirect-uri: ${APP_AUTH_OAUTH2_REDIRECT_URI}
+      failure-redirect-uri: ${APP_AUTH_OAUTH2_FAILURE_REDIRECT_URI:${APP_AUTH_OAUTH2_REDIRECT_URI}}
+    cookie:
+      refresh-token-name: ${APP_AUTH_REFRESH_TOKEN_COOKIE_NAME:raota_refresh_token}
+      secure: ${APP_AUTH_REFRESH_TOKEN_COOKIE_SECURE:true}
+      same-site: ${APP_AUTH_REFRESH_TOKEN_COOKIE_SAME_SITE:Lax}
+      domain: ${APP_AUTH_REFRESH_TOKEN_COOKIE_DOMAIN:}
+    cors:
+      allowed-origins: ${APP_AUTH_ALLOWED_ORIGINS}

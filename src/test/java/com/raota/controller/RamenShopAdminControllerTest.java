@@ -1,4 +1,4 @@
-package com.raota.admin.ramenShop.controller;
+package com.raota.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;

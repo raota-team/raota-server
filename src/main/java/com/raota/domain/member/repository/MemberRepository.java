@@ -23,14 +23,66 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
             m.memberActivityStats.visitedRestaurantCount,
             m.memberActivityStats.photoCount,
             m.memberActivityStats.bookmarkCount,
-            m.memberActivityStats.photoCount,
-            m.memberActivityStats.visitedRestaurantCount
+            m.memberActivityStats.postCount,
+            m.memberActivityStats.commentCount
         )
     )
     from MemberProfile m
     where m.id = :id
 """)
     MyProfileResponse findMemberDetailInfo(@Param("id") Long id);
+
+    @Query(value = """
+            select new com.raota.domain.community.presentation.response.CommunityPostCardResponse(
+                cast(p.category as string),
+                r.name,
+                p.title,
+                p.content,
+                p.thumbnailUrl,
+                m.nickname,
+                p.createdAt,
+                0L,
+                0L
+            )
+            from PostEntity p
+            join p.author m
+            left join p.ramenShop r
+            where m.id = :memberId
+            order by p.createdAt desc
+            """,
+            countQuery = """
+                    select count(p)
+                    from PostEntity p
+                    where p.author.id = :memberId
+                    """)
+    Page<com.raota.domain.community.presentation.response.CommunityPostCardResponse> findMyPosts(
+            @Param("memberId") Long memberId,
+            Pageable pageable
+    );
+
+    @Query(value = """
+            select new com.raota.domain.community.presentation.response.CommunityCommentItemResponse(
+                c.id,
+                null,
+                m.nickname,
+                null,
+                c.createdAt,
+                c.content
+            )
+            from CommentEntity c
+            join c.author m
+            where m.id = :memberId
+            order by c.createdAt desc
+            """,
+            countQuery = """
+                    select count(c)
+                    from CommentEntity c
+                    where c.author.id = :memberId
+                    """)
+    Page<com.raota.domain.community.presentation.response.CommunityCommentItemResponse> findMyComments(
+            @Param("memberId") Long memberId,
+            Pageable pageable
+    );
 
     @Query(value = """
             select new com.raota.domain.member.controller.response.VisitSummaryResponse(
