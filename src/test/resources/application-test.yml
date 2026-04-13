@@ -57,7 +57,7 @@ app:
     access-token-expiry-seconds: 1800
     refresh-token-expiry-seconds: 1209600
     refresh-token:
-      store-type: redis
+      store-type: jpa
     oauth2:
       redirect-uri: http://localhost:3000/auth/callback
       failure-redirect-uri: http://localhost:3000/auth/callback

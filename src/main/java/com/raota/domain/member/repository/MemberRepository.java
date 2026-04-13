@@ -34,7 +34,7 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
 
     @Query(value = """
             select new com.raota.domain.community.presentation.response.CommunityPostCardResponse(
-                p.category,
+                cast(p.category as string),
                 r.name,
                 p.title,
                 p.content,
@@ -63,11 +63,11 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
     @Query(value = """
             select new com.raota.domain.community.presentation.response.CommunityCommentItemResponse(
                 c.id,
-                m.id,
+                null,
                 m.nickname,
-                m.imageUrl,
-                c.content,
-                c.createdAt
+                null,
+                c.createdAt,
+                c.content
             )
             from CommentEntity c
             join c.author m

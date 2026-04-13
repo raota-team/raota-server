@@ -77,6 +77,14 @@
     - **내 활동 탭**: 사용자가 작성한 전체 글과 댓글 목록을 JPQL 생성자 프로젝션으로 고성능 페이징 조회.
 - **연동**: `PostService`, `CommentService`와 `MemberProfile` 간의 도메인 협력 관계 구축.
 
+### ✅ Commit 7: 커뮤니티 기능 안정화 및 설정 최적화 (완료)
+- **내용**: 
+    - **컴파일 에러 해결**: `CommunityService`의 패키지 임포트 누락 및 `PostService` 이미지 업로드 인자 불일치 수정.
+    - **인터페이스 정합성 확보**: `CommunityCommentController`를 `CommunityCommentApi` 규격에 맞춰 전면 개편.
+    - **쿼리 성능 및 정합성**: `MemberRepository`의 JPQL DTO 프로젝션 순서 불일치 해결 및 Enum 캐스팅 추가.
+    - **테스트 환경 최적화**: `application-test.yml`의 `store-type`을 `jpa`로 변경하여 레디스 없는 환경에서의 통합 테스트 안정성 확보.
+- **검증**: `RaotaApplicationTests`, `AuthControllerIntegrationTest` 등 주요 통합 테스트 통과 확인.
+
 ---
 
 ## 🧪 테스트 전략 (Testing Standards)

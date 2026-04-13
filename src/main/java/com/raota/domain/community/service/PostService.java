@@ -32,12 +32,12 @@ public class PostService {
         // 1. 이미지 업로드 처리
         String thumbnailUrl = request.getThumbnailUrl();
         if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
-            thumbnailUrl = fileUploader.upload(thumbnailFile);
+            thumbnailUrl = fileUploader.upload(thumbnailFile, "community");
         }
 
         if (contentImages != null && !contentImages.isEmpty()) {
             contentImages.stream()
-                    .map(file -> file.isEmpty() ? null : fileUploader.upload(file))
+                    .map(file -> file.isEmpty() ? null : fileUploader.upload(file, "community"))
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
         }
