@@ -76,7 +76,6 @@
     - **통계 자동화**: 글/댓글 작성/삭제 시 `MemberActivityStats`(`postCount`, `commentCount`) 실시간 증감 로직 연동.
     - **내 활동 탭**: 사용자가 작성한 전체 글과 댓글 목록을 JPQL 생성자 프로젝션으로 고성능 페이징 조회.
 - **연동**: `PostService`, `CommentService`와 `MemberProfile` 간의 도메인 협력 관계 구축.
-
 ### ✅ Commit 7: 커뮤니티 기능 안정화 및 설정 최적화 (완료)
 - **내용**: 
     - **컴파일 에러 해결**: `CommunityService`의 패키지 임포트 누락 및 `PostService` 이미지 업로드 인자 불일치 수정.
@@ -85,10 +84,19 @@
     - **테스트 환경 최적화**: `application-test.yml`의 `store-type`을 `jpa`로 변경하여 레디스 없는 환경에서의 통합 테스트 안정성 확보.
 - **검증**: `RaotaApplicationTests`, `AuthControllerIntegrationTest` 등 주요 통합 테스트 통과 확인.
 
+### ✅ Commit 8: 커뮤니티 댓글 및 파일 관리 기능 완성 (완료)
+- **내용**: 
+    - **댓글 기능 풀스택 완성**: `CommunityCommentController`의 모든 미구현(`TODO`) 항목을 서비스 및 쿼리 저장소와 연동하여 완성.
+    - **조회 고도화**: `CommentQueryRepository`에 단일 조회 기능을 추가하고, 인터페이스 규격(`ThreadResponse`)에 맞춘 스레드 변환 로직 구현.
+    - **파일 삭제 연동**: `ImageBucketFileUploader`에 S3/OCI API를 이용한 실제 오브젝트 삭제(`delete`) 로직 구현.
+- **핵심**: 비즈니스 로직(`CommentService`), 조회 로직(`JOOQ`), API 규격(`Swagger/Contract`) 간의 데이터 정합성 및 타입 안정성 확보.
+- **검증**: `./gradlew compileJava`를 통한 컴파일 안정성 확인 및 깃허브 푸시 완료.
+
 ---
 
 ## 🧪 테스트 전략 (Testing Standards)
-
+...
+*문서 최종 수정일: 2026-04-14*
 모든 기능 추가 및 버그 수정 시 다음 기준에 따라 테스트를 작성해야 합니다.
 
 1.  **단위 테스트 (Unit Test)**:
