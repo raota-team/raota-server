@@ -38,7 +38,7 @@ public class JpaRefreshTokenStore implements RefreshTokenStore {
                         () -> refreshTokenRepository.save(RefreshToken.builder()
                                 .memberId(memberId)
                                 .token(token)
-                                .expiresAt(expiresAt)
+                                .expiryDate(expiresAt)
                                 .build())
                 );
     }

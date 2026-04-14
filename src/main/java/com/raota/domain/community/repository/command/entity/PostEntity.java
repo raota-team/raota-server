@@ -5,10 +5,12 @@ import com.raota.domain.community.model.PostCategory;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.ramenShop.model.RamenShop;
 import jakarta.persistence.Column;
+import jakarta.persistence.ConstraintMode;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -23,12 +25,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "posts")
+@Table(name = "tb_post")
 @Getter
-@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
 public class PostEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -40,38 +43,23 @@ public class PostEntity {
     @Column(nullable = false)
     private String title;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
+    @Column(columnDefinition = "LONGTEXT", nullable = false)
     private String content;
 
-    @Column(nullable = false)
     private String contentFormat;
 
     private String thumbnailUrl;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id")
+    @JoinColumn(name = "author_id", nullable = false, foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private MemberProfile author;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ramen_shop_id")
+    @JoinColumn(name = "ramen_shop_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private RamenShop ramenShop;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
-
-    public static PostEntity fromDomain(Post post, MemberProfile author, RamenShop ramenShop) {
-        return PostEntity.builder()
-                .id(post.getId())
-                .category(post.getCategory())
-                .title(post.getTitle())
-                .content(post.getContent())
-                .contentFormat(post.getContentFormat())
-                .thumbnailUrl(post.getThumbnailUrl())
-                .author(author)
-                .ramenShop(ramenShop)
-                .createdAt(post.getCreatedAt())
-                .build();
-    }
 
     public Post toDomain() {
         return Post.of(
@@ -85,5 +73,19 @@ public class PostEntity {
                 ramenShop != null ? ramenShop.getId() : null,
                 createdAt
         );
+    }
+
+    public static PostEntity fromDomain(Post post, MemberProfile author, RamenShop ramenShop) {
+        return PostEntity.builder()
+                .id(post.getId())
+                .category(post.getCategory())
+                .title(post.getTitle())
+                .content(post.getContent())
+                .contentFormat(post.getContentFormat())
+                .thumbnailUrl(post.getThumbnailUrl())
+                .author(author)
+                .ramenShop(ramenShop)
+                .createdAt(post.getCreatedAt())
+                .build();
     }
 }

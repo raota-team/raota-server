@@ -13,6 +13,7 @@ public class Comment {
     private final Long id;
     private final Long postId;
     private final Long authorId;
+    private final Long parentId;
     private final String content;
     private final LocalDateTime createdAt;
 
@@ -20,10 +21,15 @@ public class Comment {
      * 새로운 댓글을 생성한다.
      */
     public static Comment create(Long postId, Long authorId, String content) {
+        return create(postId, authorId, null, content);
+    }
+
+    public static Comment create(Long postId, Long authorId, Long parentId, String content) {
         validate(postId, authorId, content);
         return Comment.builder()
                 .postId(postId)
                 .authorId(authorId)
+                .parentId(parentId)
                 .content(content)
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -33,10 +39,15 @@ public class Comment {
      * 기존에 저장된 댓글 데이터를 도메인 모델로 로드한다.
      */
     public static Comment of(Long id, Long postId, Long authorId, String content, LocalDateTime createdAt) {
+        return of(id, postId, authorId, null, content, createdAt);
+    }
+
+    public static Comment of(Long id, Long postId, Long authorId, Long parentId, String content, LocalDateTime createdAt) {
         return Comment.builder()
                 .id(id)
                 .postId(postId)
                 .authorId(authorId)
+                .parentId(parentId)
                 .content(content)
                 .createdAt(createdAt)
                 .build();
@@ -63,6 +74,7 @@ public class Comment {
                 .id(this.id)
                 .postId(this.postId)
                 .authorId(this.authorId)
+                .parentId(this.parentId)
                 .content(content)
                 .createdAt(this.createdAt)
                 .build();

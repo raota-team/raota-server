@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
+@Table(name = "tb_ramen_shop_report")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -22,11 +23,11 @@ public class RamenShopReport {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ramen_shop_id", nullable = false)
+    @JoinColumn(name = "ramen_shop_id", nullable = false, foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private RamenShop ramenShop;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_profile_id", nullable = false)
+    @JoinColumn(name = "member_profile_id", nullable = false, foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private MemberProfile memberProfile;
 
     @Enumerated(EnumType.STRING)
