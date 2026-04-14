@@ -2,6 +2,7 @@ package com.raota.domain.community.service;
 
 import com.raota.domain.community.model.Comment;
 import com.raota.domain.community.presentation.request.CommunityCommentCreateRequest;
+import com.raota.domain.community.presentation.request.CommunityCommentUpdateRequest;
 import com.raota.domain.community.repository.command.CommentRepository;
 import com.raota.domain.community.repository.command.PostRepository;
 import com.raota.domain.member.model.MemberProfile;
@@ -31,6 +32,18 @@ public class CommentService {
         author.increaseCommentCount();
 
         return commentId;
+    }
+
+    public void updateComment(Long commentId, CommunityCommentUpdateRequest request, Long authorId) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다."));
+
+        if (!comment.getAuthorId().equals(authorId)) {
+            throw new IllegalStateException("수정 권한이 없습니다.");
+        }
+
+        Comment updatedComment = comment.update(request.getContent());
+        commentRepository.save(updatedComment);
     }
 
     public void deleteComment(Long commentId, Long authorId) {

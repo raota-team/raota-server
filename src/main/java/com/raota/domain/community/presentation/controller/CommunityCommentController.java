@@ -5,11 +5,15 @@ import com.raota.domain.community.presentation.request.CommunityCommentCreateReq
 import com.raota.domain.community.presentation.request.CommunityCommentUpdateRequest;
 import com.raota.domain.community.presentation.response.CommunityCommentItemResponse;
 import com.raota.domain.community.presentation.response.CommunityCommentThreadResponse;
+import com.raota.domain.community.repository.query.CommentQueryRepository;
 import com.raota.domain.community.service.CommentService;
 import com.raota.global.auth.LoginMember;
 import com.raota.global.common.ApiResponse;
 import com.raota.global.common.PageResponse;
+import java.util.Collections;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -27,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class CommunityCommentController implements CommunityCommentApi {
 
     private final CommentService commentService;
+    private final CommentQueryRepository commentQueryRepository;
 
     @Override
     @PostMapping("/posts/{postId}/comments")
@@ -34,9 +39,10 @@ public class CommunityCommentController implements CommunityCommentApi {
             @PathVariable Long postId,
             @RequestBody CommunityCommentCreateRequest request,
             @LoginMember Long memberId) {
-        commentService.createComment(postId, request, memberId);
-        // TODO: 생성된 댓글 정보를 조회하여 반환하도록 개선 필요
-        return ResponseEntity.ok(ApiResponse.success(null));
+        Long commentId = commentService.createComment(postId, request, memberId);
+        CommunityCommentItemResponse response = commentQueryRepository.getComment(commentId)
+                .orElseThrow(() -> new IllegalStateException("생성된 댓글을 찾을 수 없습니다."));
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @Override
@@ -44,8 +50,24 @@ public class CommunityCommentController implements CommunityCommentApi {
     public ResponseEntity<ApiResponse<PageResponse<CommunityCommentThreadResponse>>> getComments(
             @PathVariable Long postId,
             Pageable pageable) {
-        // TODO: CommentQueryRepository를 사용하여 조회 구현
-        return ResponseEntity.ok(ApiResponse.success(null));
+        PageResponse<CommunityCommentItemResponse> itemResponse = commentQueryRepository.getComments(postId, pageable);
+        
+        // ItemResponse -> ThreadResponse 변환 (답글은 일단 빈 리스트로 처리)
+        List<CommunityCommentThreadResponse> threads = itemResponse.items().stream()
+                .map(item -> new CommunityCommentThreadResponse(
+                        item.commentId(),
+                        item.authorNickname(),
+                        item.createdAt(),
+                        item.content(),
+                        Collections.emptyList()
+                ))
+                .toList();
+        
+        PageResponse<CommunityCommentThreadResponse> response = PageResponse.from(
+                new PageImpl<>(threads, pageable, itemResponse.page().totalElements())
+        );
+        
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @Override
@@ -54,8 +76,10 @@ public class CommunityCommentController implements CommunityCommentApi {
             @PathVariable Long commentId,
             @RequestBody CommunityCommentUpdateRequest request,
             @LoginMember Long memberId) {
-        // TODO: 댓글 수정 로직 구현 필요
-        return ResponseEntity.ok(ApiResponse.success(null));
+        commentService.updateComment(commentId, request, memberId);
+        CommunityCommentItemResponse response = commentQueryRepository.getComment(commentId)
+                .orElseThrow(() -> new IllegalStateException("수정된 댓글을 찾을 수 없습니다."));
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @Override
