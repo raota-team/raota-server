@@ -35,7 +35,9 @@ public class OciVaultApplicationContextInitializer
             "GOOGLE_CLIENT_SECRET",
             "KAKAO_CLIENT_ID",
             "KAKAO_CLIENT_SECRET",
-            "APP_AUTH_ACCESS_TOKEN_SECRET"
+            "APP_AUTH_ACCESS_TOKEN_SECRET",
+            "APP_AUTH_OAUTH2_REDIRECT_URI",
+            "APP_AUTH_ALLOWED_ORIGINS"
     );
 
     @Override
