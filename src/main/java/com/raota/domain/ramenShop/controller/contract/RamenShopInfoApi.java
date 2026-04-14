@@ -1,5 +1,6 @@
 package com.raota.domain.ramenShop.controller.contract;
 
+import com.raota.domain.ramenShop.controller.request.RamenShopReportRequest;
 import com.raota.domain.ramenShop.controller.request.RamenShopSearchRequest;
 import com.raota.domain.ramenShop.controller.response.RamenShopBasicInfoResponse;
 import com.raota.domain.ramenShop.controller.response.StoreSummaryResponse;
@@ -30,4 +31,21 @@ public interface RamenShopInfoApi {
     ResponseEntity<ApiResponse<PageResponse<StoreSummaryResponse>>> getShopDetailInfo(
             @ParameterObject Pageable pageable,
             @ParameterObject RamenShopSearchRequest request);
+
+    @Operation(summary = "가게 북마크 토글", description = "가게를 찜하거나 해제합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    ResponseEntity<ApiResponse<Boolean>> toggleBookmark(
+            @Parameter(description = "가게 ID", required = true) Long shopId,
+            @Parameter(hidden = true) Long memberId);
+
+    @Operation(summary = "가게 정보 제보하기", description = "가게의 영업시간 오류, 폐업 등을 제보합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    ResponseEntity<ApiResponse<Void>> reportShop(
+            @Parameter(description = "가게 ID", required = true) Long shopId,
+            @Parameter(hidden = true) Long memberId,
+            RamenShopReportRequest request);
 }

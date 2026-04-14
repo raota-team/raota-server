@@ -112,7 +112,13 @@ public class ImageBucketFileUploader implements FileUploader{
 
     @Override
     public void delete(String filePath) {
-        // TODO: S3Client를 이용한 삭제 로직 구현
+        if (!StringUtils.hasText(filePath)) {
+            return;
+        }
+
+        // 이미지 URL에서 오브젝트 키(경로)를 추출하는 로직이 필요할 수 있으나, 
+        // 여기서는 전달된 filePath가 키라고 가정하고 삭제를 진행합니다.
+        s3Client.deleteObject(builder -> builder.bucket(bucketName).key(filePath));
     }
 
     private String createObjectKey(String dirName, String extension) {
