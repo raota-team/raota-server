@@ -30,7 +30,12 @@ public class OciVaultApplicationContextInitializer
             "OCI_STORAGE_BUCKET",
             "OCI_STORAGE_REGION",
             "OCI_STORAGE_ACCESS_KEY",
-            "OCI_STORAGE_SECRET_KEY"
+            "OCI_STORAGE_SECRET_KEY",
+            "GOOGLE_CLIENT_ID",
+            "GOOGLE_CLIENT_SECRET",
+            "KAKAO_CLIENT_ID",
+            "KAKAO_CLIENT_SECRET",
+            "APP_AUTH_ACCESS_TOKEN_SECRET"
     );
 
     @Override
