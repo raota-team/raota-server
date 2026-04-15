@@ -61,12 +61,16 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     properties:
       hibernate:
         format_sql: true
         default_batch_fetch_size: 100
     open-in-view: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
 
 logging:
   level:

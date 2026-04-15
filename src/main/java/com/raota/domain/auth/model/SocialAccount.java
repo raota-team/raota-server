@@ -16,8 +16,9 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(
+        name = "tb_social_account",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_social_account_provider_user", columnNames = {"provider", "provider_user_id"})
+                @UniqueConstraint(name = "uk_social_account_provider_user", columnNames = {"provider", "provider_id"})
         }
 )
 @Getter
@@ -32,7 +33,7 @@ public class SocialAccount {
     @Column(nullable = false, length = 20)
     private AuthProvider provider;
 
-    @Column(name = "provider_user_id", nullable = false, length = 100)
+    @Column(name = "provider_id", nullable = false, length = 100)
     private String providerUserId;
 
     private String email;

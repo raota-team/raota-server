@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.raota.domain.auth.store.RedisRefreshTokenStore;
 import com.raota.domain.auth.store.RefreshTokenStore;
-import com.raota.RedisTestSupport;
+import com.raota.global.common.BaseIntegrationTest;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,8 +13,8 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
-@ActiveProfiles("test")
-public class RedisRefreshTokensStoreTest extends RedisTestSupport {
+
+public class RedisRefreshTokensStoreTest extends BaseIntegrationTest {
 
     private RefreshTokenStore refreshTokenStore;
     private StringRedisTemplate redisTemplate;

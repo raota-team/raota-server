@@ -1,8 +1,10 @@
 package com.raota.domain.ramenShop.model;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.ConstraintMode;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -20,18 +22,17 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Entity
 @Builder
-@Table(name = "event_menu")
+@Table(name = "tb_event_menu")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class EventMenu {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "event_menu_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ramen_shop_id")
+    @JoinColumn(name = "ramen_shop_id", nullable = false, foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private RamenShop ramenShop;
 
     @Column(nullable = false)
@@ -40,10 +41,10 @@ public class EventMenu {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column
+    @Column(nullable = false)
     private Integer price;
 
-    @Column(name = "badge_text", length = 50)
+    @Column(name = "badge_text")
     private String badgeText;
 
     @Column(name = "start_date")
@@ -52,7 +53,7 @@ public class EventMenu {
     @Column(name = "end_date")
     private LocalDate endDate;
 
-    @Column(name = "image_url", length = 500)
+    @Column(name = "image_url")
     private String imageUrl;
 
     public void setShop(RamenShop ramenShop) {

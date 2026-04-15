@@ -1,15 +1,15 @@
 package com.raota.domain.ramenShop.repository;
 
 import com.raota.domain.ramenShop.controller.response.ProofPictureInfoResponse;
-import com.raota.domain.ramenShop.model.RamenProofPicture;
 import com.raota.domain.ramenShop.controller.response.RamenShopProofPictureResponse;
+import com.raota.domain.ramenShop.model.RamenProofPicture;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface RamenProofPictureRepository extends JpaRepository<RamenProofPicture,Long>{
+public interface RamenProofPictureRepository extends JpaRepository<RamenProofPicture, Long> {
     @Query(
             value = """
         select new com.raota.domain.ramenShop.controller.response.ProofPictureInfoResponse(
@@ -19,7 +19,7 @@ public interface RamenProofPictureRepository extends JpaRepository<RamenProofPic
         )
         from RamenProofPicture p
         where p.memberProfile.id = :memberId
-        order by p.uploadAt desc
+        order by p.uploadedAt desc
         """,
             countQuery = """
         select count(p)
@@ -38,11 +38,11 @@ public interface RamenProofPictureRepository extends JpaRepository<RamenProofPic
             p.memberProfile.nickname,
             p.imageUrl,
             p.imageName,
-            p.uploadAt
+            p.uploadedAt
         )
         from RamenProofPicture p
         where p.ramenShop.id = :shopId
-        order by p.uploadAt desc
+        order by p.uploadedAt desc
         """,
             countQuery = """
         select count(p)

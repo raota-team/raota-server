@@ -4,7 +4,7 @@ import com.raota.domain.auth.service.AuthAccountService;
 import com.raota.domain.auth.service.AuthRefreshSession;
 import com.raota.domain.auth.store.RefreshTokenStore;
 import com.raota.global.auth.AuthenticationRequiredException;
-import com.raota.RedisTestSupport;
+import com.raota.global.common.BaseIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -15,9 +15,12 @@ import java.time.Instant;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@ActiveProfiles("test")
-@SpringBootTest
-public class AuthTokenRotationTest extends RedisTestSupport {
+
+
+import org.springframework.transaction.annotation.Transactional;
+
+@Transactional
+public class AuthTokenRotationTest extends BaseIntegrationTest {
 
     @Autowired
     AuthAccountService authAccountService;

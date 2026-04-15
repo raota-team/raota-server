@@ -70,14 +70,14 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
                 c.content
             )
             from CommentEntity c
-            join c.author m
+            join c.member m
             where m.id = :memberId
             order by c.createdAt desc
             """,
             countQuery = """
                     select count(c)
                     from CommentEntity c
-                    where c.author.id = :memberId
+                    where c.member.id = :memberId
                     """)
     Page<com.raota.domain.community.presentation.response.CommunityCommentItemResponse> findMyComments(
             @Param("memberId") Long memberId,
@@ -91,7 +91,7 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
                 r.imageUrl,
                 CONCAT(CONCAT(r.address.city, ' '), r.address.district),
                 count(p.id),
-                max(p.uploadAt))
+                max(p.uploadedAt))
             from MemberProfile m
             left join RamenProofPicture p on p.memberProfile = m
             left join p.ramenShop r
@@ -140,7 +140,7 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
         p.imageName,
         p.ramenShop.id,
         p.ramenShop.name,
-        p.uploadAt
+        p.uploadedAt
     )
     from RamenProofPicture p
     where p.memberProfile.id = :memberId

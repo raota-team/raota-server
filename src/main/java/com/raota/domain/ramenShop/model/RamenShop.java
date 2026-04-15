@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.util.List;
 import java.util.Objects;
 import lombok.AccessLevel;
@@ -17,6 +18,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 @Entity
+@Table(name = "tb_ramen_shop")
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
@@ -42,7 +44,7 @@ public class RamenShop {
     private ShopStats stats = ShopStats.init();
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "tags",columnDefinition = "json")
+    @Column(name = "tags", columnDefinition = "json")
     private List<String> tags;
 
     @Column(name = "instagram_url")
@@ -66,11 +68,13 @@ public class RamenShop {
     private EventMenus eventMenus = EventMenus.init();
 
     public void addNormalMenu(NormalMenu menu) {
+        if (normalMenus == null) normalMenus = NormalMenus.init();
         normalMenus.add(menu);
         menu.setShop(this);
     }
 
     public void addEventMenu(EventMenu eventMenu){
+        if (eventMenus == null) eventMenus = EventMenus.init();
         eventMenus.add(eventMenu);
         eventMenu.setShop(this);
     }
