@@ -58,7 +58,7 @@ public class PostEntity {
     @JoinColumn(name = "ramen_shop_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private RamenShop ramenShop;
 
-    @Column(nullable = false)
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
     public Post toDomain() {

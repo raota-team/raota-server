@@ -68,7 +68,7 @@ public class MemberProfile {
 
     // Builder용 커스텀 메서드
     public static class MemberProfileBuilder {
-        private MemberActivityStats memberActivityStats; // 필드명 일치
+        private MemberActivityStats memberActivityStats;
 
         public MemberProfileBuilder stats(MemberActivityStats stats) {
             this.memberActivityStats = stats;

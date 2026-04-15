@@ -1,14 +1,7 @@
-# 테스트용 프로필: H2 메모리 DB
+# 테스트용 프로필: Testcontainers MySQL
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
-  data:
-    redis:
-      host: localhost
-      port: 6379
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: validate
@@ -16,11 +9,13 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
         default_batch_fetch_size: 1000
 
   flyway:
     enabled: true
-    baseline-on-migrate: true
+    baseline-on-migrate: false
+    locations: classpath:db/migration
   security:
     oauth2:
       client:

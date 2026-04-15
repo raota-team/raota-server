@@ -49,6 +49,6 @@ public class RamenProofPicture {
     private String description;
 
     @CreationTimestamp
-    @Column(name = "uploaded_at")
+    @Column(name = "uploaded_at", nullable = false)
     private LocalDateTime uploadedAt;
 }

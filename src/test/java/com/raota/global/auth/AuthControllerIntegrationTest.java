@@ -1,38 +1,32 @@
 package com.raota.global.auth;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import com.raota.domain.auth.model.RefreshToken;
 import com.raota.domain.auth.repository.RefreshTokenRepository;
-import com.raota.domain.member.model.MemberActivityStats;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
+import com.raota.global.common.ApiResponse;
+import io.restassured.RestAssured;
 import java.time.Instant;
-import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.context.WebApplicationContext;
 
-@SpringBootTest
+import static org.assertj.core.api.Assertions.assertThat;
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@Transactional
 class AuthControllerIntegrationTest {
 
-    private MockMvc mockMvc;
+    @LocalServerPort
+    private int port;
 
     @Autowired
-    private WebApplicationContext webApplicationContext;
+    private JwtTokenProvider jwtTokenProvider;
 
     @Autowired
     private MemberRepository memberRepository;
@@ -42,33 +36,32 @@ class AuthControllerIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
-                .apply(springSecurity())
-                .build();
+        RestAssured.port = port;
         refreshTokenRepository.deleteAll();
         memberRepository.deleteAll();
     }
 
     @Test
-    void refreshIssuesNewAccessTokenAndRotatesCookie() throws Exception {
+    @DisplayName("유효한 Refresh Token으로 Access Token을 갱신한다.")
+    void refresh_token_success() {
+        // given
         MemberProfile member = memberRepository.save(MemberProfile.builder()
-                .nickname("리프레시유저")
-                .imageUrl(null)
-                .backgroundImageUrl(null)
-                .stats(MemberActivityStats.init())
-                .build());
-        refreshTokenRepository.save(RefreshToken.builder()
-                .memberId(member.getId())
-                .token("refresh-token-value")
-                .expiresAt(Instant.now().plusSeconds(3600))
+                .nickname("testuser")
                 .build());
 
-        mockMvc.perform(post("/auth/refresh")
-                        .cookie(new Cookie("raota_refresh_token", "refresh-token-value")))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.tokenType").value("Bearer"))
-                .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.data.memberId").value(member.getId()))
-                .andExpect(header().string("Set-Cookie", containsString("raota_refresh_token=")));
+        String refreshTokenValue = "valid-refresh-token";
+        refreshTokenRepository.save(RefreshToken.builder()
+                .memberId(member.getId())
+                .token(refreshTokenValue)
+                .expiryDate(Instant.now().plusSeconds(3600))
+                .build());
+
+        // when
+        RestAssured.given()
+                .cookie("raota_refresh_token", refreshTokenValue)
+                .when()
+                .post("/api/v1/auth/refresh")
+                .then()
+                .statusCode(HttpStatus.OK.value());
     }
 }

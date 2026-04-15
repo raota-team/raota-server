@@ -1,6 +1,7 @@
 package com.raota.domain.member.model;
 
 import com.raota.domain.ramenShop.model.RamenShop;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -31,9 +32,10 @@ public class Bookmark {
     private MemberProfile memberProfile;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ramen_shop_id")
+    @JoinColumn(name = "ramen_shop_id", nullable = false)
     private RamenShop ramenShop;
 
     @CreationTimestamp
+    @Column(name = "marking_at", nullable = false)
     private LocalDateTime markingAt;
 }
