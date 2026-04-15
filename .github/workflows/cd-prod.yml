@@ -1,4 +1,4 @@
-name: CD - Deploy to Prod (OCI Rolling)
+name: CD - Deploy to Prod (Self-hosted Swarm)
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted  # 프라이빗 매니저에서 직접 실행
 
     environment:
       name: raota-prod-server
@@ -23,21 +23,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 서버 메모리가 넉넉하므로 빌드는 서버에서 직접 수행 (또는 기존처럼 이미지 빌드 후 땡겨오기)
       - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "25"
-
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
 
       - name: Build jar (without tests)
         run: ./gradlew clean bootJar -x test
@@ -46,303 +37,43 @@ jobs:
         run: |
           echo "${{ secrets.OCIR_AUTH_TOKEN }}" | docker login "${{ secrets.OCIR_REGISTRY }}" -u "${{ secrets.OCIR_USERNAME }}" --password-stdin
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build and push image (ARM64)
+      - name: Build and Deploy (Local Build)
         env:
           IMAGE_URI: ${{ secrets.OCIR_REGISTRY }}/${{ secrets.OCIR_NAMESPACE }}/${{ secrets.OCIR_REPOSITORY }}
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          platforms: linux/arm64
-          push: true
-          tags: |
-            ${{ env.IMAGE_URI }}:${{ github.sha }}
-            ${{ env.IMAGE_URI }}:latest
-
-      - name: Install OCI CLI
+          IMAGE_TAG: ${{ github.sha }}
+          OCI_VAULT_ID: "ocid1.vault.oc1.ap-chuncheon-1.gju25j3taaark.ab4w4ljrvayyfb3dk5dp2yu45i7aw5u6jvjl73tfjxaqfxgexq3do6izft5szq"
         run: |
-          python3 -m pip install --user oci-cli
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          # 1. 이미지 빌드 (서버에서 직접 하므로 아키텍처 불일치 걱정 없음)
+          docker build -t "$IMAGE_URI:$IMAGE_TAG" -t "$IMAGE_URI:latest" .
+          
+          # 2. 레지스트리에 푸시 (워커 노드 전파용)
+          docker push "$IMAGE_URI:$IMAGE_TAG"
+          docker push "$IMAGE_URI:latest"
 
-      - name: Configure OCI CLI
-        env:
-          SUPPRESS_LABEL_WARNING: "True"
-          OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING: "True"
-        run: |
-          set -euo pipefail
-          mkdir -p "$HOME/.oci"
-          printf '%s' "${{ secrets.OCI_CLI_PRIVATE_KEY }}" > "$HOME/.oci/oci_api_key.pem"
-          chmod 600 "$HOME/.oci/oci_api_key.pem"
-          {
-            echo "[DEFAULT]"
-            echo "user=${{ secrets.OCI_CLI_USER_OCID }}"
-            echo "fingerprint=${{ secrets.OCI_CLI_FINGERPRINT }}"
-            echo "tenancy=${{ secrets.OCI_CLI_TENANCY_OCID }}"
-            echo "region=${{ secrets.OCI_CLI_REGION }}"
-            echo "key_file=$HOME/.oci/oci_api_key.pem"
-          } > "$HOME/.oci/config"
-          chmod 600 "$HOME/.oci/config"
+          # 3. 로컬에서 바로 스택 배포
+          export IMAGE_URI IMAGE_TAG OCI_VAULT_ID
+          docker stack deploy --with-registry-auth -c docker-stack.yml raota
 
-      - name: Rolling replace instances in pool
-        env:
-          SUPPRESS_LABEL_WARNING: "True"
-          OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING: "True"
-          COMPARTMENT_OCID: ${{ secrets.OCI_COMPARTMENT_OCID }}
-          INSTANCE_POOL_OCID: ${{ secrets.OCI_INSTANCE_POOL_OCID }}
-          LB_OCID: ${{ secrets.OCI_LB_OCID }}
-          LB_BACKEND_SET_NAME: ${{ secrets.OCI_LB_BACKEND_SET_NAME }}
-          APP_PORT: ${{ secrets.APP_PORT }}
-          ROLLING_SURGE: ${{ secrets.OCI_ROLLING_SURGE }}
-          SURGE_WHEN_BELOW: ${{ secrets.OCI_SURGE_WHEN_BELOW }}
-        run: |
-          set -Eeuo pipefail
-          set -x
+          # 4. 배포 상태 모니터링
+          service_name="raota_app"
+          desired_replicas="$(docker service inspect "$service_name" --format '{{if .Spec.Mode.Replicated}}{{.Spec.Mode.Replicated.Replicas}}{{else}}0{{end}}')"
 
-          desired_count=0
-          surge_applied=0
+          echo "[swarm] Monitoring deployment for ${service_name}..."
+          for attempt in $(seq 1 36); do
+            replicas="$(docker service ls --filter name=^${service_name}$ --format '{{.Replicas}}')"
+            update_state="$(docker service inspect "$service_name" --format '{{if .UpdateStatus}}{{.UpdateStatus.State}}{{else}}completed{{end}}')"
 
-          log() {
-            echo "[$(date '+%Y-%m-%dT%H:%M:%S%z')] [rolling] $*" >&2
-          }
+            echo "[swarm] attempt=${attempt} replicas=${replicas} update_state=${update_state}"
 
-          rollback_on_error() {
-            local rc=$?
-            if (( rc != 0 )) && (( surge_applied > 0 )) && (( desired_count > 0 )); then
-              log "Error detected. Best-effort scale rollback to original size=${desired_count}"
-              oci compute-management instance-pool update \
-                --instance-pool-id "$INSTANCE_POOL_OCID" \
-                --size "$desired_count" \
-                --force >/dev/null || true
+            if [[ "$update_state" == "completed" || "$update_state" == "" ]]; then
+              if [[ "$replicas" == "${desired_replicas}/${desired_replicas}" ]]; then
+                echo "[swarm] Deployment successful!"
+                exit 0
+              fi
+            elif [[ "$update_state" == "failed" || "$update_state" == "rollback_started" ]]; then
+              echo "[swarm] Deployment failed or rolling back!"
+              exit 1
             fi
-            log "FAILED (line=${LINENO}, exit=${rc})"
-            exit "$rc"
-          }
-
-          trap rollback_on_error ERR
-
-          fail() {
-            log "$*"
-            false
-          }
-
-          log "Starting rolling replace step"
-
-          if [[ -z "${INSTANCE_POOL_OCID:-}" ]]; then
-            fail "OCI_INSTANCE_POOL_OCID secret is required."
-          fi
-
-          if [[ -z "${COMPARTMENT_OCID:-}" ]]; then
-            fail "OCI_COMPARTMENT_OCID secret is required."
-          fi
-
-          if [[ -z "${APP_PORT:-}" ]]; then
-            APP_PORT=8080
-          fi
-
-          if [[ -z "${ROLLING_SURGE:-}" ]]; then
-            ROLLING_SURGE=1
-          fi
-
-          if [[ -z "${SURGE_WHEN_BELOW:-}" ]]; then
-            SURGE_WHEN_BELOW=3
-          fi
-
-          if ! command -v jq >/dev/null 2>&1; then
-            fail "jq is required in runner."
-          fi
-
-          log "Input summary: pool=${INSTANCE_POOL_OCID}, compartment=${COMPARTMENT_OCID}, app_port=${APP_PORT}, rolling_surge=${ROLLING_SURGE}, surge_when_below=${SURGE_WHEN_BELOW}"
-
-          list_running_ids() {
-            log "Query RUNNING instances from instance pool"
-            oci compute-management instance-pool list-instances \
-              --compartment-id "$COMPARTMENT_OCID" \
-              --instance-pool-id "$INSTANCE_POOL_OCID" \
-              --all | jq -r '
-                .data[]
-                | ((."lifecycle-state" // ."lifecycleState" // .state // .status // "") | ascii_downcase) as $s
-                | select($s == "running")
-                | .id
-              '
-          }
-
-          state_summary() {
-            oci compute-management instance-pool list-instances \
-              --compartment-id "$COMPARTMENT_OCID" \
-              --instance-pool-id "$INSTANCE_POOL_OCID" \
-              --all | jq -r '
-                if (.data | length) == 0 then
-                  "no-instances"
-                else
-                  ([
-                    .data[]
-                    | (."lifecycle-state" // ."lifecycleState" // .state // .status // "unknown")
-                  ] | group_by(.) | map("\(.[0]):\(length)") | join(", "))
-                end
-              '
-          }
-
-          contains_id() {
-            local needle="$1"
-            shift || true
-            local item
-            for item in "$@"; do
-              if [[ "$item" == "$needle" ]]; then
-                return 0
-              fi
-            done
-            return 1
-          }
-
-          mapfile -t initial_ids < <(list_running_ids)
-          desired_count=${#initial_ids[@]}
-
-          if (( desired_count == 0 )); then
-            fail "No RUNNING instances in pool."
-          fi
-
-          echo "Initial RUNNING instances (${desired_count}): ${initial_ids[*]}"
-
-          min_running="$desired_count"
-          effective_surge=0
-
-          if (( desired_count < SURGE_WHEN_BELOW )); then
-            effective_surge="$ROLLING_SURGE"
-            echo "Current count (${desired_count}) is below ${SURGE_WHEN_BELOW}; surge enabled: +${effective_surge}"
-          else
-            echo "Current count (${desired_count}) is >= ${SURGE_WHEN_BELOW}; surge disabled."
-          fi
-
-          if (( effective_surge > 0 )); then
-            target_size=$((desired_count + effective_surge))
-            echo "Scaling out instance pool for surge: ${desired_count} -> ${target_size}"
-
-            log "Calling instance-pool update (scale out)"
-            oci compute-management instance-pool update \
-              --instance-pool-id "$INSTANCE_POOL_OCID" \
-              --size "$target_size" \
-              --force >/dev/null
-
-            for attempt in {1..80}; do
-              mapfile -t now_ids < <(list_running_ids)
-              now_count=${#now_ids[@]}
-              log "Scale-out wait attempt=${attempt}, running=${now_count}, target=${target_size}, states=$(state_summary)"
-              if (( now_count >= target_size )); then
-                surge_applied="$effective_surge"
-                min_running="$target_size"
-                echo "Surge scale-out completed. Running count: ${now_count}"
-                break
-              fi
-              sleep 15
-            done
-
-            if (( surge_applied == 0 )); then
-              fail "Failed to scale out to surge size. Check instance pool max size / autoscaling policy."
-            fi
-          fi
-
-          for old_id in "${initial_ids[@]}"; do
-            echo "Replacing old instance: ${old_id}"
-
-            mapfile -t before_ids < <(list_running_ids)
-            log "Before detach running IDs: ${before_ids[*]}"
-
-            log "Detaching instance ${old_id}"
-            oci compute-management instance-pool-instance detach \
-              --instance-pool-id "$INSTANCE_POOL_OCID" \
-              --instance-id "$old_id" \
-              --is-decrement-size false \
-              --is-auto-terminate true
-
-            new_id=""
-            for attempt in {1..80}; do
-              mapfile -t now_ids < <(list_running_ids)
-              now_count=${#now_ids[@]}
-              log "Replace wait old=${old_id} attempt=${attempt}, running=${now_count}, min_running=${min_running}, states=$(state_summary), ids=${now_ids[*]}"
-
-              if contains_id "$old_id" "${now_ids[@]}"; then
-                sleep 15
-                continue
-              fi
-
-              if (( now_count >= min_running )); then
-                candidate=""
-                for id in "${now_ids[@]}"; do
-                  if ! contains_id "$id" "${before_ids[@]}"; then
-                    candidate="$id"
-                    break
-                  fi
-                done
-                if [[ -n "$candidate" ]]; then
-                  new_id="$candidate"
-                  break
-                fi
-              fi
-
-              sleep 15
-            done
-
-            if [[ -z "$new_id" ]]; then
-              fail "Failed to detect replacement instance for ${old_id}"
-            fi
-
-            echo "Replacement instance is RUNNING: ${new_id}"
-
-            if [[ -n "${LB_OCID:-}" && -n "${LB_BACKEND_SET_NAME:-}" ]]; then
-              private_ip="$(oci compute instance list-vnics --instance-id "$new_id" | jq -r '.data[0]."private-ip"')"
-              backend_name="${private_ip}:${APP_PORT}"
-              echo "Checking LB backend health for ${backend_name}"
-
-              healthy="false"
-              for attempt in {1..40}; do
-                status="$(oci lb backend-health get \
-                  --load-balancer-id "$LB_OCID" \
-                  --backend-set-name "$LB_BACKEND_SET_NAME" \
-                  --backend-name "$backend_name" 2>/dev/null | jq -r '.data.status // empty' || true)"
-                if [[ -z "$status" ]]; then
-                  status="PENDING_OR_NOT_FOUND"
-                fi
-                log "LB health attempt=${attempt}, backend=${backend_name}, status=${status}"
-
-                if [[ "$status" == "OK" ]]; then
-                  healthy="true"
-                  break
-                fi
-                sleep 15
-              done
-
-              if [[ "$healthy" != "true" ]]; then
-                fail "New instance ${new_id} is not healthy in LB backend set."
-              fi
-            else
-              echo "LB secrets not set. Waiting 60s for app warm-up."
-              sleep 60
-            fi
+            sleep 10
           done
-
-          if (( surge_applied > 0 )); then
-            echo "Scaling instance pool back to original size: ${desired_count}"
-            log "Calling instance-pool update (scale in)"
-            oci compute-management instance-pool update \
-              --instance-pool-id "$INSTANCE_POOL_OCID" \
-              --size "$desired_count" \
-              --force >/dev/null
-
-            for attempt in {1..80}; do
-              mapfile -t now_ids < <(list_running_ids)
-              now_count=${#now_ids[@]}
-              log "Scale-in wait attempt=${attempt}, running=${now_count}, target=${desired_count}, states=$(state_summary)"
-              if (( now_count == desired_count )); then
-                echo "Scale-in completed. Running count: ${now_count}"
-                break
-              fi
-              sleep 15
-            done
-          fi
-
-          echo "Rolling deployment completed successfully."
+          exit 1
