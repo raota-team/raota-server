@@ -8,7 +8,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted  # 프라이빗 매니저에서 직접 실행
+    runs-on: [self-hosted, linux, arm64]  # 프라이빗 매니저에서 직접 실행
 
     environment:
       name: raota-prod-server
