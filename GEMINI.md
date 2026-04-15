@@ -92,6 +92,14 @@
 - **핵심**: 비즈니스 로직(`CommentService`), 조회 로직(`JOOQ`), API 규격(`Swagger/Contract`) 간의 데이터 정합성 및 타입 안정성 확보.
 - **검증**: `./gradlew compileJava`를 통한 컴파일 안정성 확인 및 깃허브 푸시 완료.
 
+### ✅ Commit 9: Flyway 자동화 및 테스트 인프라 통합 (완료)
+- **내용**:
+    - **Flyway 안정화**: `spring-boot-starter-flyway` 의존성을 추가하여 Spring Boot의 자동 마이그레이션 메커니즘 활성화.
+    - **테스트 인프라 통합**: `BaseIntegrationTest`를 도입하여 MySQL(Testcontainers) 및 Redis 컨테이너를 모든 통합 테스트에서 공유하도록 개선.
+    - **테스트 버그 수정**: `AuthControllerIntegrationTest`의 잘못된 URL 매핑(`/api/v1` 제거) 및 `SecurityConfig`의 CORS 헤더 누락(`X-User-Id`) 수정.
+- **핵심**: 로컬 개발 및 테스트 환경에서의 DB 스키마 자동 동기화 보장 및 전체 테스트 스위트의 실행 속도/안정성 대폭 향상.
+- **검증**: 전체 테스트(29개) 통과 확인 (`./gradlew test`).
+
 ---
 
 ## 🧪 테스트 전략 (Testing Standards)

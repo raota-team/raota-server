@@ -4,7 +4,6 @@ import com.raota.domain.auth.model.RefreshToken;
 import com.raota.domain.auth.repository.RefreshTokenRepository;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
-import com.raota.global.common.ApiResponse;
 import io.restassured.RestAssured;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,9 +17,11 @@ import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles("test")
-class AuthControllerIntegrationTest {
+
+
+import com.raota.global.common.BaseIntegrationTest;
+
+class AuthControllerIntegrationTest extends BaseIntegrationTest {
 
     @LocalServerPort
     private int port;
@@ -60,7 +61,7 @@ class AuthControllerIntegrationTest {
         RestAssured.given()
                 .cookie("raota_refresh_token", refreshTokenValue)
                 .when()
-                .post("/api/v1/auth/refresh")
+                .post("/auth/refresh")
                 .then()
                 .statusCode(HttpStatus.OK.value());
     }

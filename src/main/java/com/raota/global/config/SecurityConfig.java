@@ -82,7 +82,8 @@ public class SecurityConfig {
                 "Content-Type",
                 "X-Requested-With",
                 "Accept",
-                "Origin"
+                "Origin",
+                "X-User-Id"
         ));
         configuration.setExposedHeaders(List.of("Location"));
         configuration.setAllowCredentials(true);

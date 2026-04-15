@@ -5,9 +5,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
-@ActiveProfiles("test")
-class FlywayMigrationIntegrationTest extends MysqlTestSupport {
+
+
+class FlywayMigrationIntegrationTest extends BaseIntegrationTest {
 
     @Test
     @DisplayName("모든 Flyway 마이그레이션 스크립트가 에러 없이 실행되고, JPA 엔티티와 스키마가 일치한다.")
