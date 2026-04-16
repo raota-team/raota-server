@@ -9,7 +9,7 @@ services:
       - raota-net
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - JAVA_TOOL_OPTIONS=-Xms3g -Xmx3g
+      - JAVA_TOOL_OPTIONS=-Xms4g -Xmx4g
       - OCI_VAULT_ID=${OCI_VAULT_ID}
     healthcheck:
       test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1:8080/actuator/health/readiness || exit 1"]
@@ -17,31 +17,36 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
-    stop_grace_period: 1m
     deploy:
       replicas: 3
+      placement:
+        constraints:
+          - node.role == worker  # 앱은 워커 노드에서만 실행
       resources:
         limits:
           memory: 5G
         reservations:
-          memory: 3G
-      update_config:
-        parallelism: 1
-        delay: 15s
-        monitor: 45s
-        order: start-first
-        failure_action: rollback
-      rollback_config:
-        parallelism: 1
-        delay: 15s
-        monitor: 45s
-        order: stop-first
+          memory: 4G
       restart_policy:
         condition: on-failure
-        delay: 5s
-        max_attempts: 3
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --maxmemory 1gb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    networks:
+      - raota-net
+    deploy:
+      replicas: 1
       placement:
-        max_replicas_per_node: 1
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          memory: 1.5G
+        reservations:
+          memory: 1G
 
 networks:
   raota-net:
