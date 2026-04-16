@@ -54,26 +54,41 @@ jobs:
           export IMAGE_URI IMAGE_TAG OCI_VAULT_ID
           docker stack deploy --with-registry-auth -c docker-stack.yml raota
 
-          # 4. 배포 상태 모니터링
+          # 4. 배포 상태 모니터링 고도화
           service_name="raota_app"
-          desired_replicas="$(docker service inspect "$service_name" --format '{{if .Spec.Mode.Replicated}}{{.Spec.Mode.Replicated.Replicas}}{{else}}0{{end}}')"
-
           echo "[swarm] Monitoring deployment for ${service_name}..."
-          for attempt in $(seq 1 36); do
-            replicas="$(docker service ls --filter name=^${service_name}$ --format '{{.Replicas}}')"
-            update_state="$(docker service inspect "$service_name" --format '{{if .UpdateStatus}}{{.UpdateStatus.State}}{{else}}completed{{end}}')"
-
-            echo "[swarm] attempt=${attempt} replicas=${replicas} update_state=${update_state}"
+          
+          # 최대 60번 시도 (10초 간격 = 총 10분)
+          for attempt in $(seq 1 60); do
+            # 현재 가동 중인 레플리카 수와 상태 요약 가져오기
+            replicas_status=$(docker service ls --filter name=^${service_name}$ --format "{{.Replicas}}")
+            update_state=$(docker service inspect "$service_name" --format "{{if .UpdateStatus}}{{.UpdateStatus.State}}{{else}}completed{{end}}")
+            
+            # 각 태스크(컨테이너)의 상세 상태 한 줄로 요약
+            task_states=$(docker service ps ${service_name} --filter "desired-state=running" --format "{{.CurrentState}}" | tr '\n' ',' | sed 's/,$//')
+            
+            echo "[swarm] Attempt ${attempt}: Replicas [${replicas_status}] | Update: ${update_state} | Tasks: [${task_states}]"
 
             if [[ "$update_state" == "completed" || "$update_state" == "" ]]; then
-              if [[ "$replicas" == "${desired_replicas}/${desired_replicas}" ]]; then
-                echo "[swarm] Deployment successful!"
+              if [[ "$replicas_status" =~ ([0-9]+)/\1 ]]; then
+                echo "🚀 [swarm] Deployment successful! All replicas are running."
                 exit 0
               fi
             elif [[ "$update_state" == "failed" || "$update_state" == "rollback_started" ]]; then
-              echo "[swarm] Deployment failed or rolling back!"
+              echo "❌ [swarm] Deployment failed or rolling back!"
+              echo "--- Last Error Logs ---"
+              docker service ps ${service_name} --no-trunc --filter "desired-state=shutdown" | head -n 5
               exit 1
             fi
+            
+            # 만약 태스크 중에 Error가 있다면 상세 정보 출력
+            if [[ "$task_states" == *"Error"* || "$task_states" == *"Failed"* ]]; then
+               echo "⚠️ [swarm] Warning: Some tasks are failing. Checking errors..."
+               docker service ps ${service_name} --no-trunc | grep -E "Error|Failed" | head -n 3
+            fi
+
             sleep 10
           done
+
+          echo "⌛ [swarm] Deployment timed out after 10 minutes."
           exit 1
