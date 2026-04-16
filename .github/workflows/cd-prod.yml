@@ -73,8 +73,8 @@ jobs:
             echo "[swarm] Attempt ${attempt}: Replicas [${replicas_status}] | Update: ${update_state} | Tasks: [${task_states}]"
 
             if [[ "$update_state" == "completed" || "$update_state" == "" ]]; then
-              if [[ "$replicas_status" =~ ([0-9]+)/\1 ]]; then
-                echo "🚀 [swarm] Deployment successful! All replicas are running."
+              if [[ "$replicas_running" -ge "$replicas_total" ]]; then
+                echo "🚀 [swarm] Deployment successful! All ${replicas_total} replicas are running."
                 exit 0
               fi
             elif [[ "$update_state" == "failed" || "$update_state" == "rollback_started" ]]; then
