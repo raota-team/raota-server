@@ -60,9 +60,9 @@ jobs:
           
           # 최대 60번 시도 (10초 간격 = 총 10분)
           for attempt in $(seq 1 60); do
-            # 현재 가동 중인 레플리카 수와 상태 요약 가져오기 (더 안정적인 방식)
+            # 현재 가동 중인 레플리카 수와 전체 목표 수 가져오기 (배포 모드 호환)
             replicas_running=$(docker service ps ${service_name} --filter "desired-state=running" --format "{{.CurrentState}}" | grep -c "Running" || echo "0")
-            replicas_total=$(docker service inspect ${service_name} --format "{{.Spec.Mode.Replicated.Replicas}}")
+            replicas_total=$(docker service ps ${service_name} --filter "desired-state=running" | grep -v "ID" | wc -l | xargs)
             replicas_status="${replicas_running}/${replicas_total}"
             
             update_state=$(docker service inspect "$service_name" --format "{{if .UpdateStatus}}{{.UpdateStatus.State}}{{else}}completed{{end}}")
