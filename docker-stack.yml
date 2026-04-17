@@ -4,7 +4,10 @@ services:
   app:
     image: ${IMAGE_URI}:${IMAGE_TAG}
     ports:
-      - "8080:8080"
+      - target: 8080
+        published: 8080
+        protocol: tcp
+        mode: host  # Ingress Mesh를 우회하여 호스트 포트에 직접 바인딩
     networks:
       - raota-net
     environment:
@@ -18,7 +21,7 @@ services:
       retries: 5
       start_period: 60s
     deploy:
-      replicas: 3
+      mode: global  # 각 노드당 1개씩 배포 (포트 충돌 방지)
       placement:
         constraints:
           - node.role == worker  # 앱은 워커 노드에서만 실행
@@ -32,7 +35,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    command: redis-server --maxmemory 1gb --maxmemory-policy allkeys-lru
+    command: redis-server --maxmemory 1.5gb --maxmemory-policy allkeys-lru
     ports:
       - "6379:6379"
     networks:
@@ -41,12 +44,12 @@ services:
       replicas: 1
       placement:
         constraints:
-          - node.role == manager
+          - node.role == manager # 레디스는 매니저 노드에 고정
       resources:
         limits:
-          memory: 1.5G
+          memory: 1.8G
         reservations:
-          memory: 1G
+          memory: 1.5G
 
 networks:
   raota-net:
