@@ -55,6 +55,8 @@ public class RamenShopAdminService {
     public Long createShop(RamenShopAdminForm form) {
         RamenShop ramenShop = RamenShop.builder()
                 .name(form.getName().trim())
+                .branchName(blankToNull(form.getBranchName()))
+                .naverMapId(blankToNull(form.getNaverMapId()))
                 .address(form.toAddress())
                 .businessHours(form.toBusinessHours())
                 .tags(form.toTags())
@@ -83,6 +85,8 @@ public class RamenShopAdminService {
         }
         ramenShop.updateBasicInfo(
                 form.getName().trim(),
+                blankToNull(form.getBranchName()),
+                blankToNull(form.getNaverMapId()),
                 form.toAddress(),
                 form.toBusinessHours(),
                 form.toTags(),

@@ -475,6 +475,16 @@
                         <div class="error-text" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
                     </div>
                     <div class="field">
+                        <label for="branchName">지점명</label>
+                        <input id="branchName" type="text" th:field="*{branchName}" placeholder="합정점">
+                    </div>
+
+                    <div class="field">
+                        <label for="naverMapId">네이버 플레이스 ID</label>
+                        <input id="naverMapId" type="text" th:field="*{naverMapId}" placeholder="12345678">
+                        <div class="hint">네이버 지도 URL의 숫자 부분이다.</div>
+                    </div>
+                    <div class="field">
                         <label for="tags">태그</label>
                         <input id="tags" type="text" th:field="*{tags}" placeholder="진한국물, 츠케멘, 혼밥">
                         <div class="hint">쉼표로 구분하면 상세 페이지 태그 목록으로 저장된다.</div>
@@ -498,6 +508,15 @@
                     <div class="field">
                         <label for="detail">상세 주소</label>
                         <input id="detail" type="text" th:field="*{detail}" placeholder="1층">
+                    </div>
+
+                    <div class="field">
+                        <label for="latitude">위도 (Latitude)</label>
+                        <input id="latitude" type="number" step="0.00000001" th:field="*{latitude}" placeholder="37.12345678">
+                    </div>
+                    <div class="field">
+                        <label for="longitude">경도 (Longitude)</label>
+                        <input id="longitude" type="number" step="0.00000001" th:field="*{longitude}" placeholder="127.12345678">
                     </div>
 
                     <div class="field">

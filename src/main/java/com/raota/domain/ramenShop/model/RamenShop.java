@@ -30,8 +30,14 @@ public class RamenShop {
     @Column(name = "ramen_shop_id")
     private Long id;
 
+    @Column(name = "naver_map_id")
+    private String naverMapId;
+
     @Column(nullable = false)
     private String name;
+
+    @Column(name = "branch_name")
+    private String branchName;
 
     @Embedded
     private Address address;
@@ -79,10 +85,12 @@ public class RamenShop {
         eventMenu.setShop(this);
     }
 
-    public void updateBasicInfo(String name, Address address, BusinessHours businessHours,
+    public void updateBasicInfo(String name, String branchName, String naverMapId, Address address, BusinessHours businessHours,
                                 List<String> tags, String instagramUrl, String catchTableUrl,
                                 String description, String imageUrl) {
         this.name = Objects.requireNonNull(name, "name");
+        this.branchName = branchName;
+        this.naverMapId = naverMapId;
         this.address = Objects.requireNonNull(address, "address");
         this.businessHours = businessHours;
         this.tags = tags;

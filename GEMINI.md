@@ -115,6 +115,14 @@
 - **핵심**: "앱 정상 = 서비스 정상"임을 보장하는 인프라-애플리케이션 간의 완벽한 정합성 확보.
 - **검증**: `https://api.raota.net` 보안 접속 및 Swagger 가동 확인 완료.
 
+### ✅ Commit 12: 라멘 가게 데이터 확장을 위한 스키마 및 관리자 기능 고도화 (완료)
+- **내용**: 
+    - **데이터 모델 확장**: 네이버 플레이스 크롤링 및 지도 연동을 위해 `branch_name`, `naver_map_id`, `latitude`, `longitude` 필드 추가.
+    - **Flyway 연동**: `V2__add_extra_columns.sql` 마이그레이션 파일을 통해 운영 DB 스키마 자동 확장 구조 마련.
+    - **JPA/어드민 통합**: `RamenShop` 엔티티와 `Address` Value Object를 업데이트하고, 관리자 페이지(Thymeleaf) 및 서비스 로직에 새 필드 입력/수정 기능 반영.
+- **핵심**: 외부 데이터(크롤링) 수용을 위한 기반 마련 및 위치 기반 검색 기능을 위한 좌표 데이터 정합성 확보.
+- **검증**: `RamenShopAdminControllerTest` 통과 및 `./gradlew compileJava` 성공 확인.
+
 ---
 
 ## 🧪 테스트 전략 (Testing Standards)

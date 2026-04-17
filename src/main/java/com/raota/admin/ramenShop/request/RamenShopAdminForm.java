@@ -22,6 +22,10 @@ public class RamenShopAdminForm {
     @NotBlank(message = "가게 이름은 필수입니다.")
     private String name;
 
+    private String branchName;
+
+    private String naverMapId;
+
     @NotBlank(message = "도시는 필수입니다.")
     private String city;
 
@@ -31,6 +35,10 @@ public class RamenShopAdminForm {
     private String street;
 
     private String detail;
+
+    private java.math.BigDecimal latitude;
+
+    private java.math.BigDecimal longitude;
 
     private String closedDays;
 
@@ -74,12 +82,17 @@ public class RamenShopAdminForm {
     public static RamenShopAdminForm from(RamenShop ramenShop) {
         RamenShopAdminForm form = new RamenShopAdminForm();
         form.setName(ramenShop.getName());
+        form.setBranchName(ramenShop.getBranchName());
+        form.setNaverMapId(ramenShop.getNaverMapId());
         if (ramenShop.getAddress() != null) {
             form.setCity(ramenShop.getAddress().city());
             form.setDistrict(ramenShop.getAddress().district());
             form.setStreet(ramenShop.getAddress().street());
             form.setDetail(ramenShop.getAddress().detail());
+            form.setLatitude(ramenShop.getAddress().latitude());
+            form.setLongitude(ramenShop.getAddress().longitude());
         }
+        // ... rest of the method
         if (ramenShop.getBusinessHours() != null) {
             form.setClosedDays(ramenShop.getBusinessHours().closedDays());
             form.setOpenTime(ramenShop.getBusinessHours().openTime());
@@ -112,7 +125,9 @@ public class RamenShopAdminForm {
                 required(city),
                 nullable(district),
                 required(street),
-                nullable(detail)
+                nullable(detail),
+                latitude,
+                longitude
         );
     }
 
