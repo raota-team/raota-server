@@ -146,6 +146,13 @@
     - **패턴 매칭 도입**: `setAllowedOriginPatterns`를 사용하여 `https://*.raota.net`과 같은 서브도메인 와일드카드 허용.
 - **핵심**: `www.raota.net`과 같은 서브도메인이 명시적 리스트와 정확히 일치하지 않아 발생하는 `403 Forbidden` 에러를 원천 해결하고, `allowCredentials(true)` 상태에서도 안정적인 CORS 환경 구축.
 
+### ✅ Commit 17: 라멘 가게 리스트 및 상세 정보 노출 강화 (완료)
+- **내용**: 
+    - **리스트 한줄평 연동**: `RamenShopRepository`의 `searchStores` 쿼리를 수정하여 `null`이던 `tagLine`에 가게 설명(`description`)을 매핑.
+    - **리스트 태그 활성화**: 검색 결과 리스트(`StoreSummaryResponse`)에서 누락되었던 태그 목록(`tags`)을 정상적으로 프로젝션하도록 쿼리 보완.
+    - **상세 페이지 고도화**: `RamenShopBasicInfoResponse`에 `branch_name`과 `naver_map_id` 필드를 추가하여 크롤링된 지점 정보와 지도 연동 기반 마련.
+- **핵심**: 크롤링된 고품질 데이터를 사용자 화면(리스트/상세)에 온전히 노출하여 서비스의 가시성 및 정보 밀도 향상.
+
 ---
 
 ## 🧪 테스트 전략 (Testing Standards)

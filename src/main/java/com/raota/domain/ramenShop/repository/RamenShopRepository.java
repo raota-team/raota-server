@@ -15,9 +15,9 @@ public interface RamenShopRepository extends JpaRepository<RamenShop, Long> {
         select new com.raota.domain.ramenShop.controller.response.StoreSummaryResponse(
             s.id,
             s.name,
-            null,
+            s.description,
             concat(s.address.city, concat(' ', s.address.district)),
-            null,
+            s.tags,
             s.imageUrl,
             s.stats.bookmarkCount
         )

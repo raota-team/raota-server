@@ -12,6 +12,8 @@ import lombok.Builder;
 public record RamenShopBasicInfoResponse(
         Long id,
         String name,
+        String branch_name,
+        String naver_map_id,
         String image_url,
         String address,
         String instagram_url,
@@ -32,6 +34,8 @@ public record RamenShopBasicInfoResponse(
         return new RamenShopBasicInfoResponse(
                 ramenShop.getId(),
                 ramenShop.getName(),
+                ramenShop.getBranchName(),
+                ramenShop.getNaverMapId(),
                 imageUrl,
                 ramenShop.getAddress().fullAddress(),
                 ramenShop.getInstagramUrl(),
