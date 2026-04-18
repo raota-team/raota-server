@@ -123,6 +123,12 @@
 - **핵심**: 외부 데이터(크롤링) 수용을 위한 기반 마련 및 위치 기반 검색 기능을 위한 좌표 데이터 정합성 확보.
 - **검증**: `RamenShopAdminControllerTest` 통과 및 `./gradlew compileJava` 성공 확인.
 
+### ✅ Commit 13: 운영 환경 CORS 정책 최적화 (완료)
+- **내용**: 
+    - **멀티 오리진 허용**: `application-prod.yml`의 CORS `allowed-origins` 설정을 확장하여 `raota.net`, `www.raota.net`, `localhost:3000`을 기본 허용 도메인으로 명시.
+    - **보안 안정성**: 환경 변수(`${APP_AUTH_ALLOWED_ORIGINS}`)가 주입되지 않더라도 서비스 필수 도메인은 항상 접근 가능하도록 Fallback 구조 구축.
+- **핵심**: 브라우저 기반의 외부 요청(Fetch API) 시 발생하는 CORS 정책 차단 문제 해결 및 프론트엔드-백엔드 간 통신 정합성 확보.
+
 ---
 
 ## 🧪 테스트 전략 (Testing Standards)

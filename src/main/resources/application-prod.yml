@@ -105,4 +105,4 @@ app:
       same-site: ${APP_AUTH_REFRESH_TOKEN_COOKIE_SAME_SITE:Lax}
       domain: ${APP_AUTH_REFRESH_TOKEN_COOKIE_DOMAIN:}
     cors:
-      allowed-origins: ${APP_AUTH_ALLOWED_ORIGINS}
+      allowed-origins: ${APP_AUTH_ALLOWED_ORIGINS:https://www.raota.net,https://raota.net,http://localhost:3000}
