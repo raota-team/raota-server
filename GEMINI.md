@@ -129,6 +129,11 @@
     - **보안 안정성**: 환경 변수(`${APP_AUTH_ALLOWED_ORIGINS}`)가 주입되지 않더라도 서비스 필수 도메인은 항상 접근 가능하도록 Fallback 구조 구축.
 - **핵심**: 브라우저 기반의 외부 요청(Fetch API) 시 발생하는 CORS 정책 차단 문제 해결 및 프론트엔드-백엔드 간 통신 정합성 확보.
 
+### ✅ Commit 14: CORS Preflight 차단 방어 로직 추가 (완료)
+- **내용**: 
+    - **필터 우회 로직**: `JwtAuthenticationFilter`의 최상단에 `OPTIONS` 메서드(Preflight 요청)인 경우 인증 검증 없이 즉시 다음 필터로 넘기는(`return`) 로직 추가.
+- **핵심**: 브라우저가 보안 검사를 위해 보내는 사전 요청(`OPTIONS`)이 인증 필터에서 가로채지는 것을 방지하여, CORS 허용 헤더가 브라우저에 정상 도달하도록 보장.
+
 ---
 
 ## 🧪 테스트 전략 (Testing Standards)

@@ -29,6 +29,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
+        // OPTIONS 요청(Preflight)은 JWT 검증을 건너뛰고 다음 필터로 넘긴다.
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         // 1. 요청 헤더에서 Authorization 값을 꺼낸다.
         String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
