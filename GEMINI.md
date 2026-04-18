@@ -134,6 +134,13 @@
     - **필터 우회 로직**: `JwtAuthenticationFilter`의 최상단에 `OPTIONS` 메서드(Preflight 요청)인 경우 인증 검증 없이 즉시 다음 필터로 넘기는(`return`) 로직 추가.
 - **핵심**: 브라우저가 보안 검사를 위해 보내는 사전 요청(`OPTIONS`)이 인증 필터에서 가로채지는 것을 방지하여, CORS 허용 헤더가 브라우저에 정상 도달하도록 보장.
 
+### ✅ Commit 15: CORS 설정 강화 및 헤더 유연성 확보 (완료)
+- **내용**: 
+    - **오리진 매칭 최적화**: `setAllowedOriginPatterns` 대신 `setAllowedOrigins`를 사용하여 명시적 도메인 리스트(`raota.net` 등)와 브라우저 간의 매칭 정확도 향상.
+    - **헤더 허용 범위 확대**: `setAllowedHeaders("*")` 설정을 통해 브라우저 사전 요청 시 검증하는 모든 커스텀 헤더를 일괄 허용.
+    - **노출 헤더 추가**: 클라이언트(프론트엔드)에서 `Authorization` 헤더를 읽을 수 있도록 `ExposedHeaders` 설정 보완.
+- **핵심**: 브라우저의 엄격한 CORS 보안 정책을 충족시키고, 프론트엔드-백엔드 간의 데이터 및 토큰 전달 정합성 최종 확보.
+
 ---
 
 ## 🧪 테스트 전략 (Testing Standards)
