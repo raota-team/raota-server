@@ -141,6 +141,11 @@
     - **노출 헤더 추가**: 클라이언트(프론트엔드)에서 `Authorization` 헤더를 읽을 수 있도록 `ExposedHeaders` 설정 보완.
 - **핵심**: 브라우저의 엄격한 CORS 보안 정책을 충족시키고, 프론트엔드-백엔드 간의 데이터 및 토큰 전달 정합성 최종 확보.
 
+### ✅ Commit 16: CORS 서브도메인 패턴 매칭 최종 해결 (완료)
+- **내용**: 
+    - **패턴 매칭 도입**: `setAllowedOriginPatterns`를 사용하여 `https://*.raota.net`과 같은 서브도메인 와일드카드 허용.
+- **핵심**: `www.raota.net`과 같은 서브도메인이 명시적 리스트와 정확히 일치하지 않아 발생하는 `403 Forbidden` 에러를 원천 해결하고, `allowCredentials(true)` 상태에서도 안정적인 CORS 환경 구축.
+
 ---
 
 ## 🧪 테스트 전략 (Testing Standards)

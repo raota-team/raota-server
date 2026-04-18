@@ -75,10 +75,14 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // 명확한 오리진 리스트를 설정 (allowCredentials가 true일 때 더 안정적임)
-        configuration.setAllowedOrigins(authProperties.cors().allowedOrigins());
+        // allowCredentials(true)와 함께 사용할 때 가장 유연한 패턴 매칭 방식을 사용합니다.
+        configuration.setAllowedOriginPatterns(List.of(
+                "https://*.raota.net",
+                "https://raota.net",
+                "http://localhost:*"
+        ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*")); // 모든 헤더 허용 (개발 편의성 및 CORS 안정성)
+        configuration.setAllowedHeaders(List.of("*")); // 모든 헤더 허용
         configuration.setExposedHeaders(List.of("Location", "Authorization"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
