@@ -24,7 +24,12 @@ public class CommentService {
                 .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다."));
 
         Comment comment = Comment.create(postId, authorId, request.getContent());
-        Long commentId = commentRepository.save(comment).getId();
+        Comment savedComment = commentRepository.save(comment);
+        // JOOQ 조회를 위해 DB 반영
+        if (commentRepository instanceof com.raota.domain.community.repository.command.JpaCommentRepository jpaRepo) {
+            jpaRepo.flush();
+        }
+        Long commentId = savedComment.getId();
 
         // 마이페이지 통계 업데이트
         MemberProfile author = memberRepository.findById(authorId)

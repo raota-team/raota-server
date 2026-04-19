@@ -9,6 +9,6 @@ public class UserStatsDto {
     private int visited_restaurant_count;
     private int total_photo_count;
     private int total_bookmark_count;
-    private int totalPostCount;
-    private int totalCommentCount;
+    private int post_count;
+    private int comment_count;
 }

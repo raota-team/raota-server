@@ -9,6 +9,7 @@ import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.domain.ramenShop.model.MenuVote;
 import com.raota.domain.ramenShop.repository.MenuVoteRepository;
+import jakarta.persistence.EntityManager;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ public class MenuVoteService {
     private final MenuVoteRepository voteRepository;
     private final RamenShopRepository ramenShopRepository;
     private final MemberRepository memberRepository;
+    private final EntityManager entityManager;
 
     public VotingStatusResponse getVotingStatus(Long shopId) {
         List<VoteResultsDto> statusDto = voteRepository.findMenuVoteCounts(shopId);
@@ -52,12 +54,17 @@ public class MenuVoteService {
 
         MenuVote vote = MenuVote.builder()
                 .memberProfile(member)
+                .ramenShop(ramenShop) // 누락되었던 필드 추가
                 .normalMenu(menu)
                 .build();
 
         voteRepository.save(vote);
+        voteRepository.flush();
+        entityManager.clear(); // 1차 캐시를 비워 서브쿼리가 포함된 findMenuVoteCounts가 DB를 직접 읽게 함
+
         return getVotingStatus(shopId);
-    }
+        }
+
 
     private long getTotalCount(List<VoteResultsDto> statusDto){
         return statusDto.stream()

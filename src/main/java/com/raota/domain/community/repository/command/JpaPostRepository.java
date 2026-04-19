@@ -42,4 +42,13 @@ public class JpaPostRepository implements PostRepository {
     public void delete(Long id) {
         jpaRepository.deleteById(id);
     }
+
+    @Override
+    public void deleteAll() {
+        jpaRepository.deleteAll();
+    }
+
+    public void flush() {
+        jpaRepository.flush();
+    }
 }

@@ -54,4 +54,12 @@ public class JpaCommentRepository implements CommentRepository {
     public void delete(Long id) {
         jpaRepository.deleteById(id);
     }
+
+    public void deleteAll() {
+        jpaRepository.deleteAll();
+    }
+
+    public void flush() {
+        jpaRepository.flush();
+    }
 }

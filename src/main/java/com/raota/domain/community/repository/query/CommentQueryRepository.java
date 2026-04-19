@@ -19,34 +19,41 @@ public class CommentQueryRepository {
 
     public Optional<CommunityCommentItemResponse> getComment(Long commentId) {
         return dsl.select(
-                        field("comments.id").as("commentId"),
-                        field("comments.parent_id").as("parentCommentId"),
-                        field("member_profile.nickname").as("authorNickname"),
-                        field("comments.content"),
-                        field("comments.created_at").as("createdAt")
+                        field("tb_comment.id", Long.class).as("commentId"),
+                        field("tb_comment.parent_id", Long.class).as("parentCommentId"),
+                        field("tb_member_profile.nickname", String.class).as("authorNickname"),
+                        field("tb_comment.content", String.class).as("content"),
+                        field("tb_comment.created_at", java.time.LocalDateTime.class).as("createdAt")
                 )
-                .from(table("comments"))
-                .join(table("member_profile")).on(field("comments.member_id").eq(field("member_profile.id")))
-                .where(field("comments.id").eq(commentId))
-                .fetchOptionalInto(CommunityCommentItemResponse.class);
+                .from(table("tb_comment"))
+                .join(table("tb_member_profile")).on(field("tb_comment.member_id").eq(field("tb_member_profile.id")))
+                .where(field("tb_comment.id").eq(commentId))
+                .fetchOptional(r -> new CommunityCommentItemResponse(
+                        r.get("commentId", Long.class),
+                        r.get("parentCommentId", Long.class),
+                        r.get("authorNickname", String.class),
+                        null, // taggedParentAuthorNickname (기능 미구현 대응)
+                        r.get("createdAt", java.time.LocalDateTime.class),
+                        r.get("content", String.class)
+                ));
     }
 
     public PageResponse<CommunityCommentItemResponse> getComments(Long postId, Pageable pageable) {
         int totalCount = dsl.fetchCount(
-                selectFrom(table("comments")).where(field("comments.post_id").eq(postId))
+                selectFrom(table("tb_comment")).where(field("tb_comment.post_id").eq(postId))
         );
 
         List<CommunityCommentItemResponse> items = dsl.select(
-                        field("comments.id").as("commentId"),
-                        field("comments.parent_id").as("parentCommentId"),
-                        field("member_profile.nickname").as("authorNickname"),
-                        field("comments.content"),
-                        field("comments.created_at").as("createdAt")
+                        field("tb_comment.id").as("commentId"),
+                        field("tb_comment.parent_id").as("parentCommentId"),
+                        field("tb_member_profile.nickname").as("authorNickname"),
+                        field("tb_comment.content"),
+                        field("tb_comment.created_at").as("createdAt")
                 )
-                .from(table("comments"))
-                .join(table("member_profile")).on(field("comments.member_id").eq(field("member_profile.id")))
-                .where(field("comments.post_id").eq(postId))
-                .orderBy(field("comments.created_at").asc())
+                .from(table("tb_comment"))
+                .join(table("tb_member_profile")).on(field("tb_comment.member_id").eq(field("tb_member_profile.id")))
+                .where(field("tb_comment.post_id").eq(postId))
+                .orderBy(field("tb_comment.created_at").asc())
                 .limit(pageable.getPageSize())
                 .offset(pageable.getOffset())
                 .fetchInto(CommunityCommentItemResponse.class);

@@ -63,7 +63,7 @@ public interface MemberInfoApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<PageResponse<MyPostSummaryResponse>>> getMyPosts(
+    ResponseEntity<ApiResponse<PageResponse<com.raota.domain.community.presentation.response.CommunityPostCardResponse>>> getMyPosts(
             @Parameter(hidden = true) Long memberId,
             @ParameterObject Pageable pageable);
 
@@ -71,7 +71,7 @@ public interface MemberInfoApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<PageResponse<MyCommentSummaryResponse>>> getMyComments(
+    ResponseEntity<ApiResponse<PageResponse<com.raota.domain.community.presentation.response.CommunityCommentItemResponse>>> getMyComments(
             @Parameter(hidden = true) Long memberId,
             @ParameterObject Pageable pageable);
 }

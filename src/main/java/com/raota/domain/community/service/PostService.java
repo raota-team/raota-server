@@ -53,7 +53,13 @@ public class PostService {
                 request.getRamenShopId()
         );
 
-        Long postId = postRepository.save(post).getId();
+        Post savedPost = postRepository.save(post);
+        // JPA 영속성 컨텍스트의 변경 내용을 DB에 즉시 반영하여 JOOQ 등 다른 기술에서 조회 가능하게 한다.
+        if (postRepository instanceof com.raota.domain.community.repository.command.JpaPostRepository jpaRepo) {
+            jpaRepo.flush();
+        }
+
+        Long postId = savedPost.getId();
 
         // 3. 마이페이지 통계 업데이트 (추가!)
         MemberProfile author = memberRepository.findById(authorId)

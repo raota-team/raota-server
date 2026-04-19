@@ -77,17 +77,19 @@ public class MemberInfoController implements MemberInfoApi {
 
     @Override
     @GetMapping("/me/posts")
-    public ResponseEntity<ApiResponse<PageResponse<MyPostSummaryResponse>>> getMyPosts(
+    public ResponseEntity<ApiResponse<PageResponse<com.raota.domain.community.presentation.response.CommunityPostCardResponse>>> getMyPosts(
             @LoginMember Long memberId,
             @PageableDefault(size = 5, direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(Page.empty(pageable))));
+        Page<com.raota.domain.community.presentation.response.CommunityPostCardResponse> response = memberInfoService.getMyPosts(memberId, pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(response)));
     }
 
     @Override
     @GetMapping("/me/comments")
-    public ResponseEntity<ApiResponse<PageResponse<MyCommentSummaryResponse>>> getMyComments(
+    public ResponseEntity<ApiResponse<PageResponse<com.raota.domain.community.presentation.response.CommunityCommentItemResponse>>> getMyComments(
             @LoginMember Long memberId,
             @PageableDefault(size = 5, direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(Page.empty(pageable))));
+        Page<com.raota.domain.community.presentation.response.CommunityCommentItemResponse> response = memberInfoService.getMyComments(memberId, pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(response)));
     }
 }

@@ -16,14 +16,12 @@ public interface MenuVoteRepository extends JpaRepository<MenuVote,Long>{
         SELECT new com.raota.domain.ramenShop.dto.VoteResultsDto(
             m.id,
             m.name,
-            COUNT(v.id),
+            (SELECT COUNT(v.id) FROM MenuVote v WHERE v.normalMenu.id = m.id),
             null
         )
         FROM NormalMenu m
-        LEFT JOIN MenuVote v ON v.normalMenu.id = m.id
         WHERE m.ramenShop.id = :shopId
-        GROUP BY m.id, m.name
-        ORDER BY COUNT(v.id) DESC
+        ORDER BY m.id ASC
         """)
     List<VoteResultsDto> findMenuVoteCounts(@Param("shopId") Long shopId);
 }
