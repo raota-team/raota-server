@@ -38,7 +38,8 @@ public class OciVaultApplicationContextInitializer
             "APP_AUTH_ACCESS_TOKEN_SECRET",
             "APP_AUTH_OAUTH2_REDIRECT_URI",
             "APP_AUTH_OAUTH2_FAILURE_REDIRECT_URI",
-            "APP_AUTH_ALLOWED_ORIGINS"
+            "APP_AUTH_ALLOWED_ORIGINS",
+            "DISCORD_WEBHOOK_URL"
     );
 
     @Override
