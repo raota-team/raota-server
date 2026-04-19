@@ -12,16 +12,20 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.util.List;
-import lombok.Setter;
 
 public class DiscordAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
-    @Setter
-    public String webHookUrl = "";
+    private String webHookUrl = "";
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
-    private static final HttpClient httpClient = HttpClient.newHttpClient();
+    public void setWebHookUrl(String webHookUrl) {
+        if (webHookUrl != null) {
+            this.webHookUrl = webHookUrl;
+        }
+    }
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final HttpClient httpClient = HttpClient.newHttpClient();
+...
     @Override
     protected void append(ILoggingEvent iLoggingEvent) {
         if (iLoggingEvent.getLevel().isGreaterOrEqual(Level.ERROR)) {
@@ -30,7 +34,7 @@ public class DiscordAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     }
 
     private void sendDiscordWebhook(ILoggingEvent event) {
-        if (webHookUrl == null || webHookUrl.isBlank() || webHookUrl.contains("${")) {
+        if (webHookUrl == null || webHookUrl.isBlank() || webHookUrl.equals("none") || webHookUrl.contains("${")) {
             return;
         }
 
@@ -80,6 +84,7 @@ public class DiscordAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
     private String truncate(String str, int maxLength) {
         if (str == null || str.length() <= maxLength) return str;
+        if (maxLength <= 3) return "...";
         return str.substring(0, maxLength - 3) + "...";
     }
 }
