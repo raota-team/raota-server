@@ -12,7 +12,7 @@ services:
       - raota-net
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - JAVA_TOOL_OPTIONS=-Xms4g -Xmx4g
+      - JAVA_TOOL_OPTIONS=-Xms2g -Xmx4g
       - OCI_VAULT_ID=${OCI_VAULT_ID}
     healthcheck:
       test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1:8080/actuator/health/readiness || exit 1"]
