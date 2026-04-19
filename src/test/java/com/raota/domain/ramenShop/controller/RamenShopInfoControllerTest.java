@@ -50,7 +50,10 @@ class RamenShopInfoControllerTest extends BaseIntegrationTest {
 
     @Test
     void searchByRegionReturnsMatchingItemsOnly() throws Exception {
-        ramenShopRepository.save(sampleShop("멘야 하쿠", "서울", "성동구"));
+        RamenShop shop = sampleShop("멘야 하쿠", "서울", "성동구");
+        shop.updateBasicInfo("멘야 하쿠", "본점", "12345", shop.getAddress(), shop.getBusinessHours(), 
+                List.of("토리파이탄", "혼밥"), null, null, "진한 국물 맛집", null);
+        ramenShopRepository.save(shop);
         ramenShopRepository.save(sampleShop("이리에 라멘", "서울", "마포구"));
         ramenShopRepository.save(sampleShop("멘야 카네토라", "부산", "해운대구"));
 
@@ -58,8 +61,25 @@ class RamenShopInfoControllerTest extends BaseIntegrationTest {
                         .param("region", "서울"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items.length()").value(2))
-                .andExpect(jsonPath("$.data.items[*].name").value(hasItems("멘야 하쿠", "이리에 라멘")))
+                .andExpect(jsonPath("$.data.items[0].name").value("멘야 하쿠"))
+                .andExpect(jsonPath("$.data.items[0].tagLine").value("진한 국물 맛집")) // 설명이 한줄평으로 나오는지 확인
+                .andExpect(jsonPath("$.data.items[0].tags").value(hasItems("토리파이탄", "혼밥"))) // 태그 확인
                 .andExpect(jsonPath("$.data.items[*].region").value(hasItems("서울 성동구", "서울 마포구")));
+    }
+
+    @Test
+    void getShopDetailInfoReturnsExtraFields() throws Exception {
+        RamenShop shop = sampleShop("멘야 하쿠", "서울", "성동구");
+        shop.updateBasicInfo("멘야 하쿠", "성수점", "naver-123", shop.getAddress(), shop.getBusinessHours(),
+                List.of("태그1", "태그2"), "https://insta", "https://catch", "가게설명", "https://img");
+        RamenShop savedShop = ramenShopRepository.save(shop);
+
+        mockMvc.perform(get("/ramen-shops/{shopId}", savedShop.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.name").value("멘야 하쿠"))
+                .andExpect(jsonPath("$.data.branch_name").value("성수점")) // 지점명 확인
+                .andExpect(jsonPath("$.data.naver_map_id").value("naver-123")) // 네이버 ID 확인
+                .andExpect(jsonPath("$.data.tags").value(hasItems("태그1", "태그2"))); // 전체 태그 확인
     }
 
     @Test
