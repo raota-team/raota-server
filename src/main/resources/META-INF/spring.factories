@@ -1,1 +1,1 @@
-org.springframework.context.ApplicationContextInitializer=com.raota.global.config.OciVaultApplicationContextInitializer
+org.springframework.boot.env.EnvironmentPostProcessor=com.raota.global.config.OciVaultEnvironmentPostProcessor

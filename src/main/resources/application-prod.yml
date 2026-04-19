@@ -77,7 +77,7 @@ logging:
     org.hibernate.SQL: info
     org.hibernate.type.descriptor.sql.BasicBinder: trace
   discord:
-    webhook-url: ${DISCORD_WEBHOOK_URL}
+    webhook-url: ${DISCORD_WEBHOOK_URL:none}
 
 management:
   endpoints:

@@ -9,15 +9,14 @@ import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.context.properties.bind.Binder;
-import org.springframework.context.ApplicationContextInitializer;
-import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.util.StringUtils;
 
-public class OciVaultApplicationContextInitializer
-        implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+public class OciVaultEnvironmentPostProcessor implements EnvironmentPostProcessor {
     private static final String PROPERTY_SOURCE_NAME = "ociVaultSecrets";
 
     private static final List<String> SECRET_NAMES = List.of(
@@ -43,8 +42,7 @@ public class OciVaultApplicationContextInitializer
     );
 
     @Override
-    public void initialize(ConfigurableApplicationContext applicationContext) {
-        ConfigurableEnvironment environment = applicationContext.getEnvironment();
+    public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
         Binder binder = Binder.get(environment);
         boolean enabled = binder.bind("oci.vault.enabled", Boolean.class).orElse(false);
 
@@ -53,18 +51,18 @@ public class OciVaultApplicationContextInitializer
         }
 
         String region = binder.bind("oci.vault.region", String.class).orElse(null);
-        if (!StringUtils.hasText(region)) {
-            throw new IllegalStateException("oci.vault.region must be set when OCI Vault secret loading is enabled");
-        }
-
         String vaultId = binder.bind("oci.vault.vault-id", String.class).orElse(null);
-        if (!StringUtils.hasText(vaultId)) {
-            throw new IllegalStateException("oci.vault.vault-id must be set when OCI Vault secret loading is enabled");
-        }
 
-        Map<String, Object> resolvedSecrets = loadSecrets(region, vaultId);
-        if (!resolvedSecrets.isEmpty()) {
-            environment.getPropertySources().addFirst(new MapPropertySource(PROPERTY_SOURCE_NAME, resolvedSecrets));
+        if (StringUtils.hasText(region) && StringUtils.hasText(vaultId)) {
+            try {
+                Map<String, Object> resolvedSecrets = loadSecrets(region, vaultId);
+                if (!resolvedSecrets.isEmpty()) {
+                    environment.getPropertySources().addFirst(new MapPropertySource(PROPERTY_SOURCE_NAME, resolvedSecrets));
+                }
+            } catch (Exception e) {
+                // 초기 단계이므로 System.err 사용 (로깅 시스템 미준비 상태일 수 있음)
+                System.err.println("[OCI-VAULT] Critical error loading secrets from OCI Vault: " + e.getMessage());
+            }
         }
     }
 
@@ -77,11 +75,15 @@ public class OciVaultApplicationContextInitializer
 
             Map<String, Object> resolvedSecrets = new LinkedHashMap<>();
             for (String secretName : SECRET_NAMES) {
-                resolvedSecrets.put(secretName, fetchSecretValue(secretsClient, vaultId, secretName));
+                try {
+                    resolvedSecrets.put(secretName, fetchSecretValue(secretsClient, vaultId, secretName));
+                } catch (Exception e) {
+                    System.err.println("[OCI-VAULT] Warning: Failed to fetch secret: " + secretName + " - " + e.getMessage());
+                }
             }
             return resolvedSecrets;
         } catch (Exception exception) {
-            throw new IllegalStateException("Failed to load OCI Vault secrets before Spring context startup", exception);
+            throw new IllegalStateException("Failed to initialize SecretsClient for OCI Vault", exception);
         }
     }
 

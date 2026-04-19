@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-    <springProperty scope="context" name="DISCORD_WEBHOOK_URL" source="logging.discord.webhook-url"/>
+    <springProperty scope="context" name="DISCORD_WEBHOOK_URL" source="logging.discord.webhook-url" defaultValue="none"/>
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
