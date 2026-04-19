@@ -30,13 +30,15 @@ public class AuthService {
         // 소셜 제공자(provider)와 고유 ID로 우리 DB에서 계정을 찾는다.
         Optional<SocialAccount> socialAccountOptional = authAccountService.findSocialAccount(userInfo);
 
-        boolean newMember = socialAccountOptional.isEmpty();
         String normalizedNickname = normalizeNickname(userInfo);
 
         // 이미 가입된 계정이면 기존 회원 정보를, 없으면 신규 회원을 생성한다.
         MemberProfile memberProfile = socialAccountOptional
                 .map(socialAccount -> memberProvisioningService.getRequired(socialAccount.getMemberId()))
                 .orElseGet(() -> memberProvisioningService.createOAuthMember(normalizedNickname, userInfo.profileImageUrl()));
+
+        // 가입 완료 여부에 따라 신규 회원 여부를 판단한다.
+        boolean newMember = !memberProfile.isRegistrationCompleted();
 
         // 우리 서비스 전용 Access Token(JWT) 생성
         String accessToken = jwtTokenProvider.createAccessToken(memberProfile.getId());

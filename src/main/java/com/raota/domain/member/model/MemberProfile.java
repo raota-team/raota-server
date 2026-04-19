@@ -32,6 +32,10 @@ public class MemberProfile {
 
     private String backgroundImageUrl;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean isRegistrationCompleted = false;
+
     @Embedded
     @Builder.Default
     private MemberActivityStats memberActivityStats = MemberActivityStats.init();
@@ -44,6 +48,11 @@ public class MemberProfile {
         this.nickname = nickname;
         this.imageUrl = imageUrl;
         this.backgroundImageUrl = backgroundImageUrl;
+        this.isRegistrationCompleted = true; // 프로필 수정 시 가입 완료로 간주
+    }
+
+    public void completeRegistration() {
+        this.isRegistrationCompleted = true;
     }
 
     public void increasePostCount() {

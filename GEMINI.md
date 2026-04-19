@@ -177,8 +177,14 @@
 ### ✅ Commit 21: Stateless 환경의 OAuth2 세션 불일치 문제 해결 (완료)
 - **내용**: 
     - **쿠키 기반 저장소 도입**: `HttpCookieOAuth2AuthorizationRequestRepository`를 구현하여 OAuth2 인증 요청 정보를 HttpSession 대신 쿠키에 저장하도록 개선.
-    - **Security 설정 연동**: `SecurityConfig`의 `oauth2Login` 설정에 쿠키 레포지토리를 등록하여 `STATELESS` 정책 하에서도 로그인 흐름 유지 가능하도록 조치.
 - **핵심**: 소셜 로그인 도중 발생하는 `authorization_request_not_found` 에러를 근본적으로 해결하고, 서버 세션 없이도 안정적인 소셜 인증 환경 구축.
+
+### ✅ Commit 22: 프로필 설정 완료 기반의 신규 회원 판단 로직 고도화 (완료)
+- **내용**: 
+    - **필드 추가**: `MemberProfile` 엔티티에 `isRegistrationCompleted` 필드 도입 및 Flyway `V3` 마이그레이션 적용.
+    - **판단 기준 변경**: 소셜 계정 존재 여부가 아닌, 실제 서비스 프로필 설정 완료 여부를 기준으로 `isNewMember` 플래그를 생성하도록 `AuthService` 수정.
+    - **자동 갱신**: 프로필 업데이트(`updateProfile`) 시 해당 플래그를 자동으로 `true`로 전환.
+- **핵심**: 사용자가 가입 도중 이탈하더라도 필수 정보를 모두 입력할 때까지 회원가입 페이지로 지속적으로 안내하는 견고한 온보딩 흐름 확보.
 
 ---
 
