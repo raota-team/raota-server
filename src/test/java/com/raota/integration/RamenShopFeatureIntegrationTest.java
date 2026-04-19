@@ -29,7 +29,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-class ExtrasIntegrationTest extends BaseIntegrationTest {
+class RamenShopFeatureIntegrationTest extends BaseIntegrationTest {
 
     @LocalServerPort
     private int port;

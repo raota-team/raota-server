@@ -161,6 +161,7 @@
 ### ✅ Commit 19: 통합 테스트 기지 구축 및 전 도메인 API 전수 검증 (완료)
 - **내용**: 
     - **통합 테스트 센터 구축**: `src/test/java/com/raota/integration` 폴더를 신설하고 `RestAssured` 기반의 블랙박스 테스트 환경 완성.
+    - **테스트 구성**: `Auth`, `RamenShop`, `Community`, `Member`, `RamenShopFeature`로 도메인별 검증 체계 분리.
     - **치명적 버그 해결**: 
         - `MenuVote` 생성 시 가게 정보(`ramenShop`) 누락 로직 수정.
         - JOOQ 쿼리의 테이블명(`tb_` 접두사) 및 필드명 불일치 전수 수정.
