@@ -38,8 +38,7 @@ spring:
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             scope:
               - profile_nickname
-              - profile_image
-              - account_email
+              - talk_message
             client-name: Kakao
             provider: kakao
         provider:
