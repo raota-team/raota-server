@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationFailureHandler {
 
     private final AuthProperties authProperties;
+    private final com.raota.global.auth.repository.HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository; // 추가
 
     @Override
     public void onAuthenticationFailure(
@@ -23,6 +24,9 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
             HttpServletResponse response,
             AuthenticationException exception
     ) throws IOException, ServletException {
+        // 임시 쿠키 삭제
+        httpCookieOAuth2AuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
+
         String redirectUri = authProperties.oauth2().failureRedirectUri()
                 + "#error=" + URLEncoder.encode(exception.getMessage(), StandardCharsets.UTF_8)
                 + "&provider=" + URLEncoder.encode(resolveProvider(request), StandardCharsets.UTF_8);

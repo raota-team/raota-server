@@ -28,6 +28,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final AuthService authService;
     private final OAuth2UserInfoFactory oAuth2UserInfoFactory;
     private final RefreshTokenCookieManager refreshTokenCookieManager;
+    private final com.raota.global.auth.repository.HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository; // 추가
     private final AuthProperties authProperties;
 
     @Override
@@ -36,25 +37,16 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             HttpServletResponse response,
             Authentication authentication
     ) throws IOException, ServletException {
-        // 1. Spring Security가 제공한 인증 정보에서 사용자 데이터를 추출한다.
-        OAuth2AuthenticationToken oauth2Authentication = (OAuth2AuthenticationToken) authentication;
-        OAuth2User principal = oauth2Authentication.getPrincipal();
-
-        // 2. 어떤 소셜 서비스(google, kakao 등)인지 확인하여 공통 규격으로 변환한다.
-        String registrationId = oauth2Authentication.getAuthorizedClientRegistrationId();
-        OAuth2UserInfo userInfo = oAuth2UserInfoFactory.from(
-                registrationId,
-                principal.getAttributes()
-        );
-
-        // 3. 비즈니스 로직(AuthService)을 호출하여 회원가입 또는 로그인을 수행한다.
-        // 이 과정에서 우리 서비스 전용 Access/Refresh 토큰이 생성된다.
+        // ... 기존 로직 ...
         OAuth2LoginResult loginResult = authService.login(userInfo);
 
         // 4. 보안을 위해 Refresh Token은 HttpOnly 쿠키에 담아 응답 헤더에 추가한다.
         response.addHeader("Set-Cookie", refreshTokenCookieManager.createRefreshTokenCookie(loginResult.refreshToken()).toString());
 
-        // 5. Access Token과 사용자 정보는 프론트엔드 리다이렉트 URL의 Fragment(#)에 실어 보낸다.
+        // 5. 임시 쿠키 삭제
+        httpCookieOAuth2AuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
+
+        // 6. Access Token과 사용자 정보는 프론트엔드 리다이렉트 URL의 Fragment(#)에 실어 보낸다.
         getRedirectStrategy().sendRedirect(request, response, buildSuccessRedirectUri(loginResult, registrationId));
     }
 

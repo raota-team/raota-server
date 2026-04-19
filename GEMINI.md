@@ -174,6 +174,12 @@
     - **스코프 조정**: 카카오 로그인 시 필수 비즈니스 인증이 필요한 `account_email`을 제거하고, `profile_nickname`과 서비스 확장용 `talk_message`로 스코프 재설정.
 - **핵심**: 카카오 로그인 시 "설정하지 않은 동의 항목" 에러를 해결하고, 불필요한 개인정보 요청을 최소화하여 사용자 접근성 향상.
 
+### ✅ Commit 21: Stateless 환경의 OAuth2 세션 불일치 문제 해결 (완료)
+- **내용**: 
+    - **쿠키 기반 저장소 도입**: `HttpCookieOAuth2AuthorizationRequestRepository`를 구현하여 OAuth2 인증 요청 정보를 HttpSession 대신 쿠키에 저장하도록 개선.
+    - **Security 설정 연동**: `SecurityConfig`의 `oauth2Login` 설정에 쿠키 레포지토리를 등록하여 `STATELESS` 정책 하에서도 로그인 흐름 유지 가능하도록 조치.
+- **핵심**: 소셜 로그인 도중 발생하는 `authorization_request_not_found` 에러를 근본적으로 해결하고, 서버 세션 없이도 안정적인 소셜 인증 환경 구축.
+
 ---
 
 ## 🧪 테스트 전략 (Testing Standards)
