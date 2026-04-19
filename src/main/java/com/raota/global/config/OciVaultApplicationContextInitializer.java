@@ -77,15 +77,11 @@ public class OciVaultApplicationContextInitializer
 
             Map<String, Object> resolvedSecrets = new LinkedHashMap<>();
             for (String secretName : SECRET_NAMES) {
-                try {
-                    resolvedSecrets.put(secretName, fetchSecretValue(secretsClient, vaultId, secretName));
-                } catch (Exception e) {
-                    System.err.println("Warning: Failed to fetch secret from OCI Vault: " + secretName + " - " + e.getMessage());
-                }
+                resolvedSecrets.put(secretName, fetchSecretValue(secretsClient, vaultId, secretName));
             }
             return resolvedSecrets;
         } catch (Exception exception) {
-            throw new IllegalStateException("Failed to initialize SecretsClient for OCI Vault", exception);
+            throw new IllegalStateException("Failed to load OCI Vault secrets before Spring context startup", exception);
         }
     }
 
