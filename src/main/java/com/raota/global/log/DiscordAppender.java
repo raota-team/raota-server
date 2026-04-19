@@ -25,7 +25,7 @@ public class DiscordAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final HttpClient httpClient = HttpClient.newHttpClient();
-...
+
     @Override
     protected void append(ILoggingEvent iLoggingEvent) {
         if (iLoggingEvent.getLevel().isGreaterOrEqual(Level.ERROR)) {
