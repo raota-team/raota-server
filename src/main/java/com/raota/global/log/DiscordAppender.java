@@ -30,6 +30,10 @@ public class DiscordAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     }
 
     private void sendDiscordWebhook(ILoggingEvent event) {
+        if (webHookUrl == null || webHookUrl.isBlank() || webHookUrl.contains("${")) {
+            return;
+        }
+
         try {
             DiscordMessage payload = createMessage(event);
             String jsonPayload = objectMapper.writeValueAsString(payload);
