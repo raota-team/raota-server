@@ -67,9 +67,16 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         String requestHost = request.getHeader("Host");
         boolean isProductionHost = requestHost != null && requestHost.contains("raota.net");
+        String prodRedirectUri = authProperties.oauth2().redirectUri();
 
         // 운영 도메인으로 접속했는데 리다이렉트 주소가 localhost인 경우 강제 교정
         if (isProductionHost && targetUri.contains("localhost")) {
+            // 발트에 설정된 운영 주소(예: https://www.raota.net)가 있다면 그 도메인을 사용
+            if (prodRedirectUri != null && prodRedirectUri.contains("raota.net")) {
+                String prodDomain = prodRedirectUri.replaceAll("/+$", ""); // 끝에 슬래시 제거
+                return targetUri.replaceFirst("https?://localhost(:[0-9]+)?", prodDomain);
+            }
+            // 발트 설정이 미비하면 현재 호스트(api.raota.net)라도 사용
             return targetUri.replaceFirst("https?://localhost(:[0-9]+)?", "https://" + requestHost);
         }
 
