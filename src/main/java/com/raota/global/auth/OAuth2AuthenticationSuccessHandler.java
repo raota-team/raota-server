@@ -59,11 +59,22 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     }
 
     private String getTargetUriFromCookie(HttpServletRequest request) {
-        return Arrays.stream(request.getCookies() != null ? request.getCookies() : new Cookie[0])
+        String targetUri = Arrays.stream(request.getCookies() != null ? request.getCookies() : new Cookie[0])
                 .filter(cookie -> REDIRECT_URI_PARAM_COOKIE_NAME.equals(cookie.getName()))
                 .map(Cookie::getValue)
                 .findFirst()
                 .orElse(authProperties.oauth2().redirectUri());
+
+        // 운영 환경에서 localhost로 리다이렉트되는 것을 방지 (보안 및 편의성)
+        if (isProduction() && targetUri.contains("localhost")) {
+            return authProperties.oauth2().redirectUri();
+        }
+
+        return targetUri;
+    }
+
+    private boolean isProduction() {
+        return authProperties.oauth2().redirectUri().contains("raota.net");
     }
 
     private String buildSuccessRedirectUri(String targetUri, OAuth2LoginResult loginResult, String registrationId) {
