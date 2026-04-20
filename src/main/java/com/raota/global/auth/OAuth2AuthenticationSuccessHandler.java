@@ -65,16 +65,15 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 .findFirst()
                 .orElse(authProperties.oauth2().redirectUri());
 
-        // 운영 환경에서 localhost로 리다이렉트되는 것을 방지 (보안 및 편의성)
-        if (isProduction() && targetUri.contains("localhost")) {
-            return authProperties.oauth2().redirectUri();
+        String requestHost = request.getHeader("Host");
+        boolean isProductionHost = requestHost != null && requestHost.contains("raota.net");
+
+        // 운영 도메인으로 접속했는데 리다이렉트 주소가 localhost인 경우 강제 교정
+        if (isProductionHost && targetUri.contains("localhost")) {
+            return targetUri.replaceFirst("https?://localhost(:[0-9]+)?", "https://" + requestHost);
         }
 
         return targetUri;
-    }
-
-    private boolean isProduction() {
-        return authProperties.oauth2().redirectUri().contains("raota.net");
     }
 
     private String buildSuccessRedirectUri(String targetUri, OAuth2LoginResult loginResult, String registrationId) {
