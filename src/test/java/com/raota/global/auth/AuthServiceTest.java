@@ -108,6 +108,7 @@ public class AuthServiceTest {
                         .build();
 
         given(authAccountService.findSocialAccount(any())).willReturn(Optional.of(existingAccount));
+        memberProfile.completeRegistration(); // 가입 완료 상태로 변경
         given(memberProvisioningService.getRequired(existingAccount.getMemberId())).willReturn(memberProfile);
         given(authAccountService.login(any(), any(), eq(memberProfile.getId()))).willReturn("test-refresh-token");
 

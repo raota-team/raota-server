@@ -7,6 +7,7 @@ import com.raota.global.auth.JwtTokenProvider;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 인증 관련 비즈니스 로직을 총괄하는 서비스.
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AuthService {
 
     private final MemberProvisioningService memberProvisioningService;
