@@ -43,8 +43,13 @@ public class MemberInfoController implements MemberInfoApi {
             @RequestBody UpdateProfileRequest request,
             @LoginMember Long memberId
     ) {
-        MyProfileResponse updated = memberInfoService.updateMyProfile(request.getNickname(),
-                request.getProfile_image_url(), request.getBackground_image_url(), memberId);
+        MyProfileResponse updated = memberInfoService.updateMyProfile(
+                request.getNickname(),
+                request.getProfile_image_url(),
+                request.getBackground_image_url(),
+                request.getBio(),
+                memberId
+        );
         return ResponseEntity.ok(ApiResponse.success(updated));
     }
 

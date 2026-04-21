@@ -11,4 +11,6 @@ public class UpdateProfileRequest {
     private String profile_image_url;
     @Schema(description = "백그라운드 이미지 URL")
     private String background_image_url;
+    @Schema(description = "자기소개")
+    private String bio;
 }

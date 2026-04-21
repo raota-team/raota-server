@@ -18,7 +18,7 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
         m.nickname,
         m.imageUrl,
         m.backgroundImageUrl,
-        m.nickname,
+        m.bio,
         new com.raota.domain.member.dto.UserStatsDto(
             m.memberActivityStats.visitedRestaurantCount,
             m.memberActivityStats.photoCount,

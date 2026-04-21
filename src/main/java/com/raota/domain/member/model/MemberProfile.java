@@ -32,6 +32,8 @@ public class MemberProfile {
 
     private String backgroundImageUrl;
 
+    private String bio;
+
     @Column(nullable = false)
     @Builder.Default
     private boolean isRegistrationCompleted = false;
@@ -40,7 +42,7 @@ public class MemberProfile {
     @Builder.Default
     private MemberActivityStats memberActivityStats = MemberActivityStats.init();
 
-    public void updateProfile(String nickname, String imageUrl, String backgroundImageUrl) {
+    public void updateProfile(String nickname, String imageUrl, String backgroundImageUrl, String bio) {
         if (nickname == null || nickname.isBlank()) {
             throw new IllegalArgumentException("닉네임은 null 또는 빈 값일 수 없습니다.");
         }
@@ -48,6 +50,7 @@ public class MemberProfile {
         this.nickname = nickname;
         this.imageUrl = imageUrl;
         this.backgroundImageUrl = backgroundImageUrl;
+        this.bio = bio;
         this.isRegistrationCompleted = true; // 프로필 수정 시 가입 완료로 간주
     }
 
