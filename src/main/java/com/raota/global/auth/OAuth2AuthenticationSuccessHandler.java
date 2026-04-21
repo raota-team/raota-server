@@ -9,6 +9,8 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -64,23 +66,13 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 .map(Cookie::getValue)
                 .findFirst()
                 .orElse(authProperties.oauth2().redirectUri());
+        String targetOrigin = getOrigin(targetUri);
+        boolean isAllowed = authProperties.cors().allowedOrigins().stream()
+                .anyMatch(allowedOrigin->allowedOrigin.equalsIgnoreCase(targetOrigin));
 
-        String requestHost = request.getHeader("Host");
-        boolean isProductionHost = requestHost != null && requestHost.contains("raota.net");
-        String prodRedirectUri = authProperties.oauth2().redirectUri();
+        if(isAllowed) return targetUri;
 
-        // 운영 도메인으로 접속했는데 리다이렉트 주소가 localhost인 경우 강제 교정
-        if (isProductionHost && targetUri.contains("localhost")) {
-            // 발트에 설정된 운영 주소(예: https://www.raota.net)가 있다면 그 도메인을 사용
-            if (prodRedirectUri != null && prodRedirectUri.contains("raota.net")) {
-                String prodDomain = prodRedirectUri.replaceAll("/+$", ""); // 끝에 슬래시 제거
-                return targetUri.replaceFirst("https?://localhost(:[0-9]+)?", prodDomain);
-            }
-            // 발트 설정이 미비하면 현재 호스트(api.raota.net)라도 사용
-            return targetUri.replaceFirst("https?://localhost(:[0-9]+)?", "https://" + requestHost);
-        }
-
-        return targetUri;
+        return authProperties.oauth2().redirectUri();
     }
 
     private String buildSuccessRedirectUri(String targetUri, OAuth2LoginResult loginResult, String registrationId) {
@@ -95,5 +87,22 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     private String encode(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    private String getOrigin(String url) {
+        try {
+            URI uri = new URI(url);
+            String scheme = uri.getScheme();
+            String host = uri.getHost();
+            int port = uri.getPort();
+
+            StringBuilder origin = new StringBuilder();
+            origin.append(scheme).append("://").append(host);
+            if(port!=-1) origin.append(":").append(port);
+
+            return origin.toString();
+        }catch (URISyntaxException e){
+            return "";
+        }
     }
 }
