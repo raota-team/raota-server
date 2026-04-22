@@ -122,14 +122,14 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
             from MemberProfile m
             join Bookmark b on b.memberProfile = m
             join b.ramenShop r
-            where m.id = :memberId
+            where m.id = :memberId and b.isDeleted = false
             order by b.markingAt desc
             """,
             countQuery = """
                     select count(b)
                     from MemberProfile m
                     join Bookmark b on b.memberProfile = m
-                    where m.id = :memberId
+                    where m.id = :memberId and b.isDeleted = false
                     """)
     Page<BookmarkSummaryResponse> findMyBookmarks(@Param("memberId") Long memberId, Pageable pageable);
 

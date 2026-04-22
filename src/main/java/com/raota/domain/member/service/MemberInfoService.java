@@ -20,6 +20,7 @@ public class MemberInfoService {
 
     private final MemberRepository memberRepository;
     private final RamenProofPictureRepository pictureRepository;
+    private final FileUploader fileUploader;
 
     public MyProfileResponse getMyProfile(Long memberId) {
         return memberRepository.findMemberDetailInfo(memberId);
@@ -45,8 +46,15 @@ public class MemberInfoService {
         return memberRepository.findMyPhotos(memberId,pageable);
     }
 
-    public Page<BookmarkSummaryResponse> getMyBookmarks(Long memberId,Pageable pageable) {
-        return memberRepository.findMyBookmarks(memberId,pageable);
+    public Page<BookmarkSummaryResponse> getMyBookmarks(Long memberId, Pageable pageable) {
+        return memberRepository.findMyBookmarks(memberId, pageable)
+                .map(bookmark -> new BookmarkSummaryResponse(
+                        bookmark.restaurant_id(),
+                        bookmark.restaurant_name(),
+                        fileUploader.getAccessibleUrl(bookmark.restaurant_image_url()),
+                        bookmark.address_simple(),
+                        bookmark.bookmarked_at()
+                ));
     }
 
     public Page<VisitSummaryResponse> getMyVisits(Long memberId,Pageable pageable) {
