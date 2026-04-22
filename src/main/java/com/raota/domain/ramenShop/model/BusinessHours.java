@@ -26,9 +26,7 @@ public record BusinessHours(
         String parkingInfo
 ) {
     public BusinessHours {
-        if (openTime != null && closeTime != null && !closeTime.isAfter(openTime)) {
-            throw new IllegalArgumentException("영업 종료 시간은 시작 시간 이후여야 합니다.");
-        }
+        // 심야 영업(다음 날 종료)을 허용하기 위해 종료 시간의 시작 시간 이후 여부 검증을 제거합니다.
     }
 
     public static BusinessHours of(
