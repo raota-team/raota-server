@@ -78,6 +78,16 @@ public class MemberProfile {
         this.memberActivityStats = this.memberActivityStats.decreaseComment();
     }
 
+    public void increaseBookmarkCount() {
+        if (this.memberActivityStats == null) this.memberActivityStats = MemberActivityStats.init();
+        this.memberActivityStats = this.memberActivityStats.increaseBookmark();
+    }
+
+    public void decreaseBookmarkCount() {
+        if (this.memberActivityStats == null) this.memberActivityStats = MemberActivityStats.init();
+        this.memberActivityStats = this.memberActivityStats.decreaseBookmark();
+    }
+
     // Builder용 커스텀 메서드
     public static class MemberProfileBuilder {
         private MemberActivityStats memberActivityStats;

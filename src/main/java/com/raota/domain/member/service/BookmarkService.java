@@ -22,9 +22,21 @@ public class BookmarkService {
     public boolean toggleBookmark(Long memberId, Long shopId) {
         return bookmarkRepository.findByMemberProfileIdAndRamenShopId(memberId, shopId)
                 .map(bookmark -> {
-                    boolean newStatus = !bookmark.isDeleted();
-                    bookmark.changeStatus(newStatus);
-                    return !newStatus; // isDeleted=false 이면 북마크됨(true) 반환
+                    boolean newDeletedStatus = !bookmark.isDeleted();
+                    bookmark.changeStatus(newDeletedStatus);
+
+                    MemberProfile member = bookmark.getMemberProfile();
+                    RamenShop shop = bookmark.getRamenShop();
+
+                    if (newDeletedStatus) {
+                        member.decreaseBookmarkCount();
+                        shop.decreaseBookmarkCount();
+                    } else {
+                        member.increaseBookmarkCount();
+                        shop.increaseBookmarkCount();
+                    }
+
+                    return !newDeletedStatus; // 북마크 활성화 상태(isDeleted=false)이면 true 반환
                 })
                 .orElseGet(() -> {
                     MemberProfile member = memberRepository.findById(memberId)
@@ -37,6 +49,9 @@ public class BookmarkService {
                             .ramenShop(shop)
                             .isDeleted(false)
                             .build();
+
+                    member.increaseBookmarkCount();
+                    shop.increaseBookmarkCount();
 
                     bookmarkRepository.save(bookmark);
                     return true;

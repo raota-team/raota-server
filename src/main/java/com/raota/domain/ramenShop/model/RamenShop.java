@@ -115,4 +115,14 @@ public class RamenShop {
         eventMenus.clear();
         menus.forEach(this::addEventMenu);
     }
+
+    public void increaseBookmarkCount() {
+        if (this.stats == null) this.stats = ShopStats.init();
+        this.stats = this.stats.increaseBookmark();
+    }
+
+    public void decreaseBookmarkCount() {
+        if (this.stats == null) this.stats = ShopStats.init();
+        this.stats = this.stats.decreaseBookmark();
+    }
 }
