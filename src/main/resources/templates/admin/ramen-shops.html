@@ -471,7 +471,7 @@
                   method="post">
 
                 <div class="message error" th:if="${#fields.hasGlobalErrors()}">
-                    <div th:each="error : ${#fields.globalErrors()}" th:text="${error?.defaultMessage}"></div>
+                    <div th:each="error : ${#fields.globalErrors()}" th:text="${error}"></div>
                 </div>
 
                 <div class="grid">
