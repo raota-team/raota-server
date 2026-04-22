@@ -35,8 +35,10 @@ public class RamenShopInfoController implements RamenShopInfoApi {
 
     @Override
     @GetMapping("/{shopId}")
-    public ResponseEntity<ApiResponse<RamenShopBasicInfoResponse>> getShopDetailInfo(@PathVariable Long shopId) {
-        RamenShopBasicInfoResponse response = ramenShopInfoService.getShopDetailInfo(shopId);
+    public ResponseEntity<ApiResponse<RamenShopBasicInfoResponse>> getShopDetailInfo(
+            @PathVariable Long shopId,
+            @LoginMember(required = false) Long memberId) {
+        RamenShopBasicInfoResponse response = ramenShopInfoService.getShopDetailInfo(shopId,memberId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

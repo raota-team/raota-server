@@ -1,5 +1,6 @@
 package com.raota.domain.ramenShop.service;
 
+import com.raota.domain.member.repository.BookmarkRepository;
 import com.raota.domain.ramenShop.controller.response.RamenShopBasicInfoResponse;
 import com.raota.domain.ramenShop.controller.response.StoreSummaryResponse;
 import com.raota.domain.ramenShop.dto.EventMenuDto;
@@ -21,12 +22,22 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @AllArgsConstructor
 public class RamenShopInfoService {
+
     private final RamenShopRepository ramenShopRepository;
     private final FileUploader fileUploader;
+    private final BookmarkRepository bookmarkRepository;
 
     @Transactional(readOnly = true)
-    public RamenShopBasicInfoResponse getShopDetailInfo(Long shopId) {
+    public RamenShopBasicInfoResponse getShopDetailInfo(Long shopId,Long memberId) {
         RamenShop ramenShop = ramenShopRepository.findById(shopId).orElseThrow(()-> new IllegalArgumentException("없는 라멘가게 입니다."));
+
+        boolean isBookmarked;
+        if(memberId==null){
+            isBookmarked = false;
+        }
+
+        isBookmarked = bookmarkRepository.existsByMemberProfileIdAndRamenShopId(memberId,shopId);
+
         return RamenShopBasicInfoResponse.from(
                 ramenShop,
                 fileUploader.getAccessibleUrl(ramenShop.getImageUrl()),
@@ -35,7 +46,8 @@ public class RamenShopInfoService {
                         .toList(),
                 eventMenusOf(ramenShop).stream()
                         .map(menu -> EventMenuDto.from(menu, fileUploader.getAccessibleUrl(menu.getImageUrl())))
-                        .toList()
+                        .toList(),
+                isBookmarked
         );
     }
 

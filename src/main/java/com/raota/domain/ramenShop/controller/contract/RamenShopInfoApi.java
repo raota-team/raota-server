@@ -22,7 +22,8 @@ public interface RamenShopInfoApi {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
     ResponseEntity<ApiResponse<RamenShopBasicInfoResponse>> getShopDetailInfo(
-            @Parameter(description = "가게 ID", required = true) Long shopId);
+            @Parameter(description = "가게 ID", required = true) Long shopId,
+            Long memberId);
 
     @Operation(summary = "가게 목록 조회", description = "지역/키워드 조건과 페이징으로 가게 목록을 조회합니다.")
     @ApiResponses({

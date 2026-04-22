@@ -21,6 +21,7 @@ public record RamenShopBasicInfoResponse(
         String description,
         BusinessHoursDto business_hours,
         ShopStatDto stats,
+        boolean is_bookmarked,
         List<String> tags,
         List<NormalMenuDto> normal_menus,
         List<EventMenuDto> event_menus) {
@@ -29,7 +30,8 @@ public record RamenShopBasicInfoResponse(
             RamenShop ramenShop,
             String imageUrl,
             List<NormalMenuDto> normalMenus,
-            List<EventMenuDto> eventMenus
+            List<EventMenuDto> eventMenus,
+            boolean isBookmarked
     ){
         return new RamenShopBasicInfoResponse(
                 ramenShop.getId(),
@@ -43,6 +45,7 @@ public record RamenShopBasicInfoResponse(
                 ramenShop.getDescription(),
                 BusinessHoursDto.from(ramenShop.getBusinessHours()),
                 ShopStatDto.from(ramenShop.getStats()),
+                isBookmarked,
                 ramenShop.getTags(),
                 normalMenus,
                 eventMenus

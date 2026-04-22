@@ -37,10 +37,16 @@ public class LoginMemberArgumentResolver implements HandlerMethodArgumentResolve
                                   NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
         // 1. 보안 컨텍스트(SecurityContext)에서 현재의 인증 정보를 가져온다.
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        LoginMember annotation = parameter.getParameterAnnotation(LoginMember.class);
+        boolean required = (annotation != null) && annotation.required();
         
         // 2. 인증 정보가 없거나, 인증된 사용자 객체(AuthenticatedMember)가 아니면 예외를 발생시킨다.
         if (authentication == null || !(authentication.getPrincipal() instanceof AuthenticatedMember member)) {
-            throw new AuthenticationRequiredException("로그인이 필요합니다.");
+            if(required) {
+                throw new AuthenticationRequiredException("로그인이 필요합니다.");
+            }
+            return null;
         }
         
         // 3. 인증 정보에서 실제 사용자 고유 ID(memberId)를 반환하여 컨트롤러 파라미터로 주입한다.
