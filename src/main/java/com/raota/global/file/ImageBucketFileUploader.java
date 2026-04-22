@@ -94,22 +94,11 @@ public class ImageBucketFileUploader implements FileUploader {
         }
 
         String objectKey = extractObjectKey(filePath.trim());
-        if (!StringUtils.hasText(objectKey)) {
-            return filePath;
+        if (StringUtils.hasText(objectKey)) {
+            return CLOUDFLARE_IMAGE_DOMAIN + objectKey;
         }
 
-        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-                .bucket(bucketName)
-                .key(objectKey)
-                .build();
-
-        GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
-                .signatureDuration(Duration.ofMinutes(30))
-                .getObjectRequest(getObjectRequest)
-                .build();
-
-        PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(presignRequest);
-        return presignedRequest.url().toString();
+        return filePath;
     }
 
     @Override
