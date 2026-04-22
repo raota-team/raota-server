@@ -21,9 +21,11 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 
 @Component
 @Profile("prod")
-public class ImageBucketFileUploader implements FileUploader{
+public class ImageBucketFileUploader implements FileUploader {
 
-    private final S3Presigner s3Presigner; // 최신 s3 라이브러리에 포함되어 있음
+    private static final String CLOUDFLARE_IMAGE_DOMAIN = "https://images.raota.net/";
+
+    private final S3Presigner s3Presigner;
     private final S3Client s3Client;
 
     @Value("${oci.storage.bucket}")
@@ -62,18 +64,14 @@ public class ImageBucketFileUploader implements FileUploader{
     public PresignedUrlResponse getPresignedUrl(String dirName, String extension, String contentType) {
         String uniqueFilename = createObjectKey(dirName, extension);
 
-        PutObjectRequest.Builder putObjectRequestBuilder = PutObjectRequest.builder()
+        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
-                .key(uniqueFilename);
-
-        if (StringUtils.hasText(contentType)) {
-            putObjectRequestBuilder.contentType(contentType);
-        }
-
-        PutObjectRequest putObjectRequest = putObjectRequestBuilder.build();
+                .key(uniqueFilename)
+                .contentType(StringUtils.hasText(contentType) ? contentType : null)
+                .build();
 
         PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
-                .signatureDuration(Duration.ofMinutes(5)) // 5분 한정 티켓
+                .signatureDuration(Duration.ofMinutes(5))
                 .putObjectRequest(putObjectRequest)
                 .build();
 
@@ -88,6 +86,10 @@ public class ImageBucketFileUploader implements FileUploader{
     @Override
     public String getAccessibleUrl(String filePath) {
         if (!StringUtils.hasText(filePath)) {
+            return filePath;
+        }
+
+        if (filePath.startsWith(CLOUDFLARE_IMAGE_DOMAIN)) {
             return filePath;
         }
 
@@ -112,13 +114,10 @@ public class ImageBucketFileUploader implements FileUploader{
 
     @Override
     public void delete(String filePath) {
-        if (!StringUtils.hasText(filePath)) {
-            return;
+        String objectKey = extractObjectKey(filePath);
+        if (StringUtils.hasText(objectKey)) {
+            s3Client.deleteObject(builder -> builder.bucket(bucketName).key(objectKey));
         }
-
-        // 이미지 URL에서 오브젝트 키(경로)를 추출하는 로직이 필요할 수 있으나, 
-        // 여기서는 전달된 filePath가 키라고 가정하고 삭제를 진행합니다.
-        s3Client.deleteObject(builder -> builder.bucket(bucketName).key(filePath));
     }
 
     private String createObjectKey(String dirName, String extension) {
@@ -126,8 +125,7 @@ public class ImageBucketFileUploader implements FileUploader{
     }
 
     private String toImageUrl(String objectKey) {
-        return String.format("https://objectstorage.%s.oraclecloud.com/n/%s/b/%s/o/%s",
-                region, namespace, bucketName, objectKey);
+        return CLOUDFLARE_IMAGE_DOMAIN + objectKey;
     }
 
     private String extractObjectKey(String filePath) {
@@ -135,15 +133,15 @@ public class ImageBucketFileUploader implements FileUploader{
             return null;
         }
 
-        if (!filePath.startsWith("http://") && !filePath.startsWith("https://")) {
-            return filePath;
+        if (filePath.startsWith(CLOUDFLARE_IMAGE_DOMAIN)) {
+            return filePath.substring(CLOUDFLARE_IMAGE_DOMAIN.length());
         }
 
         try {
             URI uri = URI.create(filePath);
             String path = uri.getPath();
             if (!StringUtils.hasText(path)) {
-                return null;
+                return filePath;
             }
 
             String objectPathPrefix = "/n/" + namespace + "/b/" + bucketName + "/o/";
@@ -152,13 +150,9 @@ public class ImageBucketFileUploader implements FileUploader{
                 return path.substring(objectPathIndex + objectPathPrefix.length());
             }
 
-            String compatPrefix = "/" + bucketName + "/";
-            if (path.startsWith(compatPrefix)) {
-                return path.substring(compatPrefix.length());
-            }
-            return null;
-        } catch (IllegalArgumentException exception) {
-            return null;
+            return filePath;
+        } catch (Exception exception) {
+            return filePath;
         }
     }
 
