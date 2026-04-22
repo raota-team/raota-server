@@ -31,12 +31,10 @@ public class RamenShopInfoService {
     public RamenShopBasicInfoResponse getShopDetailInfo(Long shopId,Long memberId) {
         RamenShop ramenShop = ramenShopRepository.findById(shopId).orElseThrow(()-> new IllegalArgumentException("없는 라멘가게 입니다."));
 
-        boolean isBookmarked;
-        if(memberId==null){
-            isBookmarked = false;
+        boolean isBookmarked = false;
+        if(memberId != null){
+            isBookmarked = bookmarkRepository.existsByMemberProfileIdAndRamenShopIdAndIsDeletedFalse(memberId, shopId);
         }
-
-        isBookmarked = bookmarkRepository.existsByMemberProfileIdAndRamenShopId(memberId,shopId);
 
         return RamenShopBasicInfoResponse.from(
                 ramenShop,

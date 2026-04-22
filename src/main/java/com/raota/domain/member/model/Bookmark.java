@@ -13,6 +13,7 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -21,6 +22,7 @@ import org.hibernate.annotations.CreationTimestamp;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Getter
 public class Bookmark {
 
     @Id
@@ -38,4 +40,12 @@ public class Bookmark {
     @CreationTimestamp
     @Column(name = "marking_at", nullable = false)
     private LocalDateTime markingAt;
+
+    @Builder.Default
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
+
+    public void changeStatus(boolean isDeleted) {
+        this.isDeleted = isDeleted;
+    }
 }

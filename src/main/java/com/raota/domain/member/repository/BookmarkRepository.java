@@ -6,9 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
 
-    boolean existsByMemberProfileIdAndRamenShopId(Long memberProfileId, Long ramenShopId);
+    boolean existsByMemberProfileIdAndRamenShopIdAndIsDeletedFalse(Long memberProfileId, Long ramenShopId);
 
     Optional<Bookmark> findByMemberProfileIdAndRamenShopId(Long memberProfileId, Long ramenShopId);
-
-    void deleteByMemberProfileIdAndRamenShopId(Long memberProfileId, Long ramenShopId);
 }
