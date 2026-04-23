@@ -68,7 +68,7 @@ public class MenuVoteService {
 
     private long getTotalCount(List<VoteResultsDto> statusDto){
         return statusDto.stream()
-                .mapToLong(VoteResultsDto::getVote_count)
+                .mapToLong(VoteResultsDto::getVoteCount)
                 .sum();
     }
 
@@ -77,7 +77,7 @@ public class MenuVoteService {
             return 0.0;
         }
 
-        double percentage = dto.getVote_count()*100.0/totalCount;
+        double percentage = dto.getVoteCount()*100.0/totalCount;
         return Math.round(percentage * 100.0) / 100.0;
     }
 }

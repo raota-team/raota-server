@@ -9,14 +9,14 @@ import org.springframework.data.repository.query.Param;
 
 public interface MenuVoteRepository extends JpaRepository<MenuVote,Long>{
 
-    @Query("SELECT COUNT(v) > 0 FROM MenuVote v WHERE v.memberProfile.id = :memberId AND v.normalMenu.ramenShop.id = :shopId")
+    @Query("SELECT COUNT(v) > 0 FROM MenuVote v WHERE v.memberProfile.id = :memberId AND v.ramenShop.id = :shopId")
     boolean existsByMemberIdAndShopId(@Param("memberId") Long memberId, @Param("shopId") Long shopId);
 
     @Query("""
         SELECT new com.raota.domain.ramenShop.dto.VoteResultsDto(
             m.id,
             m.name,
-            (SELECT COUNT(v.id) FROM MenuVote v WHERE v.normalMenu.id = m.id),
+            (SELECT COUNT(v.id) FROM MenuVote v WHERE v.normalMenu.id = m.id AND v.ramenShop.id = :shopId),
             null
         )
         FROM NormalMenu m
