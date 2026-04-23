@@ -45,7 +45,16 @@ public class MemberInfoService {
     }
 
     public Page<PhotoSummaryResponse> getMyPhotoList(Long memberId,Pageable pageable){
-        return memberRepository.findMyPhotos(memberId,pageable);
+        return memberRepository.findMyPhotos(memberId,pageable)
+                .map(photo -> new PhotoSummaryResponse(
+                        photo.photo_id(),
+                        fileUploader.getAccessibleUrl(photo.image_url()),
+                        photo.menuName(),
+                        photo.description(),
+                        photo.restaurant_id(),
+                        photo.restaurant_name(),
+                        photo.uploaded_at()
+                ));
     }
 
     public Page<BookmarkSummaryResponse> getMyBookmarks(Long memberId, Pageable pageable) {

@@ -137,7 +137,8 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
     select new com.raota.domain.member.controller.response.PhotoSummaryResponse(
         p.id,
         p.imageUrl,
-        p.imageName,
+        p.menuName,
+        p.description,
         p.ramenShop.id,
         p.ramenShop.name,
         p.uploadedAt
