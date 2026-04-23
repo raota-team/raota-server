@@ -38,7 +38,10 @@ public class OciVaultEnvironmentPostProcessor implements EnvironmentPostProcesso
             "APP_AUTH_OAUTH2_REDIRECT_URI",
             "APP_AUTH_OAUTH2_FAILURE_REDIRECT_URI",
             "APP_AUTH_ALLOWED_ORIGINS",
-            "DISCORD_WEBHOOK_URL"
+            "DISCORD_WEBHOOK_URL",
+            "CLOUDINARY_CLOUD_NAME",
+            "CLOUDINARY_API_KEY",
+            "CLOUDINARY_API_SECRET"
     );
 
     @Override
