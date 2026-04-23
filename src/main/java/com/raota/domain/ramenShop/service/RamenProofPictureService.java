@@ -26,7 +26,7 @@ public class RamenProofPictureService {
     private final FileUploader fileUploader;
 
     @Transactional
-    public ProofPictureInfoResponse addProofPicture(Long shopId, String imageUrl, String description, Long memberId) {
+    public ProofPictureInfoResponse addProofPicture(Long shopId, String imageUrl, String imageName, String description, Long memberId) {
         MemberProfile member = memberRepository.findById(memberId).orElseThrow(()->new IllegalArgumentException("없는 유저 입니다."));
         RamenShop ramenShop = ramenShopRepository.findById(shopId).orElseThrow(()->new IllegalArgumentException("없는 라멘집 입니다."));
 
@@ -34,6 +34,7 @@ public class RamenProofPictureService {
                 .ramenShop(ramenShop)
                 .memberProfile(member)
                 .imageUrl(imageUrl)
+                .imageName(imageName)
                 .description(description)
                 .build();
 

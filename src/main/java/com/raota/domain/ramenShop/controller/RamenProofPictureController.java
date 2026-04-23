@@ -37,7 +37,8 @@ public class RamenProofPictureController implements RamenProofPictureApi {
     ) {
         ProofPictureInfoResponse response = proofPictureService.addProofPicture(
                 shopId, 
-                request.getImageUrl(), 
+                request.getImageUrl(),
+                request.getImageName(),
                 request.getDescription(), 
                 memberId
         );
