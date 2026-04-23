@@ -39,7 +39,6 @@ public class RamenProofPictureService {
 
         RamenProofPicture saved = proofPictureRepository.save(picture);
 
-        // 마이페이지 통계 업데이트 (인증샷 수 증가)
         member.increasePhotoCount();
 
         return new ProofPictureInfoResponse(

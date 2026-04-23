@@ -28,7 +28,8 @@ public class CloudinaryFileUploader implements FileUploader {
     @Override
     public PresignedUrlResponse getPresignedUrl(String dirName, String extension, String contentType) {
         long timestamp = System.currentTimeMillis() / 1000L;
-        String publicId = dirName + "/" + java.util.UUID.randomUUID();
+        String normalizedExtension = (extension != null && extension.startsWith(".")) ? extension : "." + extension;
+        String publicId = dirName + "/" + java.util.UUID.randomUUID() + normalizedExtension;
         
         Map<String, Object> params = new java.util.HashMap<>();
         params.put("public_id", publicId);
@@ -43,7 +44,7 @@ public class CloudinaryFileUploader implements FileUploader {
 
         String uploadUrl = String.format("https://api.cloudinary.com/v1_1/%s/image/upload", cloudinary.config.cloudName);
         String finalImageUrl = String.format("https://res.cloudinary.com/%s/image/upload/%s", 
-                cloudinary.config.cloudName, publicId + (extension.startsWith(".") ? extension : "." + extension));
+                cloudinary.config.cloudName, publicId);
         
         return new PresignedUrlResponse(uploadUrl, finalImageUrl, uploadParams);
     }
