@@ -40,6 +40,7 @@ public class RamenProofPictureController implements RamenProofPictureApi {
                 request.getImageUrl(),
                 request.getImageName(),
                 request.getDescription(), 
+                request.getMenuName(),
                 memberId
         );
         return ResponseEntity.ok(ApiResponse.success(response));

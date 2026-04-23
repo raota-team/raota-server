@@ -46,7 +46,11 @@ public class RamenProofPicture {
     @Column(name = "image_url", nullable = false)
     private String imageUrl;
 
+    @Column(name = "description", nullable = false)
     private String description;
+
+    @Column(name = "menu_name", nullable = false)
+    private String menuName;
 
     @CreationTimestamp
     @Column(name = "uploaded_at", nullable = false)

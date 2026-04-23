@@ -9,4 +9,5 @@ public class ProofPictureUploadRequest {
     private String imageUrl;
     private String imageName;
     private String description;
+    private String menuName;
 }
