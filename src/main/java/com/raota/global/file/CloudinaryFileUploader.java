@@ -51,6 +51,9 @@ public class CloudinaryFileUploader implements FileUploader {
 
     @Override
     public String getAccessibleUrl(String filePath) {
+        if (filePath != null && filePath.contains("res.cloudinary.com") && !filePath.contains("f_auto")) {
+            return filePath.replace("/upload/", "/upload/f_auto,q_auto/");
+        }
         return filePath;
     }
 
