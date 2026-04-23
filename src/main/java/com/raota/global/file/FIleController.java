@@ -16,17 +16,30 @@ public class FIleController {
 
     private final FileUploader fileUploader;
 
-    @GetMapping("/presigned-url")
-    public ResponseEntity<PresignedUrlResponse> getPresignedUrl(
-            @RequestParam String dirName,
+    /**
+     * 클라이언트 직접 업로드를 위한 티켓(Presigned URL 또는 Cloudinary Signature)을 발급한다.
+     * @param type 이미지 용도 (PROFILE, SHOP, COMMUNITY, PROOF)
+     * @param extension 파일 확장자 (jpg, png 등)
+     */
+    @GetMapping("/upload-ticket")
+    public ResponseEntity<PresignedUrlResponse> getUploadTicket(
+            @RequestParam String type,
             @RequestParam String extension,
             @RequestParam(required = false) String contentType
-    ){
-        // 1. Uploader에게 URL 발급 요청
+    ) {
+        String dirName = resolveDirectory(type);
         PresignedUrlResponse response = fileUploader.getPresignedUrl(dirName, extension, contentType);
-
-        // 2. 발급된 URL 정보 반환
         return ResponseEntity.ok(response);
+    }
+
+    private String resolveDirectory(String type) {
+        return switch (type.toUpperCase()) {
+            case "PROFILE" -> "profiles";
+            case "SHOP" -> "shops";
+            case "COMMUNITY" -> "community";
+            case "PROOF" -> "ramen-proof";
+            default -> throw new IllegalArgumentException("지원하지 않는 이미지 타입입니다: " + type);
+        };
     }
 
     @PutMapping("/mock-upload-endpoint")

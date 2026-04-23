@@ -80,7 +80,7 @@ public class ImageBucketFileUploader implements FileUploader {
         String uploadUrl = presignedRequest.url().toString();
         String imageUrl = toImageUrl(uniqueFilename);
 
-        return new PresignedUrlResponse(uploadUrl, imageUrl);
+        return PresignedUrlResponse.of(uploadUrl, imageUrl);
     }
 
     @Override

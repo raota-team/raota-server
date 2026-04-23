@@ -22,7 +22,7 @@ public class LocalFileUploader implements FileUploader{
         String mockUploadUrl = "/files/mock-upload-endpoint";
         String mockImageUrl = "https://mock.cdn.com/" + dummyFilename;
 
-        return new PresignedUrlResponse(mockUploadUrl, mockImageUrl);
+        return PresignedUrlResponse.of(mockUploadUrl, mockImageUrl);
     }
 
     @Override
