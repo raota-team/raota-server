@@ -17,9 +17,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
+import com.raota.domain.ramenShop.controller.request.ProofPictureUploadRequest;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequestMapping("/ramen-shops/{shopId}/photos")
@@ -32,10 +32,15 @@ public class RamenProofPictureController implements RamenProofPictureApi {
     @PostMapping
     public ResponseEntity<ApiResponse<ProofPictureInfoResponse>> addProofPicture(
             @PathVariable Long shopId,
-            @RequestPart("file") MultipartFile file,
+            @RequestBody ProofPictureUploadRequest request,
             @LoginMember Long memberId
     ) {
-        ProofPictureInfoResponse response = proofPictureService.addProofPicture(shopId,file,memberId);
+        ProofPictureInfoResponse response = proofPictureService.addProofPicture(
+                shopId, 
+                request.getImageUrl(), 
+                request.getDescription(), 
+                memberId
+        );
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

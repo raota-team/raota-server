@@ -26,28 +26,21 @@ public class RamenProofPictureService {
     private final FileUploader fileUploader;
 
     @Transactional
-    public ProofPictureInfoResponse addProofPicture(Long shopId, MultipartFile file,Long memberId) {
+    public ProofPictureInfoResponse addProofPicture(Long shopId, String imageUrl, String description, Long memberId) {
         MemberProfile member = memberRepository.findById(memberId).orElseThrow(()->new IllegalArgumentException("없는 유저 입니다."));
         RamenShop ramenShop = ramenShopRepository.findById(shopId).orElseThrow(()->new IllegalArgumentException("없는 라멘집 입니다."));
-
-        // 확장자 추출
-        String originalFilename = file.getOriginalFilename();
-        String extension = originalFilename != null && originalFilename.contains(".") 
-                ? originalFilename.substring(originalFilename.lastIndexOf(".")) 
-                : ".png";
-
-        // 파일 업로더를 통해 Presigned URL 발급 및 이미지 경로 생성
-        var presignedUrlResponse = fileUploader.getPresignedUrl("ramen", extension);
-        String imageUrl = presignedUrlResponse.imgUrl();
 
         RamenProofPicture picture = RamenProofPicture.builder()
                 .ramenShop(ramenShop)
                 .memberProfile(member)
-                .imageName(originalFilename)
                 .imageUrl(imageUrl)
+                .description(description)
                 .build();
 
         RamenProofPicture saved = proofPictureRepository.save(picture);
+
+        // 마이페이지 통계 업데이트 (인증샷 수 증가)
+        member.increasePhotoCount();
 
         return new ProofPictureInfoResponse(
                 saved.getId(),
