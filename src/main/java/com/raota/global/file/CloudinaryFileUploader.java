@@ -28,11 +28,11 @@ public class CloudinaryFileUploader implements FileUploader {
     @Override
     public PresignedUrlResponse getPresignedUrl(String dirName, String extension, String contentType) {
         long timestamp = System.currentTimeMillis() / 1000L;
-        String publicId = dirName + "/" + java.util.UUID.randomUUID();
+        String uniqueId = java.util.UUID.randomUUID().toString();
         String normalizedExtension = (extension != null && extension.startsWith(".")) ? extension : "." + extension;
         
         Map<String, Object> params = new java.util.HashMap<>();
-        params.put("public_id", publicId);
+        params.put("public_id", uniqueId); // 폴더명 제외하고 UUID만!
         params.put("timestamp", timestamp);
         params.put("folder", dirName);
 
@@ -43,8 +43,8 @@ public class CloudinaryFileUploader implements FileUploader {
         uploadParams.put("signature", signature);
 
         String uploadUrl = String.format("https://api.cloudinary.com/v1_1/%s/image/upload", cloudinary.config.cloudName);
-        String finalImageUrl = String.format("https://res.cloudinary.com/%s/image/upload/%s", 
-                cloudinary.config.cloudName, publicId + normalizedExtension);
+        String finalImageUrl = String.format("https://res.cloudinary.com/%s/image/upload/%s/%s", 
+                cloudinary.config.cloudName, dirName, uniqueId + normalizedExtension);
         
         return new PresignedUrlResponse(uploadUrl, finalImageUrl, uploadParams);
     }

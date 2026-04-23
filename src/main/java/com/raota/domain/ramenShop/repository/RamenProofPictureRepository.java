@@ -36,7 +36,7 @@ public interface RamenProofPictureRepository extends JpaRepository<RamenProofPic
             p.memberProfile.id,
             p.imageUrl,
             p.memberProfile.nickname,
-            p.imageUrl,
+            p.description,
             p.imageName,
             p.uploadedAt
         )
