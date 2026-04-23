@@ -9,6 +9,7 @@ import com.raota.domain.member.repository.MemberRepository;
 import com.raota.domain.ramenShop.repository.RamenProofPictureRepository;
 import com.raota.global.file.FileUploader;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;

@@ -19,7 +19,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequ
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
-@Component
+@Component("imageBucketFileUploader")
 @Profile("prod")
 public class ImageBucketFileUploader implements FileUploader {
 
