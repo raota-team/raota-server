@@ -55,4 +55,6 @@ public interface RamenProofPictureRepository extends JpaRepository<RamenProofPic
         """
     )
     Page<RamenShopProofPictureResponse> searchPictures(@Param("shopId") Long shopId, Pageable pageable);
+
+    long countByMemberProfileIdAndRamenShopIdAndIsDeletedFalse(Long memberId, Long shopId);
 }

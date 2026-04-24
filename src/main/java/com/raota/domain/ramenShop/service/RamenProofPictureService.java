@@ -30,6 +30,12 @@ public class RamenProofPictureService {
         MemberProfile member = memberRepository.findById(memberId).orElseThrow(()->new IllegalArgumentException("없는 유저 입니다."));
         RamenShop ramenShop = ramenShopRepository.findById(shopId).orElseThrow(()->new IllegalArgumentException("없는 라멘집 입니다."));
 
+        // 이 가게에 처음 방문하는 것인지 확인 (아직 삭제되지 않은 사진이 0개인 경우)
+        long currentPhotosInShop = proofPictureRepository.countByMemberProfileIdAndRamenShopIdAndIsDeletedFalse(memberId, shopId);
+        if (currentPhotosInShop == 0) {
+            member.increaseVisitedRestaurantCount();
+        }
+
         RamenProofPicture picture = RamenProofPicture.builder()
                 .ramenShop(ramenShop)
                 .memberProfile(member)
@@ -68,6 +74,12 @@ public class RamenProofPictureService {
                 .orElseThrow(()-> new IllegalArgumentException("없는 유저입니다."));
         RamenShop ramenShop = ramenShopRepository.findById(proofPicture.getRamenShop().getId())
                 .orElseThrow(()->new IllegalArgumentException("없는 라멘집 입니다."));
+
+        // 삭제 전, 이 가게에 남은 사진이 1개뿐이라면 '방문한 식당' 수 감소
+        long currentPhotosInShop = proofPictureRepository.countByMemberProfileIdAndRamenShopIdAndIsDeletedFalse(memberId, ramenShop.getId());
+        if (currentPhotosInShop == 1) {
+            member.decreaseVisitedRestaurantCount();
+        }
 
         member.decreasePhotoCount();
         ramenShop.decreaseVisitCount();

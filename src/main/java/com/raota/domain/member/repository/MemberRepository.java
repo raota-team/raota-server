@@ -93,18 +93,19 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
                 count(p.id),
                 max(p.uploadedAt))
             from MemberProfile m
-            left join RamenProofPicture p on p.memberProfile = m and p.isDeleted = false
-            left join p.ramenShop r
-            where m.id = :memberId
+            join RamenProofPicture p on p.memberProfile = m
+            join p.ramenShop r
+            where m.id = :memberId and p.isDeleted = false
             group by r.id, r.name, r.imageUrl, r.address.city, r.address.district
+            having count(p.id) > 0
             order by count(p.id) desc
             """,
             countQuery = """
                     select count(distinct r.id)
                     from MemberProfile m
-                    left join RamenProofPicture p on p.memberProfile = m and p.isDeleted = false
-                    left join p.ramenShop r
-                    where m.id = :memberId
+                    join RamenProofPicture p on p.memberProfile = m
+                    join p.ramenShop r
+                    where m.id = :memberId and p.isDeleted = false
                     """)
     Page<VisitSummaryResponse> findMyVisitRestaurant(
             @Param("memberId") Long memberId,
