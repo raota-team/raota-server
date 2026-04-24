@@ -12,7 +12,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 
 @Tag(name = "라멘 가게", description = "라멘 가게 조회/방문 API")
 public interface RamenShopInfoApi {
@@ -29,9 +32,10 @@ public interface RamenShopInfoApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<PageResponse<StoreSummaryResponse>>> getShopDetailInfo(
-            @ParameterObject Pageable pageable,
-            @ParameterObject RamenShopSearchRequest request);
+    @GetMapping
+    ResponseEntity<ApiResponse<PageResponse<StoreSummaryResponse>>> getShopList(
+            @PageableDefault(size = 12, direction = Sort.Direction.DESC) Pageable pageable,
+            RamenShopSearchRequest request);
 
     @Operation(summary = "가게 북마크 토글", description = "가게를 찜하거나 해제합니다.")
     @ApiResponses({

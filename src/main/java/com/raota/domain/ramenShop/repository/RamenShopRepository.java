@@ -19,7 +19,7 @@ public interface RamenShopRepository extends JpaRepository<RamenShop, Long> {
             concat(s.address.city, concat(' ', s.address.district)),
             s.tags,
             s.imageUrl,
-            s.stats.bookmarkCount
+            s.stats.visitCount
         )
         from RamenShop s
         where (:region is null or :region = '' or s.address.city = :region)

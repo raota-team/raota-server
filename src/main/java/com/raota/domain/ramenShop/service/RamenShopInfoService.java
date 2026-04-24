@@ -59,7 +59,7 @@ public class RamenShopInfoService {
                         store.region(),
                         store.tags(),
                         fileUploader.getAccessibleUrl(store.thumbnailUrl()),
-                        store.votes()
+                        store.visits()
                 ));
     }
 

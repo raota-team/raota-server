@@ -125,4 +125,8 @@ public class RamenShop {
         if (this.stats == null) this.stats = ShopStats.init();
         this.stats = this.stats.decreaseBookmark();
     }
+
+    public void increaseVisitCount() {
+        this.stats = this.stats.increaseVisit();
+    }
 }

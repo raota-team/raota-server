@@ -42,6 +42,7 @@ public class RamenProofPictureService {
         RamenProofPicture saved = proofPictureRepository.save(picture);
 
         member.increasePhotoCount();
+        ramenShop.increaseVisitCount();
 
         return new ProofPictureInfoResponse(
                 saved.getId(),

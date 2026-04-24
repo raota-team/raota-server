@@ -42,9 +42,9 @@ public class RamenShopInfoController implements RamenShopInfoApi {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @Override
     @GetMapping
-    public ResponseEntity<ApiResponse<PageResponse<StoreSummaryResponse>>> getShopDetailInfo(
+    @Override
+    public ResponseEntity<ApiResponse<PageResponse<StoreSummaryResponse>>> getShopList(
             @PageableDefault(size = 12, direction = Sort.Direction.DESC) Pageable pageable,
             RamenShopSearchRequest request) {
         Page<StoreSummaryResponse> response = ramenShopInfoService.getRamenShopList(request.getRegion(), request.getKeyword(), pageable);

@@ -186,6 +186,13 @@
     - **자동 갱신**: 프로필 업데이트(`updateProfile`) 시 해당 플래그를 자동으로 `true`로 전환.
 - **핵심**: 사용자가 가입 도중 이탈하더라도 필수 정보를 모두 입력할 때까지 회원가입 페이지로 지속적으로 안내하는 견고한 온보딩 흐름 확보.
 
+### ✅ Commit 23: 테스트 인프라 안정화 및 API 정합성 수정 (완료)
+- **내용**:
+    - **설정 누락 해결**: `application-test.yml`에 `cloudinary` 관련 필수 설정값(더미)을 추가하여 테스트 시 `ApplicationContext` 로드 실패 문제 해결.
+    - **테스트 케이스 교정**: `RamenShopFeatureIntegrationTest`에서 multipart 대신 JSON 바디를 전송하도록 수정하여 실제 API 규격(`RamenProofPictureApi`)과의 불일치 해결.
+- **핵심**: 전체 테스트 스위트의 100% 통과(42개)를 달성하고, CI/CD 파이프라인의 안정성 확보.
+- **검증**: `./gradlew test` 실행 결과 전수 통과 확인.
+
 ---
 
 ## 🧪 테스트 전략 (Testing Standards)

@@ -65,3 +65,8 @@ app:
     cors:
       allowed-origins:
         - http://localhost:3000
+
+cloudinary:
+  cloud-name: test-cloud-name
+  api-key: test-api-key
+  api-secret: test-api-secret

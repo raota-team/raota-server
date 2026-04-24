@@ -9,6 +9,6 @@ public record StoreSummaryResponse(
         String region,
         List<String> tags,
         String thumbnailUrl,
-        Integer votes
+        Integer visits
         ){
 }
