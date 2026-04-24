@@ -100,23 +100,26 @@ class RamenShopFeatureIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("이미 투표한 사용자가 다시 투표하면 실패(400 에러)를 반환한다.")
-    void vote_menu_duplicate_fail() {
+    @DisplayName("이미 투표한 사용자가 같은 메뉴를 다시 투표하면 투표가 취소된다.")
+    void vote_menu_toggle_success() {
         Long menuId = jdbcTemplate.queryForObject(
                 "SELECT id FROM tb_normal_menu WHERE ramen_shop_id = ? LIMIT 1", 
                 Long.class, savedShop.getId());
 
+        // 첫 번째 투표
         given()
                 .header("Authorization", "Bearer " + accessToken)
                 .post("/ramen-shops/{shopId}/votes/menus/{menuId}", savedShop.getId(), menuId)
                 .then().statusCode(HttpStatus.OK.value());
 
+        // 두 번째 투표 (취소)
         given()
                 .header("Authorization", "Bearer " + accessToken)
         .when()
                 .post("/ramen-shops/{shopId}/votes/menus/{menuId}", savedShop.getId(), menuId)
         .then()
-                .statusCode(HttpStatus.BAD_REQUEST.value());
+                .statusCode(HttpStatus.OK.value())
+                .body("data.total_votes", is(equalTo(0)));
     }
 
     @Test

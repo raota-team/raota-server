@@ -16,7 +16,8 @@ public interface MenuVoteApi {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
     ResponseEntity<ApiResponse<VotingStatusResponse>> getVoteStatus(
-            @Parameter(description = "가게 ID", required = true) Long shopId);
+            @Parameter(description = "가게 ID", required = true) Long shopId,
+            @Parameter(hidden = true) Long memberId);
 
     @Operation(summary = "메뉴 투표", description = "특정 메뉴에 투표합니다.")
     @ApiResponses({

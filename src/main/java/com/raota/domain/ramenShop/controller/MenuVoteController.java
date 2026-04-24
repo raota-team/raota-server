@@ -22,8 +22,10 @@ public class MenuVoteController implements MenuVoteApi {
 
     @Override
     @GetMapping
-    public ResponseEntity<ApiResponse<VotingStatusResponse>> getVoteStatus(@PathVariable Long shopId) {
-        VotingStatusResponse response = menuVoteService.getVotingStatus(shopId);
+    public ResponseEntity<ApiResponse<VotingStatusResponse>> getVoteStatus(
+            @PathVariable Long shopId, 
+            @LoginMember(required = false) Long memberId) {
+        VotingStatusResponse response = menuVoteService.getVotingStatus(shopId, memberId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -33,7 +35,7 @@ public class MenuVoteController implements MenuVoteApi {
             @PathVariable Long shopId,
             @PathVariable Long menuId,
             @LoginMember Long memberId) {
-        VotingStatusResponse response = menuVoteService.voteTheMenu(shopId, menuId,memberId);
+        VotingStatusResponse response = menuVoteService.voteTheMenu(shopId, menuId, memberId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

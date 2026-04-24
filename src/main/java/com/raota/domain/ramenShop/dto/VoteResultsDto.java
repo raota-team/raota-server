@@ -21,4 +21,15 @@ public class VoteResultsDto {
 
     @Setter
     private Double percentage;
+
+    @Setter
+    private boolean isVoted = false;
+
+    public void toggleVoted(){
+        if(isVoted){
+            this.isVoted = false;
+            return;
+        }
+        this.isVoted = true;
+    }
 }
