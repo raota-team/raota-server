@@ -127,6 +127,12 @@ public class RamenShop {
     }
 
     public void increaseVisitCount() {
+        if (this.stats == null) this.stats = ShopStats.init();
         this.stats = this.stats.increaseVisit();
+    }
+
+    public void decreaseVisitCount() {
+        if (this.stats == null) this.stats = ShopStats.init();
+        this.stats = this.stats.decreaseVisit();
     }
 }

@@ -52,7 +52,15 @@ public class RamenProofPicture {
     @Column(name = "menu_name", nullable = false)
     private String menuName;
 
+    @Builder.Default
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
+
     @CreationTimestamp
     @Column(name = "uploaded_at", nullable = false)
     private LocalDateTime uploadedAt;
+
+    public void delete(){
+        this.isDeleted = true;
+    }
 }

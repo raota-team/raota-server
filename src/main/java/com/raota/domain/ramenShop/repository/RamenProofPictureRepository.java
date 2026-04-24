@@ -19,12 +19,14 @@ public interface RamenProofPictureRepository extends JpaRepository<RamenProofPic
         )
         from RamenProofPicture p
         where p.memberProfile.id = :memberId
+                and p.isDeleted = false
         order by p.uploadedAt desc
         """,
             countQuery = """
         select count(p)
         from RamenProofPicture p
         where p.memberProfile.id = :memberId
+                and p.isDeleted = false
         """
     )
     Page<ProofPictureInfoResponse> findMemberUploadPhoto(@Param("memberId") Long memberId, Pageable pageable);
@@ -42,12 +44,14 @@ public interface RamenProofPictureRepository extends JpaRepository<RamenProofPic
         )
         from RamenProofPicture p
         where p.ramenShop.id = :shopId
+                and p.isDeleted = false
         order by p.uploadedAt desc
         """,
             countQuery = """
         select count(p)
         from RamenProofPicture p
         where p.ramenShop.id = :shopId
+                and p.isDeleted = false
         """
     )
     Page<RamenShopProofPictureResponse> searchPictures(@Param("shopId") Long shopId, Pageable pageable);
