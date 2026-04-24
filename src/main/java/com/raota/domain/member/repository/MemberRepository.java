@@ -93,7 +93,7 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
                 count(p.id),
                 max(p.uploadedAt))
             from MemberProfile m
-            left join RamenProofPicture p on p.memberProfile = m
+            left join RamenProofPicture p on p.memberProfile = m and p.isDeleted = false
             left join p.ramenShop r
             where m.id = :memberId
             group by r.id, r.name, r.imageUrl, r.address.city, r.address.district
@@ -102,7 +102,7 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
             countQuery = """
                     select count(distinct r.id)
                     from MemberProfile m
-                    left join RamenProofPicture p on p.memberProfile = m
+                    left join RamenProofPicture p on p.memberProfile = m and p.isDeleted = false
                     left join p.ramenShop r
                     where m.id = :memberId
                     """)
@@ -144,12 +144,12 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
         p.uploadedAt
     )
     from RamenProofPicture p
-    where p.memberProfile.id = :memberId
+    where p.memberProfile.id = :memberId and p.isDeleted = false
 """,
             countQuery = """
     select count(p)
     from RamenProofPicture p
-    where p.memberProfile.id = :memberId
+    where p.memberProfile.id = :memberId and p.isDeleted = false
 """)
     Page<PhotoSummaryResponse> findMyPhotos(@Param("memberId") Long memberId, Pageable pageable);
 }

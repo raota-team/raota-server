@@ -1,0 +1,1 @@
+ALTER TABLE tb_menu_vote ADD COLUMN is_cancelled BOOLEAN NOT NULL DEFAULT FALSE;

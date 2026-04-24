@@ -46,4 +46,18 @@ public class MenuVote {
     @CreationTimestamp
     @Column(name = "voted_at", nullable = false)
     private LocalDateTime votedAt;
+
+    @Builder.Default
+    @Column(name = "is_cancelled", nullable = false)
+    private boolean isCancelled = false;
+
+    public void cancel() {
+        this.isCancelled = true;
+    }
+
+    public void reVote(NormalMenu menu) {
+        this.normalMenu = menu;
+        this.isCancelled = false;
+        this.votedAt = LocalDateTime.now();
+    }
 }

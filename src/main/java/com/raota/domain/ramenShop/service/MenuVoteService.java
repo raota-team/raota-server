@@ -29,9 +29,9 @@ public class MenuVoteService {
         List<VoteResultsDto> statusDto = voteRepository.findMenuVoteCounts(shopId);
         long totalCount = getTotalCount(statusDto);
 
-        // 현재 유저가 투표한 메뉴 찾기
+        // 현재 유저가 투표한 메뉴 찾기 (취소되지 않은 활성 투표만)
         Optional<MenuVote> userVote = (memberId != null) 
-                ? voteRepository.findByMemberProfileIdAndRamenShopId(memberId, shopId)
+                ? voteRepository.findByMemberProfileIdAndRamenShopIdAndIsCancelledFalse(memberId, shopId)
                 : Optional.empty();
 
         statusDto.forEach(dto -> {
@@ -56,17 +56,32 @@ public class MenuVoteService {
 
         if (existingVote.isPresent()) {
             MenuVote vote = existingVote.get();
-            // 같은 메뉴를 다시 누른 경우 -> 투표 취소
-            if (vote.getNormalMenu().getId().equals(menuId)) {
-                voteRepository.delete(vote);
+            
+            // 이미 투표된 상태인 경우
+            if (!vote.isCancelled()) {
+                // 같은 메뉴를 다시 누른 경우 -> 투표 취소
+                if (vote.getNormalMenu().getId().equals(menuId)) {
+                    vote.cancel();
+                } 
+                // 다른 메뉴를 누른 경우 -> 기존 투표 메뉴 변경
+                else {
+                    RamenShop ramenShop = ramenShopRepository.findById(shopId)
+                            .orElseThrow(() -> new IllegalArgumentException("찾을수 없는 라멘가게 입니다."));
+                    NormalMenu newMenu = ramenShop.getNormalMenus().findMenuById(menuId)
+                            .orElseThrow(() -> new IllegalArgumentException("찾을수 없는 메뉴입니다."));
+                    vote.reVote(newMenu);
+                }
             } 
-            // 다른 메뉴를 누른 경우 -> 기존 투표 삭제 후 새 투표
+            // 이전에 투표했다가 취소한 상태인 경우 -> 다시 활성화 및 메뉴 설정
             else {
-                voteRepository.delete(vote);
-                createNewVote(shopId, menuId, memberId);
+                RamenShop ramenShop = ramenShopRepository.findById(shopId)
+                        .orElseThrow(() -> new IllegalArgumentException("찾을수 없는 라멘가게 입니다."));
+                NormalMenu newMenu = ramenShop.getNormalMenus().findMenuById(menuId)
+                        .orElseThrow(() -> new IllegalArgumentException("찾을수 없는 메뉴입니다."));
+                vote.reVote(newMenu);
             }
         } else {
-            // 투표가 없었던 경우 -> 새 투표 생성
+            // 투표 기록이 아예 없었던 경우 -> 새 투표 생성
             createNewVote(shopId, menuId, memberId);
         }
 
