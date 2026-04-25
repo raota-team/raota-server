@@ -18,7 +18,7 @@ public class FIleController {
 
     /**
      * 클라이언트 직접 업로드를 위한 티켓(Presigned URL 또는 Cloudinary Signature)을 발급한다.
-     * @param type 이미지 용도 (PROFILE, SHOP, COMMUNITY, PROOF)
+     * @param type 이미지 용도 (PROFILE, BACKGROUND, SHOP, COMMUNITY, PROOF)
      * @param extension 파일 확장자 (jpg, png 등)
      */
     @GetMapping("/upload-ticket")
@@ -35,6 +35,7 @@ public class FIleController {
     private String resolveDirectory(String type) {
         return switch (type.toUpperCase()) {
             case "PROFILE" -> "profiles";
+            case "BACKGROUND" -> "backgrounds";
             case "SHOP" -> "shops";
             case "COMMUNITY" -> "community";
             case "PROOF" -> "ramen-proof";
