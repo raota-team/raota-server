@@ -114,4 +114,58 @@ class MemberIntegrationTest extends BaseIntegrationTest {
                 .body("data.items.size()", is(1))
                 .body("data.items[0].content", is("댓글달기"));
     }
+
+    @Test
+    @DisplayName("삭제된 게시글과 그 게시글의 댓글은 마이페이지 목록과 통계에서 제외된다.")
+    void deleted_post_and_its_comments_are_excluded_from_my_page() {
+        CommunityPostCreateRequest postRequest = new CommunityPostCreateRequest(
+                "REVIEW", null, "삭제될 게시글", null, "PLAIN", "내용"
+        );
+        given()
+                .header("Authorization", "Bearer " + accessToken)
+                .contentType(ContentType.JSON)
+                .body(postRequest)
+                .post("/community/posts")
+                .then().statusCode(HttpStatus.OK.value());
+
+        Long postId = jdbcTemplate.queryForObject("SELECT id FROM tb_post WHERE title = '삭제될 게시글' LIMIT 1", Long.class);
+
+        CommunityCommentCreateRequest commentRequest = new CommunityCommentCreateRequest("숨겨질 댓글", null);
+        given()
+                .header("Authorization", "Bearer " + accessToken)
+                .contentType(ContentType.JSON)
+                .body(commentRequest)
+                .post("/community/posts/{postId}/comments", postId)
+                .then().statusCode(HttpStatus.OK.value());
+
+        given()
+                .header("Authorization", "Bearer " + accessToken)
+                .delete("/community/posts/{postId}", postId)
+                .then().statusCode(HttpStatus.OK.value());
+
+        given()
+                .header("Authorization", "Bearer " + accessToken)
+        .when()
+                .get("/users/me/profile")
+        .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("data.stats.post_count", is(0))
+                .body("data.stats.comment_count", is(0));
+
+        given()
+                .header("Authorization", "Bearer " + accessToken)
+        .when()
+                .get("/users/me/posts")
+        .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("data.items.size()", is(0));
+
+        given()
+                .header("Authorization", "Bearer " + accessToken)
+        .when()
+                .get("/users/me/comments")
+        .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("data.items.size()", is(0));
+    }
 }

@@ -6,9 +6,9 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 public class UserStatsDto {
-    private int visited_restaurant_count;
-    private int total_photo_count;
-    private int total_bookmark_count;
-    private int post_count;
-    private int comment_count;
+    private Long visited_restaurant_count;
+    private Long total_photo_count;
+    private Long total_bookmark_count;
+    private Long post_count;
+    private Long comment_count;
 }

@@ -22,11 +22,11 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
         m.backgroundImageUrl,
         m.bio,
         new com.raota.domain.member.dto.UserStatsDto(
-            m.memberActivityStats.visitedRestaurantCount,
-            m.memberActivityStats.photoCount,
-            m.memberActivityStats.bookmarkCount,
-            m.memberActivityStats.postCount,
-            m.memberActivityStats.commentCount
+            (select count(distinct p.ramenShop.id) from RamenProofPicture p where p.memberProfile.id = m.id and p.isDeleted = false),
+            (select count(p) from RamenProofPicture p where p.memberProfile.id = m.id and p.isDeleted = false),
+            (select count(b) from Bookmark b where b.memberProfile.id = m.id and b.isDeleted = false),
+            (select count(p) from PostEntity p where p.author.id = m.id and p.isDeleted = false),
+            (select count(c) from CommentEntity c where c.member.id = m.id and c.isDeleted = false and c.post.isDeleted = false)
         )
     )
     from MemberProfile m
@@ -53,13 +53,13 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
             from PostEntity p
             join p.author m
             left join p.ramenShop r
-            where m.id = :memberId
+            where m.id = :memberId and p.isDeleted = false
             order by p.createdAt desc
             """,
             countQuery = """
                     select count(p)
                     from PostEntity p
-                    where p.author.id = :memberId
+                    where p.author.id = :memberId and p.isDeleted = false
                     """)
     Page<com.raota.domain.community.presentation.response.CommunityPostCardResponse> findMyPosts(
             @Param("memberId") Long memberId,
@@ -82,12 +82,16 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
             from CommentEntity c
             join c.member m
             where m.id = :memberId
+                and c.isDeleted = false
+                and c.post.isDeleted = false
             order by c.createdAt desc
             """,
             countQuery = """
                     select count(c)
                     from CommentEntity c
                     where c.member.id = :memberId
+                        and c.isDeleted = false
+                        and c.post.isDeleted = false
                     """)
     Page<com.raota.domain.community.presentation.response.CommunityCommentItemResponse> findMyComments(
             @Param("memberId") Long memberId,
