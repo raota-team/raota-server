@@ -11,6 +11,7 @@ import com.raota.global.common.PageResponse;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
@@ -19,21 +20,25 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+@Slf4j
 @Repository
 @RequiredArgsConstructor
 public class PostQueryRepository {
     private final DSLContext dsl;
 
     public PageResponse<CommunityPostCardResponse> searchPostCards(CommunityPostSearchRequest request, Pageable pageable) {
+        log.info("Searching posts with category filter: {}", request.getCategory());
+
+        // 1. 조건 설정 (카테고리 필터 등)
         Condition condition = field("tb_post.is_deleted").eq(false);
         if (request.getCategory() != null && !request.getCategory().isBlank()) {
             condition = condition.and(field("tb_post.category").eq(request.getCategory()));
         }
 
+        // 2. 전체 개수 조회
         int totalCount = dsl.fetchCount(
-                selectFrom(table("tb_post")).where(condition)
+                dsl.selectFrom(table("tb_post")).where(condition)
         );
-
         List<CommunityPostCardResponse> items = dsl.select(
                         field("tb_post.id").as("postId"),
                         field("tb_post.category"),
