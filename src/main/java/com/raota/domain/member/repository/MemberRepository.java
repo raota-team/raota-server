@@ -1,5 +1,7 @@
 package com.raota.domain.member.repository;
 
+import com.raota.domain.community.repository.command.entity.CommentEntity;
+import com.raota.domain.community.repository.command.entity.PostEntity;
 import com.raota.domain.member.controller.response.BookmarkSummaryResponse;
 import com.raota.domain.member.controller.response.MyProfileResponse;
 import com.raota.domain.member.controller.response.PhotoSummaryResponse;
@@ -69,7 +71,8 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
                 m.nickname,
                 null,
                 c.createdAt,
-                c.content
+                c.content,
+                c.isDeleted
             )
             from CommentEntity c
             join c.member m
