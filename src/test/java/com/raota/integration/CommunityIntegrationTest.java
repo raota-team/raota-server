@@ -67,8 +67,8 @@ class CommunityIntegrationTest extends BaseIntegrationTest {
 
         given()
                 .header("Authorization", "Bearer " + accessToken)
-                .contentType(ContentType.MULTIPART)
-                .multiPart("request", request, "application/json; charset=UTF-8")
+                .contentType(ContentType.JSON)
+                .body(request)
         .when()
                 .post("/community/posts")
         .then()

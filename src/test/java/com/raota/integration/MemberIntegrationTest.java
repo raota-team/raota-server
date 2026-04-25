@@ -65,8 +65,8 @@ class MemberIntegrationTest extends BaseIntegrationTest {
         );
         given()
                 .header("Authorization", "Bearer " + accessToken)
-                .contentType(ContentType.MULTIPART)
-                .multiPart("request", postRequest, "application/json; charset=UTF-8")
+                .contentType(ContentType.JSON)
+                .body(postRequest)
                 .post("/community/posts")
                 .then().statusCode(HttpStatus.OK.value());
 
