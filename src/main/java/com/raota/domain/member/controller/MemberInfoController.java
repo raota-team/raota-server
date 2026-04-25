@@ -20,6 +20,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -95,6 +96,49 @@ public class MemberInfoController implements MemberInfoApi {
             @LoginMember Long memberId,
             @PageableDefault(size = 5, direction = Sort.Direction.DESC) Pageable pageable) {
         Page<com.raota.domain.community.presentation.response.CommunityCommentItemResponse> response = memberInfoService.getMyComments(memberId, pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(response)));
+    }
+
+    @Override
+    @GetMapping("/{userId}/profile")
+    public ResponseEntity<ApiResponse<MyProfileResponse>> getUserProfileById(
+            @PathVariable Long userId) {
+        return ResponseEntity.ok(ApiResponse.success(memberInfoService.getMyProfile(userId)));
+    }
+
+    @Override
+    @GetMapping("/{userId}/photos")
+    public ResponseEntity<ApiResponse<PageResponse<PhotoSummaryResponse>>> getUserPhotosById(
+            @PathVariable Long userId,
+            Pageable pageable) {
+        Page<PhotoSummaryResponse> photos = memberInfoService.getMyPhotoList(userId, pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(photos)));
+    }
+
+    @Override
+    @GetMapping("/{userId}/visits")
+    public ResponseEntity<ApiResponse<PageResponse<VisitSummaryResponse>>> getUserVisitsById(
+            @PathVariable Long userId,
+            Pageable pageable) {
+        Page<VisitSummaryResponse> page = memberInfoService.getMyVisits(userId, pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(page)));
+    }
+
+    @Override
+    @GetMapping("/{userId}/posts")
+    public ResponseEntity<ApiResponse<PageResponse<com.raota.domain.community.presentation.response.CommunityPostCardResponse>>> getUserPostsById(
+            @PathVariable Long userId,
+            @PageableDefault(size = 5, direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<com.raota.domain.community.presentation.response.CommunityPostCardResponse> response = memberInfoService.getMyPosts(userId, pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(response)));
+    }
+
+    @Override
+    @GetMapping("/{userId}/comments")
+    public ResponseEntity<ApiResponse<PageResponse<com.raota.domain.community.presentation.response.CommunityCommentItemResponse>>> getUserCommentsById(
+            @PathVariable Long userId,
+            @PageableDefault(size = 5, direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<com.raota.domain.community.presentation.response.CommunityCommentItemResponse> response = memberInfoService.getMyComments(userId, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(response)));
     }
 }

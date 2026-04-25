@@ -9,6 +9,11 @@ import com.raota.domain.community.repository.command.JpaCommentRepository;
 import com.raota.domain.community.repository.command.JpaPostRepository;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
+import com.raota.domain.ramenShop.model.Address;
+import com.raota.domain.ramenShop.model.RamenProofPicture;
+import com.raota.domain.ramenShop.model.RamenShop;
+import com.raota.domain.ramenShop.repository.RamenProofPictureRepository;
+import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.global.auth.JwtTokenProvider;
 import com.raota.global.common.BaseIntegrationTest;
 import io.restassured.RestAssured;
@@ -36,6 +41,12 @@ class MemberIntegrationTest extends BaseIntegrationTest {
     private JpaCommentRepository jpaCommentRepository;
 
     @Autowired
+    private RamenProofPictureRepository ramenProofPictureRepository;
+
+    @Autowired
+    private RamenShopRepository ramenShopRepository;
+
+    @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
     @Autowired
@@ -49,6 +60,8 @@ class MemberIntegrationTest extends BaseIntegrationTest {
         RestAssured.port = port;
         jpaCommentRepository.deleteAll();
         jpaPostRepository.deleteAll();
+        ramenProofPictureRepository.deleteAll();
+        ramenShopRepository.deleteAll();
         memberRepository.deleteAll();
 
         savedMember = memberRepository.save(MemberProfile.builder()
@@ -167,5 +180,87 @@ class MemberIntegrationTest extends BaseIntegrationTest {
         .then()
                 .statusCode(HttpStatus.OK.value())
                 .body("data.items.size()", is(0));
+    }
+
+    @Test
+    @DisplayName("사용자 ID로 공개 프로필/활동 목록을 조회할 수 있다.")
+    void get_user_public_profile_and_activity_lists_by_user_id() {
+        CommunityPostCreateRequest postRequest = new CommunityPostCreateRequest(
+                "REVIEW", null, "공개 조회 게시글", null, "PLAIN", "내용"
+        );
+        given()
+                .header("Authorization", "Bearer " + accessToken)
+                .contentType(ContentType.JSON)
+                .body(postRequest)
+                .post("/community/posts")
+                .then().statusCode(HttpStatus.OK.value());
+
+        Long postId = jdbcTemplate.queryForObject("SELECT id FROM tb_post WHERE title = '공개 조회 게시글' LIMIT 1", Long.class);
+
+        CommunityCommentCreateRequest commentRequest = new CommunityCommentCreateRequest("공개 조회 댓글", null);
+        given()
+                .header("Authorization", "Bearer " + accessToken)
+                .contentType(ContentType.JSON)
+                .body(commentRequest)
+                .post("/community/posts/{postId}/comments", postId)
+                .then().statusCode(HttpStatus.OK.value());
+
+        RamenShop ramenShop = ramenShopRepository.save(RamenShop.builder()
+                .name("공개 조회 라멘집")
+                .address(Address.of("서울", "마포구", "테스트로 1", null))
+                .imageUrl("https://images.example.com/shop.jpg")
+                .build());
+        ramenProofPictureRepository.save(RamenProofPicture.builder()
+                .ramenShop(ramenShop)
+                .memberProfile(savedMember)
+                .imageUrl("https://images.example.com/proof.jpg")
+                .description("공개 조회 인증샷")
+                .menuName("시오라멘")
+                .build());
+
+        Long userId = savedMember.getId();
+
+        given()
+        .when()
+                .get("/users/{userId}/profile", userId)
+        .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("data.nickname", is("마이페이지테스터"))
+                .body("data.stats.post_count", is(1))
+                .body("data.stats.comment_count", is(1))
+                .body("data.stats.total_photo_count", is(1))
+                .body("data.stats.visited_restaurant_count", is(1));
+
+        given()
+        .when()
+                .get("/users/{userId}/posts", userId)
+        .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("data.items.size()", is(1))
+                .body("data.items[0].title", is("공개 조회 게시글"));
+
+        given()
+        .when()
+                .get("/users/{userId}/comments", userId)
+        .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("data.items.size()", is(1))
+                .body("data.items[0].content", is("공개 조회 댓글"));
+
+        given()
+        .when()
+                .get("/users/{userId}/photos", userId)
+        .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("data.items.size()", is(1))
+                .body("data.items[0].image_url", is("https://images.example.com/proof.jpg"));
+
+        given()
+        .when()
+                .get("/users/{userId}/visits", userId)
+        .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("data.items.size()", is(1))
+                .body("data.items[0].restaurant_name", is("공개 조회 라멘집"));
     }
 }
