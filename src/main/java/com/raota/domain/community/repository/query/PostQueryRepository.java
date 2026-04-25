@@ -98,22 +98,32 @@ public class PostQueryRepository {
     public PageResponse<CommunityRamenShopOptionResponse> getRamenShopOptions(CommunityRamenShopSearchRequest request, Pageable pageable) {
         Condition condition = trueCondition();
         if (request.getKeyword() != null && !request.getKeyword().isBlank()) {
-            condition = condition.and(field("tb_ramen_shop.name").like("%" + request.getKeyword() + "%"));
+            condition = condition.and(
+                    field("tb_ramen_shop.name").like("%" + request.getKeyword() + "%")
+                    .or(field("tb_ramen_shop.city").like("%" + request.getKeyword() + "%"))
+                    .or(field("tb_ramen_shop.district").like("%" + request.getKeyword() + "%"))
+            );
         }
 
         int totalCount = dsl.fetchCount(selectFrom(table("tb_ramen_shop")).where(condition));
 
         List<CommunityRamenShopOptionResponse> items = dsl.select(
-                        field("tb_ramen_shop.ramen_shop_id").as("id"),
-                        field("tb_ramen_shop.name"),
-                        concat(field("tb_ramen_shop.city"), inline(" "), field("tb_ramen_shop.district")).as("region"),
-                        field("tb_ramen_shop.image_url").as("thumbnailUrl")
+                        field("tb_ramen_shop.ramen_shop_id", Long.class).as("id"),
+                        field("tb_ramen_shop.name", String.class).as("name"),
+                        concat(field("tb_ramen_shop.city", String.class), inline(" "), field("tb_ramen_shop.district", String.class)).as("region"),
+                        field("tb_ramen_shop.image_url", String.class).as("thumbnailUrl")
                 )
                 .from(table("tb_ramen_shop"))
                 .where(condition)
+                .orderBy(field("tb_ramen_shop.name").asc()) // 가나다순 정렬 추가
                 .limit(pageable.getPageSize())
                 .offset(pageable.getOffset())
-                .fetchInto(CommunityRamenShopOptionResponse.class);
+                .fetch(r -> new CommunityRamenShopOptionResponse(
+                        r.get("id", Long.class),
+                        r.get("name", String.class),
+                        r.get("region", String.class),
+                        r.get("thumbnailUrl", String.class)
+                ));
 
         return PageResponse.from(new PageImpl<>(items, pageable, totalCount));
     }

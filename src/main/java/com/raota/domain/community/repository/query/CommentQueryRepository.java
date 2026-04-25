@@ -44,11 +44,11 @@ public class CommentQueryRepository {
         );
 
         List<CommunityCommentItemResponse> items = dsl.select(
-                        field("tb_comment.id").as("commentId"),
-                        field("tb_comment.parent_id").as("parentCommentId"),
-                        field("tb_member_profile.nickname").as("authorNickname"),
-                        field("tb_comment.content"),
-                        field("tb_comment.created_at").as("createdAt")
+                        field("tb_comment.id", Long.class).as("commentId"),
+                        field("tb_comment.parent_id", Long.class).as("parentCommentId"),
+                        field("tb_member_profile.nickname", String.class).as("authorNickname"),
+                        field("tb_comment.created_at", java.time.LocalDateTime.class).as("createdAt"),
+                        field("tb_comment.content", String.class).as("content")
                 )
                 .from(table("tb_comment"))
                 .join(table("tb_member_profile")).on(field("tb_comment.member_id").eq(field("tb_member_profile.id")))
@@ -56,7 +56,14 @@ public class CommentQueryRepository {
                 .orderBy(field("tb_comment.created_at").asc())
                 .limit(pageable.getPageSize())
                 .offset(pageable.getOffset())
-                .fetchInto(CommunityCommentItemResponse.class);
+                .fetch(r -> new CommunityCommentItemResponse(
+                        r.get("commentId", Long.class),
+                        r.get("parentCommentId", Long.class),
+                        r.get("authorNickname", String.class),
+                        null, // taggedParentAuthorNickname (미구현)
+                        r.get("createdAt", java.time.LocalDateTime.class),
+                        r.get("content", String.class)
+                ));
 
         return PageResponse.from(new PageImpl<>(items, pageable, totalCount));
     }
