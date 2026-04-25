@@ -3,8 +3,6 @@ package com.raota.domain.member.controller;
 import com.raota.domain.member.controller.contract.MemberInfoApi;
 import com.raota.domain.member.controller.request.UpdateProfileRequest;
 import com.raota.domain.member.controller.response.BookmarkSummaryResponse;
-import com.raota.domain.member.controller.response.MyCommentSummaryResponse;
-import com.raota.domain.member.controller.response.MyPostSummaryResponse;
 import com.raota.domain.member.controller.response.MyProfileResponse;
 import com.raota.domain.member.controller.response.PhotoSummaryResponse;
 import com.raota.domain.member.controller.response.VisitSummaryResponse;
