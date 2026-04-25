@@ -55,8 +55,9 @@ public class CommunityController implements CommunityApi {
     @Override
     @GetMapping("/posts/{postId}")
     public ResponseEntity<ApiResponse<CommunityPostDetailResponse>> getCommunityPostDetail(
-            @PathVariable Long postId) {
-        return ResponseEntity.ok(ApiResponse.success(postQueryRepository.getPostDetail(postId)));
+            @PathVariable Long postId,
+            @LoginMember(required = false) Long memberId) {
+        return ResponseEntity.ok(ApiResponse.success(postQueryRepository.getPostDetail(postId, memberId)));
     }
 
     @Override
@@ -66,7 +67,7 @@ public class CommunityController implements CommunityApi {
             @LoginMember Long memberId) {
         
         Long postId = postService.createPost(request, memberId);
-        return ResponseEntity.ok(ApiResponse.success(postQueryRepository.getPostDetail(postId)));
+        return ResponseEntity.ok(ApiResponse.success(postQueryRepository.getPostDetail(postId, memberId)));
     }
 
     @Override
@@ -76,7 +77,7 @@ public class CommunityController implements CommunityApi {
             @RequestBody CommunityPostCreateRequest request,
             @LoginMember Long memberId) {
         postService.updatePost(postId, request, memberId);
-        return ResponseEntity.ok(ApiResponse.success(postQueryRepository.getPostDetail(postId)));
+        return ResponseEntity.ok(ApiResponse.success(postQueryRepository.getPostDetail(postId, memberId)));
     }
 
     @Override

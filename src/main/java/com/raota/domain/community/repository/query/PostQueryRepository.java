@@ -61,7 +61,7 @@ public class PostQueryRepository {
         return PageResponse.from(page);
     }
 
-    public CommunityPostDetailResponse getPostDetail(Long postId) {
+    public CommunityPostDetailResponse getPostDetail(Long postId, Long memberId) {
         return dsl.select(
                         field("tb_post.category", String.class).as("category"),
                         field("tb_ramen_shop.name", String.class).as("storeName"),
@@ -73,7 +73,13 @@ public class PostQueryRepository {
                         // 좋아요 수 서브쿼리
                         field(selectCount().from(table("tb_post_like")).where(field("tb_post_like.post_id").eq(field("tb_post.id")))).as("likeCount"),
                         // 댓글 수 서브쿼리
-                        field(selectCount().from(table("tb_comment")).where(field("tb_comment.post_id").eq(field("tb_post.id")).and(field("tb_comment.is_deleted").eq(false)))).as("commentCount")
+                        field(selectCount().from(table("tb_comment")).where(field("tb_comment.post_id").eq(field("tb_post.id")).and(field("tb_comment.is_deleted").eq(false)))).as("commentCount"),
+                        // 좋아요 여부 서브쿼리
+                        field(memberId == null ? inline(false) : exists(
+                                selectOne().from(table("tb_post_like"))
+                                        .where(field("tb_post_like.post_id").eq(field("tb_post.id"))
+                                                .and(field("tb_post_like.member_id").eq(memberId)))
+                        )).as("isLiked")
                 )
                 .from(table("tb_post"))
                 .leftJoin(table("tb_ramen_shop")).on(field("tb_post.ramen_shop_id").eq(field("tb_ramen_shop.ramen_shop_id")))
@@ -89,7 +95,8 @@ public class PostQueryRepository {
                         r.get("contentFormat", String.class),
                         r.get("content", String.class),
                         r.get("likeCount", Long.class),
-                        r.get("commentCount", Long.class)
+                        r.get("commentCount", Long.class),
+                        r.get("isLiked", Boolean.class)
                 ));
     }
 

@@ -231,6 +231,13 @@
     - **테스트 동기화**: 게시글 작성 API의 JSON 전환에 맞춰 `CommunityIntegrationTest` 및 `MemberIntegrationTest` 코드 전수 수정.
 - **검증**: 전체 통합 테스트(46개) 100% 통과 확인.
 
+### ✅ Commit 30: 게시글 상세 조회 시 좋아요 여부(isLiked) 추가 (완료)
+- **내용**: 
+    - **응답 확장**: `CommunityPostDetailResponse`에 사용자의 좋아요 여부를 나타내는 `isLiked` 필드 추가.
+    - **쿼리 고도화**: `PostQueryRepository`에서 현재 로그인한 사용자의 ID를 기반으로 `tb_post_like` 테이블을 조회하여 좋아요 여부를 실시간으로 판별.
+    - **비인증 지원**: 비로그인 사용자의 경우 항상 `isLiked = false`를 반환하도록 예외 처리.
+- **핵심**: 상세 페이지 UI에서 사용자의 인터랙션 상태(좋아요 여부)를 즉시 시각화할 수 있도록 지원.
+
 ---
 
 ## 🧪 테스트 전략 (Testing Standards)
