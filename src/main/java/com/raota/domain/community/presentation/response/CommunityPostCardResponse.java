@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 
 public record CommunityPostCardResponse(
+        @Schema(description = "글 ID")
+        Long postId,
         @Schema(description = "글 카테고리")
         String category,
         @Schema(description = "맛집후기 카테고리일 때만 가게 이름, 그 외에는 null")

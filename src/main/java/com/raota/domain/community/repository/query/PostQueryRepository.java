@@ -41,6 +41,7 @@ public class PostQueryRepository {
 
         // 3. 목록 조회 (JOOQ DSL)
         List<CommunityPostCardResponse> items = dsl.select(
+                        field("tb_post.id").as("postId"),
                         field("tb_post.category"),
                         field("tb_ramen_shop.name").as("storeName"),
                         field("tb_post.title"),

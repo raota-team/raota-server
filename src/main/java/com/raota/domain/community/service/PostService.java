@@ -25,30 +25,15 @@ public class PostService {
 
     public Long createPost(
             CommunityPostCreateRequest request, 
-            MultipartFile thumbnailFile, 
-            List<MultipartFile> contentImages, 
             Long authorId
     ) {
-        // 1. 이미지 업로드 처리
-        String thumbnailUrl = request.getThumbnailUrl();
-        if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
-            thumbnailUrl = fileUploader.upload(thumbnailFile, "community");
-        }
-
-        if (contentImages != null && !contentImages.isEmpty()) {
-            contentImages.stream()
-                    .map(file -> file.isEmpty() ? null : fileUploader.upload(file, "community"))
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-        }
-
-        // 2. 도메인 모델 생성 및 저장
+        // 1. 도메인 모델 생성 및 저장
         Post post = Post.create(
                 PostCategory.valueOf(request.getCategory()),
                 request.getTitle(),
                 request.getContent(),
                 request.getContentFormat(),
-                thumbnailUrl,
+                request.getThumbnailUrl(), // 요청으로 전달된 URL을 그대로 사용
                 authorId,
                 request.getRamenShopId()
         );

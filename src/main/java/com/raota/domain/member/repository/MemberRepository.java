@@ -34,6 +34,7 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
 
     @Query(value = """
             select new com.raota.domain.community.presentation.response.CommunityPostCardResponse(
+                p.id,
                 cast(p.category as string),
                 r.name,
                 p.title,

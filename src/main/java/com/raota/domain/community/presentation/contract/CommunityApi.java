@@ -39,16 +39,13 @@ public interface CommunityApi {
             @Parameter(description = "글 ID", required = true) Long postId);
 
     @Operation(summary = "커뮤니티 글 작성",
-            description = "multipart/form-data로 글 작성 JSON과 이미지 파일을 함께 전송합니다. " +
-                    "contentFormat은 MARKDOWN/PLAIN/TIPTAP_JSON이며 content는 해당 포맷의 문자열입니다.")
+            description = "JSON 형식으로 커뮤니티 글을 작성합니다. 이미지는 사전 업로드 후 URL로 포함되어야 합니다.")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
     ResponseEntity<ApiResponse<CommunityPostDetailResponse>> createCommunityPost(
-            @Parameter(description = "글 작성 요청(JSON)") CommunityPostCreateRequest request,
-            @Parameter(description = "썸네일 이미지 파일", required = false) MultipartFile thumbnail,
-            @Parameter(description = "본문 이미지 파일 목록(본문에 등장하는 순서대로)", required = false)
-            List<MultipartFile> contentImages,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "글 작성 요청") 
+            CommunityPostCreateRequest request,
             @Parameter(hidden = true) Long memberId);
 
     @Operation(summary = "커뮤니티 글 작성용 라멘집 목록 조회",

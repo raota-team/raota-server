@@ -51,14 +51,12 @@ public class CommunityController implements CommunityApi {
     }
 
     @Override
-    @PostMapping(value = "/posts", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping("/posts")
     public ResponseEntity<ApiResponse<CommunityPostDetailResponse>> createCommunityPost(
-            @RequestPart("request") CommunityPostCreateRequest request,
-            @RequestPart(value = "thumbnail", required = false) MultipartFile thumbnail,
-            @RequestPart(value = "contentImages", required = false) List<MultipartFile> contentImages,
+            @org.springframework.web.bind.annotation.RequestBody CommunityPostCreateRequest request,
             @LoginMember Long memberId) {
         
-        Long postId = postService.createPost(request, thumbnail, contentImages, memberId);
+        Long postId = postService.createPost(request, memberId);
         return ResponseEntity.ok(ApiResponse.success(postQueryRepository.getPostDetail(postId)));
     }
 
