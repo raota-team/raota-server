@@ -72,6 +72,7 @@ public class PostQueryRepository {
                         field("tb_ramen_shop.name", String.class).as("storeName"),
                         field("tb_post.title", String.class).as("title"),
                         field("tb_member_profile.nickname", String.class).as("authorName"),
+                        field("tb_post.author_id", Long.class).as("authorId"),
                         field("tb_post.created_at", LocalDateTime.class).as("createdAt"),
                         field("tb_post.content_format", String.class).as("contentFormat"),
                         field("tb_post.content", String.class).as("content"),
@@ -95,6 +96,7 @@ public class PostQueryRepository {
                         r.get("storeName", String.class),
                         r.get("title", String.class),
                         r.get("authorName", String.class),
+                        r.get("authorId", Long.class),
                         r.get("createdAt", LocalDateTime.class),
                         java.util.Collections.emptyList(), // 이미지 리스트는 본문에 포함됨
                         r.get("contentFormat", String.class),

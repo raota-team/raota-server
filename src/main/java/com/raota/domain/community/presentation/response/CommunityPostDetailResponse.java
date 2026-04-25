@@ -13,6 +13,8 @@ public record CommunityPostDetailResponse(
         String title,
         @Schema(description = "작성자 이름")
         String authorName,
+        @Schema(description = "작성자 ID")
+        Long authorId,
         @Schema(description = "작성 일시")
         LocalDateTime createdAt,
         @Schema(description = "글 이미지 URL 리스트")
