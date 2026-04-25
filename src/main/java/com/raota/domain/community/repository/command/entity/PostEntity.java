@@ -61,6 +61,22 @@ public class PostEntity {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    @Builder.Default
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
+
+    public void update(PostCategory category, String title, String content, String thumbnailUrl, RamenShop ramenShop) {
+        this.category = category;
+        this.title = title;
+        this.content = content;
+        this.thumbnailUrl = thumbnailUrl;
+        this.ramenShop = ramenShop;
+    }
+
+    public void delete() {
+        this.isDeleted = true;
+    }
+
     public Post toDomain() {
         return Post.of(
                 id,

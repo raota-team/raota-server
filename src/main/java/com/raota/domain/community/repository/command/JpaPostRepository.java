@@ -39,6 +39,11 @@ public class JpaPostRepository implements PostRepository {
     }
 
     @Override
+    public Optional<PostEntity> findEntityById(Long id) {
+        return jpaRepository.findById(id);
+    }
+
+    @Override
     public void delete(Long id) {
         jpaRepository.deleteById(id);
     }
