@@ -48,6 +48,35 @@ public interface CommunityApi {
             CommunityPostCreateRequest request,
             @Parameter(hidden = true) Long memberId);
 
+    @Operation(summary = "커뮤니티 글 수정",
+            description = "본인이 작성한 글을 수정합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    ResponseEntity<ApiResponse<CommunityPostDetailResponse>> updateCommunityPost(
+            @Parameter(description = "글 ID") Long postId,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "글 수정 요청") 
+            CommunityPostCreateRequest request,
+            @Parameter(hidden = true) Long memberId);
+
+    @Operation(summary = "커뮤니티 글 삭제",
+            description = "본인이 작성한 글을 삭제(소프트 딜리트)합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    ResponseEntity<ApiResponse<Void>> deleteCommunityPost(
+            @Parameter(description = "글 ID") Long postId,
+            @Parameter(hidden = true) Long memberId);
+
+    @Operation(summary = "커뮤니티 글 좋아요 토글",
+            description = "게시글에 좋아요를 누르거나 취소합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    ResponseEntity<ApiResponse<Boolean>> togglePostLike(
+            @Parameter(description = "글 ID") Long postId,
+            @Parameter(hidden = true) Long memberId);
+
     @Operation(summary = "커뮤니티 글 작성용 라멘집 목록 조회",
             description = "맛집후기 카테고리 작성 시 선택할 라멘집 목록을 검색/페이징으로 조회합니다. 기본 페이지 크기는 10입니다.")
     @ApiResponses({

@@ -8,24 +8,24 @@ import com.raota.domain.community.presentation.response.CommunityPostCardRespons
 import com.raota.domain.community.presentation.response.CommunityPostDetailResponse;
 import com.raota.domain.community.presentation.response.CommunityRamenShopOptionResponse;
 import com.raota.domain.community.repository.query.PostQueryRepository;
+import com.raota.domain.community.service.PostLikeService;
 import com.raota.domain.community.service.PostService;
 import com.raota.global.auth.LoginMember;
 import com.raota.global.common.ApiResponse;
 import com.raota.global.common.PageResponse;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/community")
@@ -33,7 +33,16 @@ import org.springframework.web.multipart.MultipartFile;
 public class CommunityController implements CommunityApi {
 
     private final PostService postService;
+    private final PostLikeService postLikeService;
     private final PostQueryRepository postQueryRepository;
+
+    @Override
+    @PostMapping("/posts/{postId}/likes")
+    public ResponseEntity<ApiResponse<Boolean>> togglePostLike(
+            @PathVariable Long postId,
+            @LoginMember Long memberId) {
+        return ResponseEntity.ok(ApiResponse.success(postLikeService.toggleLike(postId, memberId)));
+    }
 
     @Override
     @GetMapping("/posts")
@@ -53,11 +62,30 @@ public class CommunityController implements CommunityApi {
     @Override
     @PostMapping("/posts")
     public ResponseEntity<ApiResponse<CommunityPostDetailResponse>> createCommunityPost(
-            @org.springframework.web.bind.annotation.RequestBody CommunityPostCreateRequest request,
+            @RequestBody CommunityPostCreateRequest request,
             @LoginMember Long memberId) {
         
         Long postId = postService.createPost(request, memberId);
         return ResponseEntity.ok(ApiResponse.success(postQueryRepository.getPostDetail(postId)));
+    }
+
+    @Override
+    @PatchMapping("/posts/{postId}")
+    public ResponseEntity<ApiResponse<CommunityPostDetailResponse>> updateCommunityPost(
+            @PathVariable Long postId,
+            @RequestBody CommunityPostCreateRequest request,
+            @LoginMember Long memberId) {
+        postService.updatePost(postId, request, memberId);
+        return ResponseEntity.ok(ApiResponse.success(postQueryRepository.getPostDetail(postId)));
+    }
+
+    @Override
+    @DeleteMapping("/posts/{postId}")
+    public ResponseEntity<ApiResponse<Void>> deleteCommunityPost(
+            @PathVariable Long postId,
+            @LoginMember Long memberId) {
+        postService.deletePost(postId, memberId);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Override

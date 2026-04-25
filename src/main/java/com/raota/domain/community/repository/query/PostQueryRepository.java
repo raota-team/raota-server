@@ -19,27 +19,21 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
-// 주의: 아래 코드에서 사용하는 POSTS, MEMBERS, RAMEN_SHOPS 등은 jooqCodegen 실행 후 생성될 클래스입니다.
-// 실제 컴파일을 위해서는 `./gradlew jooqCodegen` 실행이 필수입니다.
-
 @Repository
 @RequiredArgsConstructor
 public class PostQueryRepository {
     private final DSLContext dsl;
 
     public PageResponse<CommunityPostCardResponse> searchPostCards(CommunityPostSearchRequest request, Pageable pageable) {
-        // 1. 조건 설정 (카테고리 필터 등)
-        Condition condition = trueCondition();
+        Condition condition = field("tb_post.is_deleted").eq(false);
         if (request.getCategory() != null && !request.getCategory().isBlank()) {
-            condition = condition.and(field("posts.category").eq(request.getCategory()));
+            condition = condition.and(field("tb_post.category").eq(request.getCategory()));
         }
 
-        // 2. 전체 개수 조회
         int totalCount = dsl.fetchCount(
                 selectFrom(table("tb_post")).where(condition)
         );
 
-        // 3. 목록 조회 (JOOQ DSL)
         List<CommunityPostCardResponse> items = dsl.select(
                         field("tb_post.id").as("postId"),
                         field("tb_post.category"),
@@ -49,8 +43,10 @@ public class PostQueryRepository {
                         field("tb_post.thumbnail_url").as("imageUrl"),
                         field("tb_member_profile.nickname").as("authorName"),
                         field("tb_post.created_at").as("createdAt"),
-                        inline(0L).as("likeCount"),
-                        inline(0L).as("commentCount")
+                        // 좋아요 수 서브쿼리
+                        field(selectCount().from(table("tb_post_like")).where(field("tb_post_like.post_id").eq(field("tb_post.id")))).as("likeCount"),
+                        // 댓글 수 서브쿼리 (삭제되지 않은 댓글만)
+                        field(selectCount().from(table("tb_comment")).where(field("tb_comment.post_id").eq(field("tb_post.id")).and(field("tb_comment.is_deleted").eq(false)))).as("commentCount")
                 )
                 .from(table("tb_post"))
                 .leftJoin(table("tb_ramen_shop")).on(field("tb_post.ramen_shop_id").eq(field("tb_ramen_shop.ramen_shop_id")))
@@ -74,20 +70,22 @@ public class PostQueryRepository {
                         field("tb_post.created_at", LocalDateTime.class).as("createdAt"),
                         field("tb_post.content_format", String.class).as("contentFormat"),
                         field("tb_post.content", String.class).as("content"),
-                        inline(0L).as("likeCount"),
-                        inline(0L).as("commentCount")
+                        // 좋아요 수 서브쿼리
+                        field(selectCount().from(table("tb_post_like")).where(field("tb_post_like.post_id").eq(field("tb_post.id")))).as("likeCount"),
+                        // 댓글 수 서브쿼리
+                        field(selectCount().from(table("tb_comment")).where(field("tb_comment.post_id").eq(field("tb_post.id")).and(field("tb_comment.is_deleted").eq(false)))).as("commentCount")
                 )
                 .from(table("tb_post"))
                 .leftJoin(table("tb_ramen_shop")).on(field("tb_post.ramen_shop_id").eq(field("tb_ramen_shop.ramen_shop_id")))
                 .join(table("tb_member_profile")).on(field("tb_post.author_id").eq(field("tb_member_profile.id")))
-                .where(field("tb_post.id").eq(postId))
+                .where(field("tb_post.id").eq(postId).and(field("tb_post.is_deleted").eq(false)))
                 .fetchOne(r -> new CommunityPostDetailResponse(
                         r.get("category", String.class),
                         r.get("storeName", String.class),
                         r.get("title", String.class),
                         r.get("authorName", String.class),
                         r.get("createdAt", LocalDateTime.class),
-                        java.util.Collections.emptyList(),
+                        java.util.Collections.emptyList(), // 이미지 리스트는 본문에 포함됨
                         r.get("contentFormat", String.class),
                         r.get("content", String.class),
                         r.get("likeCount", Long.class),
@@ -115,7 +113,7 @@ public class PostQueryRepository {
                 )
                 .from(table("tb_ramen_shop"))
                 .where(condition)
-                .orderBy(field("tb_ramen_shop.name").asc()) // 가나다순 정렬 추가
+                .orderBy(field("tb_ramen_shop.name").asc())
                 .limit(pageable.getPageSize())
                 .offset(pageable.getOffset())
                 .fetch(r -> new CommunityRamenShopOptionResponse(
