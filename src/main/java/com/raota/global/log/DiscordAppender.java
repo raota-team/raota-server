@@ -24,7 +24,7 @@ public class DiscordAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
     @Override
     protected void append(ILoggingEvent iLoggingEvent) {
-        if (iLoggingEvent.getLevel().isGreaterOrEqual(Level.ERROR)) {
+        if (iLoggingEvent.getLevel().isGreaterOrEqual(Level.WARN)) {
             sendDiscordWebhook(iLoggingEvent);
         }
     }
@@ -47,12 +47,12 @@ public class DiscordAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
             httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString());
 
         } catch (Exception e) {
-            addError("Failed to send error log to Discord", e);
+            addError("Failed to send log to Discord", e);
         }
     }
 
     private DiscordMessage createMessage(ILoggingEvent event){
-        int color = event.getLevel().isGreaterOrEqual(Level.ERROR) ? 16711680 : 16776960;
+        int color = event.getLevel().isGreaterOrEqual(Level.ERROR) ? 16711680 : 16776960; // ERROR: 빨강, WARN: 노랑
 
         String stackTrace = "";
         IThrowableProxy throwableProxy = event.getThrowableProxy();
@@ -60,10 +60,11 @@ public class DiscordAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
             stackTrace = ThrowableProxyUtil.asString(throwableProxy);
         }
 
+        String levelIcon = event.getLevel().isGreaterOrEqual(Level.ERROR) ? "🚨" : "⚠️";
         String description = stackTrace.isEmpty() ? event.getFormattedMessage() : "```java\n" + truncate(stackTrace, 4000) + "\n```";
 
         DiscordEmbed embed = DiscordEmbed.builder()
-                .title("🚨 [" + event.getLevel() + "] " + truncate(event.getFormattedMessage(), 250))
+                .title(levelIcon + " [" + event.getLevel() + "] " + truncate(event.getFormattedMessage(), 250))
                 .description(description)
                 .color(color)
                 .timestamp(Instant.ofEpochMilli(event.getTimeStamp()).toString())
