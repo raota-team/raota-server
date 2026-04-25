@@ -38,6 +38,7 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
             select new com.raota.domain.community.presentation.response.CommunityPostCardResponse(
                 p.id,
                 cast(p.category as string),
+                r.id,
                 r.name,
                 p.title,
                 p.content,

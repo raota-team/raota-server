@@ -8,6 +8,8 @@ public record CommunityPostCardResponse(
         Long postId,
         @Schema(description = "글 카테고리")
         String category,
+        @Schema(description = "맛집후기 카테고리일 때만 라멘집 ID, 그 외에는 null")
+        Long ramenShopId,
         @Schema(description = "맛집후기 카테고리일 때만 가게 이름, 그 외에는 null")
         String storeName,
         @Schema(description = "글 제목")

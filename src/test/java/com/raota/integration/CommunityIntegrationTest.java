@@ -12,6 +12,9 @@ import com.raota.domain.community.repository.command.JpaCommentRepository;
 import com.raota.domain.community.repository.command.JpaPostRepository;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
+import com.raota.domain.ramenShop.model.Address;
+import com.raota.domain.ramenShop.model.RamenShop;
+import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.global.auth.JwtTokenProvider;
 import com.raota.global.common.BaseIntegrationTest;
 import io.restassured.RestAssured;
@@ -40,6 +43,9 @@ class CommunityIntegrationTest extends BaseIntegrationTest {
     private MemberRepository memberRepository;
 
     @Autowired
+    private RamenShopRepository ramenShopRepository;
+
+    @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
     private String accessToken;
@@ -50,6 +56,7 @@ class CommunityIntegrationTest extends BaseIntegrationTest {
         RestAssured.port = port;
         jpaCommentRepository.deleteAll();
         jpaPostRepository.deleteAll();
+        ramenShopRepository.deleteAll();
         memberRepository.deleteAll();
 
         savedMember = memberRepository.save(MemberProfile.builder()
@@ -95,6 +102,29 @@ class CommunityIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
+    @DisplayName("맛집후기 게시글 목록을 라멘집 ID로 필터링할 수 있다.")
+    void get_review_posts_by_ramen_shop_id() {
+        RamenShop targetShop = ramenShopRepository.save(sampleShop("멘야 하쿠"));
+        RamenShop otherShop = ramenShopRepository.save(sampleShop("라멘 소라"));
+        saveSamplePost("하쿠 후기", "내용 1", targetShop.getId());
+        saveSamplePost("소라 후기", "내용 2", otherShop.getId());
+
+        given()
+                .param("category", "REVIEW")
+                .param("ramenShopId", targetShop.getId())
+                .param("page", 0)
+                .param("size", 10)
+        .when()
+                .get("/community/posts")
+        .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("data.items.size()", is(1))
+                .body("data.items[0].ramenShopId", is(targetShop.getId().intValue()))
+                .body("data.items[0].title", is("하쿠 후기"))
+                .body("data.items[0].storeName", is("멘야 하쿠"));
+    }
+
+    @Test
     @DisplayName("로그인한 사용자는 게시글에 댓글을 작성할 수 있다.")
     void create_comment_success() {
         Post post = saveSamplePost("댓글용 글", "내용");
@@ -113,8 +143,21 @@ class CommunityIntegrationTest extends BaseIntegrationTest {
     }
 
     private Post saveSamplePost(String title, String content) {
+        return saveSamplePost(title, content, null);
+    }
+
+    private Post saveSamplePost(String title, String content, Long ramenShopId) {
         return jpaPostRepository.save(Post.of(
-                null, PostCategory.REVIEW, title, content, "PLAIN", null, savedMember.getId(), null, LocalDateTime.now()
+                null, PostCategory.REVIEW, title, content, "PLAIN", null, savedMember.getId(), ramenShopId, LocalDateTime.now()
         ));
+    }
+
+    private RamenShop sampleShop(String name) {
+        return RamenShop.builder()
+                .name(name)
+                .address(Address.of("서울", "마포구", "월드컵로", "1층"))
+                .description("라멘집 설명")
+                .imageUrl("https://example.com/shop.jpg")
+                .build();
     }
 }

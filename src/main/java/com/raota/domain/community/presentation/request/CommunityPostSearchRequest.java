@@ -13,4 +13,7 @@ import lombok.Setter;
 public class CommunityPostSearchRequest {
     @Schema(description = "글 카테고리 필터 (예: 맛집후기)")
     private String category;
+
+    @Schema(description = "맛집후기 카테고리에서 필터링할 라멘집 ID", nullable = true)
+    private Long ramenShopId;
 }

@@ -27,11 +27,15 @@ public class PostQueryRepository {
     private final DSLContext dsl;
 
     public PageResponse<CommunityPostCardResponse> searchPostCards(CommunityPostSearchRequest request, Pageable pageable) {
-        log.info("Searching posts with category filter: {}", request.getCategory());
+        log.info("Searching posts with category filter: {}, ramenShopId filter: {}",
+                request.getCategory(), request.getRamenShopId());
 
         Condition condition = field("tb_post.is_deleted").eq(false);
         if (request.getCategory() != null && !request.getCategory().isBlank()) {
             condition = condition.and(field("tb_post.category").eq(request.getCategory()));
+        }
+        if (request.getRamenShopId() != null) {
+            condition = condition.and(field("tb_post.ramen_shop_id").eq(request.getRamenShopId()));
         }
 
         int totalCount = dsl.fetchCount(
@@ -41,6 +45,7 @@ public class PostQueryRepository {
         List<CommunityPostCardResponse> items = dsl.select(
                         field("tb_post.id").as("postId"),
                         field("tb_post.category"),
+                        field("tb_post.ramen_shop_id").as("ramenShopId"),
                         field("tb_ramen_shop.name").as("storeName"),
                         field("tb_post.title"),
                         substring(field("tb_post.content", String.class), 1, 100).as("contentPreview"),

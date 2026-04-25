@@ -22,7 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 public interface CommunityApi {
 
     @Operation(summary = "커뮤니티 글 목록 조회",
-            description = "카테고리 필터와 페이징으로 커뮤니티 글 목록을 조회합니다. 기본 페이지 크기는 10입니다.")
+            description = "카테고리, 라멘집 ID 필터와 페이징으로 커뮤니티 글 목록을 조회합니다. 기본 페이지 크기는 10입니다.")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
