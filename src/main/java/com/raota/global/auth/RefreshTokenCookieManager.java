@@ -2,6 +2,7 @@ package com.raota.global.auth;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.WebUtils;
@@ -10,6 +11,7 @@ import org.springframework.web.util.WebUtils;
  * Refresh Token을 브라우저 쿠키에 안전하게 보관하고 관리하는 매니저.
  * HttpOnly, Secure 설정 등을 통해 토큰 탈취를 방지한다.
  */
+@Slf4j
 @Component
 public class RefreshTokenCookieManager {
 
@@ -26,19 +28,26 @@ public class RefreshTokenCookieManager {
      * - SameSite: CSRF 공격 방지 설정
      */
     public ResponseCookie createRefreshTokenCookie(String refreshToken) {
+        String sameSite = authProperties.cookie().sameSite();
+        boolean secure = authProperties.cookie().secure();
+        String domain = authProperties.cookie().domain();
+
+        log.info("Creating refresh token cookie: name={}, domain={}, secure={}, sameSite={}", 
+                authProperties.cookie().refreshTokenName(), domain, secure, sameSite);
+
         ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(
                         authProperties.cookie().refreshTokenName(),
                         refreshToken
                 )
                 .httpOnly(true)
-                .secure(authProperties.cookie().secure())
+                .secure(secure)
                 .path("/") // 모든 경로에서 쿠키 전송 가능
-                .sameSite(authProperties.cookie().sameSite())
+                .sameSite(sameSite)
                 .maxAge(authProperties.refreshTokenExpirySeconds());
 
         // 특정 도메인이 설정되어 있다면 추가한다.
-        if (authProperties.cookie().domain() != null && !authProperties.cookie().domain().isBlank()) {
-            builder.domain(authProperties.cookie().domain());
+        if (domain != null && !domain.isBlank()) {
+            builder.domain(domain);
         }
         return builder.build();
     }
