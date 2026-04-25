@@ -59,8 +59,11 @@ public class CommunityCommentController implements CommunityCommentApi {
                     return new CommunityCommentThreadResponse(
                             parent.commentId(),
                             parent.authorNickname(),
+                            parent.authorId(),
+                            parent.authorImageUrl(),
                             parent.createdAt(),
                             parent.content(),
+                            parent.isDeleted(),
                             replies
                     );
                 })

@@ -29,16 +29,15 @@ public class PostQueryRepository {
     public PageResponse<CommunityPostCardResponse> searchPostCards(CommunityPostSearchRequest request, Pageable pageable) {
         log.info("Searching posts with category filter: {}", request.getCategory());
 
-        // 1. 조건 설정 (카테고리 필터 등)
         Condition condition = field("tb_post.is_deleted").eq(false);
         if (request.getCategory() != null && !request.getCategory().isBlank()) {
             condition = condition.and(field("tb_post.category").eq(request.getCategory()));
         }
 
-        // 2. 전체 개수 조회
         int totalCount = dsl.fetchCount(
                 dsl.selectFrom(table("tb_post")).where(condition)
         );
+
         List<CommunityPostCardResponse> items = dsl.select(
                         field("tb_post.id").as("postId"),
                         field("tb_post.category"),
@@ -47,10 +46,10 @@ public class PostQueryRepository {
                         substring(field("tb_post.content", String.class), 1, 100).as("contentPreview"),
                         field("tb_post.thumbnail_url").as("imageUrl"),
                         field("tb_member_profile.nickname").as("authorName"),
+                        field("tb_post.author_id").as("authorId"),
+                        field("tb_member_profile.image_url").as("authorImageUrl"),
                         field("tb_post.created_at").as("createdAt"),
-                        // 좋아요 수 서브쿼리
                         field(selectCount().from(table("tb_post_like")).where(field("tb_post_like.post_id").eq(field("tb_post.id")))).as("likeCount"),
-                        // 댓글 수 서브쿼리 (삭제되지 않은 댓글만)
                         field(selectCount().from(table("tb_comment")).where(field("tb_comment.post_id").eq(field("tb_post.id")).and(field("tb_comment.is_deleted").eq(false)))).as("commentCount")
                 )
                 .from(table("tb_post"))
@@ -73,14 +72,12 @@ public class PostQueryRepository {
                         field("tb_post.title", String.class).as("title"),
                         field("tb_member_profile.nickname", String.class).as("authorName"),
                         field("tb_post.author_id", Long.class).as("authorId"),
+                        field("tb_member_profile.image_url", String.class).as("authorImageUrl"),
                         field("tb_post.created_at", LocalDateTime.class).as("createdAt"),
                         field("tb_post.content_format", String.class).as("contentFormat"),
                         field("tb_post.content", String.class).as("content"),
-                        // 좋아요 수 서브쿼리
                         field(selectCount().from(table("tb_post_like")).where(field("tb_post_like.post_id").eq(field("tb_post.id")))).as("likeCount"),
-                        // 댓글 수 서브쿼리
                         field(selectCount().from(table("tb_comment")).where(field("tb_comment.post_id").eq(field("tb_post.id")).and(field("tb_comment.is_deleted").eq(false)))).as("commentCount"),
-                        // 좋아요 여부 서브쿼리
                         field(memberId == null ? inline(false) : exists(
                                 selectOne().from(table("tb_post_like"))
                                         .where(field("tb_post_like.post_id").eq(field("tb_post.id"))
@@ -97,8 +94,9 @@ public class PostQueryRepository {
                         r.get("title", String.class),
                         r.get("authorName", String.class),
                         r.get("authorId", Long.class),
+                        r.get("authorImageUrl", String.class),
                         r.get("createdAt", LocalDateTime.class),
-                        java.util.Collections.emptyList(), // 이미지 리스트는 본문에 포함됨
+                        java.util.Collections.emptyList(),
                         r.get("contentFormat", String.class),
                         r.get("content", String.class),
                         r.get("likeCount", Long.class),

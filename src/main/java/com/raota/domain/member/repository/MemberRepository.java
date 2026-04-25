@@ -43,9 +43,11 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
                 p.content,
                 p.thumbnailUrl,
                 m.nickname,
+                m.id,
+                m.imageUrl,
                 p.createdAt,
-                0L,
-                0L
+                (select count(l) from PostLikeEntity l where l.postId = p.id),
+                (select count(c) from CommentEntity c where c.post.id = p.id and c.isDeleted = false)
             )
             from PostEntity p
             join p.author m
@@ -69,6 +71,8 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
                 c.parent.id,
                 c.post.id,
                 m.nickname,
+                m.id,
+                m.imageUrl,
                 null,
                 c.createdAt,
                 c.content,

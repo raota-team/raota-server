@@ -18,6 +18,10 @@ public record CommunityPostCardResponse(
         String imageUrl,
         @Schema(description = "작성자 이름")
         String authorName,
+        @Schema(description = "작성자 ID")
+        Long authorId,
+        @Schema(description = "작성자 프로필 이미지 URL")
+        String authorImageUrl,
         @Schema(description = "작성 일시")
         LocalDateTime createdAt,
         @Schema(description = "좋아요 수")
