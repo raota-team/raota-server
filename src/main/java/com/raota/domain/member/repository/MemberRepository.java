@@ -64,7 +64,8 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
     @Query(value = """
             select new com.raota.domain.community.presentation.response.CommunityCommentItemResponse(
                 c.id,
-                null,
+                c.parent.id,
+                c.post.id,
                 m.nickname,
                 null,
                 c.createdAt,

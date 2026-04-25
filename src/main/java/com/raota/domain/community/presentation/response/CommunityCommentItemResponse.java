@@ -8,6 +8,8 @@ public record CommunityCommentItemResponse(
         Long commentId,
         @Schema(description = "부모 댓글 ID(답글인 경우)")
         Long parentCommentId,
+        @Schema(description = "게시글 ID")
+        Long postId,
         @Schema(description = "작성자 닉네임")
         String authorNickname,
         @Schema(description = "부모 댓글 작성자 닉네임 태그(답글인 경우)")

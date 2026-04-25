@@ -21,6 +21,7 @@ public class CommentQueryRepository {
         return dsl.select(
                         field("tb_comment.id", Long.class).as("commentId"),
                         field("tb_comment.parent_id", Long.class).as("parentCommentId"),
+                        field("tb_comment.post_id", Long.class).as("postId"),
                         field("tb_member_profile.nickname", String.class).as("authorNickname"),
                         field("tb_comment.content", String.class).as("content"),
                         field("tb_comment.created_at", java.time.LocalDateTime.class).as("createdAt")
@@ -31,6 +32,7 @@ public class CommentQueryRepository {
                 .fetchOptional(r -> new CommunityCommentItemResponse(
                         r.get("commentId", Long.class),
                         r.get("parentCommentId", Long.class),
+                        r.get("postId", Long.class),
                         r.get("authorNickname", String.class),
                         null, // taggedParentAuthorNickname (기능 미구현 대응)
                         r.get("createdAt", java.time.LocalDateTime.class),
@@ -46,6 +48,7 @@ public class CommentQueryRepository {
         List<CommunityCommentItemResponse> items = dsl.select(
                         field("tb_comment.id", Long.class).as("commentId"),
                         field("tb_comment.parent_id", Long.class).as("parentCommentId"),
+                        field("tb_comment.post_id", Long.class).as("postId"),
                         field("tb_member_profile.nickname", String.class).as("authorNickname"),
                         field("tb_comment.created_at", java.time.LocalDateTime.class).as("createdAt"),
                         field("tb_comment.content", String.class).as("content")
@@ -59,6 +62,7 @@ public class CommentQueryRepository {
                 .fetch(r -> new CommunityCommentItemResponse(
                         r.get("commentId", Long.class),
                         r.get("parentCommentId", Long.class),
+                        r.get("postId", Long.class),
                         r.get("authorNickname", String.class),
                         null, // taggedParentAuthorNickname (미구현)
                         r.get("createdAt", java.time.LocalDateTime.class),
