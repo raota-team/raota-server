@@ -44,6 +44,11 @@ public class JpaCommentRepository implements CommentRepository {
     }
 
     @Override
+    public Optional<CommentEntity> findEntityById(Long id) {
+        return jpaRepository.findById(id);
+    }
+
+    @Override
     public List<Comment> findAllByPostId(Long postId) {
         return jpaRepository.findAllByPostId(postId).stream()
                 .map(CommentEntity::toDomain)

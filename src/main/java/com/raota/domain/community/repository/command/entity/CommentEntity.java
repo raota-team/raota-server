@@ -50,6 +50,18 @@ public class CommentEntity {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    @Builder.Default
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
+
+    public void update(String content) {
+        this.content = content;
+    }
+
+    public void delete() {
+        this.isDeleted = true;
+    }
+
     public Comment toDomain() {
         return Comment.of(id, post.getId(), member.getId(), content, createdAt);
     }

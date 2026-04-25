@@ -10,7 +10,6 @@ import com.raota.domain.community.service.CommentService;
 import com.raota.global.auth.LoginMember;
 import com.raota.global.common.ApiResponse;
 import com.raota.global.common.PageResponse;
-import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageImpl;
@@ -50,21 +49,25 @@ public class CommunityCommentController implements CommunityCommentApi {
     public ResponseEntity<ApiResponse<PageResponse<CommunityCommentThreadResponse>>> getComments(
             @PathVariable Long postId,
             Pageable pageable) {
-        PageResponse<CommunityCommentItemResponse> itemResponse = commentQueryRepository.getComments(postId, pageable);
+        // 1. 부모 댓글 목록 조회 (페이지네이션)
+        PageResponse<CommunityCommentItemResponse> parents = commentQueryRepository.getParentComments(postId, pageable);
         
-        // ItemResponse -> ThreadResponse 변환 (답글은 일단 빈 리스트로 처리)
-        List<CommunityCommentThreadResponse> threads = itemResponse.items().stream()
-                .map(item -> new CommunityCommentThreadResponse(
-                        item.commentId(),
-                        item.authorNickname(),
-                        item.createdAt(),
-                        item.content(),
-                        Collections.emptyList()
-                ))
+        // 2. 각 부모별 답글 조회 및 변환
+        List<CommunityCommentThreadResponse> threads = parents.items().stream()
+                .map(parent -> {
+                    List<CommunityCommentItemResponse> replies = commentQueryRepository.getReplies(parent.commentId());
+                    return new CommunityCommentThreadResponse(
+                            parent.commentId(),
+                            parent.authorNickname(),
+                            parent.createdAt(),
+                            parent.content(),
+                            replies
+                    );
+                })
                 .toList();
         
         PageResponse<CommunityCommentThreadResponse> response = PageResponse.from(
-                new PageImpl<>(threads, pageable, itemResponse.page().totalElements())
+                new PageImpl<>(threads, pageable, parents.page().totalElements())
         );
         
         return ResponseEntity.ok(ApiResponse.success(response));

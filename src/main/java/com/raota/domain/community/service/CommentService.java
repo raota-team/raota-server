@@ -5,6 +5,7 @@ import com.raota.domain.community.presentation.request.CommunityCommentCreateReq
 import com.raota.domain.community.presentation.request.CommunityCommentUpdateRequest;
 import com.raota.domain.community.repository.command.CommentRepository;
 import com.raota.domain.community.repository.command.PostRepository;
+import com.raota.domain.community.repository.command.entity.CommentEntity;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,45 +24,51 @@ public class CommentService {
         postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다."));
 
-        Comment comment = Comment.create(postId, authorId, request.getContent());
+        // 답글인 경우 부모 댓글 존재 및 Depth(1) 체크
+        if (request.getParentCommentId() != null) {
+            CommentEntity parent = commentRepository.findEntityById(request.getParentCommentId())
+                    .orElseThrow(() -> new IllegalArgumentException("부모 댓글이 존재하지 않습니다."));
+            
+            if (parent.getParent() != null) {
+                throw new IllegalArgumentException("답글에는 답글을 달 수 없습니다. (최대 Depth 1)");
+            }
+        }
+
+        Comment comment = Comment.create(postId, authorId, request.getParentCommentId(), request.getContent());
         Comment savedComment = commentRepository.save(comment);
-        // JOOQ 조회를 위해 DB 반영
+        
         if (commentRepository instanceof com.raota.domain.community.repository.command.JpaCommentRepository jpaRepo) {
             jpaRepo.flush();
         }
-        Long commentId = savedComment.getId();
 
-        // 마이페이지 통계 업데이트
         MemberProfile author = memberRepository.findById(authorId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         author.increaseCommentCount();
 
-        return commentId;
+        return savedComment.getId();
     }
 
     public void updateComment(Long commentId, CommunityCommentUpdateRequest request, Long authorId) {
-        Comment comment = commentRepository.findById(commentId)
+        CommentEntity commentEntity = commentRepository.findEntityById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다."));
 
-        if (!comment.getAuthorId().equals(authorId)) {
+        if (!commentEntity.getMember().getId().equals(authorId)) {
             throw new IllegalStateException("수정 권한이 없습니다.");
         }
 
-        Comment updatedComment = comment.update(request.getContent());
-        commentRepository.save(updatedComment);
+        commentEntity.update(request.getContent());
     }
 
     public void deleteComment(Long commentId, Long authorId) {
-        Comment comment = commentRepository.findById(commentId)
+        CommentEntity commentEntity = commentRepository.findEntityById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다."));
 
-        if (!comment.getAuthorId().equals(authorId)) {
+        if (!commentEntity.getMember().getId().equals(authorId)) {
             throw new IllegalStateException("삭제 권한이 없습니다.");
         }
 
-        commentRepository.delete(commentId);
+        commentEntity.delete();
 
-        // 마이페이지 통계 업데이트
         MemberProfile author = memberRepository.findById(authorId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         author.decreaseCommentCount();
