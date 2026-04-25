@@ -17,6 +17,8 @@ public record CommunityCommentItemResponse(
         @Schema(description = "작성 일시")
         LocalDateTime createdAt,
         @Schema(description = "댓글 내용")
-        String content
+        String content,
+        @Schema(description = "삭제 여부")
+        Boolean isDeleted
 ) {
 }
