@@ -1,4 +1,4 @@
-name: CD - Deploy to Prod (Compose Rolling)
+name: CD - Build Image and Dispatch Prod Deploy
 
 on:
   push:
@@ -25,24 +25,17 @@ on:
           - 10.0.1.87
 
 jobs:
-  deploy:
+  build-and-dispatch:
     runs-on: [self-hosted, linux, arm64]
 
     environment:
       name: raota-prod-server
     concurrency:
-      group: raota-prod-compose-deploy
+      group: raota-prod-image-build
       cancel-in-progress: false
 
     permissions:
       contents: read
-
-    env:
-      OCI_VAULT_ID: ocid1.vault.oc1.ap-chuncheon-1.gju25j3taaark.ab4w4ljrvayyfb3dk5dp2yu45i7aw5u6jvl73tfjxaqfxgeq3do6izft5szq
-      PROD_REDIS_HOST: 10.0.1.44
-      PROD_REDIS_PORT: "6379"
-      PROD_WORKER_HOSTS: "10.0.1.213 10.0.1.144 10.0.1.87"
-      PROD_SSH_USER: ubuntu
 
     steps:
       - name: Checkout code
@@ -70,86 +63,34 @@ jobs:
           docker push "${IMAGE_URI}:${IMAGE_TAG}"
           docker push "${IMAGE_URI}:latest"
 
-      - name: Prepare SSH key
-        run: |
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "${{ secrets.PROD_DEPLOY_SSH_PRIVATE_KEY }}" > ~/.ssh/raota_prod
-          chmod 600 ~/.ssh/raota_prod
-
-      - name: Preflight
-        run: |
-          command -v ssh
-          command -v scp
-
-      - name: Resolve target hosts
-        id: targets
+      - name: Resolve deploy inputs
+        id: deploy-inputs
         shell: bash
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.deploy_mode }}" == "canary" ]]; then
-            echo "hosts=${{ inputs.canary_host }}" >> "$GITHUB_OUTPUT"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "deploy_mode=${{ inputs.deploy_mode }}" >> "$GITHUB_OUTPUT"
+            echo "canary_host=${{ inputs.canary_host }}" >> "$GITHUB_OUTPUT"
           else
-            echo "hosts=${PROD_WORKER_HOSTS}" >> "$GITHUB_OUTPUT"
+            echo "deploy_mode=full" >> "$GITHUB_OUTPUT"
+            echo "canary_host=10.0.1.213" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Sync deployment files
+      - name: Dispatch infra deploy workflow
         env:
-          TARGET_HOSTS: ${{ steps.targets.outputs.hosts }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          for host in ${TARGET_HOSTS}; do
-            echo "[deploy] syncing deployment files to ${host}"
-            scp -i ~/.ssh/raota_prod -o StrictHostKeyChecking=no \
-              deploy/compose/app.yml \
-              deploy/scripts/bootstrap-host.sh \
-              deploy/scripts/deploy-app.sh \
-              "${PROD_SSH_USER}@${host}:/tmp/"
-
-            ssh -i ~/.ssh/raota_prod -o StrictHostKeyChecking=no "${PROD_SSH_USER}@${host}" \
-              "chmod +x /tmp/bootstrap-host.sh /tmp/deploy-app.sh && /tmp/bootstrap-host.sh && cp /tmp/app.yml /opt/raota/docker-compose.prod.yml && cp /tmp/bootstrap-host.sh /opt/raota/bootstrap-host.sh && cp /tmp/deploy-app.sh /opt/raota/deploy-app.sh && chmod +x /opt/raota/bootstrap-host.sh /opt/raota/deploy-app.sh"
-          done
-
-      - name: Rolling deploy
-        env:
-          TARGET_HOSTS: ${{ steps.targets.outputs.hosts }}
-          IMAGE_URI: ${{ secrets.OCIR_REGISTRY }}/${{ secrets.OCIR_NAMESPACE }}/${{ secrets.OCIR_REPOSITORY }}
+          INFRA_DISPATCH_TOKEN: ${{ secrets.INFRA_DISPATCH_TOKEN }}
           IMAGE_TAG: ${{ github.sha }}
-          OCIR_REGISTRY: ${{ secrets.OCIR_REGISTRY }}
-          OCIR_USERNAME: ${{ secrets.OCIR_USERNAME }}
-          OCIR_AUTH_TOKEN: ${{ secrets.OCIR_AUTH_TOKEN }}
+          DEPLOY_MODE: ${{ steps.deploy-inputs.outputs.deploy_mode }}
+          CANARY_HOST: ${{ steps.deploy-inputs.outputs.canary_host }}
         shell: bash
         run: |
           set -euo pipefail
 
-          for host in ${TARGET_HOSTS}; do
-            node_name="$(ssh -i ~/.ssh/raota_prod -o StrictHostKeyChecking=no "${PROD_SSH_USER}@${host}" 'hostname')"
-            has_compose_app="$(ssh -i ~/.ssh/raota_prod -o StrictHostKeyChecking=no "${PROD_SSH_USER}@${host}" "docker ps --format '{{.Names}}' | grep -qx 'raota-app' && echo yes || echo no")"
+          payload="$(printf '{"ref":"main","inputs":{"image_tag":"%s","deploy_mode":"%s","canary_host":"%s"}}' "${IMAGE_TAG}" "${DEPLOY_MODE}" "${CANARY_HOST}")"
 
-            if [[ "${has_compose_app}" != "yes" ]]; then
-              echo "[deploy] draining swarm node ${node_name}"
-              docker node update --availability drain "${node_name}"
-              ssh -i ~/.ssh/raota_prod -o StrictHostKeyChecking=no "${PROD_SSH_USER}@${host}" '
-                for attempt in $(seq 1 30); do
-                  if ! docker ps --format "{{.Ports}}" | grep -q "8080->8080/tcp"; then
-                    exit 0
-                  fi
-                  sleep 2
-                done
-                exit 1
-              '
-              sleep 35
-            else
-              echo "[deploy] ${host} is already running compose app"
-            fi
-
-            echo "[deploy] running /opt/raota/deploy-app.sh on ${host}"
-            ssh -i ~/.ssh/raota_prod -o StrictHostKeyChecking=no "${PROD_SSH_USER}@${host}" \
-              "APP_IMAGE='${IMAGE_URI}:${IMAGE_TAG}' OCI_VAULT_ID='${OCI_VAULT_ID}' SPRING_DATA_REDIS_HOST='${PROD_REDIS_HOST}' SPRING_DATA_REDIS_PORT='${PROD_REDIS_PORT}' OCIR_REGISTRY='${OCIR_REGISTRY}' OCIR_USERNAME='${OCIR_USERNAME}' OCIR_AUTH_TOKEN='${OCIR_AUTH_TOKEN}' /opt/raota/deploy-app.sh"
-
-            sleep 20
-          done
-
-          if [[ "${{ github.event_name }}" == "push" || "${{ inputs.deploy_mode }}" == "full" ]]; then
-            docker service rm raota_app || true
-          fi
+          curl -fsSL \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${INFRA_DISPATCH_TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/raota-team/raota-infra/actions/workflows/deploy-prod-compose.yml/dispatches \
+            -d "${payload}"
