@@ -11,6 +11,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.Setter;
 
@@ -52,7 +53,10 @@ public class DiscordAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     }
 
     private DiscordMessage createMessage(ILoggingEvent event){
-        int color = 16711680;
+        boolean isError = event.getLevel().isGreaterOrEqual(Level.ERROR);
+        int color = isError ? 16711680 : 16776960; // ERROR: red, WARN: yellow
+        String levelIcon = isError ? "🚨" : "⚠️";
+        String levelName = event.getLevel().toString();
 
         String stackTrace = "";
         IThrowableProxy throwableProxy = event.getThrowableProxy();
@@ -61,18 +65,24 @@ public class DiscordAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         }
 
         String summary = truncate(event.getFormattedMessage(), 300);
-        String stackTracePreview = stackTrace.isEmpty() ? "-" : "```java\n" + truncate(stackTrace, 1200) + "\n```";
+
+        List<EmbedField> fields = new ArrayList<>();
+        fields.add(EmbedField.builder().name("Logger").value("`" + event.getLoggerName() + "`").inline(true).build());
+        fields.add(EmbedField.builder().name("Thread").value("`" + event.getThreadName() + "`").inline(true).build());
+        if (!stackTrace.isEmpty()) {
+            fields.add(EmbedField.builder()
+                    .name("Stack Trace")
+                    .value("```java\n" + truncate(firstLines(stackTrace, 4), 1200) + "\n```")
+                    .inline(false)
+                    .build());
+        }
 
         DiscordEmbed embed = DiscordEmbed.builder()
-                .title("🚨 [ERROR] " + truncate(event.getFormattedMessage(), 180))
+                .title(levelIcon + " [" + levelName + "] " + truncate(event.getFormattedMessage(), 180))
                 .description(summary)
                 .color(color)
                 .timestamp(Instant.ofEpochMilli(event.getTimeStamp()).toString())
-                .fields(List.of(
-                        EmbedField.builder().name("Logger").value("`" + event.getLoggerName() + "`").inline(true).build(),
-                        EmbedField.builder().name("Thread").value("`" + event.getThreadName() + "`").inline(true).build(),
-                        EmbedField.builder().name("Stack Trace").value(stackTracePreview).inline(false).build()
-                ))
+                .fields(fields)
                 .build();
 
         return DiscordMessage.builder()
@@ -83,5 +93,11 @@ public class DiscordAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     private String truncate(String str, int maxLength) {
         if (str == null || str.length() <= maxLength) return str;
         return str.substring(0, maxLength - 3) + "...";
+    }
+
+    private String firstLines(String str, int maxLines) {
+        String[] lines = str.split("\\R");
+        int lineCount = Math.min(lines.length, maxLines);
+        return String.join("\n", java.util.Arrays.copyOf(lines, lineCount));
     }
 }
