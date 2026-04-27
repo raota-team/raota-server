@@ -1,0 +1,140 @@
+name: CD - Deploy to Prod (Compose Rolling)
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_mode:
+        description: Deploy scope
+        required: true
+        type: choice
+        default: canary
+        options:
+          - canary
+          - full
+      canary_host:
+        description: Canary target host
+        required: true
+        type: choice
+        default: 10.0.1.213
+        options:
+          - 10.0.1.213
+          - 10.0.1.144
+          - 10.0.1.87
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, linux, arm64]
+
+    environment:
+      name: raota-prod-server
+    concurrency:
+      group: raota-prod-compose-deploy
+      cancel-in-progress: false
+
+    permissions:
+      contents: read
+
+    env:
+      OCI_VAULT_ID: ocid1.vault.oc1.ap-chuncheon-1.gju25j3taaark.ab4w4ljrvayyfb3dk5dp2yu45i7aw5u6jvl73tfjxaqfxgeq3do6izft5szq
+      PROD_REDIS_HOST: 10.0.1.44
+      PROD_REDIS_PORT: "6379"
+      PROD_WORKER_HOSTS: "10.0.1.213 10.0.1.144 10.0.1.87"
+      PROD_SSH_USER: ubuntu
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Build jar (without tests)
+        run: ./gradlew clean bootJar -x test
+
+      - name: Docker login to OCIR
+        run: |
+          echo "${{ secrets.OCIR_AUTH_TOKEN }}" | docker login "${{ secrets.OCIR_REGISTRY }}" -u "${{ secrets.OCIR_USERNAME }}" --password-stdin
+
+      - name: Build and push image
+        env:
+          IMAGE_URI: ${{ secrets.OCIR_REGISTRY }}/${{ secrets.OCIR_NAMESPACE }}/${{ secrets.OCIR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t "${IMAGE_URI}:${IMAGE_TAG}" -t "${IMAGE_URI}:latest" .
+          docker push "${IMAGE_URI}:${IMAGE_TAG}"
+          docker push "${IMAGE_URI}:latest"
+
+      - name: Prepare SSH key
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.PROD_DEPLOY_SSH_PRIVATE_KEY }}" > ~/.ssh/raota_prod
+          chmod 600 ~/.ssh/raota_prod
+
+      - name: Preflight
+        run: |
+          command -v ssh
+          command -v scp
+
+      - name: Resolve target hosts
+        id: targets
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.deploy_mode }}" == "canary" ]]; then
+            echo "hosts=${{ inputs.canary_host }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "hosts=${PROD_WORKER_HOSTS}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Rolling deploy
+        env:
+          TARGET_HOSTS: ${{ steps.targets.outputs.hosts }}
+          IMAGE_URI: ${{ secrets.OCIR_REGISTRY }}/${{ secrets.OCIR_NAMESPACE }}/${{ secrets.OCIR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+          OCIR_REGISTRY: ${{ secrets.OCIR_REGISTRY }}
+          OCIR_USERNAME: ${{ secrets.OCIR_USERNAME }}
+          OCIR_AUTH_TOKEN: ${{ secrets.OCIR_AUTH_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for host in ${TARGET_HOSTS}; do
+            remote_tmp="/tmp/raota-deploy"
+            node_name="$(ssh -i ~/.ssh/raota_prod -o StrictHostKeyChecking=no "${PROD_SSH_USER}@${host}" 'hostname')"
+
+            echo "[deploy] preparing ${host}"
+            ssh -i ~/.ssh/raota_prod -o StrictHostKeyChecking=no "${PROD_SSH_USER}@${host}" "mkdir -p ${remote_tmp}"
+            scp -i ~/.ssh/raota_prod -o StrictHostKeyChecking=no \
+              docker-compose.prod.yml \
+              scripts/bootstrap-compose-host.sh \
+              scripts/deploy-compose-node.sh \
+              "${PROD_SSH_USER}@${host}:${remote_tmp}/"
+
+            ssh -i ~/.ssh/raota_prod -o StrictHostKeyChecking=no "${PROD_SSH_USER}@${host}" \
+              "chmod +x ${remote_tmp}/bootstrap-compose-host.sh ${remote_tmp}/deploy-compose-node.sh && ${remote_tmp}/bootstrap-compose-host.sh && cp ${remote_tmp}/docker-compose.prod.yml /opt/raota/docker-compose.prod.yml"
+
+            echo "[deploy] draining swarm node ${node_name}"
+            docker node update --availability drain "${node_name}"
+            ssh -i ~/.ssh/raota_prod -o StrictHostKeyChecking=no "${PROD_SSH_USER}@${host}" '
+              for attempt in $(seq 1 30); do
+                if ! docker ps --format "{{.Ports}}" | grep -q "8080->8080/tcp"; then
+                  exit 0
+                fi
+                sleep 2
+              done
+              exit 1
+            '
+            sleep 35
+
+            echo "[deploy] updating container on ${host}"
+            ssh -i ~/.ssh/raota_prod -o StrictHostKeyChecking=no "${PROD_SSH_USER}@${host}" \
+              "APP_IMAGE='${IMAGE_URI}:${IMAGE_TAG}' OCI_VAULT_ID='${OCI_VAULT_ID}' SPRING_DATA_REDIS_HOST='${PROD_REDIS_HOST}' SPRING_DATA_REDIS_PORT='${PROD_REDIS_PORT}' OCIR_REGISTRY='${OCIR_REGISTRY}' OCIR_USERNAME='${OCIR_USERNAME}' OCIR_AUTH_TOKEN='${OCIR_AUTH_TOKEN}' ${remote_tmp}/deploy-compose-node.sh"
+
+            sleep 20
+          done
+
+          if [[ "${{ inputs.deploy_mode }}" == "full" ]]; then
+            docker service rm raota_app || true
+          fi
