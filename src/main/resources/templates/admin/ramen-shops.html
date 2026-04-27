@@ -799,36 +799,57 @@
             event.preventDefault();
 
             try {
-                const uploadImage = async (file, dirName) => {
+                const uploadImage = async (file, type) => {
                     const dotIndex = file.name.lastIndexOf(".");
                     const extension = dotIndex >= 0 ? file.name.substring(dotIndex) : ".png";
-                    const presignedResponse = await fetch(
-                        "/files/presigned-url?dirName="
-                        + encodeURIComponent(dirName)
+                    
+                    // 1. 업로드 티켓 발급 요청 (백엔드 규격 반영)
+                    const ticketResponse = await fetch(
+                        "/files/upload-ticket?type="
+                        + encodeURIComponent(type)
                         + "&extension="
                         + encodeURIComponent(extension)
                         + "&contentType="
                         + encodeURIComponent(file.type || "")
                     );
-                    if (!presignedResponse.ok) {
-                        throw new Error("presigned-url");
+                    
+                    if (!ticketResponse.ok) {
+                        throw new Error("티켓 발급 실패");
                     }
 
-                    const { uploadUrl, imgUrl } = await presignedResponse.json();
-                    const uploadResponse = await fetch(uploadUrl, {
-                        method: "PUT",
-                        headers: file.type ? { "Content-Type": file.type } : {},
-                        body: file
-                    });
-                    if (!uploadResponse.ok) {
-                        throw new Error("upload");
+                    // 2. 응답 데이터 추출 (Snake Case 대응)
+                    const { upload_url, img_url, upload_params } = await ticketResponse.json();
+                    
+                    // 3. 실제 스토리지 업로드 (Cloudinary와 S3/OCI 방식 구분)
+                    if (upload_params) {
+                        // Cloudinary 방식: POST + FormData
+                        const formData = new FormData();
+                        Object.entries(upload_params).forEach(([key, value]) => {
+                            formData.append(key, value);
+                        });
+                        formData.append("file", file);
+                        
+                        const uploadResponse = await fetch(upload_url, {
+                            method: "POST",
+                            body: formData
+                        });
+                        if (!uploadResponse.ok) throw new Error("Cloudinary 업로드 실패");
+                    } else {
+                        // OCI / S3 방식: PUT + Binary Body
+                        const uploadResponse = await fetch(upload_url, {
+                            method: "PUT",
+                            headers: file.type ? { "Content-Type": file.type } : {},
+                            body: file
+                        });
+                        if (!uploadResponse.ok) throw new Error("S3/OCI 업로드 실패");
                     }
-                    return imgUrl;
+                    
+                    return img_url;
                 };
 
                 if (imageFileInput.files && imageFileInput.files.length > 0) {
                     imageUploadStatus.textContent = "대표 이미지를 업로드하고 있다...";
-                    const imgUrl = await uploadImage(imageFileInput.files[0], "ramen-shop");
+                    const imgUrl = await uploadImage(imageFileInput.files[0], "SHOP");
                     imageUrlInput.value = imgUrl;
                     imageFileInput.dataset.currentImageUrl = imgUrl;
                 }
@@ -843,7 +864,7 @@
                         continue;
                     }
                     imageUploadStatus.textContent = "메뉴 이미지를 업로드하고 있다...";
-                    hiddenInput.value = await uploadImage(input.files[0], input.dataset.dirName || "ramen-menu");
+                    hiddenInput.value = await uploadImage(input.files[0], "RAMEN_MENU");
                 }
 
                 imageUploadStatus.textContent = "이미지 업로드가 완료됐다. 저장을 계속한다.";

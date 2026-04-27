@@ -36,7 +36,8 @@ public class FIleController {
         return switch (type.toUpperCase()) {
             case "PROFILE" -> "profiles";
             case "BACKGROUND" -> "backgrounds";
-            case "SHOP" -> "shops";
+            case "SHOP", "RAMEN_SHOP", "RAMEN-SHOP" -> "shops";
+            case "RAMEN_MENU", "RAMEN-MENU" -> "ramen-menu";
             case "COMMUNITY" -> "community";
             case "PROOF" -> "ramen-proof";
             default -> throw new IllegalArgumentException("지원하지 않는 이미지 타입입니다: " + type);
