@@ -1,12 +1,16 @@
 package com.raota.global.common;
 
 import com.raota.global.auth.AuthenticationRequiredException;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+
+import java.util.Arrays;
 
 @Slf4j
 @RestControllerAdvice
@@ -39,6 +43,23 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<Void> handleNoResourceFound(NoResourceFoundException exception) {
         return ResponseEntity.notFound().build();
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodNotSupported(
+            HttpRequestMethodNotSupportedException exception,
+            HttpServletRequest request
+    ) {
+        log.warn(
+                "Method not supported. method={}, uri={}, remoteAddr={}, userAgent={}, supportedMethods={}",
+                request.getMethod(),
+                request.getRequestURI(),
+                request.getRemoteAddr(),
+                request.getHeader("User-Agent"),
+                Arrays.toString(exception.getSupportedMethods())
+        );
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(ApiResponse.fail("지원하지 않는 HTTP 메서드입니다."));
     }
 
     @ExceptionHandler(Exception.class)

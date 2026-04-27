@@ -52,7 +52,7 @@ public class DiscordAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     }
 
     private DiscordMessage createMessage(ILoggingEvent event){
-        int color = event.getLevel().isGreaterOrEqual(Level.ERROR) ? 16711680 : 16776960; // ERROR: 빨강, WARN: 노랑
+        int color = 16711680;
 
         String stackTrace = "";
         IThrowableProxy throwableProxy = event.getThrowableProxy();
@@ -60,17 +60,18 @@ public class DiscordAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
             stackTrace = ThrowableProxyUtil.asString(throwableProxy);
         }
 
-        String levelIcon = event.getLevel().isGreaterOrEqual(Level.ERROR) ? "🚨" : "⚠️";
-        String description = stackTrace.isEmpty() ? event.getFormattedMessage() : "```java\n" + truncate(stackTrace, 4000) + "\n```";
+        String summary = truncate(event.getFormattedMessage(), 300);
+        String stackTracePreview = stackTrace.isEmpty() ? "-" : "```java\n" + truncate(stackTrace, 1200) + "\n```";
 
         DiscordEmbed embed = DiscordEmbed.builder()
-                .title(levelIcon + " [" + event.getLevel() + "] " + truncate(event.getFormattedMessage(), 250))
-                .description(description)
+                .title("🚨 [ERROR] " + truncate(event.getFormattedMessage(), 180))
+                .description(summary)
                 .color(color)
                 .timestamp(Instant.ofEpochMilli(event.getTimeStamp()).toString())
                 .fields(List.of(
                         EmbedField.builder().name("Logger").value("`" + event.getLoggerName() + "`").inline(true).build(),
-                        EmbedField.builder().name("Thread").value("`" + event.getThreadName() + "`").inline(true).build()
+                        EmbedField.builder().name("Thread").value("`" + event.getThreadName() + "`").inline(true).build(),
+                        EmbedField.builder().name("Stack Trace").value(stackTracePreview).inline(false).build()
                 ))
                 .build();
 
