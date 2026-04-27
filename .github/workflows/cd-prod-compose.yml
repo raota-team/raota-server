@@ -107,13 +107,13 @@ jobs:
             echo "[deploy] preparing ${host}"
             ssh -i ~/.ssh/raota_prod -o StrictHostKeyChecking=no "${PROD_SSH_USER}@${host}" "mkdir -p ${remote_tmp}"
             scp -i ~/.ssh/raota_prod -o StrictHostKeyChecking=no \
-              docker-compose.prod.yml \
-              scripts/bootstrap-compose-host.sh \
-              scripts/deploy-compose-node.sh \
+              deploy/compose/app.yml \
+              deploy/scripts/bootstrap-host.sh \
+              deploy/scripts/deploy-app.sh \
               "${PROD_SSH_USER}@${host}:${remote_tmp}/"
 
             ssh -i ~/.ssh/raota_prod -o StrictHostKeyChecking=no "${PROD_SSH_USER}@${host}" \
-              "chmod +x ${remote_tmp}/bootstrap-compose-host.sh ${remote_tmp}/deploy-compose-node.sh && ${remote_tmp}/bootstrap-compose-host.sh && cp ${remote_tmp}/docker-compose.prod.yml /opt/raota/docker-compose.prod.yml"
+              "chmod +x ${remote_tmp}/bootstrap-host.sh ${remote_tmp}/deploy-app.sh && ${remote_tmp}/bootstrap-host.sh && cp ${remote_tmp}/app.yml /opt/raota/docker-compose.prod.yml"
 
             echo "[deploy] draining swarm node ${node_name}"
             docker node update --availability drain "${node_name}"
@@ -130,7 +130,7 @@ jobs:
 
             echo "[deploy] updating container on ${host}"
             ssh -i ~/.ssh/raota_prod -o StrictHostKeyChecking=no "${PROD_SSH_USER}@${host}" \
-              "APP_IMAGE='${IMAGE_URI}:${IMAGE_TAG}' OCI_VAULT_ID='${OCI_VAULT_ID}' SPRING_DATA_REDIS_HOST='${PROD_REDIS_HOST}' SPRING_DATA_REDIS_PORT='${PROD_REDIS_PORT}' OCIR_REGISTRY='${OCIR_REGISTRY}' OCIR_USERNAME='${OCIR_USERNAME}' OCIR_AUTH_TOKEN='${OCIR_AUTH_TOKEN}' ${remote_tmp}/deploy-compose-node.sh"
+              "APP_IMAGE='${IMAGE_URI}:${IMAGE_TAG}' OCI_VAULT_ID='${OCI_VAULT_ID}' SPRING_DATA_REDIS_HOST='${PROD_REDIS_HOST}' SPRING_DATA_REDIS_PORT='${PROD_REDIS_PORT}' OCIR_REGISTRY='${OCIR_REGISTRY}' OCIR_USERNAME='${OCIR_USERNAME}' OCIR_AUTH_TOKEN='${OCIR_AUTH_TOKEN}' ${remote_tmp}/deploy-app.sh"
 
             sleep 20
           done
