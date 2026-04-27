@@ -23,6 +23,9 @@
 
 - Compose rolling deploy:
   - `.github/workflows/cd-prod-compose.yml`
+  - `main` push 시 자동 실행
+  - 배포 직전에 최신 `app.yml`, `bootstrap-host.sh`, `deploy-app.sh`를 각 worker의 `/opt/raota`에 덮어씀
+  - 그 다음 각 worker에서 `/opt/raota/deploy-app.sh` 실행
 - Legacy Swarm workflow:
   - `.github/workflows/cd-prod.yml`
   - manual fallback only
@@ -47,11 +50,11 @@ SPRING_DATA_REDIS_PORT=6379 \
 OCIR_REGISTRY=<registry> \
 OCIR_USERNAME=<username> \
 OCIR_AUTH_TOKEN=<token> \
-./deploy/scripts/deploy-app.sh
+/opt/raota/deploy-app.sh
 ```
 
 Redis deploy script:
 
 ```bash
-REMOTE_DIR=/opt/raota-redis ./deploy/scripts/deploy-redis.sh
+REMOTE_DIR=/opt/raota-redis /opt/raota-redis/deploy-redis.sh
 ```
