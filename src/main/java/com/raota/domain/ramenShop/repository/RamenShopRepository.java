@@ -24,15 +24,17 @@ public interface RamenShopRepository extends JpaRepository<RamenShop, Long> {
         from RamenShop s
         where (:region is null or :region = '' or s.address.city = :region)
           and (:keyword is null or :keyword = '' or s.name like concat('%', :keyword, '%'))
+          and (:tag is null or :tag = '' or function('json_contains', s.tags, function('json_quote', :tag)) = 1)
         """,
             countQuery = """
         select count(s)
         from RamenShop s
         where (:region is null or :region = '' or s.address.city = :region)
           and (:keyword is null or :keyword = '' or s.name like concat('%', :keyword, '%'))
+          and (:tag is null or :tag = '' or function('json_contains', s.tags, function('json_quote', :tag)) = 1)
         """
     )
     Page<StoreSummaryResponse> searchStores(@Param("region") String region,
                                             @Param("keyword") String keyword,
-                                            Pageable pageable);
+                                            @Param("tag") String tag, Pageable pageable);
 }

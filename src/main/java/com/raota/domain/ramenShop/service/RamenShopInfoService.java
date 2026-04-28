@@ -50,8 +50,8 @@ public class RamenShopInfoService {
     }
 
     @Transactional(readOnly = true)
-    public Page<StoreSummaryResponse> getRamenShopList(String region, String keyword, Pageable pageable) {
-        return ramenShopRepository.searchStores(region, keyword, pageable)
+    public Page<StoreSummaryResponse> getRamenShopList(String region, String keyword, String tag, Pageable pageable) {
+        return ramenShopRepository.searchStores(region, keyword, tag, pageable)
                 .map(store -> new StoreSummaryResponse(
                         store.id(),
                         store.name(),

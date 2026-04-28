@@ -8,4 +8,5 @@ import lombok.Getter;
 public class RamenShopSearchRequest {
     private String region;
     private String keyword;
+    private String tag;
 }
