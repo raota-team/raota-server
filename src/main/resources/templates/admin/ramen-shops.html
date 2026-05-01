@@ -459,7 +459,7 @@
                       th:if="${editMode}"
                       th:action="@{/admin/ramen-shops/{id}/delete(id=${selectedShopId})}"
                       method="post">
-                    <button class="button-danger" type="submit" onclick="return confirm('이 라멘집을 삭제할까요?');">삭제</button>
+                    <button class="button-danger" type="submit">삭제</button>
                 </form>
             </div>
 
@@ -749,11 +749,14 @@
     </div>
 </template>
 
-<script>
+<script th:inline="javascript">
     const adminForm = document.getElementById("ramen-shop-form");
+    const deleteForm = document.querySelector(".delete-form");
     const imageFileInput = document.getElementById("imageFile");
     const imageUrlInput = document.getElementById("imageUrl");
     const imageUploadStatus = document.getElementById("image-upload-status");
+    const editMode = /*[[${editMode}]]*/ false;
+    const selectedShopId = /*[[${selectedShopId}]]*/ null;
 
     const nextIndex = (container, field) => {
         const selector = '[name^="' + field + '["]';
@@ -793,6 +796,104 @@
             imageUploadStatus.textContent = "새 이미지를 저장할 준비가 됐다. 저장 버튼을 누르면 업로드한다.";
         });
     }
+
+    const nullIfBlank = (value) => {
+        if (value === null || value === undefined) {
+            return null;
+        }
+        const trimmed = String(value).trim();
+        return trimmed.length === 0 ? null : trimmed;
+    };
+
+    const numberOrNull = (value) => {
+        const normalized = nullIfBlank(value);
+        return normalized === null ? null : Number(normalized);
+    };
+
+    const readValue = (selector) => {
+        const element = adminForm.querySelector(selector);
+        return element ? nullIfBlank(element.value) : null;
+    };
+
+    const readMenus = (containerId, fields) => {
+        const container = document.getElementById(containerId);
+        if (!container) {
+            return [];
+        }
+        return Array.from(container.querySelectorAll(".menu-card")).map((card) => {
+            const menu = {};
+            fields.forEach((field) => {
+                const input = card.querySelector('[name$=".' + field.name + '"]');
+                if (!input) {
+                    menu[field.name] = field.type === "boolean" ? false : null;
+                    return;
+                }
+                if (field.type === "boolean") {
+                    menu[field.name] = input.checked;
+                } else if (field.type === "number") {
+                    menu[field.name] = numberOrNull(input.value);
+                } else {
+                    menu[field.name] = nullIfBlank(input.value);
+                }
+            });
+            return menu;
+        });
+    };
+
+    const buildPayload = () => ({
+        name: readValue('[name="name"]'),
+        branchName: readValue('[name="branchName"]'),
+        naverMapId: readValue('[name="naverMapId"]'),
+        city: readValue('[name="city"]'),
+        district: readValue('[name="district"]'),
+        street: readValue('[name="street"]'),
+        detail: readValue('[name="detail"]'),
+        latitude: readValue('[name="latitude"]'),
+        longitude: readValue('[name="longitude"]'),
+        closedDays: readValue('[name="closedDays"]'),
+        openTime: readValue('[name="openTime"]'),
+        closeTime: readValue('[name="closeTime"]'),
+        breakStart: readValue('[name="breakStart"]'),
+        breakEnd: readValue('[name="breakEnd"]'),
+        instagramUrl: readValue('[name="instagramUrl"]'),
+        catchTableUrl: readValue('[name="catchTableUrl"]'),
+        description: readValue('[name="description"]'),
+        parkingInfo: readValue('[name="parkingInfo"]'),
+        imageUrl: readValue('[name="imageUrl"]'),
+        tags: readValue('[name="tags"]'),
+        normalMenus: readMenus("normal-menu-list", [
+            { name: "name" },
+            { name: "price", type: "number" },
+            { name: "signature", type: "boolean" },
+            { name: "imageUrl" }
+        ]),
+        eventMenus: readMenus("event-menu-list", [
+            { name: "name" },
+            { name: "description" },
+            { name: "price", type: "number" },
+            { name: "badgeText" },
+            { name: "startDate" },
+            { name: "endDate" },
+            { name: "imageUrl" }
+        ])
+    });
+
+    const requestJson = async (url, options) => {
+        const response = await fetch(url, {
+            ...options,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                ...(options.headers || {})
+            }
+        });
+        const contentType = response.headers.get("content-type") || "";
+        const body = contentType.includes("application/json") ? await response.json() : null;
+        if (!response.ok || body?.status === "FAIL") {
+            throw new Error(body?.message || "요청 처리에 실패했다.");
+        }
+        return body;
+    };
 
     if (adminForm && imageFileInput && imageUrlInput) {
         adminForm.addEventListener("submit", async (event) => {
@@ -868,9 +969,37 @@
                 }
 
                 imageUploadStatus.textContent = "이미지 업로드가 완료됐다. 저장을 계속한다.";
-                adminForm.submit();
+                const body = await requestJson(
+                    editMode ? "/admin/api/ramen-shops/" + selectedShopId : "/admin/api/ramen-shops",
+                    {
+                        method: editMode ? "PATCH" : "POST",
+                        body: JSON.stringify(buildPayload())
+                    }
+                );
+                const nextShopId = body?.data?.shopId || selectedShopId;
+                window.location.href = nextShopId
+                    ? "/admin/ramen-shops?shopId=" + encodeURIComponent(nextShopId)
+                    : "/admin/ramen-shops";
             } catch (error) {
-                imageUploadStatus.textContent = "이미지 업로드에 실패했다. 다시 시도해달라.";
+                imageUploadStatus.textContent = error.message || "저장에 실패했다. 다시 시도해달라.";
+            }
+        });
+    }
+
+    if (deleteForm && selectedShopId) {
+        deleteForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            if (!confirm("이 라멘집을 삭제할까요?")) {
+                return;
+            }
+            try {
+                await requestJson("/admin/api/ramen-shops/" + selectedShopId, {
+                    method: "DELETE",
+                    body: "{}"
+                });
+                window.location.href = "/admin/ramen-shops";
+            } catch (error) {
+                alert(error.message || "삭제에 실패했다.");
             }
         });
     }

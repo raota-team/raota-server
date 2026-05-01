@@ -1,8 +1,11 @@
 package com.raota.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -20,6 +23,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
@@ -161,6 +165,92 @@ class RamenShopAdminControllerTest extends BaseIntegrationTest {
         mockMvc.perform(post("/admin/ramen-shops/{shopId}/delete", savedShop.getId()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/ramen-shops"));
+
+        assertThat(ramenShopRepository.findAll()).isEmpty();
+    }
+
+    @Test
+    void createShopWithJsonApi() throws Exception {
+        mockMvc.perform(post("/admin/api/ramen-shops")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "제이슨 라멘",
+                                  "city": "서울",
+                                  "district": "마포구",
+                                  "street": "동교로 12",
+                                  "detail": "1층",
+                                  "latitude": "37.12345678",
+                                  "longitude": "127.12345678",
+                                  "closedDays": "월요일",
+                                  "openTime": "11:00",
+                                  "closeTime": "21:00",
+                                  "instagramUrl": "https://instagram.com/json_ramen",
+                                  "description": "JSON으로 등록한 라멘집",
+                                  "tags": "쇼유, 혼밥",
+                                  "normalMenus": [
+                                    { "name": "쇼유 라멘", "price": 12000, "signature": true }
+                                  ],
+                                  "eventMenus": []
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.shopId").exists());
+
+        RamenShop shop = ramenShopRepository.findAll().getFirst();
+        assertThat(shop.getName()).isEqualTo("제이슨 라멘");
+        assertThat(shop.getAddress().latitude()).isEqualByComparingTo("37.12345678");
+        assertThat(shop.getNormalMenus().getValues()).hasSize(1);
+    }
+
+    @Test
+    void updateShopWithJsonApi() throws Exception {
+        RamenShop savedShop = ramenShopRepository.save(sampleShop("수정 전"));
+
+        mockMvc.perform(patch("/admin/api/ramen-shops/{shopId}", savedShop.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "JSON 수정 후",
+                                  "city": "서울",
+                                  "district": "성동구",
+                                  "street": "성수이로 7",
+                                  "detail": "2층",
+                                  "closedDays": "화요일",
+                                  "openTime": "10:30",
+                                  "closeTime": "20:00",
+                                  "parkingInfo": "불가",
+                                  "instagramUrl": "https://instagram.com/json_updated",
+                                  "description": "JSON으로 수정한 라멘집",
+                                  "tags": "츠케멘",
+                                  "normalMenus": [
+                                    { "name": "츠케멘", "price": 14000, "signature": true }
+                                  ],
+                                  "eventMenus": [
+                                    { "name": "한정 라멘", "price": 16000, "badgeText": "LIMITED", "startDate": "2026-05-01", "endDate": "2026-05-31" }
+                                  ]
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.shopId").value(savedShop.getId()));
+
+        RamenShop updatedShop = ramenShopRepository.findById(savedShop.getId()).orElseThrow();
+        assertThat(updatedShop.getName()).isEqualTo("JSON 수정 후");
+        assertThat(updatedShop.getNormalMenus().getValues().getFirst().getName()).isEqualTo("츠케멘");
+        assertThat(updatedShop.getEventMenus().getValues()).hasSize(1);
+    }
+
+    @Test
+    void deleteShopWithJsonApi() throws Exception {
+        RamenShop savedShop = ramenShopRepository.save(sampleShop("JSON 삭제 대상"));
+
+        mockMvc.perform(delete("/admin/api/ramen-shops/{shopId}", savedShop.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"));
 
         assertThat(ramenShopRepository.findAll()).isEmpty();
     }
