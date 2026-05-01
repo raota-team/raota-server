@@ -40,3 +40,6 @@ out/
 
 # Local/generated API docs
 /docs/
+
+# Local archives generated from personal account exports
+/archive/
