@@ -109,7 +109,7 @@ app:
     cookie:
       refresh-token-name: ${APP_AUTH_REFRESH_TOKEN_COOKIE_NAME:raota_refresh_token}
       secure: ${APP_AUTH_REFRESH_TOKEN_COOKIE_SECURE:true}
-      same-site: ${APP_AUTH_REFRESH_TOKEN_COOKIE_SAME_SITE:'None'}
+      same-site: ${APP_AUTH_REFRESH_TOKEN_COOKIE_SAME_SITE:None}
       domain: ${APP_AUTH_REFRESH_TOKEN_COOKIE_DOMAIN:.raota.net}
     cors:
       allowed-origins: ${APP_AUTH_ALLOWED_ORIGINS:https://www.raota.net,https://raota.net,http://localhost:3000}
