@@ -44,4 +44,15 @@ class SecurityConfigTest extends BaseIntegrationTest {
                 .andExpect(header().string("Access-Control-Allow-Headers", containsString("Authorization")))
                 .andExpect(header().string("Access-Control-Allow-Credentials", "true"));
     }
+
+    @Test
+    void preflightRequestIsAllowedForProductionDomain() throws Exception {
+        mockMvc.perform(options("/auth/refresh")
+                        .header("Origin", "https://www.raota.net")
+                        .header("Access-Control-Request-Method", "POST")
+                        .header("Access-Control-Request-Headers", "Content-Type"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", "https://www.raota.net"))
+                .andExpect(header().string("Access-Control-Allow-Credentials", "true"));
+    }
 }

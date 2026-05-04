@@ -6,6 +6,7 @@ import com.raota.global.auth.OAuth2AuthenticationFailureHandler;
 import com.raota.global.auth.OAuth2AuthenticationSuccessHandler;
 import com.raota.global.auth.RestAccessDeniedHandler;
 import com.raota.global.auth.RestAuthenticationEntryPoint;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -81,7 +82,16 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(authProperties.cors().allowedOrigins());
+        List<String> allowedOriginPatterns = new ArrayList<>(List.of(
+                "https://*.raota.net",
+                "https://raota.net",
+                "http://localhost:*",
+                "https://localhost:*",
+                "http://127.0.0.1:*",
+                "https://127.0.0.1:*"
+        ));
+        allowedOriginPatterns.addAll(authProperties.cors().allowedOrigins());
+        configuration.setAllowedOriginPatterns(allowedOriginPatterns.stream().distinct().toList());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*")); // 모든 헤더 허용
         configuration.setExposedHeaders(List.of("Location", "Authorization"));
