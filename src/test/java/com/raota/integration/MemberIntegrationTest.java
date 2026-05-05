@@ -15,7 +15,7 @@ import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenProofPictureRepository;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.global.auth.JwtTokenProvider;
-import com.raota.global.common.BaseIntegrationTest;
+import com.raota.testsupport.BaseIntegrationTest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.BeforeEach;
