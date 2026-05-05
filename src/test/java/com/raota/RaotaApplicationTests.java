@@ -6,7 +6,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 
 
-import com.raota.global.common.BaseIntegrationTest;
+import com.raota.testsupport.BaseIntegrationTest;
 
 class RaotaApplicationTests extends BaseIntegrationTest {
 

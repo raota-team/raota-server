@@ -3,12 +3,11 @@ package com.raota.global.auth;
 import com.raota.domain.auth.service.AuthAccountService;
 import com.raota.domain.auth.service.AuthRefreshSession;
 import com.raota.domain.auth.store.RefreshTokenStore;
-import com.raota.global.auth.AuthenticationRequiredException;
-import com.raota.global.common.BaseIntegrationTest;
+
+import com.raota.testsupport.BaseIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
+
 
 import java.time.Instant;
 

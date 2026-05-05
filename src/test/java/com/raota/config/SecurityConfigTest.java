@@ -17,7 +17,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 
 
-import com.raota.global.common.BaseIntegrationTest;
+import com.raota.testsupport.BaseIntegrationTest;
 
 class SecurityConfigTest extends BaseIntegrationTest {
 

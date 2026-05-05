@@ -10,7 +10,7 @@ import com.raota.domain.ramenShop.model.EventMenus;
 import com.raota.domain.ramenShop.model.NormalMenus;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
-import com.raota.global.common.BaseIntegrationTest;
+import com.raota.testsupport.BaseIntegrationTest;
 import io.restassured.RestAssured;
 import java.time.LocalTime;
 import java.util.List;
