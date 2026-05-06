@@ -8,6 +8,7 @@ import com.raota.domain.ramenShop.repository.RamenProofPictureRepository;
 import com.raota.domain.ramenShop.controller.response.RamenShopProofPictureResponse;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
+import com.raota.global.cache.CacheInvalidationPublisher;
 import com.raota.global.file.FileUploader;
 import java.util.Objects;
 import lombok.AllArgsConstructor;
@@ -24,6 +25,7 @@ public class RamenProofPictureService {
     private final MemberRepository memberRepository;
     private final RamenShopRepository ramenShopRepository;
     private final FileUploader fileUploader;
+    private final CacheInvalidationPublisher cacheInvalidationPublisher;
 
     @Transactional
     public ProofPictureInfoResponse addProofPicture(Long shopId, String imageUrl,String description, String menuName, Long memberId) {
@@ -49,6 +51,8 @@ public class RamenProofPictureService {
 
         member.increasePhotoCount();
         ramenShop.increaseVisitCount();
+        cacheInvalidationPublisher.publish("ramenShopDetail", String.valueOf(shopId));
+        cacheInvalidationPublisher.publishAll("ramenShopList");
 
         return new ProofPictureInfoResponse(
                 saved.getId(),
@@ -84,5 +88,7 @@ public class RamenProofPictureService {
         member.decreasePhotoCount();
         ramenShop.decreaseVisitCount();
         proofPicture.delete();
+        cacheInvalidationPublisher.publish("ramenShopDetail", String.valueOf(ramenShop.getId()));
+        cacheInvalidationPublisher.publishAll("ramenShopList");
     }
 }

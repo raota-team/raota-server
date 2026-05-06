@@ -67,6 +67,9 @@ dependencies {
     implementation 'com.oracle.oci.sdk:oci-java-sdk-shaded-full:3.63.1'
     implementation 'com.cloudinary:cloudinary-http5:2.0.0'
 
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
+
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.7'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.7'
 }

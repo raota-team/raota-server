@@ -1,10 +1,10 @@
 package com.raota.domain.auth.store;
 
+import com.raota.global.auth.AuthRedisProperties;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
@@ -18,10 +18,8 @@ import org.springframework.stereotype.Component;
 )
 public class RedisRefreshTokenStore implements RefreshTokenStore {
 
-    private static final String TOKEN_KEY_PREFIX = "auth:refresh:token:";
-    private static final String MEMBER_KEY_PREFIX = "auth:refresh:member:";
-
     private final StringRedisTemplate redisTemplate;
+    private final AuthRedisProperties authRedisProperties;
 
     @Override
     public Optional<StoredRefreshToken> findByToken(String token) {
@@ -71,10 +69,10 @@ public class RedisRefreshTokenStore implements RefreshTokenStore {
     }
 
     private String tokenKey(String token) {
-        return TOKEN_KEY_PREFIX + token;
+        return authRedisProperties.refreshTokenKeyPrefix() + token;
     }
 
     private String memberKey(Long memberId) {
-        return MEMBER_KEY_PREFIX + memberId;
+        return authRedisProperties.refreshMemberKeyPrefix() + memberId;
     }
 }

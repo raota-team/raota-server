@@ -6,6 +6,7 @@ import com.raota.domain.ramenShop.model.EventMenus;
 import com.raota.domain.ramenShop.model.NormalMenus;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
+import com.raota.global.cache.CacheInvalidationPublisher;
 import com.raota.global.file.FileUploader;
 import java.util.List;
 import java.util.stream.Stream;
@@ -20,6 +21,7 @@ public class RamenShopAdminService {
 
     private final RamenShopRepository ramenShopRepository;
     private final FileUploader fileUploader;
+    private final CacheInvalidationPublisher cacheInvalidationPublisher;
 
     @Transactional(readOnly = true)
     public List<RamenShopAdminSummaryResponse> getShopSummaries() {
@@ -71,7 +73,9 @@ public class RamenShopAdminService {
         ramenShop.replaceNormalMenus(form.toNormalMenus());
         ramenShop.replaceEventMenus(form.toEventMenus());
 
-        return ramenShopRepository.save(ramenShop).getId();
+        Long shopId = ramenShopRepository.save(ramenShop).getId();
+        cacheInvalidationPublisher.publishAll("ramenShopList");
+        return shopId;
     }
 
     @Transactional
@@ -97,6 +101,8 @@ public class RamenShopAdminService {
         );
         ramenShop.replaceNormalMenus(form.toNormalMenus());
         ramenShop.replaceEventMenus(form.toEventMenus());
+        cacheInvalidationPublisher.publish("ramenShopDetail", String.valueOf(shopId));
+        cacheInvalidationPublisher.publishAll("ramenShopList");
     }
 
     @Transactional
@@ -106,6 +112,8 @@ public class RamenShopAdminService {
             fileUploader.delete(ramenShop.getImageUrl());
         }
         ramenShopRepository.delete(ramenShop);
+        cacheInvalidationPublisher.publish("ramenShopDetail", String.valueOf(shopId));
+        cacheInvalidationPublisher.publishAll("ramenShopList");
     }
 
     private RamenShop getShop(Long shopId) {

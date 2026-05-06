@@ -88,7 +88,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics
   endpoint:
     health:
       probes:
@@ -113,3 +113,16 @@ app:
       domain: ${APP_AUTH_REFRESH_TOKEN_COOKIE_DOMAIN:.raota.net}
     cors:
       allowed-origins: ${APP_AUTH_ALLOWED_ORIGINS:https://www.raota.net,https://raota.net,http://localhost:3000}
+  redis:
+    auth:
+      refresh-token-key-prefix: "${APP_REDIS_AUTH_REFRESH_TOKEN_KEY_PREFIX:auth:refresh:token:}"
+      refresh-member-key-prefix: "${APP_REDIS_AUTH_REFRESH_MEMBER_KEY_PREFIX:auth:refresh:member:}"
+    cache:
+      invalidation-topic: ${APP_REDIS_CACHE_INVALIDATION_TOPIC:cache-invalidation}
+      caches:
+        ramenShopDetail:
+          ttl-seconds: ${APP_CACHE_RAMEN_SHOP_DETAIL_TTL_SECONDS:1800}
+          maximum-size: ${APP_CACHE_RAMEN_SHOP_DETAIL_MAX_SIZE:200}
+        ramenShopList:
+          ttl-seconds: ${APP_CACHE_RAMEN_SHOP_LIST_TTL_SECONDS:300}
+          maximum-size: ${APP_CACHE_RAMEN_SHOP_LIST_MAX_SIZE:50}

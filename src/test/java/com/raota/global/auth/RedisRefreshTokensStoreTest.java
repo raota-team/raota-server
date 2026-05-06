@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.raota.domain.auth.store.RedisRefreshTokenStore;
 import com.raota.domain.auth.store.RefreshTokenStore;
+import com.raota.global.auth.AuthRedisProperties;
 import com.raota.testsupport.BaseIntegrationTest;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,6 +16,9 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 
 
 public class RedisRefreshTokensStoreTest extends BaseIntegrationTest {
+
+    private static final String REFRESH_TOKEN_KEY_PREFIX = "auth:refresh:token:";
+    private static final String REFRESH_MEMBER_KEY_PREFIX = "auth:refresh:member:";
 
     private RefreshTokenStore refreshTokenStore;
     private StringRedisTemplate redisTemplate;
@@ -29,7 +33,10 @@ public class RedisRefreshTokensStoreTest extends BaseIntegrationTest {
         factory.afterPropertiesSet();
 
         this.redisTemplate = new StringRedisTemplate(factory);
-        this.refreshTokenStore = new RedisRefreshTokenStore(this.redisTemplate);
+        this.refreshTokenStore = new RedisRefreshTokenStore(
+                this.redisTemplate,
+                new AuthRedisProperties(REFRESH_TOKEN_KEY_PREFIX, REFRESH_MEMBER_KEY_PREFIX)
+        );
     }
 
     @Test
@@ -40,7 +47,7 @@ public class RedisRefreshTokensStoreTest extends BaseIntegrationTest {
 
         refreshTokenStore.save(memberId,testToken,testExpiry);
 
-        String raw = redisTemplate.opsForValue().get("auth:refresh:token:" + testToken);
+        String raw = redisTemplate.opsForValue().get(REFRESH_TOKEN_KEY_PREFIX + testToken);
         assertThat(raw).isNotNull();
         assertThat(raw).contains(String.valueOf(memberId));
     }
