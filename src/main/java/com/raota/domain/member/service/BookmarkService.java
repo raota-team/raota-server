@@ -6,6 +6,7 @@ import com.raota.domain.member.repository.BookmarkRepository;
 import com.raota.domain.member.repository.MemberRepository;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
+import com.raota.global.cache.CacheInvalidationPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,9 +19,10 @@ public class BookmarkService {
     private final BookmarkRepository bookmarkRepository;
     private final MemberRepository memberRepository;
     private final RamenShopRepository ramenShopRepository;
+    private final CacheInvalidationPublisher cacheInvalidationPublisher;
 
     public boolean toggleBookmark(Long memberId, Long shopId) {
-        return bookmarkRepository.findByMemberProfileIdAndRamenShopId(memberId, shopId)
+        boolean bookmarked = bookmarkRepository.findByMemberProfileIdAndRamenShopId(memberId, shopId)
                 .map(bookmark -> {
                     boolean newDeletedStatus = !bookmark.isDeleted();
                     bookmark.changeStatus(newDeletedStatus);
@@ -56,5 +58,8 @@ public class BookmarkService {
                     bookmarkRepository.save(bookmark);
                     return true;
                 });
+
+        cacheInvalidationPublisher.publish("ramenShopDetail", String.valueOf(shopId));
+        return bookmarked;
     }
 }

@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 
 
-import com.raota.global.common.BaseIntegrationTest;
+import com.raota.testsupport.BaseIntegrationTest;
 
 class AuthControllerIntegrationTest extends BaseIntegrationTest {
 

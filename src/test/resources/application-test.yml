@@ -65,6 +65,19 @@ app:
     cors:
       allowed-origins:
         - http://localhost:3000
+  redis:
+    auth:
+      refresh-token-key-prefix: "auth:refresh:token:"
+      refresh-member-key-prefix: "auth:refresh:member:"
+    cache:
+      invalidation-topic: cache-invalidation
+      caches:
+        ramenShopDetail:
+          ttl-seconds: 1800
+          maximum-size: 200
+        ramenShopList:
+          ttl-seconds: 300
+          maximum-size: 50
 
 cloudinary:
   cloud-name: test-cloud-name

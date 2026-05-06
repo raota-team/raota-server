@@ -26,6 +26,26 @@ public record RamenShopBasicInfoResponse(
         List<NormalMenuDto> normal_menus,
         List<EventMenuDto> event_menus) {
 
+    public RamenShopBasicInfoResponse withBookmark(boolean isBookmarked) {
+        return new RamenShopBasicInfoResponse(
+                id,
+                name,
+                branch_name,
+                naver_map_id,
+                image_url,
+                address,
+                instagram_url,
+                catchTableUrl,
+                description,
+                business_hours,
+                stats,
+                isBookmarked,
+                tags,
+                normal_menus,
+                event_menus
+        );
+    }
+
     public static RamenShopBasicInfoResponse from(
             RamenShop ramenShop,
             String imageUrl,
