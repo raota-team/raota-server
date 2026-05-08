@@ -25,7 +25,14 @@ public interface RamenShopRepository extends JpaRepository<RamenShop, Long> {
         where (:city is null or :city = '' or s.address.city = :city)
           and (:district is null or :district = '' or s.address.district = :district)
           and (:keyword is null or :keyword = '' or s.name like concat('%', :keyword, '%'))
-          and (:tag is null or :tag = '' or function('json_search', s.tags, 'all', concat('%', :tag, '%')) is not null)
+          and (
+              :tag is null or :tag = '' or exists (
+                  select 1
+                  from NormalMenu m
+                  where m.ramenShop = s
+                    and m.name like concat('%', :tag, '%')
+              )
+          )
         """,
             countQuery = """
         select count(s)
@@ -33,7 +40,14 @@ public interface RamenShopRepository extends JpaRepository<RamenShop, Long> {
         where (:city is null or :city = '' or s.address.city = :city)
           and (:district is null or :district = '' or s.address.district = :district)
           and (:keyword is null or :keyword = '' or s.name like concat('%', :keyword, '%'))
-          and (:tag is null or :tag = '' or function('json_search', s.tags, 'all', concat('%', :tag, '%')) is not null)
+          and (
+              :tag is null or :tag = '' or exists (
+                  select 1
+                  from NormalMenu m
+                  where m.ramenShop = s
+                    and m.name like concat('%', :tag, '%')
+              )
+          )
         """
     )
     Page<StoreSummaryResponse> searchStores(@Param("city") String city,
