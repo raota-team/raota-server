@@ -13,15 +13,15 @@ import com.raota.global.common.ApiResponse;
 import com.raota.global.common.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -45,8 +45,10 @@ public class RamenShopInfoController implements RamenShopInfoApi {
     @GetMapping
     @Override
     public ResponseEntity<ApiResponse<PageResponse<StoreSummaryResponse>>> getShopList(
-            @PageableDefault(size = 12, direction = Sort.Direction.DESC) Pageable pageable,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size,
             RamenShopSearchRequest request) {
+        Pageable pageable = PageRequest.of(page, size);
         Page<StoreSummaryResponse> response = ramenShopInfoService.getRamenShopList(request.getCity(),
                 request.getDistrict(), request.getKeyword(), request.getTag(), request.getSort(), pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(response)));

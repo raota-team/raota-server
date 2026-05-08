@@ -136,6 +136,27 @@ class RamenShopInfoControllerTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.data.items[2].name").value("로우"));
     }
 
+    @Test
+    void searchByLatestSortWithPagingReturnsOk() throws Exception {
+        ramenShopRepository.save(sampleShop("첫번째", "서울", "성동구"));
+        ramenShopRepository.save(sampleShop("두번째", "서울", "성동구"));
+
+        mockMvc.perform(get("/ramen-shops")
+                        .param("page", "0")
+                        .param("size", "12")
+                        .param("sort", "LATEST"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items.length()").value(2));
+    }
+
+    @Test
+    void invalidSortReturnsBadRequest() throws Exception {
+        mockMvc.perform(get("/ramen-shops")
+                        .param("sort", "name,asc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("잘못된 요청 파라미터입니다: sort"));
+    }
+
     private RamenShop sampleShop(String name, String city, String district) {
         RamenShop ramenShop = RamenShop.builder()
                 .name(name)

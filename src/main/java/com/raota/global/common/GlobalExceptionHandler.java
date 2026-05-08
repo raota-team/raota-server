@@ -5,9 +5,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.Arrays;
@@ -60,6 +62,22 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
                 .body(ApiResponse.fail("지원하지 않는 HTTP 메서드입니다."));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException exception) {
+        log.warn("Method argument type mismatch: name={}, value={}", exception.getName(), exception.getValue());
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.fail("잘못된 요청 파라미터입니다: " + exception.getName()));
+    }
+
+    @ExceptionHandler(BindException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBindException(BindException exception) {
+        String fieldName = exception.getFieldError() == null ? "unknown" : exception.getFieldError().getField();
+        Object rejectedValue = exception.getFieldError() == null ? null : exception.getFieldError().getRejectedValue();
+        log.warn("Bind exception: field={}, rejectedValue={}", fieldName, rejectedValue);
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.fail("잘못된 요청 파라미터입니다: " + fieldName));
     }
 
     @ExceptionHandler(Exception.class)
