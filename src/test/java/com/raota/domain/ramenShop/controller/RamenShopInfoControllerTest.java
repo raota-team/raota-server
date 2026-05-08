@@ -61,9 +61,9 @@ class RamenShopInfoControllerTest extends BaseIntegrationTest {
                         .param("city", "서울"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items.length()").value(2))
-                .andExpect(jsonPath("$.data.items[0].name").value("멘야 하쿠"))
-                .andExpect(jsonPath("$.data.items[0].tagLine").value("진한 국물 맛집")) // 설명이 한줄평으로 나오는지 확인
-                .andExpect(jsonPath("$.data.items[0].tags").value(hasItems("토리파이탄", "혼밥"))) // 태그 확인
+                .andExpect(jsonPath("$.data.items[*].name").value(hasItems("멘야 하쿠", "이리에 라멘")))
+                .andExpect(jsonPath("$.data.items[?(@.name=='멘야 하쿠')].tagLine").value(hasItems("진한 국물 맛집"))) // 설명이 한줄평으로 나오는지 확인
+                .andExpect(jsonPath("$.data.items[?(@.name=='멘야 하쿠')].tags[*]").value(hasItems("토리파이탄", "혼밥"))) // 태그 확인
                 .andExpect(jsonPath("$.data.items[*].region").value(hasItems("서울 성동구", "서울 마포구")));
     }
 
@@ -107,6 +107,33 @@ class RamenShopInfoControllerTest extends BaseIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items.length()").value(1))
                 .andExpect(jsonPath("$.data.items[0].name").value("이리에 라멘"));
+    }
+
+    @Test
+    void searchByPopularSortReturnsBookmarkAndVisitPriorityOrder() throws Exception {
+        RamenShop low = sampleShop("로우", "정렬시", "A");
+        low.increaseVisitCount();
+
+        RamenShop popular = sampleShop("인기", "정렬시", "B");
+        popular.increaseBookmarkCount();
+        popular.increaseBookmarkCount();
+
+        RamenShop middle = sampleShop("미들", "정렬시", "C");
+        middle.increaseBookmarkCount();
+        middle.increaseVisitCount();
+        middle.increaseVisitCount();
+        middle.increaseVisitCount();
+
+        ramenShopRepository.saveAll(List.of(low, popular, middle));
+
+        mockMvc.perform(get("/ramen-shops")
+                        .param("city", "정렬시")
+                        .param("sort", "POPULAR"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items.length()").value(3))
+                .andExpect(jsonPath("$.data.items[0].name").value("인기"))
+                .andExpect(jsonPath("$.data.items[1].name").value("미들"))
+                .andExpect(jsonPath("$.data.items[2].name").value("로우"));
     }
 
     private RamenShop sampleShop(String name, String city, String district) {
