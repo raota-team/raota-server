@@ -6,7 +6,8 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class RamenShopSearchRequest {
-    private String region;
+    private String city;
+    private String district;
     private String keyword;
     private String tag;
 }

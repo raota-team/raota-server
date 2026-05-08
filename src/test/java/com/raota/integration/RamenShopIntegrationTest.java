@@ -36,7 +36,7 @@ class RamenShopIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("지역 필터링 시 해당 지역의 라멘집 리스트와 한줄평(설명), 태그가 정상 반환된다.")
+    @DisplayName("city 필터링 시 해당 지역의 라멘집 리스트와 한줄평(설명), 태그가 정상 반환된다.")
     void get_ramen_shop_list_with_filters() {
         RamenShop shop = sampleShop("멘야 하쿠", "서울", "성동구");
         shop.updateBasicInfo("멘야 하쿠", "본점", "naver-123", shop.getAddress(), shop.getBusinessHours(),
@@ -46,7 +46,7 @@ class RamenShopIntegrationTest extends BaseIntegrationTest {
         ramenShopRepository.save(sampleShop("멘야 카네토라", "부산", "해운대구"));
 
         given()
-                .param("region", "서울")
+                .param("city", "서울")
         .when()
                 .get("/ramen-shops")
         .then()
@@ -56,6 +56,25 @@ class RamenShopIntegrationTest extends BaseIntegrationTest {
                 .body("data.items[0].tagLine", is("진한 국물 맛집"))
                 .body("data.items[0].tags", hasItems("토리파이탄", "혼밥"))
                 .body("data.items.region", hasItems("서울 성동구", "서울 마포구"));
+    }
+
+    @Test
+    @DisplayName("city와 district를 함께 넘기면 해당 행정구역의 라멘집만 반환된다.")
+    void get_ramen_shop_list_with_city_and_district_filters() {
+        ramenShopRepository.save(sampleShop("멘야 하쿠", "서울", "성동구"));
+        ramenShopRepository.save(sampleShop("이리에 라멘", "서울", "마포구"));
+        ramenShopRepository.save(sampleShop("멘야 카네토라", "부산", "해운대구"));
+
+        given()
+                .param("city", "서울")
+                .param("district", "성동구")
+        .when()
+                .get("/ramen-shops")
+        .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("data.items.size()", is(1))
+                .body("data.items[0].name", is("멘야 하쿠"))
+                .body("data.items[0].region", is("서울 성동구"));
     }
 
     @Test

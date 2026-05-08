@@ -49,7 +49,7 @@ class RamenShopInfoControllerTest extends BaseIntegrationTest {
     }
 
     @Test
-    void searchByRegionReturnsMatchingItemsOnly() throws Exception {
+    void searchByCityReturnsMatchingItemsOnly() throws Exception {
         RamenShop shop = sampleShop("멘야 하쿠", "서울", "성동구");
         shop.updateBasicInfo("멘야 하쿠", "본점", "12345", shop.getAddress(), shop.getBusinessHours(), 
                 List.of("토리파이탄", "혼밥"), null, null, "진한 국물 맛집", null);
@@ -58,13 +58,28 @@ class RamenShopInfoControllerTest extends BaseIntegrationTest {
         ramenShopRepository.save(sampleShop("멘야 카네토라", "부산", "해운대구"));
 
         mockMvc.perform(get("/ramen-shops")
-                        .param("region", "서울"))
+                        .param("city", "서울"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items.length()").value(2))
                 .andExpect(jsonPath("$.data.items[0].name").value("멘야 하쿠"))
                 .andExpect(jsonPath("$.data.items[0].tagLine").value("진한 국물 맛집")) // 설명이 한줄평으로 나오는지 확인
                 .andExpect(jsonPath("$.data.items[0].tags").value(hasItems("토리파이탄", "혼밥"))) // 태그 확인
                 .andExpect(jsonPath("$.data.items[*].region").value(hasItems("서울 성동구", "서울 마포구")));
+    }
+
+    @Test
+    void searchByCityAndDistrictReturnsMatchingItemsOnly() throws Exception {
+        ramenShopRepository.save(sampleShop("멘야 하쿠", "서울", "성동구"));
+        ramenShopRepository.save(sampleShop("이리에 라멘", "서울", "마포구"));
+        ramenShopRepository.save(sampleShop("멘야 카네토라", "부산", "해운대구"));
+
+        mockMvc.perform(get("/ramen-shops")
+                        .param("city", "서울")
+                        .param("district", "성동구"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items.length()").value(1))
+                .andExpect(jsonPath("$.data.items[0].name").value("멘야 하쿠"))
+                .andExpect(jsonPath("$.data.items[0].region").value("서울 성동구"));
     }
 
     @Test

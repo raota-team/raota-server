@@ -48,11 +48,11 @@ public class RamenShopCacheService {
     @Transactional(readOnly = true)
     @Cacheable(
             cacheNames = "ramenShopList",
-            key = "T(String).valueOf(#region) + ':' + T(String).valueOf(#keyword) + ':' + T(String).valueOf(#tag) + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort.toString()",
+            key = "T(String).valueOf(#city) + ':' + T(String).valueOf(#district) + ':' + T(String).valueOf(#keyword) + ':' + T(String).valueOf(#tag) + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort.toString()",
             condition = "#pageable.pageNumber == 0"
     )
-    public Page<StoreSummaryResponse> getFirstPageShopList(String region, String keyword, String tag, Pageable pageable) {
-        return ramenShopRepository.searchStores(region, keyword, tag, pageable)
+    public Page<StoreSummaryResponse> getFirstPageShopList(String city, String district, String keyword, String tag, Pageable pageable) {
+        return ramenShopRepository.searchStores(city, district, keyword, tag, pageable)
                 .map(store -> new StoreSummaryResponse(
                         store.id(),
                         store.name(),

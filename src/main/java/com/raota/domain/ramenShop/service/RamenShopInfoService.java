@@ -29,7 +29,7 @@ public class RamenShopInfoService {
     }
 
     @Transactional(readOnly = true)
-    public Page<StoreSummaryResponse> getRamenShopList(String region, String keyword, String tag, Pageable pageable) {
-        return ramenShopCacheService.getFirstPageShopList(region, keyword, tag, pageable);
+    public Page<StoreSummaryResponse> getRamenShopList(String city, String district, String keyword, String tag, Pageable pageable) {
+        return ramenShopCacheService.getFirstPageShopList(city, district, keyword, tag, pageable);
     }
 }
