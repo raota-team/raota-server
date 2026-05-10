@@ -19,26 +19,58 @@ import java.util.Arrays;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(AuthenticationRequiredException.class)
-    public ResponseEntity<ApiResponse<Void>> handleAuthenticationRequired(AuthenticationRequiredException exception) {
-        log.warn("Authentication required: {}", exception.getMessage());
+    public ResponseEntity<ApiResponse<Void>> handleAuthenticationRequired(
+            AuthenticationRequiredException exception,
+            HttpServletRequest request
+    ) {
+        log.warn("Authentication required. method={}, uri={}, query={}, message={}",
+                request.getMethod(),
+                request.getRequestURI(),
+                request.getQueryString(),
+                exception.getMessage(),
+                exception);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.fail(exception.getMessage()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException exception) {
-        log.warn("Illegal argument: {}", exception.getMessage());
+    public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(
+            IllegalArgumentException exception,
+            HttpServletRequest request
+    ) {
+        log.warn("Illegal argument. method={}, uri={}, query={}, message={}",
+                request.getMethod(),
+                request.getRequestURI(),
+                request.getQueryString(),
+                exception.getMessage(),
+                exception);
         return ResponseEntity.badRequest().body(ApiResponse.fail(exception.getMessage()));
     }
 
     @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<ApiResponse<Void>> handleIllegalState(IllegalStateException exception) {
-        log.warn("Illegal state: {}", exception.getMessage());
+    public ResponseEntity<ApiResponse<Void>> handleIllegalState(
+            IllegalStateException exception,
+            HttpServletRequest request
+    ) {
+        log.warn("Illegal state. method={}, uri={}, query={}, message={}",
+                request.getMethod(),
+                request.getRequestURI(),
+                request.getQueryString(),
+                exception.getMessage(),
+                exception);
         return ResponseEntity.badRequest().body(ApiResponse.fail(exception.getMessage()));
     }
 
     @ExceptionHandler(jakarta.persistence.EntityNotFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleEntityNotFound(jakarta.persistence.EntityNotFoundException exception) {
-        log.warn("Entity not found: {}", exception.getMessage());
+    public ResponseEntity<ApiResponse<Void>> handleEntityNotFound(
+            jakarta.persistence.EntityNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        log.warn("Entity not found. method={}, uri={}, query={}, message={}",
+                request.getMethod(),
+                request.getRequestURI(),
+                request.getQueryString(),
+                exception.getMessage(),
+                exception);
         return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND).body(ApiResponse.fail(exception.getMessage()));
     }
 
@@ -65,17 +97,35 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ApiResponse<Void>> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException exception) {
-        log.warn("Method argument type mismatch: name={}, value={}", exception.getName(), exception.getValue());
+    public ResponseEntity<ApiResponse<Void>> handleMethodArgumentTypeMismatch(
+            MethodArgumentTypeMismatchException exception,
+            HttpServletRequest request
+    ) {
+        log.warn("Method argument type mismatch. method={}, uri={}, query={}, name={}, value={}",
+                request.getMethod(),
+                request.getRequestURI(),
+                request.getQueryString(),
+                exception.getName(),
+                exception.getValue(),
+                exception);
         return ResponseEntity.badRequest()
                 .body(ApiResponse.fail("잘못된 요청 파라미터입니다: " + exception.getName()));
     }
 
     @ExceptionHandler(BindException.class)
-    public ResponseEntity<ApiResponse<Void>> handleBindException(BindException exception) {
+    public ResponseEntity<ApiResponse<Void>> handleBindException(
+            BindException exception,
+            HttpServletRequest request
+    ) {
         String fieldName = exception.getFieldError() == null ? "unknown" : exception.getFieldError().getField();
         Object rejectedValue = exception.getFieldError() == null ? null : exception.getFieldError().getRejectedValue();
-        log.warn("Bind exception: field={}, rejectedValue={}", fieldName, rejectedValue);
+        log.warn("Bind exception. method={}, uri={}, query={}, field={}, rejectedValue={}",
+                request.getMethod(),
+                request.getRequestURI(),
+                request.getQueryString(),
+                fieldName,
+                rejectedValue,
+                exception);
         return ResponseEntity.badRequest()
                 .body(ApiResponse.fail("잘못된 요청 파라미터입니다: " + fieldName));
     }
