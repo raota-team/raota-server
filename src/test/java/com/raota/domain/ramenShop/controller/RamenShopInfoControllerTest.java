@@ -150,6 +150,22 @@ class RamenShopInfoControllerTest extends BaseIntegrationTest {
     }
 
     @Test
+    void searchByNameSortReturnsAscendingOrder() throws Exception {
+        ramenShopRepository.save(sampleShop("카", "서울", "성동구"));
+        ramenShopRepository.save(sampleShop("가", "서울", "성동구"));
+        ramenShopRepository.save(sampleShop("나", "서울", "성동구"));
+
+        mockMvc.perform(get("/ramen-shops")
+                        .param("city", "서울")
+                        .param("sort", "NAME"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items.length()").value(3))
+                .andExpect(jsonPath("$.data.items[0].name").value("가"))
+                .andExpect(jsonPath("$.data.items[1].name").value("나"))
+                .andExpect(jsonPath("$.data.items[2].name").value("카"));
+    }
+
+    @Test
     void invalidSortReturnsBadRequest() throws Exception {
         mockMvc.perform(get("/ramen-shops")
                         .param("sort", "name,asc"))

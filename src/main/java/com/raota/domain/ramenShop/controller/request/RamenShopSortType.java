@@ -9,8 +9,8 @@ public enum RamenShopSortType {
             Sort.Order.desc("stats.visitCount"),
             Sort.Order.desc("id")
     )),
-    BOOKMARKS(Sort.by(
-            Sort.Order.desc("stats.bookmarkCount"),
+    NAME(Sort.by(
+            Sort.Order.asc("name"),
             Sort.Order.desc("id")
     )),
     VISITS(Sort.by(
