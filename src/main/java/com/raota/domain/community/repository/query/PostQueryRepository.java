@@ -1,145 +1,241 @@
 package com.raota.domain.community.repository.query;
 
-import static org.jooq.impl.DSL.*;
-
+import com.raota.domain.community.model.PostCategory;
 import com.raota.domain.community.presentation.request.CommunityPostSearchRequest;
 import com.raota.domain.community.presentation.request.CommunityRamenShopSearchRequest;
 import com.raota.domain.community.presentation.response.CommunityPostCardResponse;
 import com.raota.domain.community.presentation.response.CommunityPostDetailResponse;
 import com.raota.domain.community.presentation.response.CommunityRamenShopOptionResponse;
 import com.raota.global.common.PageResponse;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jooq.Condition;
-import org.jooq.DSLContext;
-import org.jooq.impl.DSL;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 @Slf4j
 @Repository
-@RequiredArgsConstructor
 public class PostQueryRepository {
-    private final DSLContext dsl;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public PageResponse<CommunityPostCardResponse> searchPostCards(CommunityPostSearchRequest request, Pageable pageable) {
         log.info("Searching posts with category filter: {}, ramenShopId filter: {}",
                 request.getCategory(), request.getRamenShopId());
 
-        Condition condition = field("tb_post.is_deleted").eq(false);
-        if (request.getCategory() != null && !request.getCategory().isBlank()) {
-            condition = condition.and(field("tb_post.category").eq(request.getCategory()));
-        }
-        if (request.getRamenShopId() != null) {
-            condition = condition.and(field("tb_post.ramen_shop_id").eq(request.getRamenShopId()));
-        }
+        PostCategory category = parseCategory(request.getCategory());
 
-        int totalCount = dsl.fetchCount(
-                dsl.selectFrom(table("tb_post")).where(condition)
-        );
+        String whereClause = """
+                where p.isDeleted = false
+                  and (:category is null or p.category = :category)
+                  and (:ramenShopId is null or rs.id = :ramenShopId)
+                """;
 
-        List<CommunityPostCardResponse> items = dsl.select(
-                        field("tb_post.id").as("postId"),
-                        field("tb_post.category"),
-                        field("tb_post.ramen_shop_id").as("ramenShopId"),
-                        field("tb_ramen_shop.name").as("storeName"),
-                        field("tb_post.title"),
-                        substring(field("tb_post.content", String.class), 1, 100).as("contentPreview"),
-                        field("tb_post.thumbnail_url").as("imageUrl"),
-                        field("tb_member_profile.nickname").as("authorName"),
-                        field("tb_post.author_id").as("authorId"),
-                        field("tb_member_profile.image_url").as("authorImageUrl"),
-                        field("tb_post.created_at").as("createdAt"),
-                        field(selectCount().from(table("tb_post_like")).where(field("tb_post_like.post_id").eq(field("tb_post.id")))).as("likeCount"),
-                        field(selectCount().from(table("tb_comment")).where(field("tb_comment.post_id").eq(field("tb_post.id")).and(field("tb_comment.is_deleted").eq(false)))).as("commentCount")
+        Long totalCount = entityManager.createQuery(
+                        "select count(p) from PostEntity p left join p.ramenShop rs " + whereClause,
+                        Long.class
                 )
-                .from(table("tb_post"))
-                .leftJoin(table("tb_ramen_shop")).on(field("tb_post.ramen_shop_id").eq(field("tb_ramen_shop.ramen_shop_id")))
-                .join(table("tb_member_profile")).on(field("tb_post.author_id").eq(field("tb_member_profile.id")))
-                .where(condition)
-                .orderBy(field("tb_post.created_at").desc())
-                .limit(pageable.getPageSize())
-                .offset(pageable.getOffset())
-                .fetchInto(CommunityPostCardResponse.class);
+                .setParameter("category", category)
+                .setParameter("ramenShopId", request.getRamenShopId())
+                .getSingleResult();
 
-        Page<CommunityPostCardResponse> page = new PageImpl<>(items, pageable, totalCount);
-        return PageResponse.from(page);
+        TypedQuery<PostCardRow> query = entityManager.createQuery(
+                        """
+                        select new com.raota.domain.community.repository.query.PostQueryRepository$PostCardRow(
+                               p.id, p.category, rs.id, rs.name, p.title, substring(p.content, 1, 100),
+                               p.thumbnailUrl, a.nickname, a.id, a.imageUrl, p.createdAt,
+                               (select count(pl) from PostLikeEntity pl where pl.postId = p.id),
+                               (select count(c) from CommentEntity c where c.post.id = p.id and c.isDeleted = false)
+                        )
+                        from PostEntity p
+                        left join p.ramenShop rs
+                        join p.author a
+                        """ + whereClause + """
+                        order by p.createdAt desc
+                        """,
+                        PostCardRow.class
+                );
+
+        List<PostCardRow> rows = query
+                .setParameter("category", category)
+                .setParameter("ramenShopId", request.getRamenShopId())
+                .setFirstResult((int) pageable.getOffset())
+                .setMaxResults(pageable.getPageSize())
+                .getResultList();
+
+        List<CommunityPostCardResponse> items = rows.stream()
+                .map(PostCardRow::toResponse)
+                .toList();
+
+        return PageResponse.from(new PageImpl<>(items, pageable, totalCount));
     }
 
     public CommunityPostDetailResponse getPostDetail(Long postId, Long memberId) {
-        return dsl.select(
-                        field("tb_post.category", String.class).as("category"),
-                        field("tb_ramen_shop.name", String.class).as("storeName"),
-                        field("tb_post.title", String.class).as("title"),
-                        field("tb_member_profile.nickname", String.class).as("authorName"),
-                        field("tb_post.author_id", Long.class).as("authorId"),
-                        field("tb_member_profile.image_url", String.class).as("authorImageUrl"),
-                        field("tb_post.created_at", LocalDateTime.class).as("createdAt"),
-                        field("tb_post.content_format", String.class).as("contentFormat"),
-                        field("tb_post.content", String.class).as("content"),
-                        field(selectCount().from(table("tb_post_like")).where(field("tb_post_like.post_id").eq(field("tb_post.id")))).as("likeCount"),
-                        field(selectCount().from(table("tb_comment")).where(field("tb_comment.post_id").eq(field("tb_post.id")).and(field("tb_comment.is_deleted").eq(false)))).as("commentCount"),
-                        field(memberId == null ? inline(false) : exists(
-                                selectOne().from(table("tb_post_like"))
-                                        .where(field("tb_post_like.post_id").eq(field("tb_post.id"))
-                                                .and(field("tb_post_like.member_id").eq(memberId)))
-                        )).as("isLiked")
+        List<PostDetailRow> rows = entityManager.createQuery(
+                        """
+                        select new com.raota.domain.community.repository.query.PostQueryRepository$PostDetailRow(
+                               p.category, rs.name, p.title, a.nickname, a.id, a.imageUrl, p.createdAt,
+                               p.contentFormat, p.content,
+                               (select count(pl) from PostLikeEntity pl where pl.postId = p.id),
+                               (select count(c) from CommentEntity c where c.post.id = p.id and c.isDeleted = false),
+                               (select count(pl2) from PostLikeEntity pl2 where pl2.postId = p.id and pl2.memberId = :memberId)
+                        )
+                        from PostEntity p
+                        left join p.ramenShop rs
+                        join p.author a
+                        where p.id = :postId and p.isDeleted = false
+                        """,
+                        PostDetailRow.class
                 )
-                .from(table("tb_post"))
-                .leftJoin(table("tb_ramen_shop")).on(field("tb_post.ramen_shop_id").eq(field("tb_ramen_shop.ramen_shop_id")))
-                .join(table("tb_member_profile")).on(field("tb_post.author_id").eq(field("tb_member_profile.id")))
-                .where(field("tb_post.id").eq(postId).and(field("tb_post.is_deleted").eq(false)))
-                .fetchOne(r -> new CommunityPostDetailResponse(
-                        r.get("category", String.class),
-                        r.get("storeName", String.class),
-                        r.get("title", String.class),
-                        r.get("authorName", String.class),
-                        r.get("authorId", Long.class),
-                        r.get("authorImageUrl", String.class),
-                        r.get("createdAt", LocalDateTime.class),
-                        java.util.Collections.emptyList(),
-                        r.get("contentFormat", String.class),
-                        r.get("content", String.class),
-                        r.get("likeCount", Long.class),
-                        r.get("commentCount", Long.class),
-                        r.get("isLiked", Boolean.class)
-                ));
+                .setParameter("postId", postId)
+                .setParameter("memberId", memberId == null ? -1L : memberId)
+                .getResultList();
+
+        if (rows.isEmpty()) {
+            return null;
+        }
+
+        return rows.getFirst().toResponse(memberId != null);
     }
 
     public PageResponse<CommunityRamenShopOptionResponse> getRamenShopOptions(CommunityRamenShopSearchRequest request, Pageable pageable) {
-        Condition condition = trueCondition();
-        if (request.getKeyword() != null && !request.getKeyword().isBlank()) {
-            condition = condition.and(
-                    field("tb_ramen_shop.name").like("%" + request.getKeyword() + "%")
-                    .or(field("tb_ramen_shop.city").like("%" + request.getKeyword() + "%"))
-                    .or(field("tb_ramen_shop.district").like("%" + request.getKeyword() + "%"))
-            );
-        }
+        String normalizedKeyword = normalizeKeyword(request.getKeyword());
 
-        int totalCount = dsl.fetchCount(selectFrom(table("tb_ramen_shop")).where(condition));
-
-        List<CommunityRamenShopOptionResponse> items = dsl.select(
-                        field("tb_ramen_shop.ramen_shop_id", Long.class).as("id"),
-                        field("tb_ramen_shop.name", String.class).as("name"),
-                        concat(field("tb_ramen_shop.city", String.class), inline(" "), field("tb_ramen_shop.district", String.class)).as("region"),
-                        field("tb_ramen_shop.image_url", String.class).as("thumbnailUrl")
+        Long totalCount = entityManager.createQuery(
+                        """
+                        select count(rs)
+                        from RamenShop rs
+                        where (:keyword is null
+                               or rs.name like :keyword
+                               or rs.address.city like :keyword
+                               or rs.address.district like :keyword)
+                        """,
+                        Long.class
                 )
-                .from(table("tb_ramen_shop"))
-                .where(condition)
-                .orderBy(field("tb_ramen_shop.name").asc())
-                .limit(pageable.getPageSize())
-                .offset(pageable.getOffset())
-                .fetch(r -> new CommunityRamenShopOptionResponse(
-                        r.get("id", Long.class),
-                        r.get("name", String.class),
-                        r.get("region", String.class),
-                        r.get("thumbnailUrl", String.class)
-                ));
+                .setParameter("keyword", normalizedKeyword)
+                .getSingleResult();
+
+        List<RamenShopOptionRow> rows = entityManager.createQuery(
+                        """
+                        select new com.raota.domain.community.repository.query.PostQueryRepository$RamenShopOptionRow(
+                               rs.id, rs.name, concat(rs.address.city, ' ', rs.address.district), rs.imageUrl
+                        )
+                        from RamenShop rs
+                        where (:keyword is null
+                               or rs.name like :keyword
+                               or rs.address.city like :keyword
+                               or rs.address.district like :keyword)
+                        order by rs.name asc
+                        """,
+                        RamenShopOptionRow.class
+                )
+                .setParameter("keyword", normalizedKeyword)
+                .setFirstResult((int) pageable.getOffset())
+                .setMaxResults(pageable.getPageSize())
+                .getResultList();
+
+        List<CommunityRamenShopOptionResponse> items = rows.stream()
+                .map(RamenShopOptionRow::toResponse)
+                .toList();
 
         return PageResponse.from(new PageImpl<>(items, pageable, totalCount));
+    }
+
+    private PostCategory parseCategory(String category) {
+        if (category == null || category.isBlank()) {
+            return null;
+        }
+        return PostCategory.valueOf(category);
+    }
+
+    private String normalizeKeyword(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return null;
+        }
+        return "%" + keyword + "%";
+    }
+
+    private record PostCardRow(
+            Long postId,
+            PostCategory category,
+            Long ramenShopId,
+            String storeName,
+            String title,
+            String contentPreview,
+            String imageUrl,
+            String authorName,
+            Long authorId,
+            String authorImageUrl,
+            LocalDateTime createdAt,
+            Long likeCount,
+            Long commentCount
+    ) {
+        private CommunityPostCardResponse toResponse() {
+            return new CommunityPostCardResponse(
+                    postId,
+                    category.name(),
+                    ramenShopId,
+                    storeName,
+                    title,
+                    contentPreview,
+                    imageUrl,
+                    authorName,
+                    authorId,
+                    authorImageUrl,
+                    createdAt,
+                    likeCount,
+                    commentCount
+            );
+        }
+    }
+
+    private record PostDetailRow(
+            PostCategory category,
+            String storeName,
+            String title,
+            String authorName,
+            Long authorId,
+            String authorImageUrl,
+            LocalDateTime createdAt,
+            String contentFormat,
+            String content,
+            Long likeCount,
+            Long commentCount,
+            Long likedCount
+    ) {
+        private CommunityPostDetailResponse toResponse(boolean hasMemberContext) {
+            return new CommunityPostDetailResponse(
+                    category.name(),
+                    storeName,
+                    title,
+                    authorName,
+                    authorId,
+                    authorImageUrl,
+                    createdAt,
+                    Collections.emptyList(),
+                    contentFormat,
+                    content,
+                    likeCount,
+                    commentCount,
+                    hasMemberContext && likedCount > 0
+            );
+        }
+    }
+
+    private record RamenShopOptionRow(
+            Long id,
+            String name,
+            String region,
+            String thumbnailUrl
+    ) {
+        private CommunityRamenShopOptionResponse toResponse() {
+            return new CommunityRamenShopOptionResponse(id, name, region, thumbnailUrl);
+        }
     }
 }
