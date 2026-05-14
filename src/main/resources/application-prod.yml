@@ -16,6 +16,9 @@ server:
   forward-headers-strategy: native
 
 spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.vectorstore.oracle.autoconfigure.OracleVectorStoreAutoConfiguration
   servlet:
     multipart:
       max-file-size: 20MB
