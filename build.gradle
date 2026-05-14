@@ -20,9 +20,16 @@ configurations {
     }
 }
 
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.ai:spring-ai-bom:2.0.0-M6"
+    }
+}
+
 repositories {
     mavenLocal()
     mavenCentral()
+    maven { url 'https://repo.spring.io/milestone' }
 }
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
@@ -43,6 +50,7 @@ dependencies {
 
     runtimeOnly 'com.h2database:h2'
     runtimeOnly 'com.mysql:mysql-connector-j'
+    runtimeOnly 'com.oracle.database.jdbc:ojdbc11'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
@@ -67,6 +75,9 @@ dependencies {
 
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.7'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.7'
+
+    implementation 'org.springframework.ai:spring-ai-starter-model-openai'
+    implementation 'org.springframework.ai:spring-ai-starter-vector-store-oracle'
 }
 
 tasks.named('test') {
