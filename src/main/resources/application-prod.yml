@@ -59,6 +59,15 @@ spring:
       host: ${SPRING_DATA_REDIS_HOST}
       port: ${SPRING_DATA_REDIS_PORT}
 
+  ai:
+    model:
+      embedding: openai
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      embedding:
+        model: ${SPRING_AI_OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+        dimensions: ${SPRING_AI_OPENAI_EMBEDDING_DIMENSIONS:1536}
+
   jpa:
     hibernate:
       ddl-auto: validate
@@ -126,3 +135,16 @@ app:
         ramenShopList:
           ttl-seconds: ${APP_CACHE_RAMEN_SHOP_LIST_TTL_SECONDS:300}
           maximum-size: ${APP_CACHE_RAMEN_SHOP_LIST_MAX_SIZE:50}
+  ai:
+    oracle:
+      url: ${AI_ORACLE_DATASOURCE_URL}
+      username: ${AI_ORACLE_DATASOURCE_USERNAME}
+      password: ${AI_ORACLE_DATASOURCE_PASSWORD}
+      driver-class-name: ${AI_ORACLE_DRIVER_CLASS_NAME:oracle.jdbc.OracleDriver}
+      initialize-schema: ${AI_ORACLE_INITIALIZE_SCHEMA:false}
+      index-type: ${AI_ORACLE_INDEX_TYPE:NONE}
+      distance-type: ${AI_ORACLE_DISTANCE_TYPE:COSINE}
+      dimensions: ${AI_ORACLE_DIMENSIONS:1536}
+      forced-normalization: ${AI_ORACLE_FORCED_NORMALIZATION:false}
+      remove-existing-vector-store-table: ${AI_ORACLE_REMOVE_EXISTING_VECTOR_STORE_TABLE:false}
+      search-accuracy: ${AI_ORACLE_SEARCH_ACCURACY:95}
