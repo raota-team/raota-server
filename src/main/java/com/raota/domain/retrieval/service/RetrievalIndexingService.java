@@ -1,7 +1,10 @@
 package com.raota.domain.retrieval.service;
 
+import com.raota.domain.community.model.Post;
+import com.raota.domain.community.repository.command.PostRepository;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
+import com.raota.domain.retrieval.document.review.PostReviewChunkDocumentFactory;
 import com.raota.domain.retrieval.document.shop.RamenShopProfileDocumentFactory;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +21,8 @@ public class RetrievalIndexingService {
 
     private final RamenShopRepository ramenShopRepository;
     private final RamenShopProfileDocumentFactory ramenShopProfileDocumentFactory;
+    private final PostRepository postRepository;
+    private final PostReviewChunkDocumentFactory postReviewChunkDocumentFactory;
     private final VectorStore vectorStore;
 
     public void indexAllShops() {
@@ -42,4 +47,15 @@ public class RetrievalIndexingService {
             vectorStore.add(documents);
         }
     }
+
+    public void indexPost(Long postId){
+        Post post  = postRepository.findById(postId)
+                .orElseThrow(()-> new IllegalArgumentException("게시글을 찾을 수 없습니다. id="+postId));
+
+        List<Document> documents = postReviewChunkDocumentFactory.create(post);
+        if(!documents.isEmpty()){
+            vectorStore.add(documents);
+        }
+    }
+
 }
