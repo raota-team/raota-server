@@ -39,7 +39,7 @@ class RetrievalIndexingServiceTest {
         Document document = new Document("리뷰 내용", Map.of());
 
         when(postRepository.findById(1L)).thenReturn(Optional.of(post));
-        when(postFactory.create(post)).thenReturn(List.of(document));
+        when(postFactory.create(post, null)).thenReturn(List.of(document));
 
         service.indexPost(1L);
 
