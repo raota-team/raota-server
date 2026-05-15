@@ -1,4 +1,4 @@
-package com.raota.domain.retrieval.document.review;
+package com.raota.domain.retrieval.document.factory;
 
 import com.raota.domain.community.model.Post;
 import com.raota.domain.ramenShop.model.RamenShop;

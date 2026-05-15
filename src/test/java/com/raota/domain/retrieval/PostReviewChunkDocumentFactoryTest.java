@@ -9,7 +9,7 @@ import com.raota.domain.community.model.PostCategory;
 import com.raota.domain.ramenShop.model.Address;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
-import com.raota.domain.retrieval.document.review.PostReviewChunkDocumentFactory;
+import com.raota.domain.retrieval.document.factory.PostReviewChunkDocumentFactory;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;

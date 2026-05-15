@@ -1,4 +1,4 @@
-package com.raota.domain.retrieval.document.shop;
+package com.raota.domain.retrieval.document.factory;
 
 import com.raota.domain.ramenShop.model.Address;
 import com.raota.domain.ramenShop.model.BusinessHours;
