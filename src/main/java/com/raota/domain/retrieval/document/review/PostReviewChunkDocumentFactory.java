@@ -2,7 +2,6 @@ package com.raota.domain.retrieval.document.review;
 
 import com.raota.domain.community.model.Post;
 import com.raota.domain.ramenShop.model.RamenShop;
-import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.domain.retrieval.document.RetrievalDocumentFactory;
 import com.raota.domain.retrieval.document.RetrievalDocumentSource;
 import com.raota.domain.retrieval.document.RetrievalDocumentType;
@@ -10,18 +9,18 @@ import com.raota.domain.retrieval.document.RetrievalMetadataKeys;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
 import org.springframework.ai.document.Document;
 import org.springframework.stereotype.Component;
 
 @Component
-@RequiredArgsConstructor
 public class PostReviewChunkDocumentFactory implements RetrievalDocumentFactory<Post> {
-
-    private final RamenShopRepository ramenShopRepository;
 
     @Override
     public List<Document> create(Post post) {
+        return create(post, null);
+    }
+
+    public List<Document> create(Post post, RamenShop shop) {
         if (post == null) {
             return List.of();
         }
@@ -36,13 +35,10 @@ public class PostReviewChunkDocumentFactory implements RetrievalDocumentFactory<
         metadata.put(RetrievalMetadataKeys.SOURCE, RetrievalDocumentSource.COMMUNITY_POST.name());
         metadata.put(RetrievalMetadataKeys.SOURCE_ID, String.valueOf(post.getId()));
 
-        if (post.getRamenShopId() != null) {
-            RamenShop shop = ramenShopRepository.findById(post.getRamenShopId()).orElse(null);
-            if (shop != null) {
-                metadata.put(RetrievalMetadataKeys.SHOP_ID, String.valueOf(shop.getId()));
-                metadata.put(RetrievalMetadataKeys.SHOP_NAME, shop.getName());
-                metadata.put(RetrievalMetadataKeys.REGION, shop.getAddress() != null ? shop.getAddress().simpleAddress() : "위치 정보 없음");
-            }
+        if (shop != null) {
+            metadata.put(RetrievalMetadataKeys.SHOP_ID, String.valueOf(shop.getId()));
+            metadata.put(RetrievalMetadataKeys.SHOP_NAME, shop.getName());
+            metadata.put(RetrievalMetadataKeys.REGION, shop.getAddress() != null ? shop.getAddress().simpleAddress() : "위치 정보 없음");
         }
 
         if (post.getCreatedAt() != null) {

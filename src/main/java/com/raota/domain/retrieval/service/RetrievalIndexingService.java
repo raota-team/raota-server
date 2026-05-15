@@ -52,7 +52,11 @@ public class RetrievalIndexingService {
         Post post  = postRepository.findById(postId)
                 .orElseThrow(()-> new IllegalArgumentException("게시글을 찾을 수 없습니다. id="+postId));
 
-        List<Document> documents = postReviewChunkDocumentFactory.create(post);
+        RamenShop shop = post.getRamenShopId() == null
+                ? null
+                : ramenShopRepository.findById(post.getRamenShopId()).orElse(null);
+
+        List<Document> documents = postReviewChunkDocumentFactory.create(post, shop);
         if(!documents.isEmpty()){
             vectorStore.add(documents);
         }
