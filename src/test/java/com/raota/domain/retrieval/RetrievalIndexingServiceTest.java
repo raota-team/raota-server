@@ -9,6 +9,7 @@ import com.raota.domain.community.repository.command.PostRepository;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.domain.retrieval.document.review.PostReviewChunkDocumentFactory;
 import com.raota.domain.retrieval.document.shop.RamenShopProfileDocumentFactory;
+import com.raota.domain.retrieval.service.RetrievalIndexingService;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;

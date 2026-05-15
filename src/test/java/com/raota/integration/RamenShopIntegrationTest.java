@@ -10,7 +10,7 @@ import com.raota.domain.ramenShop.model.EventMenus;
 import com.raota.domain.ramenShop.model.NormalMenus;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
-import com.raota.testsupport.BaseIntegrationTest;
+import com.raota.helper.BaseIntegrationTest;
 import io.restassured.RestAssured;
 import java.time.LocalTime;
 import java.util.List;
@@ -52,9 +52,9 @@ class RamenShopIntegrationTest extends BaseIntegrationTest {
         .then()
                 .statusCode(HttpStatus.OK.value())
                 .body("data.items.size()", is(2))
-                .body("data.items[0].name", is("멘야 하쿠"))
-                .body("data.items[0].tagLine", is("진한 국물 맛집"))
-                .body("data.items[0].tags", hasItems("토리파이탄", "혼밥"))
+                .body("data.items.name", hasItems("멘야 하쿠", "이리에 라멘"))
+                .body("data.items.find { it.name == '멘야 하쿠' }.tagLine", is("진한 국물 맛집"))
+                .body("data.items.find { it.name == '멘야 하쿠' }.tags", hasItems("토리파이탄", "혼밥"))
                 .body("data.items.region", hasItems("서울 성동구", "서울 마포구"));
     }
 

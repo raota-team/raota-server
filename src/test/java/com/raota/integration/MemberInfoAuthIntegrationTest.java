@@ -1,4 +1,4 @@
-package com.raota.controller;
+package com.raota.integration;
 
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -22,7 +22,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 
 
-import com.raota.testsupport.BaseIntegrationTest;
+import com.raota.helper.BaseIntegrationTest;
 
 @Transactional
 class MemberInfoAuthIntegrationTest extends BaseIntegrationTest {

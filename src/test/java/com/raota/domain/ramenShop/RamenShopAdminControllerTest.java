@@ -1,4 +1,4 @@
-package com.raota.controller;
+package com.raota.domain.ramenShop;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -31,7 +31,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 
 
-import com.raota.testsupport.BaseIntegrationTest;
+import com.raota.helper.BaseIntegrationTest;
 
 @Transactional
 class RamenShopAdminControllerTest extends BaseIntegrationTest {

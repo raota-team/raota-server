@@ -1,4 +1,4 @@
-package com.raota.testsupport;
+package com.raota.helper;
 
 import com.redis.testcontainers.RedisContainer;
 import org.flywaydb.core.Flyway;
@@ -6,12 +6,17 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 public abstract class BaseIntegrationTest {
+
+    @MockitoBean
+    protected VectorStore vectorStore;
 
     protected static final MySQLContainer<?> MYSQL_CONTAINER;
     protected static final RedisContainer REDIS_CONTAINER;

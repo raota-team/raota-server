@@ -7,7 +7,7 @@ import com.raota.domain.auth.model.RefreshToken;
 import com.raota.domain.auth.repository.RefreshTokenRepository;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
-import com.raota.testsupport.BaseIntegrationTest;
+import com.raota.helper.BaseIntegrationTest;
 import io.restassured.RestAssured;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;

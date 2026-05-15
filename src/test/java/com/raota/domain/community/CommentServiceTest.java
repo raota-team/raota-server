@@ -1,4 +1,4 @@
-package com.raota.domain.community.service;
+package com.raota.domain.community;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -7,6 +7,7 @@ import com.raota.domain.community.presentation.request.CommunityCommentCreateReq
 import com.raota.domain.community.repository.command.CommentRepository;
 import com.raota.domain.community.repository.command.PostRepository;
 import com.raota.domain.community.repository.command.entity.CommentEntity;
+import com.raota.domain.community.service.CommentService;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
 import java.util.Optional;
