@@ -3,7 +3,7 @@
 ## 목적
 이 문서는 라오타 서버 저장소에서 AI 에이전트를 사용할 때의 작업 원칙과 현재 구현 상태를 함께 관리하는 기준 문서다.
 
-기준 날짜: 2026-05-08
+기준 날짜: 2026-05-15
 
 ## AI 협업 원칙
 
@@ -47,10 +47,19 @@
 
 ### 아키텍처
 - Java 25, Spring Boot 4.0.2 기반 서버다.
-- 도메인은 `auth`, `member`, `ramenShop`, `community`, `global`, `admin`으로 나뉜다.
-- 상태 변경은 JPA, 조회는 JOOQ를 함께 사용하는 CQRS 성격의 구조다.
+- 도메인은 `auth`, `member`, `ramenShop`, `community`, `retrieval`, `global`, `admin`으로 나뉜다.
+- 상태 변경과 조회 모두 JPA 기반으로 정리되어 있으며, 커뮤니티 조회도 JPA 쿼리 리포지토리로 동작한다.
 - Flyway 마이그레이션과 Redis 캐시/토큰 저장소를 사용한다.
 - 파일 업로드는 S3 호환 스토리지와 Cloudinary 라우팅 구성을 포함한다.
+
+### 검색 / AI 인프라
+- Spring AI 2.0.0-M6와 OpenAI 임베딩 모델을 사용한다.
+- Oracle Vector Store를 별도 Oracle 데이터소스가 아니라 전용 `JdbcTemplate` 기반 수동 구성으로 연결한다.
+- 운영 설정에서는 `OracleVectorStoreAutoConfiguration`을 제외하고 수동 `VectorStore` bean을 사용한다.
+- `OracleVectorStoreSmokeTest`로 문서 저장/유사도 검색 스모크 테스트가 추가되어 있다.
+- 검색/RAG 적재용 도메인 계약은 `com.raota.domain.retrieval.document` 패키지에서 관리한다.
+- 현재 정의된 문서 타입은 `SHOP_PROFILE`, `SHOP_FACT`, `REVIEW_CHUNK`다.
+- 현재 구현된 적재 뼈대는 라멘샵 프로필 문서 생성기와 샵 전체/단건 인덱싱 서비스다.
 
 ### 인증 및 보안
 - OAuth2 로그인 흐름을 기준으로 JWT Access/Refresh 토큰을 발급한다.
