@@ -20,5 +20,6 @@ public class RedisMessagingPublisher implements MessagePublisher {
     public void publish(String topic, Object payload) {
         String jsonPayload  = redisObjectMapper.writeValueAsString(payload);
         redisTemplate.opsForStream().add(topic, Collections.singletonMap("payload",jsonPayload));
+        redisTemplate.opsForStream().trim(topic,1000);
     }
 }
