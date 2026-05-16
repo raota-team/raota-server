@@ -11,6 +11,9 @@ public final class RetrievalMetadataKeys {
     public static final String CREATED_AT = "createdAt";
     public static final String TAGS = "tags";
     public static final String MENU_NAMES = "menuNames";
+    public static final String CHUNK_INDEX = "chunkIndex";
+    public static final String CHUNK_TOTAL = "chunkTotal";
+    public static final String CHUNK_ID = "chunkId";
 
     private RetrievalMetadataKeys() {
     }
