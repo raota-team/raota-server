@@ -8,8 +8,10 @@ import org.springframework.ai.vectorstore.oracle.OracleVectorStore;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+@Profile("!test")
 @Configuration
 @EnableConfigurationProperties(OracleVectorProperties.class)
 public class AiConfig {

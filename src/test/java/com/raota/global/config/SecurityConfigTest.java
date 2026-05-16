@@ -17,7 +17,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 
 
-import com.raota.testsupport.BaseIntegrationTest;
+import com.raota.helper.BaseIntegrationTest;
 
 class SecurityConfigTest extends BaseIntegrationTest {
 
@@ -38,9 +38,21 @@ class SecurityConfigTest extends BaseIntegrationTest {
         mockMvc.perform(options("/users/me/profile")
                         .header("Origin", "http://localhost:3000")
                         .header("Access-Control-Request-Method", "GET")
-                        .header("Access-Control-Request-Headers", "X-User-Id, Content-Type"))
+                        .header("Access-Control-Request-Headers", "Authorization, Content-Type"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:3000"))
-                .andExpect(header().string("Access-Control-Allow-Headers", containsString("X-User-Id")));
+                .andExpect(header().string("Access-Control-Allow-Headers", containsString("Authorization")))
+                .andExpect(header().string("Access-Control-Allow-Credentials", "true"));
+    }
+
+    @Test
+    void preflightRequestIsAllowedForProductionDomain() throws Exception {
+        mockMvc.perform(options("/auth/refresh")
+                        .header("Origin", "https://www.raota.net")
+                        .header("Access-Control-Request-Method", "POST")
+                        .header("Access-Control-Request-Headers", "Content-Type"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", "https://www.raota.net"))
+                .andExpect(header().string("Access-Control-Allow-Credentials", "true"));
     }
 }

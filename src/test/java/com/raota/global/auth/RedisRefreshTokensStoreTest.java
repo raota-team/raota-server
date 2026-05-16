@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.raota.domain.auth.store.RedisRefreshTokenStore;
 import com.raota.domain.auth.store.RefreshTokenStore;
 import com.raota.global.auth.AuthRedisProperties;
-import com.raota.testsupport.BaseIntegrationTest;
+import com.raota.helper.BaseIntegrationTest;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

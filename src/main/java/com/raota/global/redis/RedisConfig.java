@@ -1,4 +1,4 @@
-package com.raota.global.config;
+package com.raota.global.redis;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

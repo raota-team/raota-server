@@ -4,7 +4,7 @@ import com.raota.domain.auth.service.AuthAccountService;
 import com.raota.domain.auth.service.AuthRefreshSession;
 import com.raota.domain.auth.store.RefreshTokenStore;
 
-import com.raota.testsupport.BaseIntegrationTest;
+import com.raota.helper.BaseIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
