@@ -1,6 +1,7 @@
 package com.raota.domain.retrieval.document.factory;
 
 import com.raota.domain.community.model.Post;
+import com.raota.domain.community.model.PostCategory;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.retrieval.document.RetrievalDocumentFactory;
 import com.raota.domain.retrieval.document.RetrievalDocumentSource;
@@ -27,7 +28,7 @@ public class PostReviewChunkDocumentFactory implements RetrievalDocumentFactory<
     }
 
     public List<Document> create(Post post, RamenShop shop) {
-        if (post == null) {
+        if (post == null || post.getCategory() != PostCategory.REVIEW) {
             return List.of();
         }
 

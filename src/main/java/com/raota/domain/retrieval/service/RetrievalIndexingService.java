@@ -4,6 +4,9 @@ import com.raota.domain.community.model.Post;
 import com.raota.domain.community.repository.command.PostRepository;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
+import com.raota.domain.retrieval.document.RetrievalDocumentSource;
+import com.raota.domain.retrieval.document.RetrievalDocumentType;
+import com.raota.domain.retrieval.document.RetrievalMetadataKeys;
 import com.raota.domain.retrieval.document.factory.PostReviewChunkDocumentFactory;
 import com.raota.domain.retrieval.document.factory.RamenShopProfileDocumentFactory;
 import java.util.ArrayList;
@@ -11,6 +14,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,18 +52,47 @@ public class RetrievalIndexingService {
         }
     }
 
-    public void indexPost(Long postId){
-        Post post  = postRepository.findById(postId)
-                .orElseThrow(()-> new IllegalArgumentException("게시글을 찾을 수 없습니다. id="+postId));
+    public void indexPost(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다. id=" + postId));
 
         RamenShop shop = post.getRamenShopId() == null
                 ? null
                 : ramenShopRepository.findById(post.getRamenShopId()).orElse(null);
 
+        deletePost(postId);
+
         List<Document> documents = postReviewChunkDocumentFactory.create(post, shop);
-        if(!documents.isEmpty()){
+        if (!documents.isEmpty()) {
             vectorStore.add(documents);
         }
+    }
+
+    public void deletePost(Long postId) {
+        if (postId == null) {
+            return;
+        }
+
+        FilterExpressionBuilder builder = new FilterExpressionBuilder();
+
+        var filter = builder.and(
+                builder.and(
+                        builder.eq(
+                                RetrievalMetadataKeys.DOCUMENT_TYPE,
+                                RetrievalDocumentType.REVIEW_CHUNK.name()
+                        ),
+                        builder.eq(
+                                RetrievalMetadataKeys.SOURCE,
+                                RetrievalDocumentSource.COMMUNITY_POST.name()
+                        )
+                ),
+                builder.eq(
+                        RetrievalMetadataKeys.SOURCE_ID,
+                        String.valueOf(postId)
+                )
+        ).build();
+
+        vectorStore.delete(filter);
     }
 
 }

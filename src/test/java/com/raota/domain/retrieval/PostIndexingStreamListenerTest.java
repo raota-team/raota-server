@@ -33,7 +33,7 @@ class PostIndexingStreamListenerTest {
     void on_message_invokes_indexing_service() throws Exception {
         // given
         String jsonPayload = "{\"postId\": 1}";
-        PostIndexingEvent event = new PostIndexingEvent(1L);
+        PostIndexingEvent event = PostIndexingEvent.upsert(1L);
 
         MapRecord<String, String, String> mockRecord = MapRecord.create("stream:key", Collections.singletonMap("payload", jsonPayload));
 
@@ -44,5 +44,24 @@ class PostIndexingStreamListenerTest {
 
         // then
         verify(retrievalIndexingService).indexPost(1L);
+    }
+
+    @Test
+    @DisplayName("삭제 이벤트를 수신하면 벡터 문서 삭제 서비스를 호출한다.")
+    void on_delete_message_invokes_delete_service() throws Exception {
+        // given
+        String jsonPayload = "{\"postId\": 1, \"action\": \"DELETE\"}";
+        PostIndexingEvent event = PostIndexingEvent.delete(1L);
+
+        MapRecord<String, String, String> mockRecord =
+                MapRecord.create("stream:key", Collections.singletonMap("payload", jsonPayload));
+
+        when(redisObjectMapper.readValue(jsonPayload, PostIndexingEvent.class)).thenReturn(event);
+
+        // when
+        listener.onMessage(mockRecord);
+
+        // then
+        verify(retrievalIndexingService).deletePost(1L);
     }
 }

@@ -7,6 +7,7 @@ import com.raota.domain.community.repository.command.PostRepository;
 import com.raota.domain.community.repository.command.entity.PostEntity;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
+import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.domain.retrieval.event.PostIndexingEvent;
 import lombok.RequiredArgsConstructor;
@@ -47,8 +48,8 @@ public class PostService {
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         author.increasePostCount();
 
-        if(savedPost.getCategory()==PostCategory.REVIEW){
-            eventPublisher.publishEvent(new PostIndexingEvent(savedPost.getId()));
+        if (savedPost.getCategory() == PostCategory.REVIEW) {
+            eventPublisher.publishEvent(PostIndexingEvent.upsert(savedPost.getId()));
         }
 
         return postId;
@@ -62,7 +63,9 @@ public class PostService {
             throw new IllegalStateException("수정 권한이 없습니다.");
         }
 
-        com.raota.domain.ramenShop.model.RamenShop ramenShop = null;
+        PostCategory beforeCategory = postEntity.getCategory();
+        RamenShop ramenShop = null;
+
         if (request.getRamenShopId() != null) {
             ramenShop = ramenShopRepository.findById(request.getRamenShopId())
                     .orElseThrow(() -> new IllegalArgumentException("없는 라멘집 입니다."));
@@ -75,6 +78,11 @@ public class PostService {
                 request.getThumbnailUrl(),
                 ramenShop
         );
+
+        PostCategory afterCategory = postEntity.getCategory();
+        if (beforeCategory == PostCategory.REVIEW || afterCategory == PostCategory.REVIEW) {
+            eventPublisher.publishEvent(PostIndexingEvent.upsert(postEntity.getId()));
+        }
     }
 
     public void deletePost(Long postId, Long authorId) {
@@ -84,8 +92,13 @@ public class PostService {
         if (!postEntity.getAuthor().getId().equals(authorId)) {
             throw new IllegalStateException("삭제 권한이 없습니다.");
         }
+        PostCategory category = postEntity.getCategory();
 
         postEntity.delete();
+
+        if (category == PostCategory.REVIEW) {
+            eventPublisher.publishEvent(PostIndexingEvent.delete(postId));
+        }
 
         MemberProfile author = memberRepository.findById(authorId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));

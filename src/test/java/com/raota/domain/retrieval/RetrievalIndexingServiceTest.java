@@ -1,6 +1,7 @@
 package com.raota.domain.retrieval;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -16,6 +17,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.filter.Filter;
 
 class RetrievalIndexingServiceTest {
 
@@ -43,6 +45,49 @@ class RetrievalIndexingServiceTest {
 
         service.indexPost(1L);
 
+        verify(vectorStore).delete(org.mockito.ArgumentMatchers.any(Filter.Expression.class));
         verify(vectorStore).add(List.of(document));
+    }
+
+    @Test
+    void deletePost_should_delete_review_chunks_by_filter() {
+        RamenShopRepository ramenShopRepository = mock(RamenShopRepository.class);
+        RamenShopProfileDocumentFactory shopFactory = mock(RamenShopProfileDocumentFactory.class);
+        PostRepository postRepository = mock(PostRepository.class);
+        PostReviewChunkDocumentFactory postFactory = mock(PostReviewChunkDocumentFactory.class);
+        VectorStore vectorStore = mock(VectorStore.class);
+
+        RetrievalIndexingService service = new RetrievalIndexingService(
+                ramenShopRepository,
+                shopFactory,
+                postRepository,
+                postFactory,
+                vectorStore
+        );
+
+        service.deletePost(1L);
+
+        verify(vectorStore).delete(org.mockito.ArgumentMatchers.any(Filter.Expression.class));
+    }
+
+    @Test
+    void deletePost_should_ignore_null_post_id() {
+        RamenShopRepository ramenShopRepository = mock(RamenShopRepository.class);
+        RamenShopProfileDocumentFactory shopFactory = mock(RamenShopProfileDocumentFactory.class);
+        PostRepository postRepository = mock(PostRepository.class);
+        PostReviewChunkDocumentFactory postFactory = mock(PostReviewChunkDocumentFactory.class);
+        VectorStore vectorStore = mock(VectorStore.class);
+
+        RetrievalIndexingService service = new RetrievalIndexingService(
+                ramenShopRepository,
+                shopFactory,
+                postRepository,
+                postFactory,
+                vectorStore
+        );
+
+        service.deletePost(null);
+
+        verifyNoInteractions(vectorStore);
     }
 }

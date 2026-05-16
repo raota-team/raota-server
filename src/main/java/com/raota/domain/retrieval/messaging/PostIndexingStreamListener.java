@@ -22,10 +22,13 @@ public class PostIndexingStreamListener implements StreamListener<String, MapRec
     public void onMessage(MapRecord<String, String, String> message) {
         String jsonPayload = message.getValue().get("payload");
 
-        PostIndexingEvent event = redisObjectmapper.readValue(jsonPayload,PostIndexingEvent.class);
+        PostIndexingEvent event = redisObjectmapper.readValue(jsonPayload, PostIndexingEvent.class);
 
-        log.info("비동기 게시글 인덱싱 시작: postId={}",event.postId());
-        retrievalIndexingService.indexPost(event.postId());
-        log.info("비동기 게시글 인덱싱 완료: postId={}",event.postId());
+        log.info("비동기 게시글 인덱싱 시작: postId={}, action={}", event.postId(), event.action());
+        switch (event.action()) {
+            case UPSERT -> retrievalIndexingService.indexPost(event.postId());
+            case DELETE -> retrievalIndexingService.deletePost(event.postId());
+        }
+        log.info("비동기 게시글 인덱싱 완료: postId={}, action={}", event.postId(), event.action());
     }
 }

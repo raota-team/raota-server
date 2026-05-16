@@ -12,6 +12,7 @@ import com.raota.domain.community.service.PostService;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
+import com.raota.domain.retrieval.event.PostIndexingAction;
 import com.raota.domain.retrieval.event.PostIndexingEvent;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -62,6 +63,7 @@ class PostServiceTest {
         
         PostIndexingEvent publishedEvent = eventCaptor.getValue();
         assertThat(publishedEvent.postId()).isEqualTo(savedPostId);
+        assertThat(publishedEvent.action()).isEqualTo(PostIndexingAction.UPSERT);
     }
 
     @Test
@@ -117,6 +119,39 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("리뷰 게시글 수정 시 인덱싱 갱신 이벤트가 발행된다.")
+    void update_review_post_publishes_upsert_event() {
+        // given
+        Long postId = 1L;
+        Long authorId = 1L;
+
+        MemberProfile author = mock(MemberProfile.class);
+        when(author.getId()).thenReturn(authorId);
+
+        PostEntity post = mock(PostEntity.class);
+        when(post.getId()).thenReturn(postId);
+        when(post.getAuthor()).thenReturn(author);
+        when(post.getCategory()).thenReturn(PostCategory.REVIEW);
+
+        when(postRepository.findEntityById(postId)).thenReturn(Optional.of(post));
+
+        CommunityPostCreateRequest request = new CommunityPostCreateRequest(
+                "REVIEW", null, "수정 제목", null, "PLAIN", "수정 내용"
+        );
+
+        // when
+        postService.updatePost(postId, request, authorId);
+
+        // then
+        ArgumentCaptor<PostIndexingEvent> eventCaptor = ArgumentCaptor.forClass(PostIndexingEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+
+        PostIndexingEvent publishedEvent = eventCaptor.getValue();
+        assertThat(publishedEvent.postId()).isEqualTo(postId);
+        assertThat(publishedEvent.action()).isEqualTo(PostIndexingAction.UPSERT);
+    }
+
+    @Test
     @DisplayName("본인의 게시글은 소프트 딜리트 처리된다.")
     void delete_post_success() {
         // given
@@ -138,5 +173,34 @@ class PostServiceTest {
         // then
         verify(post).delete();
         verify(author).decreasePostCount();
+    }
+
+    @Test
+    @DisplayName("리뷰 게시글 삭제 시 인덱싱 삭제 이벤트가 발행된다.")
+    void delete_review_post_publishes_delete_event() {
+        // given
+        Long postId = 1L;
+        Long authorId = 1L;
+
+        MemberProfile author = mock(MemberProfile.class);
+        when(author.getId()).thenReturn(authorId);
+
+        PostEntity post = mock(PostEntity.class);
+        when(post.getAuthor()).thenReturn(author);
+        when(post.getCategory()).thenReturn(PostCategory.REVIEW);
+
+        when(postRepository.findEntityById(postId)).thenReturn(Optional.of(post));
+        when(memberRepository.findById(authorId)).thenReturn(Optional.of(author));
+
+        // when
+        postService.deletePost(postId, authorId);
+
+        // then
+        ArgumentCaptor<PostIndexingEvent> eventCaptor = ArgumentCaptor.forClass(PostIndexingEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+
+        PostIndexingEvent publishedEvent = eventCaptor.getValue();
+        assertThat(publishedEvent.postId()).isEqualTo(postId);
+        assertThat(publishedEvent.action()).isEqualTo(PostIndexingAction.DELETE);
     }
 }

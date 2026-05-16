@@ -26,7 +26,7 @@ class PostIndexingEventDispatcherTest {
     @DisplayName("이벤트를 전달받으면 Redis Stream 토픽으로 퍼블리싱한다.")
     void dispatch_to_redis_stream_success() {
         // given
-        PostIndexingEvent event = new PostIndexingEvent(1L);
+        PostIndexingEvent event = PostIndexingEvent.upsert(1L);
 
         // when
         dispatcher.dispatchToRedisStream(event);
