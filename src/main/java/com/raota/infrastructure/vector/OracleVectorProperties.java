@@ -1,4 +1,4 @@
-package com.raota.infrastructure.ai;
+package com.raota.infrastructure.vector;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

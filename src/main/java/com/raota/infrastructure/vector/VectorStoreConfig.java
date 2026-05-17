@@ -1,6 +1,5 @@
-package com.raota.infrastructure.config;
+package com.raota.infrastructure.vector;
 
-import com.raota.infrastructure.ai.OracleVectorProperties;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -14,7 +13,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 @Profile("!test")
 @Configuration
 @EnableConfigurationProperties(OracleVectorProperties.class)
-public class AiConfig {
+public class VectorStoreConfig {
 
     @Bean
     public JdbcTemplate oracleVectorJdbcTemplate(OracleVectorProperties properties) {
