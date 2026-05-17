@@ -16,7 +16,7 @@ import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.MenuVoteRepository;
 import com.raota.domain.ramenShop.repository.RamenProofPictureRepository;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
-import com.raota.global.auth.JwtTokenProvider;
+import com.raota.infrastructure.auth.JwtTokenProvider;
 import com.raota.helper.BaseIntegrationTest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;

@@ -1,11 +1,11 @@
-package com.raota.domain.ramenShop.controller.contract;
+package com.raota.presentation.api.ramenShop.contract;
 
-import com.raota.domain.ramenShop.controller.request.RamenShopReportRequest;
-import com.raota.domain.ramenShop.controller.request.RamenShopSearchRequest;
-import com.raota.domain.ramenShop.controller.response.RamenShopBasicInfoResponse;
-import com.raota.domain.ramenShop.controller.response.StoreSummaryResponse;
-import com.raota.global.common.ApiResponse;
-import com.raota.global.common.PageResponse;
+import com.raota.presentation.api.ramenShop.dto.RamenShopReportRequest;
+import com.raota.presentation.api.ramenShop.dto.RamenShopSearchRequest;
+import com.raota.presentation.api.ramenShop.dto.RamenShopBasicInfoResponse;
+import com.raota.presentation.api.ramenShop.dto.StoreSummaryResponse;
+import com.raota.presentation.common.ApiResponse;
+import com.raota.presentation.common.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;

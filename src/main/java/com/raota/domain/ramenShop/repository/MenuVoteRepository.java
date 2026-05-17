@@ -1,6 +1,6 @@
 package com.raota.domain.ramenShop.repository;
 
-import com.raota.domain.ramenShop.dto.VoteResultsDto;
+import com.raota.presentation.api.ramenShop.dto.VoteResultsDto;
 import com.raota.domain.ramenShop.model.MenuVote;
 import java.util.List;
 import java.util.Optional;
@@ -18,7 +18,7 @@ public interface MenuVoteRepository extends JpaRepository<MenuVote,Long>{
     Optional<MenuVote> findByMemberProfileIdAndRamenShopIdAndIsCancelledFalse(Long memberId, Long shopId);
 
     @Query("""
-        SELECT new com.raota.domain.ramenShop.dto.VoteResultsDto(
+        SELECT new com.raota.presentation.api.ramenShop.dto.VoteResultsDto(
             m.id,
             m.name,
             (SELECT COUNT(v.id) FROM MenuVote v WHERE v.normalMenu.id = m.id AND v.ramenShop.id = :shopId AND v.isCancelled = false),

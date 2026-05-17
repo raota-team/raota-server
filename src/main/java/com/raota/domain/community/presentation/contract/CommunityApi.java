@@ -1,13 +1,13 @@
-package com.raota.domain.community.presentation.contract;
+package com.raota.presentation.api.community.contract;
 
-import com.raota.domain.community.presentation.request.CommunityPostCreateRequest;
-import com.raota.domain.community.presentation.request.CommunityPostSearchRequest;
-import com.raota.domain.community.presentation.request.CommunityRamenShopSearchRequest;
-import com.raota.domain.community.presentation.response.CommunityPostCardResponse;
-import com.raota.domain.community.presentation.response.CommunityPostDetailResponse;
-import com.raota.domain.community.presentation.response.CommunityRamenShopOptionResponse;
-import com.raota.global.common.ApiResponse;
-import com.raota.global.common.PageResponse;
+import com.raota.presentation.api.community.dto.CommunityPostCreateRequest;
+import com.raota.presentation.api.community.dto.CommunityPostSearchRequest;
+import com.raota.presentation.api.community.dto.CommunityRamenShopSearchRequest;
+import com.raota.presentation.api.community.dto.CommunityPostCardResponse;
+import com.raota.presentation.api.community.dto.CommunityPostDetailResponse;
+import com.raota.presentation.api.community.dto.CommunityRamenShopOptionResponse;
+import com.raota.presentation.common.ApiResponse;
+import com.raota.presentation.common.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;

@@ -1,9 +1,9 @@
-package com.raota.domain.ramenShop.controller.contract;
+package com.raota.presentation.api.ramenShop.contract;
 
-import com.raota.domain.ramenShop.controller.response.ProofPictureInfoResponse;
-import com.raota.domain.ramenShop.controller.response.RamenShopProofPictureResponse;
-import com.raota.global.common.ApiResponse;
-import com.raota.global.common.PageResponse;
+import com.raota.presentation.api.ramenShop.dto.ProofPictureInfoResponse;
+import com.raota.presentation.api.ramenShop.dto.RamenShopProofPictureResponse;
+import com.raota.presentation.common.ApiResponse;
+import com.raota.presentation.common.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -11,7 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import com.raota.domain.ramenShop.controller.request.ProofPictureUploadRequest;
+import com.raota.presentation.api.ramenShop.dto.ProofPictureUploadRequest;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @Tag(name = "인증샷", description = "라멘 인증샷 API")

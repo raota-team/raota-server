@@ -1,12 +1,12 @@
 package com.raota.domain.community.repository.query;
 
 import com.raota.domain.community.model.PostCategory;
-import com.raota.domain.community.presentation.request.CommunityPostSearchRequest;
-import com.raota.domain.community.presentation.request.CommunityRamenShopSearchRequest;
-import com.raota.domain.community.presentation.response.CommunityPostCardResponse;
-import com.raota.domain.community.presentation.response.CommunityPostDetailResponse;
-import com.raota.domain.community.presentation.response.CommunityRamenShopOptionResponse;
-import com.raota.global.common.PageResponse;
+import com.raota.presentation.api.community.dto.CommunityPostSearchRequest;
+import com.raota.presentation.api.community.dto.CommunityRamenShopSearchRequest;
+import com.raota.presentation.api.community.dto.CommunityPostCardResponse;
+import com.raota.presentation.api.community.dto.CommunityPostDetailResponse;
+import com.raota.presentation.api.community.dto.CommunityRamenShopOptionResponse;
+import com.raota.presentation.common.PageResponse;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;

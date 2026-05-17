@@ -1,4 +1,4 @@
-package com.raota.domain.auth.store;
+package com.raota.infrastructure.persistence.auth;
 
 import java.time.Instant;
 import java.util.Optional;

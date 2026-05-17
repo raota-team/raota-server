@@ -1,7 +1,7 @@
-package com.raota.domain.ramenShop.controller.contract;
+package com.raota.presentation.api.ramenShop.contract;
 
-import com.raota.domain.ramenShop.controller.response.VotingStatusResponse;
-import com.raota.global.common.ApiResponse;
+import com.raota.presentation.api.ramenShop.dto.VotingStatusResponse;
+import com.raota.presentation.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;

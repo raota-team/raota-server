@@ -1,7 +1,7 @@
 package com.raota.domain.ramenShop.repository;
 
-import com.raota.domain.ramenShop.controller.response.ProofPictureInfoResponse;
-import com.raota.domain.ramenShop.controller.response.RamenShopProofPictureResponse;
+import com.raota.presentation.api.ramenShop.dto.ProofPictureInfoResponse;
+import com.raota.presentation.api.ramenShop.dto.RamenShopProofPictureResponse;
 import com.raota.domain.ramenShop.model.RamenProofPicture;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,7 +12,7 @@ import org.springframework.data.repository.query.Param;
 public interface RamenProofPictureRepository extends JpaRepository<RamenProofPicture, Long> {
     @Query(
             value = """
-        select new com.raota.domain.ramenShop.controller.response.ProofPictureInfoResponse(
+        select new com.raota.presentation.api.ramenShop.dto.ProofPictureInfoResponse(
             p.id,
             true,
             p.imageUrl
@@ -33,7 +33,7 @@ public interface RamenProofPictureRepository extends JpaRepository<RamenProofPic
 
     @Query(
             value = """
-        select new com.raota.domain.ramenShop.controller.response.RamenShopProofPictureResponse(
+        select new com.raota.presentation.api.ramenShop.dto.RamenShopProofPictureResponse(
             p.id,
             p.memberProfile.id,
             p.imageUrl,

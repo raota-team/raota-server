@@ -1,6 +1,6 @@
 package com.raota.domain.ramenShop.repository;
 
-import com.raota.domain.ramenShop.controller.response.StoreSummaryResponse;
+import com.raota.presentation.api.ramenShop.dto.StoreSummaryResponse;
 import com.raota.domain.ramenShop.model.RamenShop;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,7 +12,7 @@ public interface RamenShopRepository extends JpaRepository<RamenShop, Long> {
 
     @Query(
             value = """
-        select new com.raota.domain.ramenShop.controller.response.StoreSummaryResponse(
+        select new com.raota.presentation.api.ramenShop.dto.StoreSummaryResponse(
             s.id,
             s.name,
             s.description,

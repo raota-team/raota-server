@@ -9,7 +9,7 @@
         </encoder>
     </appender>
 
-    <appender name="DISCORD" class="com.raota.global.log.DiscordAppender">
+    <appender name="DISCORD" class="com.raota.infrastructure.log.DiscordAppender">
         <webHookUrl>${DISCORD_WEBHOOK_URL}</webHookUrl>
     </appender>
 

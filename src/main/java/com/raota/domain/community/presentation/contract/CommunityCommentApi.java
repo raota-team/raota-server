@@ -1,11 +1,11 @@
-package com.raota.domain.community.presentation.contract;
+package com.raota.presentation.api.community.contract;
 
-import com.raota.domain.community.presentation.request.CommunityCommentCreateRequest;
-import com.raota.domain.community.presentation.request.CommunityCommentUpdateRequest;
-import com.raota.domain.community.presentation.response.CommunityCommentItemResponse;
-import com.raota.domain.community.presentation.response.CommunityCommentThreadResponse;
-import com.raota.global.common.ApiResponse;
-import com.raota.global.common.PageResponse;
+import com.raota.presentation.api.community.dto.CommunityCommentCreateRequest;
+import com.raota.presentation.api.community.dto.CommunityCommentUpdateRequest;
+import com.raota.presentation.api.community.dto.CommunityCommentItemResponse;
+import com.raota.presentation.api.community.dto.CommunityCommentThreadResponse;
+import com.raota.presentation.common.ApiResponse;
+import com.raota.presentation.common.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;

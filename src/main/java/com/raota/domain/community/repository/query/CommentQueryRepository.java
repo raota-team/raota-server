@@ -1,7 +1,7 @@
 package com.raota.domain.community.repository.query;
 
-import com.raota.domain.community.presentation.response.CommunityCommentItemResponse;
-import com.raota.global.common.PageResponse;
+import com.raota.presentation.api.community.dto.CommunityCommentItemResponse;
+import com.raota.presentation.common.PageResponse;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.time.LocalDateTime;
