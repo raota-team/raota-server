@@ -1,9 +1,9 @@
-package com.raota.presentation.api.ramenShop.contract;
+package com.raota.domain.ramenShop.controller.contract;
 
 import com.raota.presentation.api.ramenShop.dto.RamenShopReportRequest;
+import com.raota.presentation.api.ramenShop.dto.RamenShopResponse;
 import com.raota.presentation.api.ramenShop.dto.RamenShopSearchRequest;
 import com.raota.presentation.api.ramenShop.dto.RamenShopBasicInfoResponse;
-import com.raota.presentation.api.ramenShop.dto.StoreSummaryResponse;
 import com.raota.presentation.common.ApiResponse;
 import com.raota.presentation.common.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,7 +30,7 @@ public interface RamenShopInfoApi {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
     @GetMapping
-    ResponseEntity<ApiResponse<PageResponse<StoreSummaryResponse>>> getShopList(
+    ResponseEntity<ApiResponse<PageResponse<RamenShopResponse>>> getShopList(
             @Parameter(description = "페이지 번호", example = "0")
             @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기", example = "12")

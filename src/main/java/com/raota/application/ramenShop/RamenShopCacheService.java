@@ -1,7 +1,7 @@
 package com.raota.application.ramenShop;
 
 import com.raota.presentation.api.ramenShop.dto.RamenShopBasicInfoResponse;
-import com.raota.presentation.api.ramenShop.dto.StoreSummaryResponse;
+import com.raota.presentation.api.ramenShop.dto.RamenShopResponse;
 import com.raota.presentation.api.ramenShop.dto.EventMenuDto;
 import com.raota.presentation.api.ramenShop.dto.NormalMenuDto;
 import com.raota.domain.ramenShop.model.EventMenu;
@@ -51,9 +51,9 @@ public class RamenShopCacheService {
             key = "T(String).valueOf(#city) + ':' + T(String).valueOf(#district) + ':' + T(String).valueOf(#keyword) + ':' + T(String).valueOf(#tag) + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort.toString()",
             condition = "#pageable.pageNumber == 0"
     )
-    public Page<StoreSummaryResponse> getFirstPageShopList(String city, String district, String keyword, String tag, Pageable pageable) {
+    public Page<RamenShopResponse> getFirstPageShopList(String city, String district, String keyword, String tag, Pageable pageable) {
         return ramenShopRepository.searchStores(city, district, keyword, tag, pageable)
-                .map(store -> new StoreSummaryResponse(
+                .map(store -> new RamenShopResponse(
                         store.id(),
                         store.name(),
                         store.tagLine(),

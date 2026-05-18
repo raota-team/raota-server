@@ -2,7 +2,7 @@ package com.raota.presentation.api.ramenShop.dto;
 
 import java.util.List;
 
-public record StoreSummaryResponse(
+public record RamenShopResponse(
         Long id,
         String name,
         String tagLine,
@@ -10,5 +10,5 @@ public record StoreSummaryResponse(
         List<String> tags,
         String thumbnailUrl,
         Integer visits
-        ){
+){
 }
