@@ -39,7 +39,12 @@ public class RecommendationService {
     }
 
     public TasteRecommendationResponse recommendByTaste(TasteRecommendationRequest request) {
-        String query =  String.format("%s %s %s", request.soup(), request.mood(), request.priority());
+        StringBuilder queryBuilder = new StringBuilder();
+        queryBuilder.append(String.format("%s %s %s", request.soup(), request.mood(), request.priority()));
+        if (request.freeText() != null && !request.freeText().isBlank()) {
+            queryBuilder.append(" ").append(request.freeText());
+        }
+        String query = queryBuilder.toString();
 
         List<Document> searchResult = vectorStore.similaritySearch(
                 SearchRequest.builder()
