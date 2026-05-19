@@ -9,14 +9,13 @@ import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.context.properties.bind.Binder;
-import org.springframework.boot.env.EnvironmentPostProcessor;
-import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.boot.context.config.ConfigData;
+import org.springframework.boot.context.config.ConfigDataLoader;
+import org.springframework.boot.context.config.ConfigDataLoaderContext;
 import org.springframework.core.env.MapPropertySource;
-import org.springframework.util.StringUtils;
 
-public class OciVaultEnvironmentPostProcessor implements EnvironmentPostProcessor {
+public class OciVaultConfigDataLoader implements ConfigDataLoader<OciVaultConfigDataResource> {
+
     private static final String PROPERTY_SOURCE_NAME = "ociVaultSecrets";
 
     private static final List<String> SECRET_NAMES = List.of(
@@ -41,32 +40,15 @@ public class OciVaultEnvironmentPostProcessor implements EnvironmentPostProcesso
             "DISCORD_WEBHOOK_URL",
             "CLOUDINARY_CLOUD_NAME",
             "CLOUDINARY_API_KEY",
-            "CLOUDINARY_API_SECRET"
+            "CLOUDINARY_API_SECRET",
+            "GROQ_API_KEY",
+            "OPENAI_API_KEY"
     );
 
     @Override
-    public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
-        Binder binder = Binder.get(environment);
-        boolean enabled = binder.bind("oci.vault.enabled", Boolean.class).orElse(false);
-
-        if (!enabled) {
-            return;
-        }
-
-        String region = binder.bind("oci.vault.region", String.class).orElse(null);
-        String vaultId = binder.bind("oci.vault.vault-id", String.class).orElse(null);
-
-        if (StringUtils.hasText(region) && StringUtils.hasText(vaultId)) {
-            try {
-                Map<String, Object> resolvedSecrets = loadSecrets(region, vaultId);
-                if (!resolvedSecrets.isEmpty()) {
-                    environment.getPropertySources().addFirst(new MapPropertySource(PROPERTY_SOURCE_NAME, resolvedSecrets));
-                }
-            } catch (Exception e) {
-                // 초기 단계이므로 System.err 사용 (로깅 시스템 미준비 상태일 수 있음)
-                System.err.println("[OCI-VAULT] Critical error loading secrets from OCI Vault: " + e.getMessage());
-            }
-        }
+    public ConfigData load(ConfigDataLoaderContext context, OciVaultConfigDataResource resource) {
+        Map<String, Object> resolvedSecrets = loadSecrets(resource.region(), resource.vaultId());
+        return new ConfigData(List.of(new MapPropertySource(PROPERTY_SOURCE_NAME, resolvedSecrets)));
     }
 
     private Map<String, Object> loadSecrets(String region, String vaultId) {

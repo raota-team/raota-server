@@ -1,8 +1,4 @@
 oci:
-  vault:
-    enabled: true
-    region: ap-chuncheon-1
-    vault-id: ocid1.vault.oc1.ap-chuncheon-1.gju25j3taaark.ab4w4ljrvayyfb3dk5dp2yu45i7aw5u6jvl73tfjxaqfxgeq3do6izft5szq
   storage:
     namespace: ${OCI_STORAGE_NAMESPACE:}
     bucket: ${OCI_STORAGE_BUCKET:}
@@ -16,6 +12,8 @@ server:
   forward-headers-strategy: native
 
 spring:
+  config:
+    import: "optional:oci-vault:ap-chuncheon-1/ocid1.vault.oc1.ap-chuncheon-1.gju25j3taaark.ab4w4ljrvayyfb3dk5dp2yu45i7aw5u6jvl73tfjxaqfxgeq3do6izft5szq"
   autoconfigure:
     exclude:
       - org.springframework.ai.vectorstore.oracle.autoconfigure.OracleVectorStoreAutoConfiguration
@@ -64,10 +62,22 @@ spring:
 
   ai:
     model:
+      chat: openai
       embedding: openai
+      image: none
+      moderation: none
+      audio:
+        speech: none
+        transcription: none
     openai:
-      api-key: ${OPENAI_API_KEY}
+      chat:
+        api-key: ${GROQ_API_KEY}
+        base-url: https://api.groq.com/openai/v1
+        temperature: ${SPRING_AI_GROQ_CHAT_TEMPERATURE:0.6}
+        model: ${SPRING_AI_GROQ_CHAT_MODEL:qwen/qwen3-32b}
       embedding:
+        api-key: ${OPENAI_API_KEY}
+        base-url: https://api.openai.com
         model: ${SPRING_AI_OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
         dimensions: ${SPRING_AI_OPENAI_EMBEDDING_DIMENSIONS:1536}
 
@@ -139,6 +149,8 @@ app:
           ttl-seconds: ${APP_CACHE_RAMEN_SHOP_LIST_TTL_SECONDS:300}
           maximum-size: ${APP_CACHE_RAMEN_SHOP_LIST_MAX_SIZE:50}
   ai:
+    vector-store:
+      enabled: true
     oracle:
       url: ${AI_ORACLE_DATASOURCE_URL}
       username: ${AI_ORACLE_DATASOURCE_USERNAME}

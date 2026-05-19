@@ -52,22 +52,32 @@ public class RedisStreamConfig {
 
     private void initConsumerGroup(String streamKey, String groupName) {
         try {
-            // 스트림 키가 없으면 에러가 나므로 미리 존재 여부 체크
             if (Boolean.FALSE.equals(stringRedisTemplate.hasKey(streamKey))) {
                 stringRedisTemplate.opsForStream().createGroup(streamKey, groupName);
                 log.info("Redis Stream 생성 및 Consumer Group 초기화 완료: {}", streamKey);
-            } else {
-                // 스트림은 존재하나 그룹이 없을 경우 그룹만 생성
-                stringRedisTemplate.opsForStream().createGroup(streamKey, groupName);
-                log.info("Consumer Group 초기화 완료: {}", groupName);
+                return;
             }
+
+            stringRedisTemplate.opsForStream().createGroup(streamKey, groupName);
+            log.info("Consumer Group 초기화 완료: {}", groupName);
         } catch (Exception e) {
-            // 이미 그룹이 존재하는 경우 발생하는 에러는 무시
-            if (e.getMessage() != null && e.getMessage().contains("BUSYGROUP")) {
+            if (isBusyGroupException(e)) {
                 log.info("Consumer Group이 이미 존재합니다: {}", groupName);
             } else {
                 log.error("Redis Stream Consumer Group 초기화 중 에러 발생", e);
             }
         }
+    }
+
+    private boolean isBusyGroupException(Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null) {
+            String message = current.getMessage();
+            if (message != null && message.contains("BUSYGROUP")) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 }
