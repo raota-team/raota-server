@@ -52,6 +52,10 @@ public class ShopComparisonService {
         List<Document> shopADocuments = collectComparisonDocuments(shopA, focus);
         List<Document> shopBDocuments = collectComparisonDocuments(shopB, focus);
 
+        if (hasInsufficientDocuments(shopADocuments, shopBDocuments)) {
+            return buildComparisonResponse(shopA, shopB, null);
+        }
+
         String contextA = buildComparisonContext(shopA, shopADocuments);
         String contextB = buildComparisonContext(shopB, shopBDocuments);
 
@@ -112,6 +116,11 @@ public class ShopComparisonService {
         );
     }
 
+    private boolean hasInsufficientDocuments(List<Document> shopADocuments, List<Document> shopBDocuments) {
+        return shopADocuments == null || shopADocuments.isEmpty()
+                || shopBDocuments == null || shopBDocuments.isEmpty();
+    }
+
     private List<ShopComparisonResponse.ComparisonNarrative> toNarratives(AiShopComparisonResult aiResult) {
         if (aiResult == null || aiResult.narratives() == null || aiResult.narratives().isEmpty()) {
             return fallbackNarratives();
@@ -136,7 +145,7 @@ public class ShopComparisonService {
     private List<ShopComparisonResponse.ComparisonNarrative> fallbackNarratives() {
         return List.of(new ShopComparisonResponse.ComparisonNarrative(
                 "비교 정보 부족",
-                "두 매장을 비교할 수 있는 리뷰와 매장 정보가 충분하지 않습니다."
+                "두 매장을 객관적으로 비교할 수 있는 검색 문서가 충분하지 않습니다. 리뷰나 매장 프로필 데이터가 쌓인 뒤 다시 비교해 주세요."
         ));
     }
 
