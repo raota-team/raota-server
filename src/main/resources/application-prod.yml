@@ -77,7 +77,7 @@ spring:
         model: ${SPRING_AI_GROQ_CHAT_MODEL:qwen/qwen3-32b}
       embedding:
         api-key: ${OPENAI_API_KEY}
-        base-url: https://api.openai.com
+        base-url: https://api.openai.com/v1
         model: ${SPRING_AI_OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
         dimensions: ${SPRING_AI_OPENAI_EMBEDDING_DIMENSIONS:1536}
 
@@ -160,6 +160,6 @@ app:
       index-type: ${AI_ORACLE_INDEX_TYPE:NONE}
       distance-type: ${AI_ORACLE_DISTANCE_TYPE:COSINE}
       dimensions: ${AI_ORACLE_DIMENSIONS:1536}
-      forced-normalization: ${AI_ORACLE_FORCED_NORMALIZATION:false}
+      forced-normalization: ${AI_ORACLE_FORCED_NORMALIZATION:true}
       remove-existing-vector-store-table: ${AI_ORACLE_REMOVE_EXISTING_VECTOR_STORE_TABLE:false}
       search-accuracy: ${AI_ORACLE_SEARCH_ACCURACY:95}
