@@ -3,8 +3,8 @@ package com.raota.integration;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 
-import com.raota.presentation.api.community.dto.CommunityCommentCreateRequest;
-import com.raota.presentation.api.community.dto.CommunityPostCreateRequest;
+import com.raota.presentation.api.community.request.CommunityCommentCreateRequest;
+import com.raota.presentation.api.community.request.CommunityPostCreateRequest;
 import com.raota.domain.community.repository.command.JpaCommentRepository;
 import com.raota.domain.community.repository.command.JpaPostRepository;
 import com.raota.domain.member.model.MemberProfile;

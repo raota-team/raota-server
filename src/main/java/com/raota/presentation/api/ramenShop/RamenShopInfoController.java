@@ -1,11 +1,11 @@
 package com.raota.presentation.api.ramenShop;
 
 import com.raota.application.member.BookmarkService;
-import com.raota.domain.ramenShop.controller.contract.RamenShopInfoApi;
-import com.raota.presentation.api.ramenShop.dto.RamenShopReportRequest;
-import com.raota.presentation.api.ramenShop.dto.RamenShopResponse;
-import com.raota.presentation.api.ramenShop.dto.RamenShopSearchRequest;
-import com.raota.presentation.api.ramenShop.dto.RamenShopBasicInfoResponse;
+import com.raota.presentation.api.ramenShop.contract.RamenShopInfoApi;
+import com.raota.presentation.api.ramenShop.request.RamenShopReportRequest;
+import com.raota.presentation.api.ramenShop.response.RamenShopResponse;
+import com.raota.presentation.api.ramenShop.request.RamenShopSearchRequest;
+import com.raota.presentation.api.ramenShop.response.RamenShopBasicInfoResponse;
 import com.raota.application.ramenShop.RamenShopInfoService;
 import com.raota.application.ramenShop.RamenShopReportService;
 import com.raota.infrastructure.auth.LoginMember;

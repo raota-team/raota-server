@@ -1,6 +1,6 @@
 package com.raota.presentation.api.auth;
 
-import com.raota.presentation.api.auth.dto.AuthTokenResponse;
+import com.raota.presentation.api.auth.response.AuthTokenResponse;
 import com.raota.application.auth.AuthService;
 import com.raota.application.auth.TokenRefreshResult;
 import com.raota.infrastructure.auth.RefreshTokenCookieManager;

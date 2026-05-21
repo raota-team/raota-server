@@ -1,6 +1,6 @@
 package com.raota.domain.community.repository.query;
 
-import com.raota.presentation.api.community.dto.CommunityCommentItemResponse;
+import com.raota.presentation.api.community.response.CommunityCommentItemResponse;
 import com.raota.presentation.common.PageResponse;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;

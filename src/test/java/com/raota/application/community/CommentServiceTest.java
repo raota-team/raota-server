@@ -3,7 +3,7 @@ package com.raota.application.community;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.raota.presentation.api.community.dto.CommunityCommentCreateRequest;
+import com.raota.presentation.api.community.request.CommunityCommentCreateRequest;
 import com.raota.domain.community.repository.command.CommentRepository;
 import com.raota.domain.community.repository.command.PostRepository;
 import com.raota.domain.community.repository.command.entity.CommentEntity;

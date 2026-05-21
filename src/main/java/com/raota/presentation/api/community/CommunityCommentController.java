@@ -1,10 +1,10 @@
 package com.raota.presentation.api.community;
 
 import com.raota.presentation.api.community.contract.CommunityCommentApi;
-import com.raota.presentation.api.community.dto.CommunityCommentCreateRequest;
-import com.raota.presentation.api.community.dto.CommunityCommentUpdateRequest;
-import com.raota.presentation.api.community.dto.CommunityCommentItemResponse;
-import com.raota.presentation.api.community.dto.CommunityCommentThreadResponse;
+import com.raota.presentation.api.community.request.CommunityCommentCreateRequest;
+import com.raota.presentation.api.community.request.CommunityCommentUpdateRequest;
+import com.raota.presentation.api.community.response.CommunityCommentItemResponse;
+import com.raota.presentation.api.community.response.CommunityCommentThreadResponse;
 import com.raota.domain.community.repository.query.CommentQueryRepository;
 import com.raota.application.community.CommentService;
 import com.raota.infrastructure.auth.LoginMember;

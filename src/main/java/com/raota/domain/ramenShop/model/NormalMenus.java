@@ -1,7 +1,7 @@
 package com.raota.domain.ramenShop.model;
 
 
-import com.raota.presentation.api.ramenShop.dto.NormalMenuDto;
+import com.raota.presentation.api.ramenShop.response.NormalMenuDto;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.OneToMany;

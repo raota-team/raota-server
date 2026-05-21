@@ -1,9 +1,9 @@
 package com.raota.domain.member.repository;
 
-import com.raota.presentation.api.member.dto.BookmarkSummaryResponse;
-import com.raota.presentation.api.member.dto.MyProfileResponse;
-import com.raota.presentation.api.member.dto.PhotoSummaryResponse;
-import com.raota.presentation.api.member.dto.VisitSummaryResponse;
+import com.raota.presentation.api.member.response.BookmarkSummaryResponse;
+import com.raota.presentation.api.member.response.MyProfileResponse;
+import com.raota.presentation.api.member.response.PhotoSummaryResponse;
+import com.raota.presentation.api.member.response.VisitSummaryResponse;
 import com.raota.domain.member.model.MemberProfile;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,13 +13,13 @@ import org.springframework.data.repository.query.Param;
 
 public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
     @Query("""
-    select new com.raota.presentation.api.member.dto.MyProfileResponse(
+    select new com.raota.presentation.api.member.response.MyProfileResponse(
         m.id,
         m.nickname,
         m.imageUrl,
         m.backgroundImageUrl,
         m.bio,
-        new com.raota.presentation.api.member.dto.UserStatsDto(
+        new com.raota.presentation.api.member.response.UserStatsDto(
             (select count(distinct p.ramenShop.id) from RamenProofPicture p where p.memberProfile.id = m.id and p.isDeleted = false),
             (select count(p) from RamenProofPicture p where p.memberProfile.id = m.id and p.isDeleted = false),
             (select count(b) from Bookmark b where b.memberProfile.id = m.id and b.isDeleted = false),
@@ -33,7 +33,7 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
     MyProfileResponse findMemberDetailInfo(@Param("id") Long id);
 
     @Query(value = """
-            select new com.raota.presentation.api.community.dto.CommunityPostCardResponse(
+            select new com.raota.presentation.api.community.response.CommunityPostCardResponse(
                 p.id,
                 cast(p.category as string),
                 r.id,
@@ -59,13 +59,13 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
                     from PostEntity p
                     where p.author.id = :memberId and p.isDeleted = false
                     """)
-    Page<com.raota.presentation.api.community.dto.CommunityPostCardResponse> findMyPosts(
+    Page<com.raota.presentation.api.community.response.CommunityPostCardResponse> findMyPosts(
             @Param("memberId") Long memberId,
             Pageable pageable
     );
 
     @Query(value = """
-            select new com.raota.presentation.api.community.dto.CommunityCommentItemResponse(
+            select new com.raota.presentation.api.community.response.CommunityCommentItemResponse(
                 c.id,
                 c.parent.id,
                 c.post.id,
@@ -91,13 +91,13 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
                         and c.isDeleted = false
                         and c.post.isDeleted = false
                     """)
-    Page<com.raota.presentation.api.community.dto.CommunityCommentItemResponse> findMyComments(
+    Page<com.raota.presentation.api.community.response.CommunityCommentItemResponse> findMyComments(
             @Param("memberId") Long memberId,
             Pageable pageable
     );
 
     @Query(value = """
-            select new com.raota.presentation.api.member.dto.VisitSummaryResponse(
+            select new com.raota.presentation.api.member.response.VisitSummaryResponse(
                 r.id,
                 r.name,
                 r.imageUrl,
@@ -125,7 +125,7 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
     );
 
     @Query(value = """
-            select new com.raota.presentation.api.member.dto.BookmarkSummaryResponse(
+            select new com.raota.presentation.api.member.response.BookmarkSummaryResponse(
                 r.id,
                 r.name,
                 r.imageUrl,
@@ -147,7 +147,7 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
     Page<BookmarkSummaryResponse> findMyBookmarks(@Param("memberId") Long memberId, Pageable pageable);
 
     @Query(value = """
-    select new com.raota.presentation.api.member.dto.PhotoSummaryResponse(
+    select new com.raota.presentation.api.member.response.PhotoSummaryResponse(
         p.id,
         p.imageUrl,
         p.menuName,

@@ -1,8 +1,8 @@
 package com.raota.presentation.api.ramenShop;
 
 import com.raota.presentation.api.ramenShop.contract.RamenProofPictureApi;
-import com.raota.presentation.api.ramenShop.dto.ProofPictureInfoResponse;
-import com.raota.presentation.api.ramenShop.dto.RamenShopProofPictureResponse;
+import com.raota.presentation.api.ramenShop.response.ProofPictureInfoResponse;
+import com.raota.presentation.api.ramenShop.response.RamenShopProofPictureResponse;
 import com.raota.infrastructure.auth.LoginMember;
 import com.raota.presentation.common.ApiResponse;
 import com.raota.presentation.common.PageResponse;
@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.raota.presentation.api.ramenShop.dto.ProofPictureUploadRequest;
+import com.raota.presentation.api.ramenShop.request.ProofPictureUploadRequest;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController

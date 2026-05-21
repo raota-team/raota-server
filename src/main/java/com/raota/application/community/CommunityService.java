@@ -2,7 +2,7 @@ package com.raota.application.community;
 
 import com.raota.domain.community.model.Post;
 import com.raota.domain.community.model.PostCategory;
-import com.raota.presentation.api.community.dto.CommunityPostCreateRequest;
+import com.raota.presentation.api.community.request.CommunityPostCreateRequest;
 import com.raota.domain.community.repository.command.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

@@ -1,9 +1,9 @@
 package com.raota.application.ramenShop;
 
-import com.raota.presentation.api.ramenShop.dto.RamenShopBasicInfoResponse;
-import com.raota.presentation.api.ramenShop.dto.RamenShopResponse;
-import com.raota.presentation.api.ramenShop.dto.EventMenuDto;
-import com.raota.presentation.api.ramenShop.dto.NormalMenuDto;
+import com.raota.presentation.api.ramenShop.response.RamenShopBasicInfoResponse;
+import com.raota.presentation.api.ramenShop.response.RamenShopResponse;
+import com.raota.presentation.api.ramenShop.response.EventMenuDto;
+import com.raota.presentation.api.ramenShop.response.NormalMenuDto;
 import com.raota.domain.ramenShop.model.EventMenu;
 import com.raota.domain.ramenShop.model.EventMenus;
 import com.raota.domain.ramenShop.model.NormalMenu;

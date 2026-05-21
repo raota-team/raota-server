@@ -1,6 +1,6 @@
 package com.raota.presentation.admin.ramenShop;
 
-import com.raota.presentation.admin.ramenShop.dto.RamenShopAdminForm;
+import com.raota.presentation.admin.ramenShop.request.RamenShopAdminForm;
 import com.raota.application.admin.ramenShop.RamenShopAdminService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

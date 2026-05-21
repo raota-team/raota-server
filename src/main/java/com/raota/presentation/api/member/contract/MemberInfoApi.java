@@ -1,12 +1,12 @@
 package com.raota.presentation.api.member.contract;
 
-import com.raota.presentation.api.member.dto.UpdateProfileRequest;
-import com.raota.presentation.api.member.dto.BookmarkSummaryResponse;
-import com.raota.presentation.api.member.dto.MyCommentSummaryResponse;
-import com.raota.presentation.api.member.dto.MyPostSummaryResponse;
-import com.raota.presentation.api.member.dto.MyProfileResponse;
-import com.raota.presentation.api.member.dto.PhotoSummaryResponse;
-import com.raota.presentation.api.member.dto.VisitSummaryResponse;
+import com.raota.presentation.api.member.request.UpdateProfileRequest;
+import com.raota.presentation.api.member.response.BookmarkSummaryResponse;
+import com.raota.presentation.api.member.response.MyCommentSummaryResponse;
+import com.raota.presentation.api.member.response.MyPostSummaryResponse;
+import com.raota.presentation.api.member.response.MyProfileResponse;
+import com.raota.presentation.api.member.response.PhotoSummaryResponse;
+import com.raota.presentation.api.member.response.VisitSummaryResponse;
 import com.raota.presentation.common.ApiResponse;
 import com.raota.presentation.common.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -64,7 +64,7 @@ public interface MemberInfoApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<PageResponse<com.raota.presentation.api.community.dto.CommunityPostCardResponse>>> getMyPosts(
+    ResponseEntity<ApiResponse<PageResponse<com.raota.presentation.api.community.response.CommunityPostCardResponse>>> getMyPosts(
             @Parameter(hidden = true) Long memberId,
             @ParameterObject Pageable pageable);
 
@@ -72,7 +72,7 @@ public interface MemberInfoApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<PageResponse<com.raota.presentation.api.community.dto.CommunityCommentItemResponse>>> getMyComments(
+    ResponseEntity<ApiResponse<PageResponse<com.raota.presentation.api.community.response.CommunityCommentItemResponse>>> getMyComments(
             @Parameter(hidden = true) Long memberId,
             @ParameterObject Pageable pageable);
 
@@ -103,7 +103,7 @@ public interface MemberInfoApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<PageResponse<com.raota.presentation.api.community.dto.CommunityPostCardResponse>>> getUserPostsById(
+    ResponseEntity<ApiResponse<PageResponse<com.raota.presentation.api.community.response.CommunityPostCardResponse>>> getUserPostsById(
             @PathVariable Long userId,
             @ParameterObject Pageable pageable);
 
@@ -111,7 +111,7 @@ public interface MemberInfoApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<PageResponse<com.raota.presentation.api.community.dto.CommunityCommentItemResponse>>> getUserCommentsById(
+    ResponseEntity<ApiResponse<PageResponse<com.raota.presentation.api.community.response.CommunityCommentItemResponse>>> getUserCommentsById(
             @PathVariable Long userId,
             @ParameterObject Pageable pageable);
 }

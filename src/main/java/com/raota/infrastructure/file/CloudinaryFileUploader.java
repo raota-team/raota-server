@@ -1,6 +1,6 @@
 package com.raota.infrastructure.file;
 
-import com.raota.presentation.api.file.dto.PresignedUrlResponse;
+import com.raota.presentation.api.file.response.PresignedUrlResponse;
 import com.cloudinary.Cloudinary;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;

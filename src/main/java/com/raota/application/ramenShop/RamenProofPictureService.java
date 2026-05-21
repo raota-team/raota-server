@@ -2,10 +2,10 @@ package com.raota.application.ramenShop;
 
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
-import com.raota.presentation.api.ramenShop.dto.ProofPictureInfoResponse;
+import com.raota.presentation.api.ramenShop.response.ProofPictureInfoResponse;
 import com.raota.domain.ramenShop.model.RamenProofPicture;
 import com.raota.domain.ramenShop.repository.RamenProofPictureRepository;
-import com.raota.presentation.api.ramenShop.dto.RamenShopProofPictureResponse;
+import com.raota.presentation.api.ramenShop.response.RamenShopProofPictureResponse;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.infrastructure.cache.CacheInvalidationPublisher;

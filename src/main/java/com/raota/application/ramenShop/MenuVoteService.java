@@ -2,8 +2,8 @@ package com.raota.application.ramenShop;
 
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
-import com.raota.presentation.api.ramenShop.dto.VotingStatusResponse;
-import com.raota.presentation.api.ramenShop.dto.VoteResultsDto;
+import com.raota.presentation.api.ramenShop.response.VotingStatusResponse;
+import com.raota.presentation.api.ramenShop.response.VoteResultsDto;
 import com.raota.domain.ramenShop.model.NormalMenu;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;

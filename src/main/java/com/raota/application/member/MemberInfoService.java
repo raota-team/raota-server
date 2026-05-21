@@ -1,9 +1,9 @@
 package com.raota.application.member;
 
-import com.raota.presentation.api.member.dto.BookmarkSummaryResponse;
-import com.raota.presentation.api.member.dto.MyProfileResponse;
-import com.raota.presentation.api.member.dto.PhotoSummaryResponse;
-import com.raota.presentation.api.member.dto.VisitSummaryResponse;
+import com.raota.presentation.api.member.response.BookmarkSummaryResponse;
+import com.raota.presentation.api.member.response.MyProfileResponse;
+import com.raota.presentation.api.member.response.PhotoSummaryResponse;
+import com.raota.presentation.api.member.response.VisitSummaryResponse;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
 import com.raota.domain.ramenShop.repository.RamenProofPictureRepository;
@@ -72,11 +72,11 @@ public class MemberInfoService {
         return memberRepository.findMyVisitRestaurant(memberId,pageable);
     }
 
-    public Page<com.raota.presentation.api.community.dto.CommunityPostCardResponse> getMyPosts(Long memberId, Pageable pageable) {
+    public Page<com.raota.presentation.api.community.response.CommunityPostCardResponse> getMyPosts(Long memberId, Pageable pageable) {
         return memberRepository.findMyPosts(memberId, pageable);
     }
 
-    public Page<com.raota.presentation.api.community.dto.CommunityCommentItemResponse> getMyComments(Long memberId, Pageable pageable) {
+    public Page<com.raota.presentation.api.community.response.CommunityCommentItemResponse> getMyComments(Long memberId, Pageable pageable) {
         return memberRepository.findMyComments(memberId, pageable);
     }
 }
