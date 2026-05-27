@@ -42,7 +42,10 @@ public class OciVaultConfigDataLoader implements ConfigDataLoader<OciVaultConfig
             "CLOUDINARY_API_KEY",
             "CLOUDINARY_API_SECRET",
             "GROQ_API_KEY",
-            "OPENAI_API_KEY"
+            "OPENAI_API_KEY",
+            "AI_ORACLE_DATASOURCE_URL",
+            "AI_ORACLE_DATASOURCE_USERNAME",
+            "AI_ORACLE_DATASOURCE_PASSWORD"
     );
 
     @Override
