@@ -1,1 +1,5 @@
-org.springframework.boot.env.EnvironmentPostProcessor=com.raota.infrastructure.config.OciVaultEnvironmentPostProcessor
+org.springframework.boot.context.config.ConfigDataLocationResolver=\
+com.raota.infrastructure.config.OciVaultConfigDataLocationResolver
+
+org.springframework.boot.context.config.ConfigDataLoader=\
+com.raota.infrastructure.config.OciVaultConfigDataLoader

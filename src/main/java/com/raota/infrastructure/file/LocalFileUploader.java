@@ -1,6 +1,6 @@
 package com.raota.infrastructure.file;
 
-import com.raota.presentation.api.file.dto.PresignedUrlResponse;
+import com.raota.presentation.api.file.response.PresignedUrlResponse;
 import java.util.UUID;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;

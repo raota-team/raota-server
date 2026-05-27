@@ -1,6 +1,6 @@
 package com.raota.infrastructure.file;
 
-import com.raota.presentation.api.file.dto.PresignedUrlResponse;
+import com.raota.presentation.api.file.response.PresignedUrlResponse;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;

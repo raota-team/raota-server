@@ -1,7 +1,7 @@
 package com.raota.application.admin.ramenShop;
 
-import com.raota.presentation.admin.ramenShop.dto.RamenShopAdminForm;
-import com.raota.presentation.admin.ramenShop.dto.RamenShopAdminSummaryResponse;
+import com.raota.presentation.admin.ramenShop.request.RamenShopAdminForm;
+import com.raota.presentation.admin.ramenShop.response.RamenShopAdminSummaryResponse;
 import com.raota.domain.ramenShop.model.EventMenus;
 import com.raota.domain.ramenShop.model.NormalMenus;
 import com.raota.domain.ramenShop.model.RamenShop;

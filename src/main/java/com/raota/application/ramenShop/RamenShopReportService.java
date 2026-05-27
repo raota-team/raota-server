@@ -2,7 +2,7 @@ package com.raota.application.ramenShop;
 
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
-import com.raota.presentation.api.ramenShop.dto.RamenShopReportRequest;
+import com.raota.presentation.api.ramenShop.request.RamenShopReportRequest;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.model.RamenShopReport;
 import com.raota.domain.ramenShop.repository.RamenShopReportRepository;

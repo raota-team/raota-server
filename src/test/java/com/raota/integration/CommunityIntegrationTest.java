@@ -6,8 +6,8 @@ import static org.hamcrest.Matchers.notNullValue;
 
 import com.raota.domain.community.model.Post;
 import com.raota.domain.community.model.PostCategory;
-import com.raota.presentation.api.community.dto.CommunityCommentCreateRequest;
-import com.raota.presentation.api.community.dto.CommunityPostCreateRequest;
+import com.raota.presentation.api.community.request.CommunityCommentCreateRequest;
+import com.raota.presentation.api.community.request.CommunityPostCreateRequest;
 import com.raota.domain.community.repository.command.JpaCommentRepository;
 import com.raota.domain.community.repository.command.JpaPostRepository;
 import com.raota.domain.member.model.MemberProfile;

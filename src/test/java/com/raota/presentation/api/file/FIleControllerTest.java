@@ -1,6 +1,6 @@
 package com.raota.presentation.api.file;
 import com.raota.infrastructure.file.FileUploader;
-import com.raota.presentation.api.file.dto.PresignedUrlResponse;
+import com.raota.presentation.api.file.response.PresignedUrlResponse;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;

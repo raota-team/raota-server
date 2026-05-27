@@ -5,7 +5,7 @@ import static org.mockito.Mockito.*;
 
 import com.raota.domain.community.model.Post;
 import com.raota.domain.community.model.PostCategory;
-import com.raota.presentation.api.community.dto.CommunityPostCreateRequest;
+import com.raota.presentation.api.community.request.CommunityPostCreateRequest;
 import com.raota.domain.community.repository.command.PostRepository;
 import com.raota.domain.community.repository.command.entity.PostEntity;
 import com.raota.application.community.PostService;

@@ -1,9 +1,9 @@
 package com.raota.application.ramenShop;
 
 import com.raota.domain.member.repository.BookmarkRepository;
-import com.raota.presentation.api.ramenShop.dto.RamenShopSortType;
-import com.raota.presentation.api.ramenShop.dto.RamenShopBasicInfoResponse;
-import com.raota.presentation.api.ramenShop.dto.StoreSummaryResponse;
+import com.raota.presentation.api.ramenShop.response.RamenShopResponse;
+import com.raota.presentation.api.ramenShop.request.RamenShopSortType;
+import com.raota.presentation.api.ramenShop.response.RamenShopBasicInfoResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -31,7 +31,7 @@ public class RamenShopInfoService {
     }
 
     @Transactional(readOnly = true)
-    public Page<StoreSummaryResponse> getRamenShopList(
+    public Page<RamenShopResponse> getRamenShopList(
             String city,
             String district,
             String keyword,

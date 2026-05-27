@@ -1,8 +1,8 @@
 package com.raota.presentation.admin.ramenShop;
 
-import com.raota.presentation.admin.ramenShop.dto.RamenShopAdminForm;
-import com.raota.presentation.admin.ramenShop.dto.RamenShopAdminMutationResponse;
-import com.raota.presentation.admin.ramenShop.dto.RamenShopAdminSummaryResponse;
+import com.raota.presentation.admin.ramenShop.request.RamenShopAdminForm;
+import com.raota.presentation.admin.ramenShop.response.RamenShopAdminMutationResponse;
+import com.raota.presentation.admin.ramenShop.response.RamenShopAdminSummaryResponse;
 import com.raota.application.admin.ramenShop.RamenShopAdminService;
 import com.raota.presentation.common.ApiResponse;
 import jakarta.validation.Valid;

@@ -1,12 +1,12 @@
 package com.raota.presentation.api.community;
 
 import com.raota.presentation.api.community.contract.CommunityApi;
-import com.raota.presentation.api.community.dto.CommunityPostCreateRequest;
-import com.raota.presentation.api.community.dto.CommunityPostSearchRequest;
-import com.raota.presentation.api.community.dto.CommunityRamenShopSearchRequest;
-import com.raota.presentation.api.community.dto.CommunityPostCardResponse;
-import com.raota.presentation.api.community.dto.CommunityPostDetailResponse;
-import com.raota.presentation.api.community.dto.CommunityRamenShopOptionResponse;
+import com.raota.presentation.api.community.request.CommunityPostCreateRequest;
+import com.raota.presentation.api.community.request.CommunityPostSearchRequest;
+import com.raota.presentation.api.community.request.CommunityRamenShopSearchRequest;
+import com.raota.presentation.api.community.response.CommunityPostCardResponse;
+import com.raota.presentation.api.community.response.CommunityPostDetailResponse;
+import com.raota.presentation.api.community.response.CommunityRamenShopOptionResponse;
 import com.raota.domain.community.repository.query.PostQueryRepository;
 import com.raota.application.community.PostLikeService;
 import com.raota.application.community.PostService;

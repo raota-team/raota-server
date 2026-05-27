@@ -2,10 +2,10 @@ package com.raota.presentation.api.ramenShop;
 
 import com.raota.application.member.BookmarkService;
 import com.raota.presentation.api.ramenShop.contract.RamenShopInfoApi;
-import com.raota.presentation.api.ramenShop.dto.RamenShopReportRequest;
-import com.raota.presentation.api.ramenShop.dto.RamenShopSearchRequest;
-import com.raota.presentation.api.ramenShop.dto.RamenShopBasicInfoResponse;
-import com.raota.presentation.api.ramenShop.dto.StoreSummaryResponse;
+import com.raota.presentation.api.ramenShop.request.RamenShopReportRequest;
+import com.raota.presentation.api.ramenShop.response.RamenShopResponse;
+import com.raota.presentation.api.ramenShop.request.RamenShopSearchRequest;
+import com.raota.presentation.api.ramenShop.response.RamenShopBasicInfoResponse;
 import com.raota.application.ramenShop.RamenShopInfoService;
 import com.raota.application.ramenShop.RamenShopReportService;
 import com.raota.infrastructure.auth.LoginMember;
@@ -44,12 +44,12 @@ public class RamenShopInfoController implements RamenShopInfoApi {
 
     @GetMapping
     @Override
-    public ResponseEntity<ApiResponse<PageResponse<StoreSummaryResponse>>> getShopList(
+    public ResponseEntity<ApiResponse<PageResponse<RamenShopResponse>>> getShopList(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size,
             RamenShopSearchRequest request) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<StoreSummaryResponse> response = ramenShopInfoService.getRamenShopList(request.getCity(),
+        Page<RamenShopResponse> response = ramenShopInfoService.getRamenShopList(request.getCity(),
                 request.getDistrict(), request.getKeyword(), request.getTag(), request.getSort(), pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(response)));
     }
