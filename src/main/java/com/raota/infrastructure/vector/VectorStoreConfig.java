@@ -15,7 +15,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 @EnableConfigurationProperties(OracleVectorProperties.class)
 public class VectorStoreConfig {
 
-    @Bean
+    @Bean(defaultCandidate = false)
     public JdbcTemplate oracleVectorJdbcTemplate(OracleVectorProperties properties) {
         var dataSource = new HikariDataSource();
         dataSource.setJdbcUrl(properties.url());

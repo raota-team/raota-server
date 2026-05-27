@@ -21,6 +21,10 @@ spring:
     openai:
       api-key: dummy-test-api-key
 
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.vectorstore.oracle.autoconfigure.OracleVectorStoreAutoConfiguration
+
   security:
     oauth2:
       client:

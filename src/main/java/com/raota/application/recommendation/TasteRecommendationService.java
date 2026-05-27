@@ -1,7 +1,6 @@
 package com.raota.application.recommendation;
 
 import com.raota.domain.ramenShop.model.RamenShop;
-import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.presentation.api.recommendation.request.TasteRecommendationRequest;
 import com.raota.presentation.api.recommendation.response.TasteRecommendationResponse;
 import java.util.List;
@@ -21,13 +20,13 @@ public class TasteRecommendationService {
 
     private final ChatClient chatClient;
     private final VectorStore vectorStore;
-    private final RamenShopRepository ramenShopRepository;
+    private final RecommendationShopReader recommendationShopReader;
     private final Resource recommendationReasonTemplate;
 
     public TasteRecommendationService(
             ChatClient.Builder chatClientBuilder,
             VectorStore vectorStore,
-            RamenShopRepository ramenShopRepository,
+            RecommendationShopReader recommendationShopReader,
             @Value("classpath:/prompts/system-persona.st") Resource systemPersona,
             @Value("classpath:/prompts/taste-recommendation-reason.st") Resource recommendationReasonTemplate
     ) {
@@ -35,7 +34,7 @@ public class TasteRecommendationService {
                 .defaultSystem(systemPersona)
                 .build();
         this.vectorStore = vectorStore;
-        this.ramenShopRepository = ramenShopRepository;
+        this.recommendationShopReader = recommendationShopReader;
         this.recommendationReasonTemplate = recommendationReasonTemplate;
     }
 
@@ -55,15 +54,15 @@ public class TasteRecommendationService {
             throw new IllegalArgumentException("취향 추천 요청은 필수입니다.");
         }
 
-        if (!hasText(request.soup())) {
+        if (!recommendationShopReader.hasText(request.soup())) {
             throw new IllegalArgumentException("국물 취향은 필수입니다.");
         }
 
-        if (!hasText(request.mood())) {
+        if (!recommendationShopReader.hasText(request.mood())) {
             throw new IllegalArgumentException("상황/분위기는 필수입니다.");
         }
 
-        if (!hasText(request.priority())) {
+        if (!recommendationShopReader.hasText(request.priority())) {
             throw new IllegalArgumentException("우선순위는 필수입니다.");
         }
     }
@@ -76,7 +75,7 @@ public class TasteRecommendationService {
                 .append(" ")
                 .append(request.priority().trim());
 
-        if (hasText(request.freeText())) {
+        if (recommendationShopReader.hasText(request.freeText())) {
             queryBuilder.append(" ").append(request.freeText().trim());
         }
 
@@ -126,33 +125,17 @@ public class TasteRecommendationService {
             Map<String, String> aiReasons
     ) {
         Long shopId = Long.valueOf(document.getMetadata().get("shopId").toString());
-        RamenShop shop = getRamenShop(shopId);
+        RamenShop shop = recommendationShopReader.getRamenShop(shopId);
 
         return new TasteRecommendationResponse.RecommendedShopResponse(
                 shop.getId(),
                 shop.getName(),
-                getPrimaryTag(shop),
-                shop.getAddress().fullAddress(),
+                recommendationShopReader.primaryTag(shop),
+                recommendationShopReader.addressText(shop),
                 aiReasons.getOrDefault(String.valueOf(shopId), "취향에 맞는 추천 매장입니다."),
                 shop.getImageUrl(),
                 (int) (document.getScore() * 100),
                 false
         );
-    }
-
-    private RamenShop getRamenShop(Long shopId) {
-        return ramenShopRepository.findById(shopId)
-                .orElseThrow(() -> new IllegalArgumentException("라멘샵을 찾을 수 없습니다. id=" + shopId));
-    }
-
-    private String getPrimaryTag(RamenShop shop) {
-        if (shop.getTags() == null || shop.getTags().isEmpty()) {
-            return "";
-        }
-        return shop.getTags().getFirst();
-    }
-
-    private boolean hasText(String value) {
-        return value != null && !value.isBlank();
     }
 }

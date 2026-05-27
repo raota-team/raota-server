@@ -2,7 +2,6 @@ package com.raota.application.recommendation;
 
 import com.raota.application.recommendation.dto.AiReviewSummaryResult;
 import com.raota.domain.ramenShop.model.RamenShop;
-import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.domain.retrieval.document.RetrievalDocumentType;
 import com.raota.domain.retrieval.document.RetrievalMetadataKeys;
 import com.raota.presentation.api.recommendation.request.ReviewSummaryRequest;
@@ -23,19 +22,19 @@ public class ReviewSummaryService {
     private static final int SAMPLE_REVIEW_LIMIT = 3;
     private static final int SAMPLE_REVIEW_MAX_LENGTH = 160;
 
-    private final RamenShopRepository ramenShopRepository;
+    private final RecommendationShopReader recommendationShopReader;
     private final VectorStore vectorStore;
     private final ChatClient chatClient;
     private final Resource reviewSummaryTemplate;
 
     public ReviewSummaryService(
-            RamenShopRepository ramenShopRepository,
+            RecommendationShopReader recommendationShopReader,
             VectorStore vectorStore,
             ChatClient.Builder chatClientBuilder,
             @Value("classpath:/prompts/system-persona.st") Resource systemPersona,
             @Value("classpath:/prompts/review-summary.st") Resource reviewSummaryTemplate
     ) {
-        this.ramenShopRepository = ramenShopRepository;
+        this.recommendationShopReader = recommendationShopReader;
         this.vectorStore = vectorStore;
         this.chatClient = chatClientBuilder.defaultSystem(systemPersona).build();
         this.reviewSummaryTemplate = reviewSummaryTemplate;
@@ -44,8 +43,8 @@ public class ReviewSummaryService {
     public ReviewSummaryResponse summarizeReviews(ReviewSummaryRequest request) {
         validateReviewSummaryRequest(request);
 
-        RamenShop ramenShop = getRamenShop(request.shopId());
-        String focus = normalizeFocus(request.focus());
+        RamenShop ramenShop = recommendationShopReader.getRamenShop(request.shopId());
+        String focus = recommendationShopReader.normalizeText(request.focus());
 
         List<Document> reviewDocuments = collectReviewDocuments(ramenShop, focus);
 
@@ -66,11 +65,6 @@ public class ReviewSummaryService {
         if (request.shopId() == null) {
             throw new IllegalArgumentException("리뷰를 요약할 매장 ID는 필수입니다.");
         }
-    }
-
-    private RamenShop getRamenShop(Long shopId) {
-        return ramenShopRepository.findById(shopId)
-                .orElseThrow(() -> new IllegalArgumentException("라멘샵을 찾을 수 없습니다. id=" + shopId));
     }
 
     private ReviewSummaryResponse buildFallbackResponse(RamenShop shop) {
@@ -99,8 +93,8 @@ public class ReviewSummaryService {
         return new ReviewSummaryResponse.AiShopBasicInfo(
                 shop.getId(),
                 shop.getName(),
-                getPrimaryTag(shop),
-                shop.getAddress() == null ? "" : shop.getAddress().fullAddress(),
+                recommendationShopReader.primaryTag(shop),
+                recommendationShopReader.addressText(shop),
                 shop.getImageUrl(),
                 false
         );
@@ -152,7 +146,8 @@ public class ReviewSummaryService {
             String fallbackTitle,
             String fallbackBody
     ) {
-        if (detail == null || !hasText(detail.title()) || !hasText(detail.body())) {
+        if (detail == null || !recommendationShopReader.hasText(detail.title())
+                || !recommendationShopReader.hasText(detail.body())) {
             return new ReviewSummaryResponse.SummaryDetail(fallbackTitle, fallbackBody);
         }
 
@@ -192,13 +187,6 @@ public class ReviewSummaryService {
         return trimmedValue.substring(0, maxLength).trim() + "...";
     }
 
-    private String getPrimaryTag(RamenShop shop) {
-        if (shop.getTags() == null || shop.getTags().isEmpty()) {
-            return "";
-        }
-        return shop.getTags().getFirst();
-    }
-
     private List<Document> collectReviewDocuments(RamenShop shop, String focus) {
         String query = buildReviewSummaryQuery(shop, focus);
 
@@ -220,7 +208,7 @@ public class ReviewSummaryService {
     }
 
     private String buildReviewSummaryQuery(RamenShop shop, String focus) {
-        if (hasText(focus)) {
+        if (recommendationShopReader.hasText(focus)) {
             return "%s %s 리뷰 장점 단점 추천 메뉴".formatted(shop.getName(), focus);
         }
 
@@ -238,25 +226,11 @@ public class ReviewSummaryService {
     ) {
         return chatClient.prompt()
                 .user(user -> user.text(reviewSummaryTemplate)
-                        .param("focus", hasText(focus) ? focus : "전반적인 리뷰 요약")
-                        .param("shopInfo", buildShopInfoContext(shop))
+                        .param("focus", recommendationShopReader.hasText(focus) ? focus : "전반적인 리뷰 요약")
+                        .param("shopInfo", recommendationShopReader.buildShopInfoContext(shop))
                         .param("reviewContext", buildReviewContext(reviewDocuments)))
                 .call()
                 .entity(AiReviewSummaryResult.class);
-    }
-
-    private String buildShopInfoContext(RamenShop shop) {
-        return """
-            매장명: %s
-            주소: %s
-            태그: %s
-            설명: %s
-            """.formatted(
-                shop.getName(),
-                shop.getAddress() == null ? "주소 정보 없음" : shop.getAddress().fullAddress(),
-                shop.getTags() == null || shop.getTags().isEmpty() ? "태그 정보 없음" : String.join(", ", shop.getTags()),
-                shop.getDescription() == null || shop.getDescription().isBlank() ? "설명 정보 없음" : shop.getDescription()
-        );
     }
 
     private String buildReviewContext(List<Document> reviewDocuments) {
@@ -280,14 +254,4 @@ public class ReviewSummaryService {
         );
     }
 
-    private String normalizeFocus(String focus) {
-        if (!hasText(focus)) {
-            return "";
-        }
-        return focus.trim();
-    }
-
-    private boolean hasText(String value) {
-        return value != null && !value.isBlank();
-    }
 }

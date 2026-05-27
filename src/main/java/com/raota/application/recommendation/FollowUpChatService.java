@@ -2,7 +2,6 @@ package com.raota.application.recommendation;
 
 import com.raota.application.recommendation.dto.AiFollowUpChatResult;
 import com.raota.domain.ramenShop.model.RamenShop;
-import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.domain.retrieval.document.RetrievalDocumentType;
 import com.raota.domain.retrieval.document.RetrievalMetadataKeys;
 import com.raota.presentation.api.recommendation.request.AiChatRequest;
@@ -26,19 +25,19 @@ public class FollowUpChatService {
     private static final String CONTEXT_TYPE_COMPARE = "compare";
     private static final int RECENT_MESSAGE_LIMIT = 6;
 
-    private final RamenShopRepository ramenShopRepository;
+    private final RecommendationShopReader recommendationShopReader;
     private final VectorStore vectorStore;
     private final ChatClient chatClient;
     private final Resource followUpChatTemplate;
 
     public FollowUpChatService(
-            RamenShopRepository ramenShopRepository,
+            RecommendationShopReader recommendationShopReader,
             VectorStore vectorStore,
             ChatClient.Builder chatClientBuilder,
             @Value("classpath:/prompts/system-persona.st") Resource systemPersona,
             @Value("classpath:/prompts/follow-up-chat.st") Resource followUpChatTemplate
     ) {
-        this.ramenShopRepository = ramenShopRepository;
+        this.recommendationShopReader = recommendationShopReader;
         this.vectorStore = vectorStore;
         this.chatClient = chatClientBuilder.defaultSystem(systemPersona).build();
         this.followUpChatTemplate = followUpChatTemplate;
@@ -48,7 +47,7 @@ public class FollowUpChatService {
         validateChatRequest(request);
 
         String contextType = normalizeContextType(request.contextType());
-        List<RamenShop> shops = getRamenShops(request.shopIds());
+        List<RamenShop> shops = recommendationShopReader.getRamenShops(request.shopIds());
         List<Document> documents = collectChatDocuments(contextType, shops, request.messages());
 
         if (documents.isEmpty()) {
@@ -94,20 +93,10 @@ public class FollowUpChatService {
             throw new IllegalArgumentException("대화 메시지는 필수입니다.");
         }
 
-        if (request.messages().stream().anyMatch(message -> message == null || !hasText(message.content()))) {
+        if (request.messages().stream()
+                .anyMatch(message -> message == null || !recommendationShopReader.hasText(message.content()))) {
             throw new IllegalArgumentException("대화 메시지 내용은 필수입니다.");
         }
-    }
-
-    private List<RamenShop> getRamenShops(List<Long> shopIds) {
-        return shopIds.stream()
-                .map(this::getRamenShop)
-                .toList();
-    }
-
-    private RamenShop getRamenShop(Long shopId) {
-        return ramenShopRepository.findById(shopId)
-                .orElseThrow(() -> new IllegalArgumentException("라멘샵을 찾을 수 없습니다. id=" + shopId));
     }
 
     private List<Document> collectChatDocuments(
@@ -186,7 +175,7 @@ public class FollowUpChatService {
     }
 
     private AiChatResponse buildChatResponse(AiFollowUpChatResult aiResult) {
-        if (aiResult == null || !hasText(aiResult.content())) {
+        if (aiResult == null || !recommendationShopReader.hasText(aiResult.content())) {
             return fallbackResponse();
         }
 
@@ -220,9 +209,9 @@ public class FollowUpChatService {
             """.formatted(
                 shop.getId(),
                 shop.getName(),
-                shop.getAddress() == null ? "주소 정보 없음" : shop.getAddress().fullAddress(),
-                shop.getTags() == null || shop.getTags().isEmpty() ? "태그 정보 없음" : String.join(", ", shop.getTags()),
-                shop.getDescription() == null || shop.getDescription().isBlank() ? "설명 정보 없음" : shop.getDescription()
+                recommendationShopReader.addressTextOrDefault(shop),
+                recommendationShopReader.tagsTextOrDefault(shop),
+                recommendationShopReader.descriptionTextOrDefault(shop)
         );
     }
 
@@ -260,7 +249,7 @@ public class FollowUpChatService {
     }
 
     private String normalizeContextType(String contextType) {
-        if (!hasText(contextType)) {
+        if (!recommendationShopReader.hasText(contextType)) {
             return "";
         }
 
@@ -268,7 +257,7 @@ public class FollowUpChatService {
     }
 
     private String normalizeRole(String role) {
-        if (!hasText(role)) {
+        if (!recommendationShopReader.hasText(role)) {
             return "user";
         }
 
@@ -280,7 +269,4 @@ public class FollowUpChatService {
         return "user";
     }
 
-    private boolean hasText(String value) {
-        return value != null && !value.isBlank();
-    }
 }

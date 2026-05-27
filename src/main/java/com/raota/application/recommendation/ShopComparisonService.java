@@ -2,7 +2,6 @@ package com.raota.application.recommendation;
 
 import com.raota.application.recommendation.dto.AiShopComparisonResult;
 import com.raota.domain.ramenShop.model.RamenShop;
-import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.domain.recommendation.model.ComparisonScores;
 import com.raota.domain.retrieval.document.RetrievalDocumentType;
 import com.raota.domain.retrieval.document.RetrievalMetadataKeys;
@@ -23,19 +22,19 @@ import org.springframework.stereotype.Service;
 @Service
 public class ShopComparisonService {
 
-    private final RamenShopRepository ramenShopRepository;
+    private final RecommendationShopReader recommendationShopReader;
     private final ChatClient chatClient;
     private final Resource compareShopsTemplate;
     private final VectorStore vectorStore;
 
     public ShopComparisonService(
-            RamenShopRepository ramenShopRepository,
+            RecommendationShopReader recommendationShopReader,
             VectorStore vectorStore,
             ChatClient.Builder chatClientBuilder,
             @Value("classpath:/prompts/system-persona.st") Resource systemPersona,
             @Value("classpath:/prompts/compare-shops.st") Resource compareShopsTemplate
     ) {
-        this.ramenShopRepository = ramenShopRepository;
+        this.recommendationShopReader = recommendationShopReader;
         this.vectorStore = vectorStore;
         this.chatClient = chatClientBuilder.defaultSystem(systemPersona).build();
         this.compareShopsTemplate = compareShopsTemplate;
@@ -44,10 +43,10 @@ public class ShopComparisonService {
     public ShopComparisonResponse compareShops(ShopComparisonRequest request) {
         validateComparisonRequest(request);
 
-        RamenShop shopA = getRamenShop(request.shopAId());
-        RamenShop shopB = getRamenShop(request.shopBId());
+        RamenShop shopA = recommendationShopReader.getRamenShop(request.shopAId());
+        RamenShop shopB = recommendationShopReader.getRamenShop(request.shopBId());
 
-        String focus = normalizeFocus(request.focus());
+        String focus = recommendationShopReader.normalizeText(request.focus());
 
         List<Document> shopADocuments = collectComparisonDocuments(shopA, focus);
         List<Document> shopBDocuments = collectComparisonDocuments(shopB, focus);
@@ -80,11 +79,6 @@ public class ShopComparisonService {
         if (request.shopAId().equals(request.shopBId())) {
             throw new IllegalArgumentException("서로 다른 두 매장을 선택해야 합니다.");
         }
-    }
-
-    private RamenShop getRamenShop(Long shopId) {
-        return ramenShopRepository.findById(shopId)
-                .orElseThrow(() -> new IllegalArgumentException("라멘샵을 찾을 수 없습니다. id=" + shopId));
     }
 
     private ShopComparisonResponse buildComparisonResponse(
@@ -128,7 +122,8 @@ public class ShopComparisonService {
 
         List<ShopComparisonResponse.ComparisonNarrative> narratives = aiResult.narratives().stream()
                 .filter(Objects::nonNull)
-                .filter(narrative -> hasText(narrative.title()) && hasText(narrative.body()))
+                .filter(narrative -> recommendationShopReader.hasText(narrative.title())
+                        && recommendationShopReader.hasText(narrative.body()))
                 .map(narrative -> new ShopComparisonResponse.ComparisonNarrative(
                         narrative.title().trim(),
                         narrative.body().trim()
@@ -149,19 +144,8 @@ public class ShopComparisonService {
         ));
     }
 
-    private boolean hasText(String value) {
-        return value != null && !value.isBlank();
-    }
-
-    private String normalizeFocus(String focus) {
-        if (focus == null || focus.isBlank()) {
-            return "";
-        }
-        return focus.trim();
-    }
-
     private String buildComparisonQuery(RamenShop shop, String focus) {
-        if (focus != null && !focus.isBlank()) {
+        if (recommendationShopReader.hasText(focus)) {
             return "%s %s".formatted(shop.getName(), focus);
         }
 
@@ -204,9 +188,9 @@ public class ShopComparisonService {
             %s
             """.formatted(
                 shop.getName(),
-                shop.getAddress() == null ? "주소 정보 없음" : shop.getAddress().fullAddress(),
-                shop.getTags() == null || shop.getTags().isEmpty() ? "태그 정보 없음" : String.join(", ", shop.getTags()),
-                shop.getDescription() == null || shop.getDescription().isBlank() ? "설명 정보 없음" : shop.getDescription(),
+                recommendationShopReader.addressTextOrDefault(shop),
+                recommendationShopReader.tagsTextOrDefault(shop),
+                recommendationShopReader.descriptionTextOrDefault(shop),
                 documentContext
         );
     }
@@ -243,7 +227,7 @@ public class ShopComparisonService {
     ) {
         return chatClient.prompt()
                 .user(user -> user.text(compareShopsTemplate)
-                        .param("focus", focus == null || focus.isBlank() ? "전반적인 비교" : focus)
+                        .param("focus", recommendationShopReader.hasText(focus) ? focus : "전반적인 비교")
                         .param("contextA", contextA)
                         .param("contextB", contextB))
                 .call()
