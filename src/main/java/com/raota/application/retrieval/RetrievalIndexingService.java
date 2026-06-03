@@ -9,7 +9,6 @@ import com.raota.domain.retrieval.document.RetrievalDocumentType;
 import com.raota.domain.retrieval.document.RetrievalMetadataKeys;
 import com.raota.domain.retrieval.document.factory.PostReviewChunkDocumentFactory;
 import com.raota.domain.retrieval.document.factory.RamenShopProfileDocumentFactory;
-import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.document.Document;
@@ -31,14 +30,9 @@ public class RetrievalIndexingService {
 
     public void indexAllShops() {
         List<RamenShop> shops = ramenShopRepository.findAll();
-        List<Document> documents = new ArrayList<>();
 
         for (RamenShop shop : shops) {
-            documents.addAll(ramenShopProfileDocumentFactory.create(shop));
-        }
-
-        if (!documents.isEmpty()) {
-            vectorStore.add(documents);
+            addDocuments(ramenShopProfileDocumentFactory.create(shop));
         }
     }
 
@@ -46,10 +40,51 @@ public class RetrievalIndexingService {
         RamenShop shop = ramenShopRepository.findById(shopId)
                 .orElseThrow(() -> new IllegalArgumentException("라멘샵을 찾을 수 없습니다. id=" + shopId));
 
-        List<Document> documents = ramenShopProfileDocumentFactory.create(shop);
-        if (!documents.isEmpty()) {
-            vectorStore.add(documents);
+        addDocuments(ramenShopProfileDocumentFactory.create(shop));
+    }
+
+    public void deleteAllShops() {
+        FilterExpressionBuilder builder = new FilterExpressionBuilder();
+
+        var filter = builder.and(
+                builder.eq(
+                        RetrievalMetadataKeys.DOCUMENT_TYPE,
+                        RetrievalDocumentType.SHOP_PROFILE.name()
+                ),
+                builder.eq(
+                        RetrievalMetadataKeys.SOURCE,
+                        RetrievalDocumentSource.RAMEN_SHOP.name()
+                )
+        ).build();
+
+        vectorStore.delete(filter);
+    }
+
+    public void deleteShop(Long shopId) {
+        if (shopId == null) {
+            return;
         }
+
+        FilterExpressionBuilder builder = new FilterExpressionBuilder();
+
+        var filter = builder.and(
+                builder.and(
+                        builder.eq(
+                                RetrievalMetadataKeys.DOCUMENT_TYPE,
+                                RetrievalDocumentType.SHOP_PROFILE.name()
+                        ),
+                        builder.eq(
+                                RetrievalMetadataKeys.SOURCE,
+                                RetrievalDocumentSource.RAMEN_SHOP.name()
+                        )
+                ),
+                builder.eq(
+                        RetrievalMetadataKeys.SHOP_ID,
+                        String.valueOf(shopId)
+                )
+        ).build();
+
+        vectorStore.delete(filter);
     }
 
     public void indexPost(Long postId) {
@@ -63,9 +98,7 @@ public class RetrievalIndexingService {
         deletePost(postId);
 
         List<Document> documents = postReviewChunkDocumentFactory.create(post, shop);
-        if (!documents.isEmpty()) {
-            vectorStore.add(documents);
-        }
+        addDocuments(documents);
     }
 
     public void deletePost(Long postId) {
@@ -93,6 +126,16 @@ public class RetrievalIndexingService {
         ).build();
 
         vectorStore.delete(filter);
+    }
+
+    private void addDocuments(List<Document> documents) {
+        if (documents == null || documents.isEmpty()) {
+            return;
+        }
+
+        for (Document document : documents) {
+            vectorStore.add(List.of(document));
+        }
     }
 
 }

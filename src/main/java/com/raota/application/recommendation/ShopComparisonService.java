@@ -169,7 +169,7 @@ public class ShopComparisonService {
                 SearchRequest.builder()
                         .query(query)
                         .topK(8)
-                        .similarityThreshold(0.55)
+                        .similarityThreshold(0.3)
                         .filterExpression(filter)
                         .build()
         );

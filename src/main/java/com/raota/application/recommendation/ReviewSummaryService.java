@@ -201,7 +201,7 @@ public class ReviewSummaryService {
                 SearchRequest.builder()
                         .query(query)
                         .topK(12)
-                        .similarityThreshold(0.55)
+                        .similarityThreshold(0.45)
                         .filterExpression(filter)
                         .build()
         );

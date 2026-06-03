@@ -1,6 +1,7 @@
 package com.raota.infrastructure.vector;
 
 import com.zaxxer.hikari.HikariDataSource;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.oracle.OracleVectorStore;
@@ -27,7 +28,7 @@ public class VectorStoreConfig {
 
     @Bean
     public VectorStore vectorStore(
-            JdbcTemplate oracleVectorJdbcTemplate,
+            @Qualifier("oracleVectorJdbcTemplate") JdbcTemplate oracleVectorJdbcTemplate,
             EmbeddingModel embeddingModel,
             OracleVectorProperties properties
     ) {

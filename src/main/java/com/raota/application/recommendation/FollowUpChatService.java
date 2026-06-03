@@ -111,7 +111,7 @@ public class FollowUpChatService {
                 SearchRequest.builder()
                         .query(query)
                         .topK(10)
-                        .similarityThreshold(0.55)
+                        .similarityThreshold(0.4)
                         .filterExpression(buildChatFilter(builder, shops))
                         .build()
         );

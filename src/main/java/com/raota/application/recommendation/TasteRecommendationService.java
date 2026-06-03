@@ -3,6 +3,8 @@ package com.raota.application.recommendation;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.presentation.api.recommendation.request.TasteRecommendationRequest;
 import com.raota.presentation.api.recommendation.response.TasteRecommendationResponse;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -83,13 +85,31 @@ public class TasteRecommendationService {
     }
 
     private List<Document> searchRecommendedShops(String query) {
-        return vectorStore.similaritySearch(
+        List<Document> documents = vectorStore.similaritySearch(
                 SearchRequest.builder()
                         .query(query)
-                        .topK(4)
-                        .similarityThreshold(0.7)
+                        .topK(8)
+                        .similarityThreshold(0.35)
                         .build()
         );
+
+        if (documents == null || documents.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, Document> bestByShop = new LinkedHashMap<>();
+        for (Document document : documents) {
+            Long shopId = parseShopId(document.getMetadata().get("shopId"));
+            Document current = bestByShop.get(shopId);
+            if (current == null || document.getScore() > current.getScore()) {
+                bestByShop.put(shopId, document);
+            }
+        }
+
+        return bestByShop.values().stream()
+                .sorted(Comparator.comparingDouble(Document::getScore).reversed())
+                .limit(4)
+                .toList();
     }
 
     private String buildRecommendationContext(List<Document> searchResult) {
@@ -124,7 +144,7 @@ public class TasteRecommendationService {
             Document document,
             Map<String, String> aiReasons
     ) {
-        Long shopId = Long.valueOf(document.getMetadata().get("shopId").toString());
+        Long shopId = parseShopId(document.getMetadata().get("shopId"));
         RamenShop shop = recommendationShopReader.getRamenShop(shopId);
 
         return new TasteRecommendationResponse.RecommendedShopResponse(
@@ -137,5 +157,14 @@ public class TasteRecommendationService {
                 (int) (document.getScore() * 100),
                 false
         );
+    }
+
+    private Long parseShopId(Object rawShopId) {
+        if (rawShopId == null) {
+            throw new IllegalArgumentException("추천 결과에 shopId 메타데이터가 없습니다.");
+        }
+
+        String value = rawShopId.toString().trim().replace("\"", "");
+        return Long.valueOf(value);
     }
 }
