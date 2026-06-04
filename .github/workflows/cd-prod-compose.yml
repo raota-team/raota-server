@@ -76,6 +76,7 @@ jobs:
           fi
 
       - name: Dispatch infra deploy workflow
+        id: dispatch-infra-deploy
         env:
           INFRA_DISPATCH_TOKEN: ${{ secrets.INFRA_DISPATCH_TOKEN }}
           IMAGE_TAG: ${{ github.sha }}
@@ -85,6 +86,7 @@ jobs:
         run: |
           set -euo pipefail
 
+          dispatched_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           payload="$(printf '{"ref":"main","inputs":{"image_tag":"%s","deploy_mode":"%s","canary_host":"%s"}}' "${IMAGE_TAG}" "${DEPLOY_MODE}" "${CANARY_HOST}")"
 
           curl -fsSL \
@@ -94,3 +96,99 @@ jobs:
             -H "X-GitHub-Api-Version: 2022-11-28" \
             https://api.github.com/repos/raota-team/raota-infra/actions/workflows/deploy-prod-compose.yml/dispatches \
             -d "${payload}"
+
+          echo "dispatched_at=${dispatched_at}" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for infra deploy workflow
+        env:
+          INFRA_DISPATCH_TOKEN: ${{ secrets.INFRA_DISPATCH_TOKEN }}
+          DISPATCHED_AT: ${{ steps.dispatch-infra-deploy.outputs.dispatched_at }}
+          INFRA_REPOSITORY: raota-team/raota-infra
+          INFRA_WORKFLOW_FILE: deploy-prod-compose.yml
+          WAIT_TIMEOUT_SECONDS: 1800
+          POLL_INTERVAL_SECONDS: 15
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python3 <<'PY'
+          import datetime
+          import json
+          import os
+          import sys
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+
+          token = os.environ["INFRA_DISPATCH_TOKEN"]
+          repository = os.environ["INFRA_REPOSITORY"]
+          workflow_file = os.environ["INFRA_WORKFLOW_FILE"]
+          dispatched_at = datetime.datetime.fromisoformat(
+              os.environ["DISPATCHED_AT"].replace("Z", "+00:00")
+          )
+          timeout_seconds = int(os.environ["WAIT_TIMEOUT_SECONDS"])
+          poll_interval_seconds = int(os.environ["POLL_INTERVAL_SECONDS"])
+          deadline = time.monotonic() + timeout_seconds
+          run_id = None
+
+          headers = {
+              "Accept": "application/vnd.github+json",
+              "Authorization": f"Bearer {token}",
+              "X-GitHub-Api-Version": "2022-11-28",
+          }
+
+          def request_json(url):
+              request = urllib.request.Request(url, headers=headers)
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      return json.loads(response.read().decode("utf-8"))
+              except urllib.error.HTTPError as error:
+                  body = error.read().decode("utf-8", errors="replace")
+                  raise RuntimeError(f"GitHub API request failed: {error.code} {body}") from error
+
+          def parse_created_at(run):
+              return datetime.datetime.fromisoformat(run["created_at"].replace("Z", "+00:00"))
+
+          runs_url = (
+              f"https://api.github.com/repos/{repository}/actions/workflows/"
+              f"{urllib.parse.quote(workflow_file)}/runs"
+              "?event=workflow_dispatch&branch=main&per_page=20"
+          )
+
+          while time.monotonic() < deadline and run_id is None:
+              data = request_json(runs_url)
+              candidates = [
+                  run for run in data.get("workflow_runs", [])
+                  if parse_created_at(run) >= dispatched_at
+              ]
+              if candidates:
+                  candidates.sort(key=parse_created_at)
+                  run_id = candidates[0]["id"]
+                  print(f"Found infra deploy workflow run: {candidates[0]['html_url']}", flush=True)
+                  break
+
+              print("Waiting for infra deploy workflow run to be created...", flush=True)
+              time.sleep(poll_interval_seconds)
+
+          if run_id is None:
+              raise TimeoutError("Timed out waiting for infra deploy workflow run to be created.")
+
+          run_url = f"https://api.github.com/repos/{repository}/actions/runs/{run_id}"
+          while time.monotonic() < deadline:
+              run = request_json(run_url)
+              status = run.get("status")
+              conclusion = run.get("conclusion")
+              html_url = run.get("html_url")
+
+              print(f"Infra deploy status: status={status}, conclusion={conclusion}, url={html_url}", flush=True)
+
+              if status == "completed":
+                  if conclusion == "success":
+                      sys.exit(0)
+                  raise RuntimeError(f"Infra deploy workflow failed with conclusion={conclusion}: {html_url}")
+
+              time.sleep(poll_interval_seconds)
+
+          raise TimeoutError("Timed out waiting for infra deploy workflow to complete.")
+          PY
