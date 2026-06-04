@@ -128,7 +128,10 @@ public class FollowUpChatService {
 
         var documentTypeFilter = builder.or(
                 builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.SHOP_PROFILE.name()),
-                builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.REVIEW_CHUNK.name())
+                builder.or(
+                        builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.REVIEW_CHUNK.name()),
+                        builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.EXTERNAL_REVIEW_CHUNK.name())
+                )
         );
 
         return builder.and(shopFilter, documentTypeFilter).build();

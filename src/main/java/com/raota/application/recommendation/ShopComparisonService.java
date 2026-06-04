@@ -161,7 +161,10 @@ public class ShopComparisonService {
                 builder.eq(RetrievalMetadataKeys.SHOP_ID, String.valueOf(shop.getId())),
                 builder.or(
                         builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.SHOP_PROFILE.name()),
-                        builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.REVIEW_CHUNK.name())
+                        builder.or(
+                                builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.REVIEW_CHUNK.name()),
+                                builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.EXTERNAL_REVIEW_CHUNK.name())
+                        )
                 )
         ).build();
 

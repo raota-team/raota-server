@@ -194,7 +194,10 @@ public class ReviewSummaryService {
 
         var filter = builder.and(
                 builder.eq(RetrievalMetadataKeys.SHOP_ID, String.valueOf(shop.getId())),
-                builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.REVIEW_CHUNK.name())
+                builder.or(
+                        builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.REVIEW_CHUNK.name()),
+                        builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.EXTERNAL_REVIEW_CHUNK.name())
+                )
         ).build();
 
         return vectorStore.similaritySearch(

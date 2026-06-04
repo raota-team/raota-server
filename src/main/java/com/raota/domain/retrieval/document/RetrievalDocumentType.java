@@ -4,5 +4,6 @@ public enum RetrievalDocumentType {
 
     SHOP_PROFILE,
     SHOP_FACT,
-    REVIEW_CHUNK
+    REVIEW_CHUNK,
+    EXTERNAL_REVIEW_CHUNK
 }
