@@ -98,6 +98,11 @@ logging:
   level:
     org.hibernate.SQL: info
     org.hibernate.type.descriptor.sql.BasicBinder: trace
+    io.lettuce.core: ${LOGGING_LEVEL_IO_LETTUCE_CORE:INFO}
+    io.lettuce.core.protocol: ${LOGGING_LEVEL_IO_LETTUCE_PROTOCOL:INFO}
+    org.springframework.data.redis: ${LOGGING_LEVEL_SPRING_DATA_REDIS:INFO}
+    org.springframework.data.redis.connection.lettuce: ${LOGGING_LEVEL_SPRING_DATA_REDIS_LETTUCE:INFO}
+    org.springframework.data.redis.stream: ${LOGGING_LEVEL_SPRING_DATA_REDIS_STREAM:INFO}
   discord:
     webhook-url: ${DISCORD_WEBHOOK_URL:none}
 

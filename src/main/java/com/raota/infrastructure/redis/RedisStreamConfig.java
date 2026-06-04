@@ -23,6 +23,7 @@ public class RedisStreamConfig {
 
     private final RedisConnectionFactory redisConnectionFactory;
     private final PostIndexingStreamListener postIndexingStreamListener;
+    private final RedisStreamErrorHandler redisStreamErrorHandler;
     private final StringRedisTemplate stringRedisTemplate;
 
     private static final String CONSUMER_GROUP = "raota-retrieval-group";
@@ -35,6 +36,7 @@ public class RedisStreamConfig {
         StreamMessageListenerContainer.StreamMessageListenerContainerOptions<String, MapRecord<String, String, String>> options =
                 StreamMessageListenerContainer.StreamMessageListenerContainerOptions.builder()
                         .pollTimeout(Duration.ofSeconds(1))
+                        .errorHandler(redisStreamErrorHandler)
                         .build();
 
         StreamMessageListenerContainer<String, MapRecord<String, String, String>> listenerContainer =
@@ -46,6 +48,8 @@ public class RedisStreamConfig {
                 postIndexingStreamListener
         );
 
+        log.info("Redis Stream listener started. streamKey={}, consumerGroup={}, consumerName={}, pollTimeoutSeconds={}",
+                MessagingTopics.POST_INDEXING, CONSUMER_GROUP, CONSUMER_NAME, 1);
         listenerContainer.start();
         return subscription;
     }

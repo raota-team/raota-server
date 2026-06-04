@@ -20,15 +20,24 @@ public class PostIndexingStreamListener implements StreamListener<String, MapRec
 
     @Override
     public void onMessage(MapRecord<String, String, String> message) {
+        long startedAt = System.currentTimeMillis();
+        String messageId = message.getId().getValue();
         String jsonPayload = message.getValue().get("payload");
-
         PostIndexingEvent event = redisObjectmapper.readValue(jsonPayload, PostIndexingEvent.class);
 
-        log.info("비동기 게시글 인덱싱 시작: postId={}, action={}", event.postId(), event.action());
-        switch (event.action()) {
-            case UPSERT -> retrievalIndexingService.indexPost(event.postId());
-            case DELETE -> retrievalIndexingService.deletePost(event.postId());
+        try {
+            log.info("비동기 게시글 인덱싱 시작: messageId={}, postId={}, action={}",
+                    messageId, event.postId(), event.action());
+            switch (event.action()) {
+                case UPSERT -> retrievalIndexingService.indexPost(event.postId());
+                case DELETE -> retrievalIndexingService.deletePost(event.postId());
+            }
+            log.info("비동기 게시글 인덱싱 완료: messageId={}, postId={}, action={}, durationMs={}",
+                    messageId, event.postId(), event.action(), System.currentTimeMillis() - startedAt);
+        } catch (Exception e) {
+            log.error("비동기 게시글 인덱싱 실패: messageId={}, postId={}, action={}, durationMs={}, payload={}",
+                    messageId, event.postId(), event.action(), System.currentTimeMillis() - startedAt, jsonPayload, e);
+            throw e;
         }
-        log.info("비동기 게시글 인덱싱 완료: postId={}, action={}", event.postId(), event.action());
     }
 }
