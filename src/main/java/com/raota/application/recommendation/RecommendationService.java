@@ -14,6 +14,7 @@ public class RecommendationService {
     private final ReviewSummaryService reviewSummaryService;
     private final FollowUpChatService followUpChatService;
 
+    // Recommendation API의 진입점으로, 세부 AI 유스케이스를 각 전용 서비스에 위임한다.
     public TasteRecommendationResponse recommendByTaste(TasteRecommendationRequest request) {
         return tasteRecommendationService.recommendByTaste(request);
     }

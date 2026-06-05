@@ -28,6 +28,7 @@ public class RetrievalIndexingService {
     private final PostReviewChunkDocumentFactory postReviewChunkDocumentFactory;
     private final VectorStore vectorStore;
 
+    // 라멘집 기본 정보 문서를 벡터스토어에 적재해 추천/비교/채팅의 검색 기반으로 사용한다.
     public void indexAllShops() {
         List<RamenShop> shops = ramenShopRepository.findAll();
 
@@ -95,6 +96,7 @@ public class RetrievalIndexingService {
                 ? null
                 : ramenShopRepository.findById(post.getRamenShopId()).orElse(null);
 
+        // 게시글은 기존 청크를 먼저 지운 뒤 다시 생성해야 수정 사항이 벡터 검색에 반영된다.
         deletePost(postId);
 
         List<Document> documents = postReviewChunkDocumentFactory.create(post, shop);
@@ -133,6 +135,7 @@ public class RetrievalIndexingService {
             return;
         }
 
+        // 각 문서는 임베딩 생성 후 VectorStore에 저장되며 이후 similaritySearch의 검색 대상이 된다.
         for (Document document : documents) {
             vectorStore.add(List.of(document));
         }

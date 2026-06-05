@@ -40,6 +40,7 @@ public class PostReviewChunkDocumentFactory implements RetrievalDocumentFactory<
         Map<String, Object> metadata = buildMetadata(post, shop);
         Document document = new Document(content, metadata);
 
+        // 긴 리뷰는 청크로 분할해 임베딩 검색 시 관련 구간만 더 정확히 찾을 수 있게 한다.
         List<Document> splitDocuments = tokenTextSplitter.split(document);
 
         return IntStream.range(0, splitDocuments.size())

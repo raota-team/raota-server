@@ -32,6 +32,7 @@ public class VectorStoreConfig {
             EmbeddingModel embeddingModel,
             OracleVectorProperties properties
     ) {
+        // Spring AI의 EmbeddingModel과 Oracle Vector Store를 연결해 RAG 검색 저장소를 구성한다.
         return OracleVectorStore.builder(oracleVectorJdbcTemplate, embeddingModel)
                 .indexType(parseIndexType(properties.indexType()))
                 .distanceType(parseDistanceType(properties.distanceType()))

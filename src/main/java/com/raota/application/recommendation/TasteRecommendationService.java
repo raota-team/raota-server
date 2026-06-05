@@ -43,8 +43,10 @@ public class TasteRecommendationService {
     public TasteRecommendationResponse recommendByTaste(TasteRecommendationRequest request) {
         validateTasteRecommendationRequest(request);
 
+        // 사용자 취향을 하나의 검색 질의로 합쳐 벡터 검색에 사용한다.
         String query = buildTasteQuery(request);
         List<Document> searchResult = searchRecommendedShops(query);
+        // 검색된 문서를 LLM 프롬프트용 문맥으로 변환해 매장별 추천 사유를 생성한다.
         String context = buildRecommendationContext(searchResult);
         Map<String, String> aiReasons = generateRecommendationReasons(query, context);
 
@@ -97,6 +99,7 @@ public class TasteRecommendationService {
             return List.of();
         }
 
+        // 같은 매장이 여러 문서로 검색될 수 있어, 점수가 가장 높은 문서만 대표로 남긴다.
         Map<Long, Document> bestByShop = new LinkedHashMap<>();
         for (Document document : documents) {
             Long shopId = parseShopId(document.getMetadata().get("shopId"));

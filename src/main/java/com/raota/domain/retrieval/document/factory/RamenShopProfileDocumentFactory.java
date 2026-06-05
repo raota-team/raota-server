@@ -26,6 +26,7 @@ public class RamenShopProfileDocumentFactory implements RetrievalDocumentFactory
         List<String> menuNames = extractMenuNames(shop);
         List<String> tags = shop.getTags() == null ? List.of() : List.copyOf(shop.getTags());
 
+        // 매장 구조화 데이터를 자연어 문서로 바꿔 벡터 검색에 잘 걸리도록 만든다.
         String content = """
                 %s는 %s에 위치한 라멘집이다.
                 대표 메뉴는 %s이다.
@@ -45,6 +46,7 @@ public class RamenShopProfileDocumentFactory implements RetrievalDocumentFactory
         );
 
         Map<String, Object> metadata = new HashMap<>();
+        // 검색 후 필터링과 후처리에 필요한 식별 정보는 메타데이터로 함께 저장한다.
         metadata.put(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.SHOP_PROFILE.name());
         metadata.put(RetrievalMetadataKeys.SOURCE, RetrievalDocumentSource.RAMEN_SHOP.name());
         metadata.put(RetrievalMetadataKeys.SOURCE_ID, String.valueOf(shop.getId()));

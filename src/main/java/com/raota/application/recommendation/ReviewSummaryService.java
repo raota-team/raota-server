@@ -46,6 +46,7 @@ public class ReviewSummaryService {
         RamenShop ramenShop = recommendationShopReader.getRamenShop(request.shopId());
         String focus = recommendationShopReader.normalizeText(request.focus());
 
+        // 특정 매장의 리뷰 청크만 벡터 검색으로 모아 요약 근거 문서를 만든다.
         List<Document> reviewDocuments = collectReviewDocuments(ramenShop, focus);
 
         if (hasInsufficientReviewDocuments(reviewDocuments)) {
@@ -192,6 +193,7 @@ public class ReviewSummaryService {
 
         FilterExpressionBuilder builder = new FilterExpressionBuilder();
 
+        // 리뷰 요약은 해당 매장의 리뷰 문서만 검색해야 하므로 shopId와 문서 타입을 함께 고정한다.
         var filter = builder.and(
                 builder.eq(RetrievalMetadataKeys.SHOP_ID, String.valueOf(shop.getId())),
                 builder.or(
@@ -227,6 +229,7 @@ public class ReviewSummaryService {
             RamenShop shop,
             List<Document> reviewDocuments
     ) {
+        // 검색된 리뷰 문맥과 매장 정보를 프롬프트에 주입해 구조화된 요약 결과를 받는다.
         return chatClient.prompt()
                 .user(user -> user.text(reviewSummaryTemplate)
                         .param("focus", recommendationShopReader.hasText(focus) ? focus : "전반적인 리뷰 요약")

@@ -48,6 +48,7 @@ public class ShopComparisonService {
 
         String focus = recommendationShopReader.normalizeText(request.focus());
 
+        // 두 매장을 각각 독립적으로 검색해 비교 근거 문서를 확보한다.
         List<Document> shopADocuments = collectComparisonDocuments(shopA, focus);
         List<Document> shopBDocuments = collectComparisonDocuments(shopB, focus);
 
@@ -157,6 +158,7 @@ public class ShopComparisonService {
 
         FilterExpressionBuilder builder = new FilterExpressionBuilder();
 
+        // 비교는 매장 프로필과 리뷰 문서를 함께 쓰되, 대상 매장의 문서만 검색하도록 제한한다.
         var filter = builder.and(
                 builder.eq(RetrievalMetadataKeys.SHOP_ID, String.valueOf(shop.getId())),
                 builder.or(
@@ -228,6 +230,7 @@ public class ShopComparisonService {
             String contextA,
             String contextB
     ) {
+        // 매장별 문맥을 분리해서 전달하고, LLM이 점수와 서술형 비교 결과를 함께 생성하게 한다.
         return chatClient.prompt()
                 .user(user -> user.text(compareShopsTemplate)
                         .param("focus", recommendationShopReader.hasText(focus) ? focus : "전반적인 비교")

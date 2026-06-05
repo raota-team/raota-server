@@ -48,6 +48,7 @@ public class FollowUpChatService {
 
         String contextType = normalizeContextType(request.contextType());
         List<RamenShop> shops = recommendationShopReader.getRamenShops(request.shopIds());
+        // 이전 추천/비교 맥락을 이어가기 위해 최근 대화와 연관 매장 문서를 함께 검색한다.
         List<Document> documents = collectChatDocuments(contextType, shops, request.messages());
 
         if (documents.isEmpty()) {
@@ -167,6 +168,7 @@ public class FollowUpChatService {
             List<Document> documents,
             List<AiChatRequest.ChatMessage> messages
     ) {
+        // 최종 답변 생성 시 매장 정보, 검색 문서, 최근 대화를 모두 LLM 입력 문맥으로 합친다.
         return chatClient.prompt()
                 .user(user -> user.text(followUpChatTemplate)
                         .param("contextType", contextType)
