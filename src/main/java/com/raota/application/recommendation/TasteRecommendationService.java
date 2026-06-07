@@ -1,6 +1,7 @@
 package com.raota.application.recommendation;
 
 import com.raota.domain.ramenShop.model.RamenShop;
+import com.raota.infrastructure.file.FileUploader;
 import com.raota.presentation.api.recommendation.request.TasteRecommendationRequest;
 import com.raota.presentation.api.recommendation.response.TasteRecommendationResponse;
 import java.util.Comparator;
@@ -23,12 +24,14 @@ public class TasteRecommendationService {
     private final ChatClient chatClient;
     private final VectorStore vectorStore;
     private final RecommendationShopReader recommendationShopReader;
+    private final FileUploader fileUploader;
     private final Resource recommendationReasonTemplate;
 
     public TasteRecommendationService(
             ChatClient.Builder chatClientBuilder,
             VectorStore vectorStore,
             RecommendationShopReader recommendationShopReader,
+            FileUploader fileUploader,
             @Value("classpath:/prompts/system-persona.st") Resource systemPersona,
             @Value("classpath:/prompts/taste-recommendation-reason.st") Resource recommendationReasonTemplate
     ) {
@@ -37,6 +40,7 @@ public class TasteRecommendationService {
                 .build();
         this.vectorStore = vectorStore;
         this.recommendationShopReader = recommendationShopReader;
+        this.fileUploader = fileUploader;
         this.recommendationReasonTemplate = recommendationReasonTemplate;
     }
 
@@ -153,7 +157,7 @@ public class TasteRecommendationService {
                 recommendationShopReader.primaryTag(shop),
                 recommendationShopReader.addressText(shop),
                 aiReasons.getOrDefault(String.valueOf(shopId), "취향에 맞는 추천 매장입니다."),
-                shop.getImageUrl(),
+                fileUploader.getAccessibleUrl(shop.getImageUrl()),
                 (int) (document.getScore() * 100),
                 false
         );

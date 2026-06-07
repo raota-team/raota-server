@@ -6,5 +6,6 @@ public enum RetrievalDocumentSource {
     COMMUNITY_POST,
     COMMUNITY_COMMENT,
     PROOF_PICTURE,
-    NAVER_REVIEW
+    NAVER_REVIEW,
+    CATCHTABLE
 }

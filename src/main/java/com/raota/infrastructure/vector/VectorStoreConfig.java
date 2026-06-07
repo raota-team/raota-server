@@ -23,6 +23,7 @@ public class VectorStoreConfig {
         dataSource.setUsername(properties.username());
         dataSource.setPassword(properties.password());
         dataSource.setDriverClassName(properties.driverClassName());
+        dataSource.setConnectionInitSql("ALTER SESSION DISABLE PARALLEL DML");
         return new JdbcTemplate(dataSource);
     }
 

@@ -4,6 +4,7 @@ import com.raota.application.recommendation.dto.AiReviewSummaryResult;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.retrieval.document.RetrievalDocumentType;
 import com.raota.domain.retrieval.document.RetrievalMetadataKeys;
+import com.raota.infrastructure.file.FileUploader;
 import com.raota.presentation.api.recommendation.request.ReviewSummaryRequest;
 import com.raota.presentation.api.recommendation.response.ReviewSummaryResponse;
 import java.util.List;
@@ -25,18 +26,21 @@ public class ReviewSummaryService {
     private final RecommendationShopReader recommendationShopReader;
     private final VectorStore vectorStore;
     private final ChatClient chatClient;
+    private final FileUploader fileUploader;
     private final Resource reviewSummaryTemplate;
 
     public ReviewSummaryService(
             RecommendationShopReader recommendationShopReader,
             VectorStore vectorStore,
             ChatClient.Builder chatClientBuilder,
+            FileUploader fileUploader,
             @Value("classpath:/prompts/system-persona.st") Resource systemPersona,
             @Value("classpath:/prompts/review-summary.st") Resource reviewSummaryTemplate
     ) {
         this.recommendationShopReader = recommendationShopReader;
         this.vectorStore = vectorStore;
         this.chatClient = chatClientBuilder.defaultSystem(systemPersona).build();
+        this.fileUploader = fileUploader;
         this.reviewSummaryTemplate = reviewSummaryTemplate;
     }
 
@@ -95,7 +99,7 @@ public class ReviewSummaryService {
                 shop.getName(),
                 recommendationShopReader.primaryTag(shop),
                 recommendationShopReader.addressText(shop),
-                shop.getImageUrl(),
+                fileUploader.getAccessibleUrl(shop.getImageUrl()),
                 false
         );
     }

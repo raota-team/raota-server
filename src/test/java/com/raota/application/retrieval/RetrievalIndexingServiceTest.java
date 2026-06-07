@@ -16,8 +16,10 @@ import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.document.Document;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.Filter;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 class RetrievalIndexingServiceTest {
 
@@ -29,7 +31,7 @@ class RetrievalIndexingServiceTest {
         PostReviewChunkDocumentFactory postFactory = mock(PostReviewChunkDocumentFactory.class);
         VectorStore vectorStore = mock(VectorStore.class);
 
-        RetrievalIndexingService service = new RetrievalIndexingService(
+        RetrievalIndexingService service = createService(
                 ramenShopRepository,
                 shopFactory,
                 postRepository,
@@ -57,7 +59,7 @@ class RetrievalIndexingServiceTest {
         PostReviewChunkDocumentFactory postFactory = mock(PostReviewChunkDocumentFactory.class);
         VectorStore vectorStore = mock(VectorStore.class);
 
-        RetrievalIndexingService service = new RetrievalIndexingService(
+        RetrievalIndexingService service = createService(
                 ramenShopRepository,
                 shopFactory,
                 postRepository,
@@ -78,7 +80,7 @@ class RetrievalIndexingServiceTest {
         PostReviewChunkDocumentFactory postFactory = mock(PostReviewChunkDocumentFactory.class);
         VectorStore vectorStore = mock(VectorStore.class);
 
-        RetrievalIndexingService service = new RetrievalIndexingService(
+        RetrievalIndexingService service = createService(
                 ramenShopRepository,
                 shopFactory,
                 postRepository,
@@ -89,5 +91,23 @@ class RetrievalIndexingServiceTest {
         service.deletePost(null);
 
         verifyNoInteractions(vectorStore);
+    }
+
+    private RetrievalIndexingService createService(
+            RamenShopRepository ramenShopRepository,
+            RamenShopProfileDocumentFactory shopFactory,
+            PostRepository postRepository,
+            PostReviewChunkDocumentFactory postFactory,
+            VectorStore vectorStore
+    ) {
+        return new RetrievalIndexingService(
+                ramenShopRepository,
+                shopFactory,
+                postRepository,
+                postFactory,
+                vectorStore,
+                mock(EmbeddingModel.class),
+                mock(JdbcTemplate.class)
+        );
     }
 }

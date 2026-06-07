@@ -69,7 +69,15 @@ public class MemberInfoService {
     }
 
     public Page<VisitSummaryResponse> getMyVisits(Long memberId,Pageable pageable) {
-        return memberRepository.findMyVisitRestaurant(memberId,pageable);
+        return memberRepository.findMyVisitRestaurant(memberId,pageable)
+                .map(visit -> new VisitSummaryResponse(
+                        visit.restaurant_id(),
+                        visit.restaurant_name(),
+                        fileUploader.getAccessibleUrl(visit.restaurant_image_url()),
+                        visit.simple_address(),
+                        visit.visit_count_for_user(),
+                        visit.last_visited_at()
+                ));
     }
 
     public Page<com.raota.presentation.api.community.response.CommunityPostCardResponse> getMyPosts(Long memberId, Pageable pageable) {
