@@ -99,17 +99,6 @@ src/main/java/com/raota
 └── infrastructure# 인증, Redis, 파일 업로드, 캐시, 벡터 검색, 외부 연동
 ```
 
-## 시작하기
-
-### 요구 사항
-
-- Java 25
-- Docker 또는 로컬 MySQL/Redis
-- OAuth2 Client 정보: Google, Kakao
-- AI 기능 사용 시 Groq API Key, OpenAI API Key
-- 이미지 업로드 사용 시 OCI Object Storage 또는 Cloudinary 설정
-
-
 ## 배포
 
 `main` 브랜치에 push되면 GitHub Actions가 다음 순서로 운영 배포를 진행합니다.
@@ -132,6 +121,6 @@ src/main/java/com/raota
 
 | Backend |
 | :---: |
-| Raota Team |
-| [raota-team](https://github.com/raota-team) |
+| 박희태 |
+|<img width="200" height="200" alt="image" src="https://github.com/user-attachments/assets/48ace07a-44a2-4477-a79e-af255dc204ff" />
 
