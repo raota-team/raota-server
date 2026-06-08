@@ -1,65 +1,150 @@
-# 🍜 라오타 (Raota) - 라멘 맛집 커뮤니티 플랫폼
+# Raota Server
 
-> **"당신의 인생 라멘을 찾고, 기록하고, 공유하세요."**
-> 라오타는 라멘 매니아들을 위한 맛집 정보 공유 및 커뮤니티 플랫폼입니다.
+> 라멘 맛집을 찾고, 기록하고, 공유하는 커뮤니티 플랫폼 **라오타**의 백엔드 서버입니다.
 
----
+![Java](https://img.shields.io/badge/Java-25-007396?style=flat-square&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.2-6DB33F?style=flat-square&logo=springboot&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat-square&logo=mysql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-cache%20%7C%20token-DC382D?style=flat-square&logo=redis&logoColor=white)
+![Flyway](https://img.shields.io/badge/Flyway-migration-CC0200?style=flat-square&logo=flyway&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=flat-square&logo=docker&logoColor=white)
 
-## ✨ 페이지별 주요 기능
+## 소개
 
-### 🏠 홈 및 탐색 (Home & Search)
-- **스마트 검색**: 지역별 필터링과 키워드 검색을 통해 원하는 라멘집을 빠르게 찾을 수 있습니다.
-- **트렌드 탐색**: 현재 인기 있는 라멘집과 기간 한정 이벤트 메뉴를 홈 화면에서 바로 확인하세요.
+Raota Server는 라멘 매장 정보, 방문 인증샷, 메뉴 투표, 북마크, 커뮤니티, 회원 활동, AI 추천 기능을 제공하는 Spring Boot 기반 REST API 서버입니다.
 
-### 🍜 라멘 가게 상세 (Shop Detail)
-- **종합 정보**: 가게의 기본 정보(영업시간, 주소)와 전체 메뉴판을 한눈에 조회합니다.
-- **메뉴 투표**: "이 집에서 꼭 먹어야 할 메뉴"에 직접 투표하여 맛집 가이드를 함께 만듭니다. (1인 1표 원칙)
-- **인증샷 갤러리**: 사용자들이 직접 올린 생생한 방문 인증샷을 확인하고, 나만의 방문 기록을 남길 수 있습니다.
-- **북마크 & 제보**: 마음에 드는 가게를 '찜'해두고, 정보가 틀렸을 경우(폐업, 시간 변경 등) 즉시 제보하여 데이터 정합성을 유지합니다.
+주요 기능은 다음과 같습니다.
 
-### 💬 커뮤니티 (Community)
-- **소통의 장**: 라멘에 대한 정보와 일상을 공유하는 자유 게시판을 운영합니다.
-- **스레드 댓글**: 깊이 있는 대화를 위해 계층형 댓글(Reply) 기능을 지원합니다.
-- **활동 연동**: 글과 댓글 작성 시 사용자의 활동 통계가 실시간으로 반영됩니다.
+- 라멘 매장 목록/상세 조회, 북마크, 정보 오류 제보
+- 라멘 매장별 메뉴 투표와 투표 현황 조회
+- 방문 인증샷 등록/조회/삭제 및 업로드 티켓 발급
+- 커뮤니티 게시글, 좋아요, 스레드 댓글
+- OAuth2 기반 소셜 로그인과 JWT Access/Refresh Token 인증
+- 마이페이지 활동 내역 조회
+- AI 기반 취향 추천, 매장 비교, 리뷰 요약, 후속 채팅
+- 관리자용 라멘 매장 CRUD 및 검색/RAG 인덱싱 API
 
-### 👤 마이페이지 (My Page)
-- **활동 로그**: 내가 쓴 글, 작성한 댓글, 찜한 가게 목록을 한곳에서 관리합니다.
-- **개인 통계**: 나의 라멘 탐방 기록(인증샷 수, 커뮤니티 활동 등)을 시각화하여 제공합니다.
+## APIs
 
----
+실행 후 Swagger UI에서 상세한 API 스펙을 확인할 수 있습니다.
 
-## 🏗 아키텍처 및 기술적 특징
+- Swagger UI: `http://localhost:8080/swagger-ui/index.html`
+- OpenAPI Docs: `http://localhost:8080/v3/api-docs`
+- Health Check: `http://localhost:8080/actuator/health`
 
-라오타는 확장성과 유지보수성을 최우선으로 고려하여 설계되었습니다.
+### API 요약
 
-### 🧩 도메인 주도 설계 (DDD)
-- **Bounded Context**: `Member`, `RamenShop`, `Community`, `Auth` 등 도메인별로 명확한 경계를 설정하여 결합도를 낮췄습니다.
-- **Rich Domain Model**: 비즈니스 로직을 엔티티와 도메인 객체에 응집시켜 서비스 레이어의 비대화를 방지했습니다.
+| Domain | Method | Endpoint | Description |
+| --- | --- | --- | --- |
+| Auth | `POST` | `/auth/refresh` | Access Token 재발급 |
+| Auth | `POST` | `/auth/logout` | Refresh Token 폐기 및 로그아웃 |
+| Ramen Shop | `GET` | `/ramen-shops` | 라멘 매장 목록 검색 |
+| Ramen Shop | `GET` | `/ramen-shops/{shopId}` | 라멘 매장 상세 조회 |
+| Ramen Shop | `POST` | `/ramen-shops/{shopId}/bookmark` | 북마크 토글 |
+| Ramen Shop | `POST` | `/ramen-shops/{shopId}/reports` | 매장 정보 오류 제보 |
+| Menu Vote | `GET` | `/ramen-shops/{shopId}/votes` | 메뉴 투표 현황 조회 |
+| Menu Vote | `POST` | `/ramen-shops/{shopId}/votes/menus/{menuId}` | 메뉴 투표/변경/취소 |
+| Photo | `POST` | `/ramen-shops/{shopId}/photos` | 인증샷 등록 |
+| Photo | `GET` | `/ramen-shops/{shopId}/photos` | 인증샷 목록 조회 |
+| File | `GET` | `/files/upload-ticket` | 업로드 티켓 발급 |
+| Community | `GET` | `/community/posts` | 게시글 목록 조회 |
+| Community | `POST` | `/community/posts` | 게시글 작성 |
+| Community | `POST` | `/community/posts/{postId}/likes` | 게시글 좋아요 토글 |
+| Comment | `GET` | `/community/posts/{postId}/comments` | 댓글 스레드 조회 |
+| Member | `GET` | `/users/me/profile` | 내 프로필 조회 |
+| Recommendation | `POST` | `/recommendations/taste` | 취향 기반 매장 추천 |
+| Recommendation | `POST` | `/recommendations/compare` | 매장 비교 |
+| Admin | `GET` | `/admin/ramen-shops` | 관리자 매장 관리 화면 |
+| Admin API | `POST` | `/admin/api/retrieval/shops/reindex` | 매장 검색 문서 재색인 |
 
-### ⚡ CQRS (Command-Query Responsibility Segregation)
-- **물리적 분리**: 상태를 변경하는 `Command`는 **JPA**를, 복잡한 조회와 성능이 중요한 `Query`는 **JOOQ**를 사용하여 효율을 극대화했습니다.
-- **성능 최적화**: 다중 조인 및 페이징 처리를 JOOQ를 통해 타입 안정성을 확보하며 최적화된 SQL로 실행합니다.
+## 기술 스택
 
-### 🔐 보안 및 인프라 (Security & Infrastructure)
-- **OAuth2 & JWT**: Google, Kakao 소셜 로그인을 지원하며, Access/Refresh Token 로테이션 정책으로 보안을 강화했습니다.
-- **Redis Cache**: Refresh Token 저장 및 캐싱을 위해 Redis를 활용하여 빠른 인증 처리를 지원합니다.
-- **Object Storage**: S3 호환 API(OCI/AWS)를 사용하여 고성능 이미지 업로드 및 Presigned URL 기반의 안전한 파일 관리를 수행합니다.
+### Back-end
 
----
+![Java](https://img.shields.io/badge/Java-25-007396?style=for-the-badge&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.2-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
+![Spring Security](https://img.shields.io/badge/Spring%20Security-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white)
+![Spring AI](https://img.shields.io/badge/Spring%20AI-2.0.0--M6-6DB33F?style=for-the-badge&logo=spring&logoColor=white)
+![JPA](https://img.shields.io/badge/JPA-Hibernate-59666C?style=for-the-badge&logo=hibernate&logoColor=white)
 
-## 🛠 기술 스택
-- **Language**: Java 25
-- **Framework**: Spring Boot 4.0.2, Spring Security
-- **Database**: MySQL, Redis, Flyway
-- **Persistence**: JPA (Hibernate), JOOQ
-- **Test**: JUnit 5, AssertJ, RestAssured, Testcontainers
-- **Cloud**: Oracle Cloud Infrastructure (OCI), GitHub Actions
+### Database & Infra
 
----
+![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+![Flyway](https://img.shields.io/badge/Flyway-CC0200?style=for-the-badge&logo=flyway&logoColor=white)
+![Oracle Cloud](https://img.shields.io/badge/Oracle%20Cloud-F80000?style=for-the-badge&logo=oracle&logoColor=white)
+![Cloudinary](https://img.shields.io/badge/Cloudinary-3448C5?style=for-the-badge&logo=cloudinary&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
-## 🛠 주요 실행 명령어
-- **빌드**: `./gradlew build`
-- **테스트**: `./gradlew test`
-- **실행**: `./gradlew bootRun`
+### Test & Tools
 
-*문서 최종 수정일: 2026-04-14*
+![JUnit5](https://img.shields.io/badge/JUnit5-25A162?style=for-the-badge&logo=junit5&logoColor=white)
+![Testcontainers](https://img.shields.io/badge/Testcontainers-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![RestAssured](https://img.shields.io/badge/RestAssured-6.0.0-6DB33F?style=for-the-badge)
+![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)
+
+## 프로젝트 아키텍처
+
+```mermaid
+flowchart TB
+    Client["Client / Front-end"] --> API["Presentation Layer<br/>REST Controller / Admin MVC"]
+    API --> App["Application Layer<br/>UseCase Service"]
+    App --> Domain["Domain Layer<br/>Entity / Domain Policy"]
+    App --> Infra["Infrastructure Layer"]
+
+    Infra --> MySQL[("MySQL<br/>Main Database")]
+    Infra --> Redis[("Redis<br/>Refresh Token / Cache / Stream")]
+    Infra --> Storage["S3-compatible Storage / Cloudinary"]
+    Infra --> Vector[("Oracle Vector Store")]
+    Infra --> AI["Groq Chat / OpenAI Embedding"]
+
+    App --> Flyway["Flyway Migration"]
+    API --> Swagger["Springdoc OpenAPI"]
+```
+
+### 패키지 구조
+
+```text
+src/main/java/com/raota
+├── presentation  # REST API, Admin Controller, 공통 응답/예외 처리
+├── application   # 유스케이스 서비스와 트랜잭션 경계
+├── domain        # 도메인 모델, 정책, 저장소 인터페이스
+└── infrastructure# 인증, Redis, 파일 업로드, 캐시, 벡터 검색, 외부 연동
+```
+
+## 시작하기
+
+### 요구 사항
+
+- Java 25
+- Docker 또는 로컬 MySQL/Redis
+- OAuth2 Client 정보: Google, Kakao
+- AI 기능 사용 시 Groq API Key, OpenAI API Key
+- 이미지 업로드 사용 시 OCI Object Storage 또는 Cloudinary 설정
+
+
+## 배포
+
+`main` 브랜치에 push되면 GitHub Actions가 다음 순서로 운영 배포를 진행합니다.
+
+1. JDK 25 환경에서 `./gradlew clean bootJar -x test` 실행
+2. Docker 이미지 빌드
+3. OCIR(Oracle Cloud Infrastructure Registry)에 이미지 push
+4. `raota-team/raota-infra` 저장소의 배포 워크플로 dispatch
+5. canary 또는 full 배포 진행 상태 확인
+
+## 기술적 이슈와 해결 과정
+
+- Refresh Token 저장소를 JPA/Redis 구현으로 분리해 테스트와 운영 환경의 선택지를 확보
+- Redis 기반 캐시 무효화 pub/sub으로 라멘 매장 상세/목록 캐시 정합성 관리
+- Flyway 마이그레이션과 `ddl-auto=validate` 조합으로 운영 DB 스키마 변경 안정성 확보
+- 파일 용도별 업로드 라우팅으로 프로필, 배경, 매장, 커뮤니티, 인증샷 이미지 경로 분리
+- Oracle Vector Store와 Spring AI를 활용한 매장 검색/RAG 인덱싱 기반 마련
+
+## 프로젝트 팀원
+
+| Backend |
+| :---: |
+| Raota Team |
+| [raota-team](https://github.com/raota-team) |
+
