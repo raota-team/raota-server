@@ -85,22 +85,9 @@ Raota Server는 라멘 매장 정보, 방문 인증샷, 메뉴 투표, 북마크
 
 ## 프로젝트 아키텍처
 
-```mermaid
-flowchart TB
-    Client["Client / Front-end"] --> API["Presentation Layer<br/>REST Controller / Admin MVC"]
-    API --> App["Application Layer<br/>UseCase Service"]
-    App --> Domain["Domain Layer<br/>Entity / Domain Policy"]
-    App --> Infra["Infrastructure Layer"]
+<img width="747" height="486" alt="image" src="https://github.com/user-attachments/assets/c6e2fafe-e5bd-4993-80db-338835615b45" />
 
-    Infra --> MySQL[("MySQL<br/>Main Database")]
-    Infra --> Redis[("Redis<br/>Refresh Token / Cache / Stream")]
-    Infra --> Storage["S3-compatible Storage / Cloudinary"]
-    Infra --> Vector[("Oracle Vector Store")]
-    Infra --> AI["Groq Chat / OpenAI Embedding"]
 
-    App --> Flyway["Flyway Migration"]
-    API --> Swagger["Springdoc OpenAPI"]
-```
 
 ### 패키지 구조
 
