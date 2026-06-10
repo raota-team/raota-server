@@ -14,6 +14,9 @@ import java.util.List;
 @Tag(name = "탐색", description = "탐색(Discovery) 관련 API")
 public interface DiscoveryApi {
 
+    /**
+     * 탐색 통계 조회
+     */
     @Operation(summary = "탐색 통계 조회",
             description = "등록된 라멘집, 누적 리뷰(또는 AI 분석), 활동 중인 유저 통계를 조회합니다.")
     @ApiResponses({

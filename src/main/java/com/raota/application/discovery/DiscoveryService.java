@@ -15,6 +15,7 @@ import java.util.List;
 @Service
 public class DiscoveryService {
 
+    // Discovery domain service for stats and trending tags
     private final RamenShopRepository ramenShopRepository;
     private final RamenProofPictureRepository ramenProofPictureRepository;
     private final MemberRepository memberRepository;

@@ -19,6 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DiscoveryApiController implements DiscoveryApi {
 
+    // Discovery domain controller for home page stats and trending tags
     private final DiscoveryService discoveryService;
 
     @Override
