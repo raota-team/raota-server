@@ -3,6 +3,7 @@ package com.raota.domain.community.repository.query;
 import com.raota.domain.community.model.PostCategory;
 import com.raota.presentation.api.community.request.CommunityPostSearchRequest;
 import com.raota.presentation.api.community.request.CommunityRamenShopSearchRequest;
+import com.raota.presentation.api.community.response.CommunityHomePostResponse;
 import com.raota.presentation.api.community.response.CommunityPostCardResponse;
 import com.raota.presentation.api.community.response.CommunityPostDetailResponse;
 import com.raota.presentation.api.community.response.CommunityRamenShopOptionResponse;
@@ -147,11 +148,43 @@ public class PostQueryRepository {
         return PageResponse.from(new PageImpl<>(items, pageable, totalCount));
     }
 
+    public List<CommunityHomePostResponse> findHomePosts(String categoryName, int limit) {
+        PostCategory category = parseCategory(categoryName);
+
+        TypedQuery<HomePostRow> query = entityManager.createQuery(
+                """
+                select new com.raota.domain.community.repository.query.PostQueryRepository$HomePostRow(
+                       p.id, p.title, substring(p.content, 1, 50),
+                       a.nickname, a.imageUrl,
+                       (select count(c) from CommentEntity c where c.post.id = p.id and c.isDeleted = false),
+                       p.createdAt
+                )
+                from PostEntity p
+                join p.author a
+                where p.isDeleted = false
+                  and (:category is null or p.category = :category)
+                order by p.createdAt desc
+                """,
+                HomePostRow.class
+        );
+
+        return query.setParameter("category", category)
+                .setMaxResults(limit)
+                .getResultList()
+                .stream()
+                .map(HomePostRow::toResponse)
+                .toList();
+    }
+
     private PostCategory parseCategory(String category) {
         if (category == null || category.isBlank()) {
             return null;
         }
-        return PostCategory.valueOf(category);
+        try {
+            return PostCategory.valueOf(category.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     private String normalizeKeyword(String keyword) {
@@ -236,6 +269,27 @@ public class PostQueryRepository {
     ) {
         private CommunityRamenShopOptionResponse toResponse() {
             return new CommunityRamenShopOptionResponse(id, name, region, thumbnailUrl);
+        }
+    }
+
+    private record HomePostRow(
+            Long id,
+            String title,
+            String contentSnippet,
+            String nickname,
+            String profileImageUrl,
+            Long commentCount,
+            LocalDateTime createdAt
+    ) {
+        private CommunityHomePostResponse toResponse() {
+            return new CommunityHomePostResponse(
+                    id,
+                    title,
+                    contentSnippet,
+                    new CommunityHomePostResponse.AuthorSummary(nickname, profileImageUrl),
+                    commentCount,
+                    createdAt
+            );
         }
     }
 }

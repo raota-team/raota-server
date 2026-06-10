@@ -22,6 +22,10 @@ public class ApiResponse<T> {
     private ApiResponse() {
     }
 
+    public boolean isSuccess() {
+        return status == ApiStatus.SUCCESS;
+    }
+
     public static <T> ApiResponse<T> success(String message, T data) {
         return new ApiResponse<>(ApiStatus.SUCCESS, message, data);
     }
