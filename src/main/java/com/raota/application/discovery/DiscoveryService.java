@@ -4,7 +4,7 @@ import com.raota.domain.member.repository.MemberRepository;
 import com.raota.domain.ramenShop.repository.RamenProofPictureRepository;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.presentation.api.discovery.response.DiscoveryStatsResponse;
-import com.raota.presentation.api.search.response.TrendingTagResponse;
+import com.raota.presentation.api.discovery.response.TrendingTagResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;

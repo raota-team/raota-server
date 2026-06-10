@@ -3,7 +3,7 @@ package com.raota.presentation.api.discovery;
 import com.raota.application.discovery.DiscoveryService;
 import com.raota.presentation.api.discovery.contract.DiscoveryApi;
 import com.raota.presentation.api.discovery.response.DiscoveryStatsResponse;
-import com.raota.presentation.api.search.response.TrendingTagResponse;
+import com.raota.presentation.api.discovery.response.TrendingTagResponse;
 import com.raota.presentation.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

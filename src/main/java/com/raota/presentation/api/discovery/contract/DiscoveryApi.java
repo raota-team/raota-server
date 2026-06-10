@@ -1,7 +1,7 @@
 package com.raota.presentation.api.discovery.contract;
 
 import com.raota.presentation.api.discovery.response.DiscoveryStatsResponse;
-import com.raota.presentation.api.search.response.TrendingTagResponse;
+import com.raota.presentation.api.discovery.response.TrendingTagResponse;
 import com.raota.presentation.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
