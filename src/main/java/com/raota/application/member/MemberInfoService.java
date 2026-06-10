@@ -1,6 +1,7 @@
 package com.raota.application.member;
 
 import com.raota.presentation.api.member.response.BookmarkSummaryResponse;
+import com.raota.presentation.api.member.response.MemberSummaryResponse;
 import com.raota.presentation.api.member.response.MyProfileResponse;
 import com.raota.presentation.api.member.response.PhotoSummaryResponse;
 import com.raota.presentation.api.member.response.VisitSummaryResponse;
@@ -26,6 +27,16 @@ public class MemberInfoService {
 
     public MyProfileResponse getMyProfile(Long memberId) {
         return memberRepository.findMemberDetailInfo(memberId);
+    }
+
+    public MemberSummaryResponse getMemberSummary(Long memberId) {
+        MemberProfile member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("없는 유저 정보 입니다."));
+        return new MemberSummaryResponse(
+                member.getId(),
+                member.getNickname(),
+                fileUploader.getAccessibleUrl(member.getImageUrl())
+        );
     }
 
     @Transactional

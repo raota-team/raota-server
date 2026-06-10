@@ -71,6 +71,20 @@ class MemberIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
+    @DisplayName("로그인한 사용자는 자신의 요약 정보(닉네임, 프로필 이미지)를 조회할 수 있다.")
+    void get_my_summary_success() {
+        given()
+                .header("Authorization", "Bearer " + accessToken)
+        .when()
+                .get("/users/me/summary")
+        .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("success", is(true))
+                .body("data.nickname", is("마이페이지테스터"))
+                .body("data.profileImageUrl", is(savedMember.getImageUrl()));
+    }
+
+    @Test
     @DisplayName("커뮤니티 활동(글/댓글 작성) 시 마이페이지의 통계 정보가 실시간으로 업데이트된다.")
     void my_activity_stats_update_realtime() {
         CommunityPostCreateRequest postRequest = new CommunityPostCreateRequest(

@@ -3,6 +3,7 @@ package com.raota.presentation.api.member;
 import com.raota.presentation.api.member.contract.MemberInfoApi;
 import com.raota.presentation.api.member.request.UpdateProfileRequest;
 import com.raota.presentation.api.member.response.BookmarkSummaryResponse;
+import com.raota.presentation.api.member.response.MemberSummaryResponse;
 import com.raota.presentation.api.member.response.MyProfileResponse;
 import com.raota.presentation.api.member.response.PhotoSummaryResponse;
 import com.raota.presentation.api.member.response.VisitSummaryResponse;
@@ -28,6 +29,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/users")
 public class MemberInfoController implements MemberInfoApi {
     private final MemberInfoService memberInfoService;
+
+    @Override
+    @GetMapping("/me/summary")
+    public ResponseEntity<ApiResponse<MemberSummaryResponse>> getMySummary(
+            @LoginMember Long memberId) {
+        return ResponseEntity.ok(ApiResponse.success(memberInfoService.getMemberSummary(memberId)));
+    }
 
     @Override
     @GetMapping("/me/profile")

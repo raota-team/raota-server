@@ -2,6 +2,7 @@ package com.raota.presentation.api.member.contract;
 
 import com.raota.presentation.api.member.request.UpdateProfileRequest;
 import com.raota.presentation.api.member.response.BookmarkSummaryResponse;
+import com.raota.presentation.api.member.response.MemberSummaryResponse;
 import com.raota.presentation.api.member.response.MyCommentSummaryResponse;
 import com.raota.presentation.api.member.response.MyPostSummaryResponse;
 import com.raota.presentation.api.member.response.MyProfileResponse;
@@ -16,10 +17,19 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 @Tag(name = "사용자", description = "사용자 프로필/활동 API")
 public interface MemberInfoApi {
+
+    @Operation(summary = "내 요약 정보 조회", description = "홈 화면 등에서 사용할 닉네임과 프로필 이미지를 반환합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    @GetMapping("/me/summary")
+    ResponseEntity<ApiResponse<MemberSummaryResponse>> getMySummary(
+            @Parameter(hidden = true) Long memberId);
 
     @Operation(summary = "내 프로필 조회", description = "로그인 사용자의 프로필과 활동 통계를 반환합니다.")
     @ApiResponses({
