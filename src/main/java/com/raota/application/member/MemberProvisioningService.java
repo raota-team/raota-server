@@ -3,6 +3,7 @@ package com.raota.application.member;
 import com.raota.domain.member.model.MemberActivityStats;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,11 @@ public class MemberProvisioningService {
                 .backgroundImageUrl(null)
                 .stats(MemberActivityStats.init())
                 .build());
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<MemberProfile> findById(Long memberId) {
+        return memberRepository.findById(memberId);
     }
 
     @Transactional(readOnly = true)

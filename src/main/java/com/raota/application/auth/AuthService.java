@@ -36,7 +36,7 @@ public class AuthService {
 
         // 이미 가입된 계정이면 기존 회원 정보를, 없으면 신규 회원을 생성한다.
         MemberProfile memberProfile = socialAccountOptional
-                .map(socialAccount -> memberProvisioningService.getRequired(socialAccount.getMemberId()))
+                .flatMap(socialAccount -> memberProvisioningService.findById(socialAccount.getMemberId()))
                 .orElseGet(() -> memberProvisioningService.createOAuthMember(normalizedNickname, userInfo.profileImageUrl()));
 
         // 가입 완료 여부에 따라 신규 회원 여부를 판단한다.

@@ -30,11 +30,14 @@ public class AuthAccountService {
     public String login(OAuth2UserInfo userInfo, String normalizedNickname, Long memberId) {
         socialAccountRepository.findByProviderAndProviderUserId(userInfo.provider(), userInfo.providerUserId())
                 .ifPresentOrElse(
-                        socialAccount -> socialAccount.updateProfile(
-                                userInfo.email(),
-                                normalizedNickname,
-                                userInfo.profileImageUrl()
-                        ),
+                        socialAccount -> {
+                            socialAccount.updateProfile(
+                                    userInfo.email(),
+                                    normalizedNickname,
+                                    userInfo.profileImageUrl()
+                            );
+                            socialAccount.updateMemberId(memberId);
+                        },
                         () -> socialAccountRepository.save(SocialAccount.builder()
                                 .provider(userInfo.provider())
                                 .providerUserId(userInfo.providerUserId())

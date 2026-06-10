@@ -68,4 +68,8 @@ public class SocialAccount {
         this.nickname = nickname;
         this.profileImageUrl = profileImageUrl;
     }
+
+    public void updateMemberId(Long memberId) {
+        this.memberId = memberId;
+    }
 }

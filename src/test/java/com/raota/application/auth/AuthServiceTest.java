@@ -109,7 +109,7 @@ public class AuthServiceTest {
 
         given(authAccountService.findSocialAccount(any())).willReturn(Optional.of(existingAccount));
         memberProfile.completeRegistration(); // 가입 완료 상태로 변경
-        given(memberProvisioningService.getRequired(existingAccount.getMemberId())).willReturn(memberProfile);
+        given(memberProvisioningService.findById(existingAccount.getMemberId())).willReturn(Optional.of(memberProfile));
         given(authAccountService.login(any(), any(), eq(memberProfile.getId()))).willReturn("test-refresh-token");
 
         // when
@@ -125,6 +125,36 @@ public class AuthServiceTest {
         assertThat(authenticatedMember.memberId()).isEqualTo(memberProfile.getId());
 
         verify(memberProvisioningService, never()).createOAuthMember(any(), any());
+        verify(authAccountService).login(any(), any(), eq(memberProfile.getId()));
+    }
+
+    @Test
+    @DisplayName("소셜 계정은 있지만 회원 프로필이 없는 경우 (데이터 불일치 복구)")
+    void login_ExistingSocialAccountButMissingMemberProfile(){
+        // given
+        SocialAccount existingAccount = SocialAccount.builder()
+                        .provider(info.provider())
+                        .providerUserId(info.providerUserId())
+                        .email(info.email())
+                        .nickname(info.nickname())
+                        .profileImageUrl(info.profileImageUrl())
+                        .memberId(999L) // 존재하지 않는 회원 ID
+                        .build();
+
+        given(authAccountService.findSocialAccount(any())).willReturn(Optional.of(existingAccount));
+        given(memberProvisioningService.findById(existingAccount.getMemberId())).willReturn(Optional.empty()); // 프로필 없음
+        given(memberProvisioningService.createOAuthMember(any(), any())).willReturn(memberProfile); // 새 프로필 생성
+        given(authAccountService.login(any(), any(), eq(memberProfile.getId()))).willReturn("test-refresh-token");
+
+        // when
+        OAuth2LoginResult result = authService.login(info);
+
+        // then
+        assertThat(result.newMember()).isTrue();
+        assertThat(result.memberId()).isEqualTo(memberProfile.getId());
+        assertThat(result.refreshToken()).isEqualTo("test-refresh-token");
+
+        verify(memberProvisioningService).createOAuthMember(any(), any());
         verify(authAccountService).login(any(), any(), eq(memberProfile.getId()));
     }
 }
