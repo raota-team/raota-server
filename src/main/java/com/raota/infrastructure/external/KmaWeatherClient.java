@@ -24,13 +24,13 @@ public class KmaWeatherClient {
      */
     public String getWeatherOutlook() {
         URI uri = UriComponentsBuilder.fromUriString(kmaProperties.baseUrl() + "/getMidFcst")
-                .queryParam("serviceKey", kmaProperties.serviceKey())
+                .queryParam("authKey", kmaProperties.resolvedAuthKey())
                 .queryParam("pageNo", 1)
                 .queryParam("numOfRows", 10)
                 .queryParam("dataType", "JSON")
                 .queryParam("stnId", kmaProperties.stnId())
                 .queryParam("tmFc", getBaseTime())
-                .build(true) // serviceKey 인코딩 방지를 위해 true 설정
+                .build(true)
                 .toUri();
 
         try {
@@ -40,8 +40,9 @@ public class KmaWeatherClient {
                 response.getResponse().getBody() != null &&
                 response.getResponse().getBody().getItems() != null &&
                 !response.getResponse().getBody().getItems().getItem().isEmpty()) {
-                
-                return response.getResponse().getBody().getItems().getItem().get(0).getWfSv();
+                String wfSv = response.getResponse().getBody().getItems().getItem().get(0).getWfSv();
+                log.info("KMA weather outlook fetched successfully. tmFc={}, summary={}", getBaseTime(), wfSv);
+                return wfSv;
             }
         } catch (Exception e) {
             log.error("Failed to fetch weather outlook from KMA", e);

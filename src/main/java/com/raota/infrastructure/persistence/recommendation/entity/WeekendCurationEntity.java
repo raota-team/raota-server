@@ -34,6 +34,9 @@ public class WeekendCurationEntity {
     @JoinColumn(name = "ramen_type_id", nullable = false)
     private RamenTypeEntity ramenType;
 
+    @Column(nullable = false, length = 255)
+    private String title;
+
     @Column(nullable = false, columnDefinition = "TEXT")
     private String reason;
 
@@ -45,10 +48,11 @@ public class WeekendCurationEntity {
     private LocalDateTime createdAt;
 
     @Builder
-    public WeekendCurationEntity(Long id, Integer yearWeek, RamenTypeEntity ramenType, String reason, String customImageUrl, LocalDateTime createdAt) {
+    public WeekendCurationEntity(Long id, Integer yearWeek, RamenTypeEntity ramenType, String title, String reason, String customImageUrl, LocalDateTime createdAt) {
         this.id = id;
         this.yearWeek = yearWeek;
         this.ramenType = ramenType;
+        this.title = title;
         this.reason = reason;
         this.customImageUrl = customImageUrl;
         this.createdAt = createdAt != null ? createdAt : LocalDateTime.now();
@@ -59,6 +63,7 @@ public class WeekendCurationEntity {
                 .id(domain.getId())
                 .yearWeek(domain.getYearWeek())
                 .ramenType(RamenTypeEntity.from(domain.getRamenType()))
+                .title(domain.getTitle())
                 .reason(domain.getReason())
                 .customImageUrl(domain.getCustomImageUrl())
                 .createdAt(domain.getCreatedAt())
@@ -70,6 +75,7 @@ public class WeekendCurationEntity {
                 .id(this.id)
                 .yearWeek(this.yearWeek)
                 .ramenType(this.ramenType.toDomain())
+                .title(this.title)
                 .reason(this.reason)
                 .customImageUrl(this.customImageUrl)
                 .createdAt(this.createdAt)

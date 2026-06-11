@@ -113,8 +113,8 @@ cloudinary:
 
 external-api:
   kma:
-    service-key: ${KMA_SERVICE_KEY}
-    base-url: http://apis.data.go.kr/1360000/MidFcstInfoService
+    auth-key: ${KMA_AUTH_KEY:${KMA_SERVICE_KEY}}
+    base-url: https://apihub.kma.go.kr/api/typ02/openApi/MidFcstInfoService
     stn-id: "108"
 
 management:

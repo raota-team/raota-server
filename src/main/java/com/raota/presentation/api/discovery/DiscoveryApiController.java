@@ -2,7 +2,6 @@ package com.raota.presentation.api.discovery;
 
 import com.raota.application.discovery.DiscoveryService;
 import com.raota.application.recommendation.RecommendationService;
-import com.raota.domain.recommendation.model.WeekendCuration;
 import com.raota.presentation.api.discovery.contract.DiscoveryApi;
 import com.raota.presentation.api.discovery.response.DiscoveryStatsResponse;
 import com.raota.presentation.api.discovery.response.TrendingTagResponse;
@@ -11,6 +10,7 @@ import com.raota.presentation.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -49,5 +49,11 @@ public class DiscoveryApiController implements DiscoveryApi {
         }
         
         return ResponseEntity.ok(ApiResponse.success(List.of(recommendation)));
+    }
+
+    @Override
+    @PostMapping("/weekend-recommendations/generate")
+    public ResponseEntity<ApiResponse<WeekendRecommendationResponse>> generateWeekendRecommendation() {
+        return ResponseEntity.ok(ApiResponse.success(recommendationService.generateWeekendRecommendation()));
     }
 }

@@ -1,6 +1,7 @@
 package com.raota.application.recommendation;
 
 import com.raota.domain.recommendation.model.WeekendCuration;
+import com.raota.infrastructure.file.FileUploader;
 import com.raota.presentation.api.discovery.response.WeekendRecommendationResponse;
 import com.raota.presentation.api.recommendation.request.*;
 import com.raota.presentation.api.recommendation.response.*;
@@ -16,6 +17,7 @@ public class RecommendationService {
     private final ReviewSummaryService reviewSummaryService;
     private final FollowUpChatService followUpChatService;
     private final WeekendCurationService weekendCurationService;
+    private final FileUploader fileUploader;
 
     public TasteRecommendationResponse recommendByTaste(TasteRecommendationRequest request) {
         return tasteRecommendationService.recommendByTaste(request);
@@ -36,7 +38,16 @@ public class RecommendationService {
 
     public com.raota.presentation.api.discovery.response.WeekendRecommendationResponse getWeekendRecommendation() {
         return weekendCurationService.getLatestCuration()
-                .map(com.raota.presentation.api.discovery.response.WeekendRecommendationResponse::from)
+                .map(this::toWeekendRecommendationResponse)
                 .orElse(null);
+    }
+
+    public WeekendRecommendationResponse generateWeekendRecommendation() {
+        return toWeekendRecommendationResponse(weekendCurationService.generateWeeklyCuration());
+    }
+
+    private WeekendRecommendationResponse toWeekendRecommendationResponse(WeekendCuration curation) {
+        String imageUrl = fileUploader.getAccessibleUrl(curation.getEffectiveImageUrl());
+        return WeekendRecommendationResponse.from(curation, imageUrl);
     }
 }

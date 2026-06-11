@@ -38,4 +38,10 @@ public interface DiscoveryApi {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
     ResponseEntity<ApiResponse<List<WeekendRecommendationResponse>>> getWeekendRecommendations();
+
+    @Operation(summary = "이번 주말의 라멘 추천 수동 생성", description = "날씨 조회, AI 분석, DB/Redis 저장 흐름을 즉시 실행합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    ResponseEntity<ApiResponse<WeekendRecommendationResponse>> generateWeekendRecommendation();
 }

@@ -69,6 +69,7 @@ class WeekendCurationServiceTest {
                 .id(1L)
                 .yearWeek(202625)
                 .ramenType(mockRamenType)
+                .title("비 오는 날의 진한 한 그릇")
                 .reason("비 오는 날엔 돈코츠죠.")
                 .build();
     }
@@ -116,14 +117,13 @@ class WeekendCurationServiceTest {
         given(weatherClient.getWeatherOutlook()).willReturn("비가 옵니다.");
         
         AiRamenRecommendationResponse aiResponse = AiRamenRecommendationResponse.builder()
-                .ramenTypeId("tonkotsu")
+                .ramenTypeName("돈코츠라멘")
                 .title("추천")
                 .reason("이유")
                 .build();
         given(aiService.getRecommendation(anyString())).willReturn(aiResponse);
         
         given(ramenTypeRepository.findAll()).willReturn(List.of(mockRamenType));
-        given(ramenTypeRepository.findById(1L)).willReturn(Optional.of(mockRamenType));
         given(weekendCurationRepository.save(any())).willReturn(mockCuration);
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
         given(redisObjectMapper.writeValueAsString(any())).willReturn("json-string");

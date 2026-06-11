@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.time.temporal.WeekFields;
@@ -55,33 +56,38 @@ public class WeekendCurationService {
      * AI를 통해 이번 주 주간 추천 정보를 생성한다. (배치용)
      */
     @Transactional
-    public void generateWeeklyCuration() {
+    public WeekendCuration generateWeeklyCuration() {
         int currentYearWeek = calculateYearWeek();
         
         // 이미 해당 주차에 데이터가 있다면 중복 생성 방지
-        if (weekendCurationRepository.findByYearWeek(currentYearWeek).isPresent()) {
-            return;
+        Optional<WeekendCuration> existing = weekendCurationRepository.findByYearWeek(currentYearWeek);
+        if (existing.isPresent()) {
+            cacheCuration(existing.get());
+            return existing.get();
         }
 
         String weatherOutlook = weatherClient.getWeatherOutlook();
 
         AiRamenRecommendationResponse aiResponse = aiService.getRecommendation(weatherOutlook);
 
-        RamenType selectedType = findRamenTypeByAiResponse(aiResponse.ramenTypeId());
+        RamenType selectedType = findRamenTypeByName(aiResponse.ramenTypeName());
 
         WeekendCuration curation = WeekendCuration.builder()
                 .yearWeek(currentYearWeek)
                 .ramenType(selectedType)
-                .reason(aiResponse.reason())
+                .title(defaultIfBlank(aiResponse.title(), selectedType.getName() + " 추천"))
+                .reason(defaultIfBlank(aiResponse.reason(), "이번 주말 날씨와 잘 어울리는 라멘입니다."))
                 .build();
 
         WeekendCuration saved = weekendCurationRepository.save(curation);
 
         cacheCuration(saved);
+        return saved;
     }
 
     private void cacheCuration(WeekendCuration curation) {
         try {
+            redisTemplate.delete(REDIS_KEY_LATEST_CURATION);
             String json = redisObjectMapper.writeValueAsString(curation);
             redisTemplate.opsForValue().set(REDIS_KEY_LATEST_CURATION, json);
         } catch (Exception e) {
@@ -96,13 +102,19 @@ public class WeekendCurationService {
         return (now.getYear() * 100) + weekNumber;
     }
 
-    private RamenType findRamenTypeByAiResponse(String typeId) {
-        // AI가 반환한 ID가 DB에 어떤 형태로 저장되어 있는지에 따라 달라짐.
-        // 현재 tb_ramen_type.id는 Long이므로, 텍스트(idString)를 통해 매칭 시도.
-        // 만약 카테고리명(name)에 해당 텍스트가 포함되어 있다면 해당 타입 선택.
+    private RamenType findRamenTypeByName(String name) {
+        String targetName = defaultIfBlank(name, "").replace(" ", "").toLowerCase();
+        
         return ramenTypeRepository.findAll().stream()
-                .filter(t -> t.getName().toLowerCase().replace(" ", "").contains(typeId.toLowerCase()))
+                .filter(t -> {
+                    String dbName = t.getName().replace(" ", "").toLowerCase();
+                    return dbName.contains(targetName) || targetName.contains(dbName);
+                })
                 .findFirst()
                 .orElseGet(() -> ramenTypeRepository.findById(1L).orElseThrow());
+    }
+
+    private String defaultIfBlank(String value, String defaultValue) {
+        return StringUtils.hasText(value) ? value : defaultValue;
     }
 }
