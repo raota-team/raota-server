@@ -2,6 +2,7 @@ package com.raota.presentation.api.discovery.contract;
 
 import com.raota.presentation.api.discovery.response.DiscoveryStatsResponse;
 import com.raota.presentation.api.discovery.response.TrendingTagResponse;
+import com.raota.presentation.api.discovery.response.WeekendRecommendationResponse;
 import com.raota.presentation.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -31,4 +32,10 @@ public interface DiscoveryApi {
     ResponseEntity<ApiResponse<List<TrendingTagResponse>>> getTrendingTags(
             @Parameter(description = "가져올 순위 개수", example = "5")
             int limit);
+
+    @Operation(summary = "이번 주말의 라멘 추천 조회", description = "이번 주말에 사용자에게 추천할 라멘 종류 데이터 1건을 조회합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    ResponseEntity<ApiResponse<List<WeekendRecommendationResponse>>> getWeekendRecommendations();
 }

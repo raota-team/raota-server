@@ -11,19 +11,24 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 public class RecommendationController implements RecommendationApi {
+
     private final RecommendationService recommendationService;
+
     @Override
     public ResponseEntity<ApiResponse<TasteRecommendationResponse>> recommendByTaste(TasteRecommendationRequest request) {
         return ResponseEntity.ok(ApiResponse.success(recommendationService.recommendByTaste(request)));
     }
+
     @Override
     public ResponseEntity<ApiResponse<ShopComparisonResponse>> compareShops(ShopComparisonRequest request) {
         return ResponseEntity.ok(ApiResponse.success(recommendationService.compareShops(request)));
     }
+
     @Override
     public ResponseEntity<ApiResponse<ReviewSummaryResponse>> summarizeReviews(ReviewSummaryRequest request) {
         return ResponseEntity.ok(ApiResponse.success(recommendationService.summarizeReviews(request)));
     }
+
     @Override
     public ResponseEntity<ApiResponse<AiChatResponse>> followUpChat(AiChatRequest request) {
         return ResponseEntity.ok(ApiResponse.success(recommendationService.followUpChat(request)));

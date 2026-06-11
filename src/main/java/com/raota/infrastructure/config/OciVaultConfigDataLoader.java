@@ -45,7 +45,8 @@ public class OciVaultConfigDataLoader implements ConfigDataLoader<OciVaultConfig
             "OPENAI_API_KEY",
             "AI_ORACLE_DATASOURCE_URL",
             "AI_ORACLE_DATASOURCE_USERNAME",
-            "AI_ORACLE_DATASOURCE_PASSWORD"
+            "AI_ORACLE_DATASOURCE_PASSWORD",
+            "KMA_SERVICE_KEY"
     );
 
     @Override

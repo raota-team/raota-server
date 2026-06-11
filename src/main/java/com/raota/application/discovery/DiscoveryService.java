@@ -15,7 +15,6 @@ import java.util.List;
 @Service
 public class DiscoveryService {
 
-    // Discovery domain service for stats and trending tags
     private final RamenShopRepository ramenShopRepository;
     private final RamenProofPictureRepository ramenProofPictureRepository;
     private final MemberRepository memberRepository;
@@ -37,7 +36,7 @@ public class DiscoveryService {
     public DiscoveryStatsResponse getStats() {
         long totalShops = ramenShopRepository.count();
         long userReviews = ramenProofPictureRepository.count();
-        long totalUsers = 4000; // Fixed value for AI analysis count as requested
+        long totalUsers = 4000;
 
         long externalReviews = 0;
         try {
@@ -46,7 +45,6 @@ public class DiscoveryService {
                 externalReviews = count;
             }
         } catch (Exception e) {
-            // Ignore if table doesn't exist or other issues
         }
 
         return new DiscoveryStatsResponse(totalShops, userReviews + externalReviews, totalUsers);
