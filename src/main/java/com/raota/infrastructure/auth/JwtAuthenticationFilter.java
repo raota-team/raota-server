@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import com.raota.application.member.MemberProvisioningService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -22,6 +23,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
+    private final MemberProvisioningService memberProvisioningService;
 
     @Override
     protected void doFilterInternal(
@@ -48,6 +50,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // 3. 토큰에서 실제 JWT 문자열만 추출하여 유효성 검증 및 사용자 정보를 추출한다.
             String token = authorizationHeader.substring(7);
             AuthenticatedMember authenticatedMember = jwtTokenProvider.getAuthenticatedMember(token);
+            if (!memberProvisioningService.isActiveMember(authenticatedMember.memberId())) {
+                throw new JwtAuthenticationException(
+                        com.raota.application.member.MemberLifecycleService.WITHDRAWN_MEMBER_MESSAGE,
+                        new IllegalStateException("withdrawn member")
+                );
+            }
             
             // 4. Spring Security가 인식할 수 있는 인증 객체(Authentication)를 생성한다.
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(

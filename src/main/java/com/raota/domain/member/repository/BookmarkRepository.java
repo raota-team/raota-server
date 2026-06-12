@@ -9,4 +9,6 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
     boolean existsByMemberProfileIdAndRamenShopIdAndIsDeletedFalse(Long memberProfileId, Long ramenShopId);
 
     Optional<Bookmark> findByMemberProfileIdAndRamenShopId(Long memberProfileId, Long ramenShopId);
+
+    void deleteAllByMemberProfileId(Long memberProfileId);
 }

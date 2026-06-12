@@ -10,6 +10,7 @@ import com.raota.presentation.api.member.response.PhotoSummaryResponse;
 import com.raota.presentation.api.member.response.VisitSummaryResponse;
 import com.raota.presentation.common.ApiResponse;
 import com.raota.presentation.common.PageResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -17,6 +18,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
@@ -45,6 +47,15 @@ public interface MemberInfoApi {
     ResponseEntity<ApiResponse<MyProfileResponse>> updateMyProfile(
             UpdateProfileRequest request,
             @Parameter(hidden = true) Long memberId);
+
+    @Operation(summary = "회원 탈퇴", description = "로그인 사용자를 소프트 딜리트 처리하고 탈퇴일로부터 30일 후 재가입 가능 상태로 전환합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    @DeleteMapping("/me")
+    ResponseEntity<ApiResponse<Void>> withdrawMyAccount(
+            @Parameter(hidden = true) Long memberId,
+            @Parameter(hidden = true) HttpServletResponse response);
 
     @Operation(summary = "내 인증샷 목록 조회", description = "로그인 사용자의 인증샷 목록을 페이징으로 조회합니다.")
     @ApiResponses({

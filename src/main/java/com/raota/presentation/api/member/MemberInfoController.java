@@ -7,16 +7,20 @@ import com.raota.presentation.api.member.response.MemberSummaryResponse;
 import com.raota.presentation.api.member.response.MyProfileResponse;
 import com.raota.presentation.api.member.response.PhotoSummaryResponse;
 import com.raota.presentation.api.member.response.VisitSummaryResponse;
+import com.raota.application.member.MemberLifecycleService;
 import com.raota.application.member.MemberInfoService;
 import com.raota.infrastructure.auth.LoginMember;
+import com.raota.infrastructure.auth.RefreshTokenCookieManager;
 import com.raota.presentation.common.ApiResponse;
 import com.raota.presentation.common.PageResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,6 +33,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/users")
 public class MemberInfoController implements MemberInfoApi {
     private final MemberInfoService memberInfoService;
+    private final MemberLifecycleService memberLifecycleService;
+    private final RefreshTokenCookieManager refreshTokenCookieManager;
 
     @Override
     @GetMapping("/me/summary")
@@ -58,6 +64,17 @@ public class MemberInfoController implements MemberInfoApi {
                 memberId
         );
         return ResponseEntity.ok(ApiResponse.success(updated));
+    }
+
+    @Override
+    @DeleteMapping("/me")
+    public ResponseEntity<ApiResponse<Void>> withdrawMyAccount(
+            @LoginMember Long memberId,
+            HttpServletResponse response
+    ) {
+        memberLifecycleService.withdraw(memberId);
+        response.addHeader("Set-Cookie", refreshTokenCookieManager.clearRefreshTokenCookie().toString());
+        return ResponseEntity.ok(ApiResponse.success(MemberLifecycleService.WITHDRAW_COMPLETE_MESSAGE, null));
     }
 
     @Override

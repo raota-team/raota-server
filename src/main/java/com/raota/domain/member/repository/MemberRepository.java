@@ -5,6 +5,9 @@ import com.raota.presentation.api.member.response.MyProfileResponse;
 import com.raota.presentation.api.member.response.PhotoSummaryResponse;
 import com.raota.presentation.api.member.response.VisitSummaryResponse;
 import com.raota.domain.member.model.MemberProfile;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,6 +15,18 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
+    Optional<MemberProfile> findByIdAndDeletedAtIsNull(Long id);
+
+    boolean existsByIdAndDeletedAtIsNull(Long id);
+
+    @Query("""
+    select m
+    from MemberProfile m
+    where m.deletedAt is not null
+      and m.deletedAt <= :cutoff
+""")
+    List<MemberProfile> findSoftDeletedMembersDueForPurge(@Param("cutoff") LocalDateTime cutoff);
+
     @Query("""
     select new com.raota.presentation.api.member.response.MyProfileResponse(
         m.id,
@@ -29,6 +44,7 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
     )
     from MemberProfile m
     where m.id = :id
+      and m.deletedAt is null
 """)
     MyProfileResponse findMemberDetailInfo(@Param("id") Long id);
 
@@ -51,13 +67,13 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
             from PostEntity p
             join p.author m
             left join p.ramenShop r
-            where m.id = :memberId and p.isDeleted = false
+            where m.id = :memberId and m.deletedAt is null and p.isDeleted = false
             order by p.createdAt desc
             """,
             countQuery = """
                     select count(p)
                     from PostEntity p
-                    where p.author.id = :memberId and p.isDeleted = false
+                    where p.author.id = :memberId and p.author.deletedAt is null and p.isDeleted = false
                     """)
     Page<com.raota.presentation.api.community.response.CommunityPostCardResponse> findMyPosts(
             @Param("memberId") Long memberId,
@@ -80,6 +96,7 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
             from CommentEntity c
             join c.member m
             where m.id = :memberId
+                and m.deletedAt is null
                 and c.isDeleted = false
                 and c.post.isDeleted = false
             order by c.createdAt desc
@@ -88,6 +105,7 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
                     select count(c)
                     from CommentEntity c
                     where c.member.id = :memberId
+                        and c.member.deletedAt is null
                         and c.isDeleted = false
                         and c.post.isDeleted = false
                     """)
@@ -107,7 +125,7 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
             from MemberProfile m
             join RamenProofPicture p on p.memberProfile = m
             join p.ramenShop r
-            where m.id = :memberId and p.isDeleted = false
+            where m.id = :memberId and m.deletedAt is null and p.isDeleted = false
             group by r.id, r.name, r.imageUrl, r.address.city, r.address.district
             having count(p.id) > 0
             order by count(p.id) desc
@@ -117,7 +135,7 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
                     from MemberProfile m
                     join RamenProofPicture p on p.memberProfile = m
                     join p.ramenShop r
-                    where m.id = :memberId and p.isDeleted = false
+                    where m.id = :memberId and m.deletedAt is null and p.isDeleted = false
                     """)
     Page<VisitSummaryResponse> findMyVisitRestaurant(
             @Param("memberId") Long memberId,
@@ -135,14 +153,14 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
             from MemberProfile m
             join Bookmark b on b.memberProfile = m
             join b.ramenShop r
-            where m.id = :memberId and b.isDeleted = false
+            where m.id = :memberId and m.deletedAt is null and b.isDeleted = false
             order by b.markingAt desc
             """,
             countQuery = """
                     select count(b)
                     from MemberProfile m
                     join Bookmark b on b.memberProfile = m
-                    where m.id = :memberId and b.isDeleted = false
+                    where m.id = :memberId and m.deletedAt is null and b.isDeleted = false
                     """)
     Page<BookmarkSummaryResponse> findMyBookmarks(@Param("memberId") Long memberId, Pageable pageable);
 
@@ -157,12 +175,16 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
         p.uploadedAt
     )
     from RamenProofPicture p
-    where p.memberProfile.id = :memberId and p.isDeleted = false
+    where p.memberProfile.id = :memberId
+      and p.memberProfile.deletedAt is null
+      and p.isDeleted = false
 """,
             countQuery = """
     select count(p)
     from RamenProofPicture p
-    where p.memberProfile.id = :memberId and p.isDeleted = false
+    where p.memberProfile.id = :memberId
+      and p.memberProfile.deletedAt is null
+      and p.isDeleted = false
 """)
     Page<PhotoSummaryResponse> findMyPhotos(@Param("memberId") Long memberId, Pageable pageable);
 }

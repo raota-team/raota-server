@@ -7,11 +7,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Table(name = "tb_member_profile")
@@ -38,6 +41,17 @@ public class MemberProfile {
     @Builder.Default
     private boolean isRegistrationCompleted = false;
 
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @Embedded
     @Builder.Default
     private MemberActivityStats memberActivityStats = MemberActivityStats.init();
@@ -56,6 +70,22 @@ public class MemberProfile {
 
     public void completeRegistration() {
         this.isRegistrationCompleted = true;
+    }
+
+    public void softDelete(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
+    }
+
+    public boolean isDeleted() {
+        return deletedAt != null;
+    }
+
+    public void anonymizeRetainedProfile() {
+        this.nickname = "탈퇴한 사용자";
+        this.imageUrl = null;
+        this.backgroundImageUrl = null;
+        this.bio = null;
+        this.isRegistrationCompleted = false;
     }
 
     public void increasePostCount() {

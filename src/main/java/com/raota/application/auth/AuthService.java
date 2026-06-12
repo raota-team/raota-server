@@ -3,6 +3,7 @@ package com.raota.application.auth;
 import com.raota.domain.auth.model.SocialAccount;
 import com.raota.application.member.MemberProvisioningService;
 import com.raota.domain.member.model.MemberProfile;
+import com.raota.infrastructure.auth.WithdrawnMemberException;
 import com.raota.infrastructure.auth.JwtTokenProvider;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -31,12 +32,19 @@ public class AuthService {
     public OAuth2LoginResult login(OAuth2UserInfo userInfo) {
         // 소셜 제공자(provider)와 고유 ID로 우리 DB에서 계정을 찾는다.
         Optional<SocialAccount> socialAccountOptional = authAccountService.findSocialAccount(userInfo);
+        Optional<MemberProfile> existingMemberProfile = socialAccountOptional
+                .flatMap(socialAccount -> memberProvisioningService.findById(socialAccount.getMemberId()));
+
+        existingMemberProfile
+                .filter(MemberProfile::isDeleted)
+                .ifPresent(member -> {
+                    throw new WithdrawnMemberException(com.raota.application.member.MemberLifecycleService.WITHDRAWN_MEMBER_MESSAGE);
+                });
 
         String normalizedNickname = normalizeNickname(userInfo);
 
         // 이미 가입된 계정이면 기존 회원 정보를, 없으면 신규 회원을 생성한다.
-        MemberProfile memberProfile = socialAccountOptional
-                .flatMap(socialAccount -> memberProvisioningService.findById(socialAccount.getMemberId()))
+        MemberProfile memberProfile = existingMemberProfile
                 .orElseGet(() -> memberProvisioningService.createOAuthMember(normalizedNickname, userInfo.profileImageUrl()));
 
         // 가입 완료 여부에 따라 신규 회원 여부를 판단한다.

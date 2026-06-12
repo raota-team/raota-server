@@ -2,6 +2,7 @@ package com.raota.integration;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 
 import com.raota.presentation.api.community.request.CommunityCommentCreateRequest;
 import com.raota.presentation.api.community.request.CommunityPostCreateRequest;
@@ -82,6 +83,30 @@ class MemberIntegrationTest extends BaseIntegrationTest {
                 .body("success", is(true))
                 .body("data.nickname", is("마이페이지테스터"))
                 .body("data.profileImageUrl", is(savedMember.getImageUrl()));
+    }
+
+    @Test
+    @DisplayName("회원 탈퇴 시 소프트 딜리트 처리되고 이후 인증 요청은 차단된다.")
+    void withdraw_member_success() {
+        given()
+                .header("Authorization", "Bearer " + accessToken)
+        .when()
+                .delete("/users/me")
+        .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("success", is(true))
+                .body("message", is("회원 탈퇴가 완료되었습니다. 탈퇴일로부터 30일 후 재가입할 수 있습니다."));
+
+        MemberProfile withdrawnMember = memberRepository.findById(savedMember.getId()).orElseThrow();
+        org.assertj.core.api.Assertions.assertThat(withdrawnMember.getDeletedAt()).isNotNull();
+
+        given()
+                .header("Authorization", "Bearer " + accessToken)
+        .when()
+                .get("/users/me/profile")
+        .then()
+                .statusCode(HttpStatus.UNAUTHORIZED.value())
+                .body("message", is("탈퇴 처리된 계정입니다. 탈퇴일로부터 30일 후 재가입할 수 있습니다."));
     }
 
     @Test

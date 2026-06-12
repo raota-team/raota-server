@@ -7,10 +7,8 @@ import com.raota.presentation.api.member.response.PhotoSummaryResponse;
 import com.raota.presentation.api.member.response.VisitSummaryResponse;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
-import com.raota.domain.ramenShop.repository.RamenProofPictureRepository;
 import com.raota.infrastructure.file.FileUploader;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -22,16 +20,20 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberInfoService {
 
     private final MemberRepository memberRepository;
-    private final RamenProofPictureRepository pictureRepository;
+    private final MemberProvisioningService memberProvisioningService;
     private final FileUploader fileUploader;
 
     public MyProfileResponse getMyProfile(Long memberId) {
-        return memberRepository.findMemberDetailInfo(memberId);
+        memberProvisioningService.getActiveRequired(memberId);
+        MyProfileResponse response = memberRepository.findMemberDetailInfo(memberId);
+        if (response == null) {
+            throw new IllegalArgumentException("없는 유저 정보 입니다.");
+        }
+        return response;
     }
 
     public MemberSummaryResponse getMemberSummary(Long memberId) {
-        MemberProfile member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("없는 유저 정보 입니다."));
+        MemberProfile member = memberProvisioningService.getActiveRequired(memberId);
         return new MemberSummaryResponse(
                 member.getId(),
                 member.getNickname(),
@@ -47,7 +49,7 @@ public class MemberInfoService {
             String updateBio,
             Long memberId
     ) {
-        MemberProfile member = memberRepository.findById(memberId).orElseThrow(()-> new IllegalArgumentException("없는 유저 정보 입니다."));
+        MemberProfile member = memberProvisioningService.getActiveRequired(memberId);
 
         member.updateProfile(updateNickname, updateImage, updateBackgroundImage, updateBio);
         memberRepository.save(member);

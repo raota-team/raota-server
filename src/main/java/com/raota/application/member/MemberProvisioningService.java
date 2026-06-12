@@ -3,6 +3,7 @@ package com.raota.application.member;
 import com.raota.domain.member.model.MemberActivityStats;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
+import com.raota.infrastructure.auth.WithdrawnMemberException;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,17 @@ public class MemberProvisioningService {
     public MemberProfile getRequired(Long memberId) {
         return memberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("없는 유저 정보 입니다."));
+    }
+
+    @Transactional(readOnly = true)
+    public MemberProfile getActiveRequired(Long memberId) {
+        return memberRepository.findByIdAndDeletedAtIsNull(memberId)
+                .orElseThrow(() -> new WithdrawnMemberException(MemberLifecycleService.WITHDRAWN_MEMBER_MESSAGE));
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isActiveMember(Long memberId) {
+        return memberRepository.existsByIdAndDeletedAtIsNull(memberId);
     }
 
     @Transactional

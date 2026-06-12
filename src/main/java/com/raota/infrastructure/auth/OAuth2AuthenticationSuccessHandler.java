@@ -41,23 +41,25 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     ) throws IOException, ServletException {
         OAuth2AuthenticationToken oauth2Authentication = (OAuth2AuthenticationToken) authentication;
         OAuth2User principal = oauth2Authentication.getPrincipal();
-
-        String registrationId = oauth2Authentication.getAuthorizedClientRegistrationId();
-        OAuth2UserInfo userInfo = oAuth2UserInfoFactory.from(
-                registrationId,
-                principal.getAttributes()
-        );
-
-        OAuth2LoginResult loginResult = authService.login(userInfo);
-
-        response.addHeader("Set-Cookie", refreshTokenCookieManager.createRefreshTokenCookie(loginResult.refreshToken()).toString());
-
-        // 쿠키에서 대상 URI 추출, 없으면 기본 설정값 사용
         String targetUri = getTargetUriFromCookie(request);
 
-        httpCookieOAuth2AuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
+        String registrationId = oauth2Authentication.getAuthorizedClientRegistrationId();
+        try {
+            OAuth2UserInfo userInfo = oAuth2UserInfoFactory.from(
+                    registrationId,
+                    principal.getAttributes()
+            );
 
-        getRedirectStrategy().sendRedirect(request, response, buildSuccessRedirectUri(targetUri, loginResult, registrationId));
+            OAuth2LoginResult loginResult = authService.login(userInfo);
+            response.addHeader("Set-Cookie", refreshTokenCookieManager.createRefreshTokenCookie(loginResult.refreshToken()).toString());
+
+            httpCookieOAuth2AuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
+
+            getRedirectStrategy().sendRedirect(request, response, buildSuccessRedirectUri(targetUri, loginResult, registrationId));
+        } catch (AuthenticationRequiredException exception) {
+            httpCookieOAuth2AuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
+            getRedirectStrategy().sendRedirect(request, response, buildErrorRedirectUri(targetUri, exception.getMessage(), registrationId));
+        }
     }
 
     private String getTargetUriFromCookie(HttpServletRequest request) {
@@ -82,6 +84,12 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 + "&expiresIn=" + loginResult.accessTokenExpiresIn()
                 + "&memberId=" + loginResult.memberId()
                 + "&newMember=" + loginResult.newMember()
+                + "&provider=" + encode(registrationId);
+    }
+
+    private String buildErrorRedirectUri(String targetUri, String message, String registrationId) {
+        return targetUri
+                + "#error=" + encode(message)
                 + "&provider=" + encode(registrationId);
     }
 

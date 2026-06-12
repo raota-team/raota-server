@@ -66,6 +66,7 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
                         ).permitAll()
+                        .requestMatchers("/users/me").authenticated()
                         .requestMatchers("/users/me/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/community/posts").authenticated()
                         .requestMatchers(HttpMethod.POST, "/community/posts/*/comments").authenticated()

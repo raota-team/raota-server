@@ -12,6 +12,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface RamenProofPictureRepository extends JpaRepository<RamenProofPicture, Long> {
+    void deleteAllByMemberProfileId(Long memberId);
+
     @Query(
             value = """
         select new com.raota.presentation.api.ramenShop.response.ProofPictureInfoResponse(

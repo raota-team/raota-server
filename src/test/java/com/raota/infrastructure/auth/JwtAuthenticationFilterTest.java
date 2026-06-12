@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import com.raota.application.member.MemberProvisioningService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import java.io.IOException;
@@ -28,6 +29,8 @@ public class JwtAuthenticationFilterTest {
     JwtTokenProvider jwtTokenProvider;
     @Mock
     RestAuthenticationEntryPoint restAuthenticationEntryPoint;
+    @Mock
+    MemberProvisioningService memberProvisioningService;
     @InjectMocks
     JwtAuthenticationFilter jwtAuthenticationFilter;
 
@@ -47,6 +50,7 @@ public class JwtAuthenticationFilterTest {
     void 유효한_bearer_토큰이_들어온_경우() throws ServletException, IOException {
         request.addHeader("Authorization", "Bearer valid-token-string");
         given(jwtTokenProvider.getAuthenticatedMember("valid-token-string")).willReturn(AuthenticatedMember.user(1L));
+        given(memberProvisioningService.isActiveMember(1L)).willReturn(true);
 
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
@@ -92,6 +96,19 @@ public class JwtAuthenticationFilterTest {
 
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
 
+        verify(restAuthenticationEntryPoint).commence(any(), any(), any());
+        verify(filterChain, never()).doFilter(request, response);
+    }
+
+    @Test
+    void 탈퇴한_회원의_토큰인_경우() throws ServletException, IOException {
+        request.addHeader("Authorization", "Bearer withdrawn-token");
+        given(jwtTokenProvider.getAuthenticatedMember("withdrawn-token")).willReturn(AuthenticatedMember.user(1L));
+        given(memberProvisioningService.isActiveMember(1L)).willReturn(false);
+
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
         verify(restAuthenticationEntryPoint).commence(any(), any(), any());
         verify(filterChain, never()).doFilter(request, response);
     }

@@ -2,6 +2,7 @@ package com.raota.application.auth;
 
 import com.raota.domain.auth.model.SocialAccount;
 import com.raota.domain.auth.repository.SocialAccountRepository;
+import com.raota.domain.member.repository.MemberRepository;
 import com.raota.infrastructure.persistence.auth.RefreshTokenStore;
 import com.raota.infrastructure.persistence.auth.StoredRefreshToken;
 import com.raota.infrastructure.auth.AuthProperties;
@@ -20,6 +21,7 @@ public class AuthAccountService {
     private final SocialAccountRepository socialAccountRepository;
     private final RefreshTokenStore refreshTokenStore;
     private final AuthProperties authProperties;
+    private final MemberRepository memberRepository;
 
     @Transactional(readOnly = true)
     public Optional<SocialAccount> findSocialAccount(OAuth2UserInfo userInfo) {
@@ -63,6 +65,11 @@ public class AuthAccountService {
         StoredRefreshToken refreshToken = refreshTokenStore.findByToken(refreshTokenValue)
                 .orElseThrow(() -> new AuthenticationRequiredException("유효하지 않은 리프레시 토큰입니다."));
 
+        if (!memberRepository.existsByIdAndDeletedAtIsNull(refreshToken.memberId())) {
+            refreshTokenStore.deleteByToken(refreshTokenValue);
+            throw new AuthenticationRequiredException(com.raota.application.member.MemberLifecycleService.WITHDRAWN_MEMBER_MESSAGE);
+        }
+
         if (refreshToken.isExpired(Instant.now())) {
             refreshTokenStore.deleteByToken(refreshTokenValue);
             throw new AuthenticationRequiredException("만료된 리프레시 토큰입니다.");
@@ -84,6 +91,12 @@ public class AuthAccountService {
             return;
         }
         refreshTokenStore.deleteByToken(refreshTokenValue);
+    }
+
+    @Transactional
+    public void logoutByMemberId(Long memberId) {
+        refreshTokenStore.findByMemberId(memberId)
+                .ifPresent(refreshToken -> refreshTokenStore.deleteByToken(refreshToken.token()));
     }
 
     private void upsertRefreshToken(Long memberId, String token, Instant expiresAt) {

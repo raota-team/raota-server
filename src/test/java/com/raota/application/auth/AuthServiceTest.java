@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.raota.domain.auth.model.AuthProvider;
 import com.raota.domain.auth.model.SocialAccount;
@@ -18,6 +19,7 @@ import com.raota.application.member.MemberProvisioningService;
 import com.raota.infrastructure.auth.AuthenticatedMember;
 import com.raota.infrastructure.auth.AuthProperties;
 import com.raota.infrastructure.auth.JwtTokenProvider;
+import com.raota.infrastructure.auth.WithdrawnMemberException;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -156,5 +158,30 @@ public class AuthServiceTest {
 
         verify(memberProvisioningService).createOAuthMember(any(), any());
         verify(authAccountService).login(any(), any(), eq(memberProfile.getId()));
+    }
+
+    @Test
+    @DisplayName("탈퇴한 회원은 재로그인할 수 없다")
+    void login_WithdrawnMember() {
+        SocialAccount existingAccount = SocialAccount.builder()
+                .provider(info.provider())
+                .providerUserId(info.providerUserId())
+                .email(info.email())
+                .nickname(info.nickname())
+                .profileImageUrl(info.profileImageUrl())
+                .memberId(memberProfile.getId())
+                .build();
+
+        memberProfile.softDelete(java.time.LocalDateTime.now());
+
+        given(authAccountService.findSocialAccount(any())).willReturn(Optional.of(existingAccount));
+        given(memberProvisioningService.findById(existingAccount.getMemberId())).willReturn(Optional.of(memberProfile));
+
+        assertThatThrownBy(() -> authService.login(info))
+                .isInstanceOf(WithdrawnMemberException.class)
+                .hasMessage("탈퇴 처리된 계정입니다. 탈퇴일로부터 30일 후 재가입할 수 있습니다.");
+
+        verify(memberProvisioningService, never()).createOAuthMember(any(), any());
+        verify(authAccountService, never()).login(any(), any(), any());
     }
 }
