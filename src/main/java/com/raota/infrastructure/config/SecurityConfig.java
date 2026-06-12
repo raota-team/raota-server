@@ -73,7 +73,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/community/comments/*").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/community/comments/*").authenticated()
                         .requestMatchers(HttpMethod.POST, "/ramen-shops/*/photos").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/ramen-shops/*/votes/menus/*").authenticated()
                         .anyRequest().permitAll())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

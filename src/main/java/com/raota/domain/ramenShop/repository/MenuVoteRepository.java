@@ -17,6 +17,10 @@ public interface MenuVoteRepository extends JpaRepository<MenuVote,Long>{
 
     Optional<MenuVote> findByMemberProfileIdAndRamenShopIdAndIsCancelledFalse(Long memberId, Long shopId);
 
+    Optional<MenuVote> findByAnonymousVoterIdAndRamenShopId(String anonymousVoterId, Long shopId);
+
+    Optional<MenuVote> findByAnonymousVoterIdAndRamenShopIdAndIsCancelledFalse(String anonymousVoterId, Long shopId);
+
     @Query("""
         SELECT new com.raota.presentation.api.ramenShop.response.VoteResultsDto(
             m.id,
