@@ -5,24 +5,6 @@ on:
     branches:
       - main
   workflow_dispatch:
-    inputs:
-      deploy_mode:
-        description: Deploy scope
-        required: true
-        type: choice
-        default: canary
-        options:
-          - canary
-          - full
-      canary_host:
-        description: Canary target host
-        required: true
-        type: choice
-        default: 10.0.1.213
-        options:
-          - 10.0.1.213
-          - 10.0.1.144
-          - 10.0.1.87
 
 jobs:
   build-and-dispatch:
@@ -63,31 +45,17 @@ jobs:
           docker push "${IMAGE_URI}:${IMAGE_TAG}"
           docker push "${IMAGE_URI}:latest"
 
-      - name: Resolve deploy inputs
-        id: deploy-inputs
-        shell: bash
-        run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "deploy_mode=${{ inputs.deploy_mode }}" >> "$GITHUB_OUTPUT"
-            echo "canary_host=${{ inputs.canary_host }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "deploy_mode=full" >> "$GITHUB_OUTPUT"
-            echo "canary_host=10.0.1.213" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Dispatch infra deploy workflow
         id: dispatch-infra-deploy
         env:
           INFRA_DISPATCH_TOKEN: ${{ secrets.INFRA_DISPATCH_TOKEN }}
           IMAGE_TAG: ${{ github.sha }}
-          DEPLOY_MODE: ${{ steps.deploy-inputs.outputs.deploy_mode }}
-          CANARY_HOST: ${{ steps.deploy-inputs.outputs.canary_host }}
         shell: bash
         run: |
           set -euo pipefail
 
           dispatched_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-          payload="$(printf '{"ref":"main","inputs":{"image_tag":"%s","deploy_mode":"%s","canary_host":"%s"}}' "${IMAGE_TAG}" "${DEPLOY_MODE}" "${CANARY_HOST}")"
+          payload="$(printf '{"ref":"main","inputs":{"image_tag":"%s"}}' "${IMAGE_TAG}")"
 
           curl -fsSL \
             -X POST \
