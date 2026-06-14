@@ -21,6 +21,15 @@ public class BookmarkService {
     private final RamenShopRepository ramenShopRepository;
     private final CacheInvalidationPublisher cacheInvalidationPublisher;
 
+    @Transactional(readOnly = true)
+    public boolean isBookmarked(Long memberId, Long shopId) {
+        if (memberId == null) {
+            return false;
+        }
+
+        return bookmarkRepository.existsByMemberProfileIdAndRamenShopIdAndIsDeletedFalse(memberId, shopId);
+    }
+
     public boolean toggleBookmark(Long memberId, Long shopId) {
         boolean bookmarked = bookmarkRepository.findByMemberProfileIdAndRamenShopId(memberId, shopId)
                 .map(bookmark -> {

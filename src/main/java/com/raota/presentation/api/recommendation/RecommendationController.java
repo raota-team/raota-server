@@ -1,5 +1,6 @@
 package com.raota.presentation.api.recommendation;
 import com.raota.application.recommendation.RecommendationService;
+import com.raota.infrastructure.auth.LoginMember;
 import com.raota.presentation.api.recommendation.contract.RecommendationApi;
 import com.raota.presentation.api.recommendation.request.*;
 import com.raota.presentation.api.recommendation.response.*;
@@ -15,8 +16,10 @@ public class RecommendationController implements RecommendationApi {
     private final RecommendationService recommendationService;
 
     @Override
-    public ResponseEntity<ApiResponse<TasteRecommendationResponse>> recommendByTaste(TasteRecommendationRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(recommendationService.recommendByTaste(request)));
+    public ResponseEntity<ApiResponse<TasteRecommendationResponse>> recommendByTaste(
+            TasteRecommendationRequest request,
+            @LoginMember(required = false) Long memberId) {
+        return ResponseEntity.ok(ApiResponse.success(recommendationService.recommendByTaste(request, memberId)));
     }
 
     @Override

@@ -1,4 +1,5 @@
 package com.raota.presentation.api.recommendation.contract;
+import com.raota.infrastructure.auth.LoginMember;
 import com.raota.presentation.api.recommendation.request.*;
 import com.raota.presentation.api.recommendation.response.*;
 import com.raota.presentation.common.ApiResponse;
@@ -15,7 +16,10 @@ public interface RecommendationApi {
 
     @Operation(summary = "라멘 취향 테스트 기반 추천")
     @PostMapping("/taste")
-    ResponseEntity<ApiResponse<TasteRecommendationResponse>> recommendByTaste(@RequestBody TasteRecommendationRequest request);
+    ResponseEntity<ApiResponse<TasteRecommendationResponse>> recommendByTaste(
+            @RequestBody TasteRecommendationRequest request,
+            @LoginMember(required = false) Long memberId
+    );
 
     @Operation(summary = "두 매장 심층 비교")
     @PostMapping("/compare")

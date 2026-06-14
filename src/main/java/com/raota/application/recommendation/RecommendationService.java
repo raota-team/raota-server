@@ -19,8 +19,8 @@ public class RecommendationService {
     private final WeekendCurationService weekendCurationService;
     private final FileUploader fileUploader;
 
-    public TasteRecommendationResponse recommendByTaste(TasteRecommendationRequest request) {
-        return tasteRecommendationService.recommendByTaste(request);
+    public TasteRecommendationResponse recommendByTaste(TasteRecommendationRequest request, Long memberId) {
+        return tasteRecommendationService.recommendByTaste(request, memberId);
     }
 
     public ShopComparisonResponse compareShops(ShopComparisonRequest request) {

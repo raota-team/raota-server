@@ -1,5 +1,6 @@
 package com.raota.application.recommendation;
 
+import com.raota.application.member.BookmarkService;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.infrastructure.file.FileUploader;
 import com.raota.presentation.api.recommendation.request.TasteRecommendationRequest;
@@ -26,6 +27,7 @@ public class TasteRecommendationService {
     private final RecommendationShopReader recommendationShopReader;
     private final FileUploader fileUploader;
     private final Resource recommendationReasonTemplate;
+    private final BookmarkService bookmarkService;
 
     public TasteRecommendationService(
             ChatClient.Builder chatClientBuilder,
@@ -33,8 +35,10 @@ public class TasteRecommendationService {
             RecommendationShopReader recommendationShopReader,
             FileUploader fileUploader,
             @Value("classpath:/prompts/system-persona.st") Resource systemPersona,
-            @Value("classpath:/prompts/taste-recommendation-reason.st") Resource recommendationReasonTemplate
+            @Value("classpath:/prompts/taste-recommendation-reason.st") Resource recommendationReasonTemplate,
+            BookmarkService bookmarkService
     ) {
+        this.bookmarkService = bookmarkService;
         this.chatClient = chatClientBuilder
                 .defaultSystem(systemPersona)
                 .build();
@@ -44,7 +48,7 @@ public class TasteRecommendationService {
         this.recommendationReasonTemplate = recommendationReasonTemplate;
     }
 
-    public TasteRecommendationResponse recommendByTaste(TasteRecommendationRequest request) {
+    public TasteRecommendationResponse recommendByTaste(TasteRecommendationRequest request, Long memberId) {
         validateTasteRecommendationRequest(request);
 
         String query = buildTasteQuery(request);
@@ -52,7 +56,7 @@ public class TasteRecommendationService {
         String context = buildRecommendationContext(searchResult);
         Map<String, String> aiReasons = generateRecommendationReasons(query, context);
 
-        return buildTasteRecommendationResponse(searchResult, aiReasons);
+        return buildTasteRecommendationResponse(searchResult, aiReasons, memberId);
     }
 
     private void validateTasteRecommendationRequest(TasteRecommendationRequest request) {
@@ -135,10 +139,10 @@ public class TasteRecommendationService {
 
     private TasteRecommendationResponse buildTasteRecommendationResponse(
             List<Document> searchResult,
-            Map<String, String> aiReasons
-    ) {
+            Map<String, String> aiReasons,
+            Long memberId) {
         List<TasteRecommendationResponse.RecommendedShopResponse> recommendedShops = searchResult.stream()
-                .map(document -> toRecommendedShopResponse(document, aiReasons))
+                .map(document -> toRecommendedShopResponse(document, aiReasons, memberId))
                 .toList();
 
         return new TasteRecommendationResponse(recommendedShops);
@@ -146,8 +150,8 @@ public class TasteRecommendationService {
 
     private TasteRecommendationResponse.RecommendedShopResponse toRecommendedShopResponse(
             Document document,
-            Map<String, String> aiReasons
-    ) {
+            Map<String, String> aiReasons,
+            Long memberId) {
         Long shopId = parseShopId(document.getMetadata().get("shopId"));
         RamenShop shop = recommendationShopReader.getRamenShop(shopId);
 
@@ -159,7 +163,7 @@ public class TasteRecommendationService {
                 aiReasons.getOrDefault(String.valueOf(shopId), "취향에 맞는 추천 매장입니다."),
                 fileUploader.getAccessibleUrl(shop.getImageUrl()),
                 (int) (document.getScore() * 100),
-                false
+                bookmarkService.isBookmarked(memberId, shop.getId())
         );
     }
 
