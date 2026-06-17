@@ -108,25 +108,24 @@ class RamenShopInfoControllerTest extends BaseIntegrationTest {
     }
 
     @Test
-    void searchByPopularSortReturnsBookmarkAndVisitPriorityOrder() throws Exception {
+    void searchByViewsSortReturnsViewCountPriorityOrder() throws Exception {
         RamenShop low = sampleShop("로우", "정렬시", "A");
-        low.increaseVisitCount();
+        low.increaseViewCount();
 
         RamenShop popular = sampleShop("인기", "정렬시", "B");
-        popular.increaseBookmarkCount();
-        popular.increaseBookmarkCount();
+        popular.increaseViewCount();
+        popular.increaseViewCount();
+        popular.increaseViewCount();
 
         RamenShop middle = sampleShop("미들", "정렬시", "C");
-        middle.increaseBookmarkCount();
-        middle.increaseVisitCount();
-        middle.increaseVisitCount();
-        middle.increaseVisitCount();
+        middle.increaseViewCount();
+        middle.increaseViewCount();
 
         ramenShopRepository.saveAll(List.of(low, popular, middle));
 
         mockMvc.perform(get("/ramen-shops")
                         .param("city", "정렬시")
-                        .param("sort", "POPULAR"))
+                        .param("sort", "VIEWS"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items.length()").value(3))
                 .andExpect(jsonPath("$.data.items[0].name").value("인기"))

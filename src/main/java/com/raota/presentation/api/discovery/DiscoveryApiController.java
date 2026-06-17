@@ -4,7 +4,7 @@ import com.raota.application.discovery.DiscoveryService;
 import com.raota.application.recommendation.RecommendationService;
 import com.raota.presentation.api.discovery.contract.DiscoveryApi;
 import com.raota.presentation.api.discovery.response.DiscoveryStatsResponse;
-import com.raota.presentation.api.discovery.response.TrendingTagResponse;
+import com.raota.presentation.api.discovery.response.TodayPopularRamenShopResponse;
 import com.raota.presentation.api.discovery.response.WeekendRecommendationResponse;
 import com.raota.presentation.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -33,10 +33,10 @@ public class DiscoveryApiController implements DiscoveryApi {
     }
 
     @Override
-    @GetMapping("/trending-tags")
-    public ResponseEntity<ApiResponse<List<TrendingTagResponse>>> getTrendingTags(
+    @GetMapping("/popular-shops/today")
+    public ResponseEntity<ApiResponse<List<TodayPopularRamenShopResponse>>> getTodayPopularShops(
             @RequestParam(defaultValue = "5") int limit) {
-        return ResponseEntity.ok(ApiResponse.success(discoveryService.getTrendingTags(limit)));
+        return ResponseEntity.ok(ApiResponse.success(discoveryService.getTodayPopularShops(limit)));
     }
 
     @Override

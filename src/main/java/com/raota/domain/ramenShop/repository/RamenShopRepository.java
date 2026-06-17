@@ -2,6 +2,9 @@ package com.raota.domain.ramenShop.repository;
 
 import com.raota.presentation.api.ramenShop.response.RamenShopResponse;
 import com.raota.domain.ramenShop.model.RamenShop;
+import com.raota.presentation.api.discovery.response.TodayPopularRamenShopResponse;
+import java.util.Collection;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -55,4 +58,15 @@ public interface RamenShopRepository extends JpaRepository<RamenShop, Long> {
                                          @Param("district") String district,
                                          @Param("keyword") String keyword,
                                          @Param("tag") String tag, Pageable pageable);
+
+    @Query("""
+            select new com.raota.presentation.api.discovery.response.TodayPopularRamenShopResponse(
+                s.id,
+                s.name,
+                s.stats.viewCount
+            )
+            from RamenShop s
+            where s.id in :shopIds
+            """)
+    List<TodayPopularRamenShopResponse> findPopularTodayShops(@Param("shopIds") Collection<Long> shopIds);
 }
