@@ -2,12 +2,17 @@ package com.raota.application.ramenShop;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.raota.domain.member.repository.BookmarkRepository;
+import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenProofPictureRepository;
+import com.raota.domain.ramenShop.repository.RamenShopRepository;
+import com.raota.infrastructure.cache.CacheInvalidationPublisher;
 import com.raota.presentation.api.ramenShop.response.RamenShopBasicInfoResponse;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,10 +26,16 @@ class RamenShopInfoServiceTest {
     private RamenShopCacheService ramenShopCacheService;
 
     @Mock
+    private RamenShopRepository ramenShopRepository;
+
+    @Mock
     private BookmarkRepository bookmarkRepository;
 
     @Mock
     private RamenProofPictureRepository ramenProofPictureRepository;
+
+    @Mock
+    private CacheInvalidationPublisher cacheInvalidationPublisher;
 
     @InjectMocks
     private RamenShopInfoService ramenShopInfoService;
@@ -39,6 +50,9 @@ class RamenShopInfoServiceTest {
                 .is_bookmarked(false)
                 .build();
 
+        given(ramenShopRepository.findById(shopId)).willReturn(Optional.of(RamenShop.builder()
+                .name("멘야 하쿠")
+                .build()));
         given(ramenShopCacheService.getShopDetail(shopId)).willReturn(cachedResponse);
         given(bookmarkRepository.existsByMemberProfileIdAndRamenShopIdAndIsDeletedFalse(memberId, shopId))
                 .willReturn(true);
@@ -46,6 +60,28 @@ class RamenShopInfoServiceTest {
         RamenShopBasicInfoResponse response = ramenShopInfoService.getShopDetailInfo(shopId, memberId);
 
         assertThat(response.is_bookmarked()).isTrue();
+    }
+
+    @Test
+    void getShopDetailInfoIncreasesViewCount() {
+        Long shopId = 1L;
+        RamenShop shop = RamenShop.builder()
+                .name("멘야 하쿠")
+                .build();
+        RamenShopBasicInfoResponse cachedResponse = RamenShopBasicInfoResponse.builder()
+                .id(shopId)
+                .name("멘야 하쿠")
+                .build();
+
+        given(ramenShopRepository.findById(shopId)).willReturn(Optional.of(shop));
+        given(ramenShopCacheService.getShopDetail(shopId)).willReturn(cachedResponse);
+
+        RamenShopBasicInfoResponse response = ramenShopInfoService.getShopDetailInfo(shopId, null);
+
+        assertThat(shop.getStats().viewCount()).isEqualTo(1);
+        assertThat(response.stats().getView_count()).isEqualTo(1);
+        verify(cacheInvalidationPublisher).publish("ramenShopDetail", String.valueOf(shopId));
+        verify(cacheInvalidationPublisher).publishAll("ramenShopList");
     }
 
     @Test

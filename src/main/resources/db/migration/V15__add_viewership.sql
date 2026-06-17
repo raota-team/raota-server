@@ -1,0 +1,5 @@
+ALTER TABLE tb_ramen_shop
+    ADD COLUMN view_count INT DEFAULT 0 NOT NULL;
+
+ALTER TABLE tb_post
+    ADD COLUMN view_count INT DEFAULT 0 NOT NULL;

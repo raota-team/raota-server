@@ -46,6 +46,30 @@ public record RamenShopBasicInfoResponse(
         );
     }
 
+    public RamenShopBasicInfoResponse withViewCount(int viewCount) {
+        ShopStatDto nextStats = stats == null
+                ? new ShopStatDto(viewCount, 0, 0)
+                : stats.withViewCount(viewCount);
+
+        return new RamenShopBasicInfoResponse(
+                id,
+                name,
+                branch_name,
+                naver_map_id,
+                image_url,
+                address,
+                instagram_url,
+                catchTableUrl,
+                description,
+                business_hours,
+                nextStats,
+                is_bookmarked,
+                tags,
+                normal_menus,
+                event_menus
+        );
+    }
+
     public static RamenShopBasicInfoResponse from(
             RamenShop ramenShop,
             String imageUrl,

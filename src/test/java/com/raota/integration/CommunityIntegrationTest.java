@@ -98,7 +98,29 @@ class CommunityIntegrationTest extends BaseIntegrationTest {
                 .get("/community/posts")
         .then()
                 .statusCode(HttpStatus.OK.value())
-                .body("data.items.size()", is(2));
+                .body("data.items.size()", is(2))
+                .body("data.items[0].viewCount", is(0));
+    }
+
+    @Test
+    @DisplayName("게시글 상세 조회 시 조회수가 증가하고 응답에 포함된다.")
+    void get_post_detail_increases_view_count() {
+        Post post = saveSamplePost("조회수 글", "내용");
+
+        given()
+        .when()
+                .get("/community/posts/{postId}", post.getId())
+        .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("data.title", is("조회수 글"))
+                .body("data.viewCount", is(1));
+
+        given()
+        .when()
+                .get("/community/posts/{postId}", post.getId())
+        .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("data.viewCount", is(2));
     }
 
     @Test
@@ -148,7 +170,7 @@ class CommunityIntegrationTest extends BaseIntegrationTest {
 
     private Post saveSamplePost(String title, String content, Long ramenShopId) {
         return jpaPostRepository.save(Post.of(
-                null, PostCategory.REVIEW, title, content, "PLAIN", null, savedMember.getId(), ramenShopId, LocalDateTime.now()
+                null, PostCategory.REVIEW, title, content, "PLAIN", null, savedMember.getId(), ramenShopId, 0, LocalDateTime.now()
         ));
     }
 

@@ -1,6 +1,9 @@
 package com.raota.application.ramenShop;
 
 import com.raota.domain.member.repository.BookmarkRepository;
+import com.raota.domain.ramenShop.model.RamenShop;
+import com.raota.domain.ramenShop.repository.RamenShopRepository;
+import com.raota.infrastructure.cache.CacheInvalidationPublisher;
 import com.raota.presentation.api.ramenShop.response.RamenShopResponse;
 import com.raota.presentation.api.ramenShop.request.RamenShopSortType;
 import com.raota.presentation.api.ramenShop.response.RamenShopBasicInfoResponse;
@@ -19,16 +22,23 @@ import org.springframework.transaction.annotation.Transactional;
 public class RamenShopInfoService {
 
     private final RamenShopCacheService ramenShopCacheService;
+    private final RamenShopRepository ramenShopRepository;
     private final BookmarkRepository bookmarkRepository;
     private final RamenProofPictureRepository ramenProofPictureRepository;
+    private final CacheInvalidationPublisher cacheInvalidationPublisher;
 
     @Transactional(readOnly = true)
     public List<RecentVerifiedShopResponse> getRecentVerifiedShops(int limit) {
         return ramenProofPictureRepository.findRecentVerifiedShops(PageRequest.of(0, limit));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public RamenShopBasicInfoResponse getShopDetailInfo(Long shopId, Long memberId) {
+        RamenShop ramenShop = ramenShopRepository.findById(shopId)
+                .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
+        ramenShop.increaseViewCount();
+        int viewCount = ramenShop.getStats().viewCount();
+
         RamenShopBasicInfoResponse cachedResponse = ramenShopCacheService.getShopDetail(shopId);
 
         boolean isBookmarked = false;
@@ -36,7 +46,9 @@ public class RamenShopInfoService {
             isBookmarked = bookmarkRepository.existsByMemberProfileIdAndRamenShopIdAndIsDeletedFalse(memberId, shopId);
         }
 
-        return cachedResponse.withBookmark(isBookmarked);
+        cacheInvalidationPublisher.publish("ramenShopDetail", String.valueOf(shopId));
+        cacheInvalidationPublisher.publishAll("ramenShopList");
+        return cachedResponse.withBookmark(isBookmarked).withViewCount(viewCount);
     }
 
     @Transactional(readOnly = true)

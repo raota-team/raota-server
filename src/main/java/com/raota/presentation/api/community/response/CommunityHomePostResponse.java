@@ -14,6 +14,8 @@ public record CommunityHomePostResponse(
         AuthorSummary author,
         @Schema(description = "댓글 수")
         long commentCount,
+        @Schema(description = "조회 수")
+        Integer viewCount,
         @Schema(description = "작성 일시")
         LocalDateTime createdAt
 ) {

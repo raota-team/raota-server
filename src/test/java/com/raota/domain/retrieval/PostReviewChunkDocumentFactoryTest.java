@@ -33,6 +33,7 @@ class PostReviewChunkDocumentFactoryTest {
                 null,
                 100L,
                 1L,
+                0,
                 LocalDateTime.now()
         );
 
@@ -64,6 +65,7 @@ class PostReviewChunkDocumentFactoryTest {
                 null,
                 100L,
                 null,
+                0,
                 LocalDateTime.now()
         );
 
@@ -85,6 +87,7 @@ class PostReviewChunkDocumentFactoryTest {
                 null,
                 100L,
                 null,
+                0,
                 LocalDateTime.now()
         );
 
@@ -112,6 +115,7 @@ class PostReviewChunkDocumentFactoryTest {
                 null,
                 100L,
                 null,
+                0,
                 LocalDateTime.now()
         );
 

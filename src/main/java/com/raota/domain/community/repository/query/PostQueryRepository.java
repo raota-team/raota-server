@@ -52,7 +52,8 @@ public class PostQueryRepository {
                                p.id, p.category, rs.id, rs.name, p.title, substring(p.content, 1, 100),
                                p.thumbnailUrl, a.nickname, a.id, a.imageUrl, p.createdAt,
                                (select count(pl) from PostLikeEntity pl where pl.postId = p.id),
-                               (select count(c) from CommentEntity c where c.post.id = p.id and c.isDeleted = false)
+                               (select count(c) from CommentEntity c where c.post.id = p.id and c.isDeleted = false),
+                               p.viewCount
                         )
                         from PostEntity p
                         left join p.ramenShop rs
@@ -85,6 +86,7 @@ public class PostQueryRepository {
                                p.contentFormat, p.content,
                                (select count(pl) from PostLikeEntity pl where pl.postId = p.id),
                                (select count(c) from CommentEntity c where c.post.id = p.id and c.isDeleted = false),
+                               p.viewCount,
                                (select count(pl2) from PostLikeEntity pl2 where pl2.postId = p.id and pl2.memberId = :memberId)
                         )
                         from PostEntity p
@@ -157,6 +159,7 @@ public class PostQueryRepository {
                        p.id, p.title, substring(p.content, 1, 50),
                        a.nickname, a.imageUrl,
                        (select count(c) from CommentEntity c where c.post.id = p.id and c.isDeleted = false),
+                       p.viewCount,
                        p.createdAt
                 )
                 from PostEntity p
@@ -207,7 +210,8 @@ public class PostQueryRepository {
             String authorImageUrl,
             LocalDateTime createdAt,
             Long likeCount,
-            Long commentCount
+            Long commentCount,
+            Integer viewCount
     ) {
         private CommunityPostCardResponse toResponse() {
             return new CommunityPostCardResponse(
@@ -223,7 +227,8 @@ public class PostQueryRepository {
                     authorImageUrl,
                     createdAt,
                     likeCount,
-                    commentCount
+                    commentCount,
+                    viewCount
             );
         }
     }
@@ -240,6 +245,7 @@ public class PostQueryRepository {
             String content,
             Long likeCount,
             Long commentCount,
+            Integer viewCount,
             Long likedCount
     ) {
         private CommunityPostDetailResponse toResponse(boolean hasMemberContext) {
@@ -256,6 +262,7 @@ public class PostQueryRepository {
                     content,
                     likeCount,
                     commentCount,
+                    viewCount,
                     hasMemberContext && likedCount > 0
             );
         }
@@ -279,6 +286,7 @@ public class PostQueryRepository {
             String nickname,
             String profileImageUrl,
             Long commentCount,
+            Integer viewCount,
             LocalDateTime createdAt
     ) {
         private CommunityHomePostResponse toResponse() {
@@ -288,6 +296,7 @@ public class PostQueryRepository {
                     contentSnippet,
                     new CommunityHomePostResponse.AuthorSummary(nickname, profileImageUrl),
                     commentCount,
+                    viewCount,
                     createdAt
             );
         }

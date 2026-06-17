@@ -120,12 +120,12 @@ class DiscoveryIntegrationTest extends BaseIntegrationTest {
         
         // 꿀팁 게시글
         jpaPostRepository.save(Post.of(
-                null, PostCategory.TIP, "꿀팁 제목", "꿀팁 내용입니다. 면을 꼬들하게 드세요.", "PLAIN", null, member.getId(), null, LocalDateTime.now()
+                null, PostCategory.TIP, "꿀팁 제목", "꿀팁 내용입니다. 면을 꼬들하게 드세요.", "PLAIN", null, member.getId(), null, 0, LocalDateTime.now()
         ));
         
         // 자유게시판 게시글 (필터링되어야 함)
         jpaPostRepository.save(Post.of(
-                null, PostCategory.FREE, "자유 제목", "자유 내용", "PLAIN", null, member.getId(), null, LocalDateTime.now()
+                null, PostCategory.FREE, "자유 제목", "자유 내용", "PLAIN", null, member.getId(), null, 0, LocalDateTime.now()
         ));
 
         given()

@@ -9,6 +9,7 @@ public record RamenShopResponse(
         String region,
         List<String> tags,
         String thumbnailUrl,
-        Integer visits
+        Integer visits,
+        Integer viewCount
 ){
 }

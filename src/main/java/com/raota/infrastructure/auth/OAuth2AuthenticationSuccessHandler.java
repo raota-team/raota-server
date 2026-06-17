@@ -4,6 +4,7 @@ import com.raota.application.auth.AuthService;
 import com.raota.application.auth.OAuth2LoginResult;
 import com.raota.application.auth.OAuth2UserInfo;
 import com.raota.application.auth.OAuth2UserInfoFactory;
+import com.raota.infrastructure.auth.repository.HttpCookieOAuth2AuthorizationRequestRepository;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,8 +22,6 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
-import static com.raota.infrastructure.auth.repository.HttpCookieOAuth2AuthorizationRequestRepository.REDIRECT_URI_PARAM_COOKIE_NAME;
-
 @Component
 @RequiredArgsConstructor
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
@@ -30,7 +29,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final AuthService authService;
     private final OAuth2UserInfoFactory oAuth2UserInfoFactory;
     private final RefreshTokenCookieManager refreshTokenCookieManager;
-    private final com.raota.infrastructure.auth.repository.HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
+    private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
     private final AuthProperties authProperties;
 
     @Override
@@ -64,7 +63,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     private String getTargetUriFromCookie(HttpServletRequest request) {
         String targetUri = Arrays.stream(request.getCookies() != null ? request.getCookies() : new Cookie[0])
-                .filter(cookie -> REDIRECT_URI_PARAM_COOKIE_NAME.equals(cookie.getName()))
+                .filter(cookie -> HttpCookieOAuth2AuthorizationRequestRepository.REDIRECT_URI_PARAM_COOKIE_NAME.equals(cookie.getName()))
                 .map(Cookie::getValue)
                 .findFirst()
                 .orElse(authProperties.oauth2().redirectUri());

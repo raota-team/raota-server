@@ -29,6 +29,8 @@ public record CommunityPostCardResponse(
         @Schema(description = "좋아요 수")
         Long likeCount,
         @Schema(description = "댓글 수")
-        Long commentCount
+        Long commentCount,
+        @Schema(description = "조회 수")
+        Integer viewCount
 ) {
 }
