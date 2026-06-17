@@ -33,12 +33,10 @@ public class RamenShopInfoService {
         return ramenProofPictureRepository.findRecentVerifiedShops(PageRequest.of(0, limit));
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public RamenShopBasicInfoResponse getShopDetailInfo(Long shopId, Long memberId) {
         RamenShop ramenShop = ramenShopRepository.findById(shopId)
                 .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
-        ramenShop.increaseViewCount();
-        ramenShopViewRankingService.increaseTodayViewCount(shopId);
         int viewCount = ramenShop.getStats().viewCount();
 
         RamenShopBasicInfoResponse cachedResponse = ramenShopCacheService.getShopDetail(shopId);
@@ -48,9 +46,18 @@ public class RamenShopInfoService {
             isBookmarked = bookmarkRepository.existsByMemberProfileIdAndRamenShopIdAndIsDeletedFalse(memberId, shopId);
         }
 
+        return cachedResponse.withBookmark(isBookmarked).withViewCount(viewCount);
+    }
+
+    @Transactional
+    public void increaseViewCount(Long shopId) {
+        RamenShop ramenShop = ramenShopRepository.findById(shopId)
+                .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
+        ramenShop.increaseViewCount();
+        ramenShopViewRankingService.increaseTodayViewCount(shopId);
+
         cacheInvalidationPublisher.publish("ramenShopDetail", String.valueOf(shopId));
         cacheInvalidationPublisher.publishAll("ramenShopList");
-        return cachedResponse.withBookmark(isBookmarked).withViewCount(viewCount);
     }
 
     @Transactional(readOnly = true)

@@ -37,6 +37,14 @@ public interface CommunityApi {
             @Parameter(description = "글 ID", required = true) Long postId,
             @Parameter(hidden = true) Long memberId);
 
+    @Operation(summary = "커뮤니티 글 조회수 증가",
+            description = "커뮤니티 게시글의 조회수를 1 증가시킵니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    ResponseEntity<ApiResponse<Void>> increasePostViewCount(
+            @Parameter(description = "글 ID", required = true) Long postId);
+
     @Operation(summary = "커뮤니티 글 작성",
             description = "JSON 형식으로 커뮤니티 글을 작성합니다. 이미지는 사전 업로드 후 URL로 포함되어야 합니다.")
     @ApiResponses({

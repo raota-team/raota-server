@@ -42,6 +42,14 @@ public class RamenShopInfoController implements RamenShopInfoApi {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    @Override
+    @PostMapping("/{shopId}/views")
+    public ResponseEntity<ApiResponse<Void>> increaseShopViewCount(
+            @PathVariable Long shopId) {
+        ramenShopInfoService.increaseViewCount(shopId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
     @GetMapping
     @Override
     public ResponseEntity<ApiResponse<PageResponse<RamenShopResponse>>> getShopList(

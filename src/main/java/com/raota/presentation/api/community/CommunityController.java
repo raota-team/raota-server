@@ -57,8 +57,15 @@ public class CommunityController implements CommunityApi {
     public ResponseEntity<ApiResponse<CommunityPostDetailResponse>> getCommunityPostDetail(
             @PathVariable Long postId,
             @LoginMember(required = false) Long memberId) {
-        postService.increaseViewCount(postId);
         return ResponseEntity.ok(ApiResponse.success(postQueryRepository.getPostDetail(postId, memberId)));
+    }
+
+    @Override
+    @PostMapping("/posts/{postId}/views")
+    public ResponseEntity<ApiResponse<Void>> increasePostViewCount(
+            @PathVariable Long postId) {
+        postService.increaseViewCount(postId);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Override
