@@ -24,7 +24,6 @@ public class OciVaultConfigDataLoader implements ConfigDataLoader<OciVaultConfig
             "SPRING_DATASOURCE_PASSWORD",
             "SPRING_DATA_REDIS_HOST",
             "SPRING_DATA_REDIS_PORT",
-            "SPRING_DATA_REDIS_PASSWORD",
             "OCI_STORAGE_NAMESPACE",
             "OCI_STORAGE_BUCKET",
             "OCI_STORAGE_REGION",

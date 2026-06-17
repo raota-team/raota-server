@@ -5,7 +5,7 @@ import jakarta.persistence.Embeddable;
 
 @Embeddable
 public record ShopStats(
-        @Column(name = "view_count") int viewCount,
+        @Column(name = "view_count", nullable = false) int viewCount,
         @Column(name = "visit_count") int visitCount,
         @Column(name = "bookmark_count") int bookmarkCount
 ) {
