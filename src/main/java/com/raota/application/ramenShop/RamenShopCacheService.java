@@ -36,10 +36,10 @@ public class RamenShopCacheService {
                 ramenShop,
                 fileUploader.getAccessibleUrl(ramenShop.getImageUrl()),
                 normalMenusOf(ramenShop).stream()
-                        .map(menu -> NormalMenuDto.from(menu, fileUploader.getAccessibleUrl(menu.getImageUrl())))
+                        .map(NormalMenuDto::from)
                         .toList(),
                 eventMenusOf(ramenShop).stream()
-                        .map(menu -> EventMenuDto.from(menu, fileUploader.getAccessibleUrl(menu.getImageUrl())))
+                        .map(EventMenuDto::from)
                         .toList(),
                 false
         );

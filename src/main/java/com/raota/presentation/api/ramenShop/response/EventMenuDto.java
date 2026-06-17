@@ -11,20 +11,14 @@ public class EventMenuDto {
     private String name;
     private String description;
     private int price;
-    private String image_url;
     private String badge_text;
 
     public static EventMenuDto from(EventMenu eventMenu){
-        return from(eventMenu, eventMenu.getImageUrl());
-    }
-
-    public static EventMenuDto from(EventMenu eventMenu, String imageUrl){
         return new EventMenuDto(
                 eventMenu.getId(),
                 eventMenu.getName(),
                 eventMenu.getDescription(),
                 eventMenu.getPrice(),
-                imageUrl,
                 eventMenu.getBadgeText()
         );
     }

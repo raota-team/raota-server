@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.raota.domain.ramenShop.model.Address;
 import com.raota.domain.ramenShop.model.BusinessHours;
+import com.raota.domain.ramenShop.model.EventMenu;
 import com.raota.domain.ramenShop.model.EventMenus;
 import com.raota.domain.ramenShop.model.NormalMenu;
 import com.raota.domain.ramenShop.model.NormalMenus;
@@ -93,6 +94,26 @@ class RamenShopInfoControllerTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.data.branch_name").value("성수점")) // 지점명 확인
                 .andExpect(jsonPath("$.data.naver_map_id").value("naver-123")) // 네이버 ID 확인
                 .andExpect(jsonPath("$.data.tags").value(hasItems("태그1", "태그2"))); // 전체 태그 확인
+    }
+
+    @Test
+    void getShopDetailInfoDoesNotReturnMenuImages() throws Exception {
+        RamenShop shop = sampleShop("멘야 하쿠", "서울", "성동구");
+        shop.addEventMenu(EventMenu.builder()
+                .name("한정 츠케멘")
+                .description("기간 한정 메뉴")
+                .price(13000)
+                .badgeText("LIMITED")
+                .imageUrl("https://example.com/event-menu.jpg")
+                .build());
+        RamenShop savedShop = ramenShopRepository.save(shop);
+
+        mockMvc.perform(get("/ramen-shops/{shopId}", savedShop.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.normal_menus[0].name").value("기본 라멘"))
+                .andExpect(jsonPath("$.data.normal_menus[0].image_url").doesNotExist())
+                .andExpect(jsonPath("$.data.event_menus[0].name").value("한정 츠케멘"))
+                .andExpect(jsonPath("$.data.event_menus[0].image_url").doesNotExist());
     }
 
     @Test
@@ -187,6 +208,7 @@ class RamenShopInfoControllerTest extends BaseIntegrationTest {
                 .name("기본 라멘")
                 .price(10000)
                 .isSignature(true)
+                .imageUrl("https://example.com/" + name + "-menu.jpg")
                 .build());
         return ramenShop;
     }
