@@ -4,9 +4,8 @@ import org.springframework.data.domain.Sort;
 
 public enum RamenShopSortType {
     LATEST(Sort.by(Sort.Order.desc("id"))),
-    POPULAR(Sort.by(
-            Sort.Order.desc("stats.bookmarkCount"),
-            Sort.Order.desc("stats.visitCount"),
+    VIEWS(Sort.by(
+            Sort.Order.desc("stats.viewCount"),
             Sort.Order.desc("id")
     )),
     NAME(Sort.by(

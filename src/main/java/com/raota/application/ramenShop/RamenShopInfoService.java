@@ -26,6 +26,7 @@ public class RamenShopInfoService {
     private final BookmarkRepository bookmarkRepository;
     private final RamenProofPictureRepository ramenProofPictureRepository;
     private final CacheInvalidationPublisher cacheInvalidationPublisher;
+    private final RamenShopViewRankingService ramenShopViewRankingService;
 
     @Transactional(readOnly = true)
     public List<RecentVerifiedShopResponse> getRecentVerifiedShops(int limit) {
@@ -37,6 +38,7 @@ public class RamenShopInfoService {
         RamenShop ramenShop = ramenShopRepository.findById(shopId)
                 .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
         ramenShop.increaseViewCount();
+        ramenShopViewRankingService.increaseTodayViewCount(shopId);
         int viewCount = ramenShop.getStats().viewCount();
 
         RamenShopBasicInfoResponse cachedResponse = ramenShopCacheService.getShopDetail(shopId);

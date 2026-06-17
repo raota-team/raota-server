@@ -37,6 +37,9 @@ class RamenShopInfoServiceTest {
     @Mock
     private CacheInvalidationPublisher cacheInvalidationPublisher;
 
+    @Mock
+    private RamenShopViewRankingService ramenShopViewRankingService;
+
     @InjectMocks
     private RamenShopInfoService ramenShopInfoService;
 
@@ -80,6 +83,7 @@ class RamenShopInfoServiceTest {
 
         assertThat(shop.getStats().viewCount()).isEqualTo(1);
         assertThat(response.stats().getView_count()).isEqualTo(1);
+        verify(ramenShopViewRankingService).increaseTodayViewCount(shopId);
         verify(cacheInvalidationPublisher).publish("ramenShopDetail", String.valueOf(shopId));
         verify(cacheInvalidationPublisher).publishAll("ramenShopList");
     }

@@ -20,11 +20,13 @@ import io.restassured.RestAssured;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 
 class DiscoveryIntegrationTest extends BaseIntegrationTest {
@@ -44,9 +46,16 @@ class DiscoveryIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private JpaPostRepository jpaPostRepository;
 
+    @Autowired
+    private StringRedisTemplate redisTemplate;
+
     @BeforeEach
     void setUp() {
         RestAssured.port = port;
+        Set<String> rankingKeys = redisTemplate.keys("ramen-shop:view:*");
+        if (rankingKeys != null && !rankingKeys.isEmpty()) {
+            redisTemplate.delete(rankingKeys);
+        }
         ramenProofPictureRepository.deleteAll();
         jpaPostRepository.deleteAll();
         ramenShopRepository.deleteAll();
@@ -71,21 +80,30 @@ class DiscoveryIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("인기 검색어 API가 플레이스홀더 데이터를 반환한다.")
-    void get_trending_tags() {
+    @DisplayName("오늘 많이 본 라멘집 API가 상세 조회수 상위 라멘집을 반환한다.")
+    void get_today_popular_shops() {
+        RamenShop first = ramenShopRepository.save(sampleShop("가장 많이 본 집", "서울", "마포구"));
+        RamenShop second = ramenShopRepository.save(sampleShop("두번째 집", "서울", "성동구"));
+
+        given().when().get("/ramen-shops/{shopId}", first.getId()).then().statusCode(HttpStatus.OK.value());
+        given().when().get("/ramen-shops/{shopId}", first.getId()).then().statusCode(HttpStatus.OK.value());
+        given().when().get("/ramen-shops/{shopId}", second.getId()).then().statusCode(HttpStatus.OK.value());
+
         given()
-                .param("limit", 3)
+                .param("limit", 5)
         .when()
-                .get("/api/v1/discovery/trending-tags")
+                .get("/api/v1/discovery/popular-shops/today")
         .then()
                 .statusCode(HttpStatus.OK.value())
                 .body("success", is(true))
-                .body("data.size()", is(3))
-                .body("data[0].name", is("토리파이탄"))
-                .body("data[0].trend", is("up"));
+                .body("data.size()", is(2))
+                .body("data[0].ramenShopId", is(first.getId().intValue()))
+                .body("data[0].name", is("가장 많이 본 집"))
+                .body("data[0].viewCount", is(2))
+                .body("data[1].ramenShopId", is(second.getId().intValue()))
+                .body("data[1].viewCount", is(1));
     }
 
-    @Test
     @DisplayName("최근 사진 인증된 라멘집 API가 정상 동작한다.")
     void get_recent_verified_shops() {
         RamenShop shop = ramenShopRepository.save(sampleShop("인증가게", "서울", "마포구"));
