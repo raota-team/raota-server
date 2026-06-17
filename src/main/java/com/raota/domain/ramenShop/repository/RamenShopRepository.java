@@ -62,8 +62,7 @@ public interface RamenShopRepository extends JpaRepository<RamenShop, Long> {
     @Query("""
             select new com.raota.presentation.api.discovery.response.TodayPopularRamenShopResponse(
                 s.id,
-                s.name,
-                s.stats.viewCount
+                s.name
             )
             from RamenShop s
             where s.id in :shopIds

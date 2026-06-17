@@ -58,11 +58,6 @@ public class RamenShopViewRankingService {
                 .map(Long::valueOf)
                 .map(shops::get)
                 .filter(Objects::nonNull)
-                .map(shop -> new TodayPopularRamenShopResponse(
-                        shop.ramenShopId(),
-                        shop.name(),
-                        scoreOf(tuples, shop.ramenShopId())
-                ))
                 .toList();
     }
 
@@ -72,16 +67,6 @@ public class RamenShopViewRankingService {
                 .filter(Objects::nonNull)
                 .map(Long::valueOf)
                 .toList();
-    }
-
-    private int scoreOf(Set<ZSetOperations.TypedTuple<String>> tuples, Long shopId) {
-        return tuples.stream()
-                .filter(tuple -> String.valueOf(shopId).equals(tuple.getValue()))
-                .map(ZSetOperations.TypedTuple::getScore)
-                .filter(Objects::nonNull)
-                .findFirst()
-                .map(Double::intValue)
-                .orElse(0);
     }
 
     private String todayKey() {
