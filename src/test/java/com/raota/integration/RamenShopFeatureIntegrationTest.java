@@ -167,6 +167,26 @@ class RamenShopFeatureIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
+    @DisplayName("로그인한 사용자가 북마크한 라멘집 상세 조회 시 북마크 상태가 true로 반환된다.")
+    void get_shop_detail_returns_bookmark_status_for_authenticated_member() {
+        given()
+                .header("Authorization", "Bearer " + accessToken)
+        .when()
+                .post("/ramen-shops/{shopId}/bookmark", savedShop.getId())
+        .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("data", is(true));
+
+        given()
+                .header("Authorization", "Bearer " + accessToken)
+        .when()
+                .get("/ramen-shops/{shopId}", savedShop.getId())
+        .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("data.is_bookmarked", is(true));
+    }
+
+    @Test
     @DisplayName("라멘집 인증샷을 업로드하면 업로드된 파일 정보를 반환한다.")
     void upload_proof_picture_success() {
         Map<String, String> request = Map.of(
