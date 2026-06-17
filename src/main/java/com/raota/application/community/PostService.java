@@ -104,4 +104,15 @@ public class PostService {
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         author.decreasePostCount();
     }
+
+    public void increaseViewCount(Long postId) {
+        PostEntity postEntity = postRepository.findEntityById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
+
+        if (postEntity.isDeleted()) {
+            throw new IllegalArgumentException("게시글을 찾을 수 없습니다.");
+        }
+
+        postEntity.increaseViewCount();
+    }
 }

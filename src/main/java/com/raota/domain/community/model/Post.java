@@ -18,6 +18,7 @@ public class Post {
     private final String thumbnailUrl;
     private final Long authorId;
     private final Long ramenShopId;
+    private final int viewCount;
     private final LocalDateTime createdAt;
 
     /**
@@ -41,6 +42,7 @@ public class Post {
                 .thumbnailUrl(thumbnailUrl)
                 .authorId(authorId)
                 .ramenShopId(ramenShopId)
+                .viewCount(0)
                 .createdAt(LocalDateTime.now())
                 .build();
     }
@@ -57,6 +59,7 @@ public class Post {
             String thumbnailUrl,
             Long authorId,
             Long ramenShopId,
+            int viewCount,
             LocalDateTime createdAt
     ) {
         return Post.builder()
@@ -68,6 +71,7 @@ public class Post {
                 .thumbnailUrl(thumbnailUrl)
                 .authorId(authorId)
                 .ramenShopId(ramenShopId)
+                .viewCount(viewCount)
                 .createdAt(createdAt)
                 .build();
     }
@@ -98,6 +102,7 @@ public class Post {
                 .thumbnailUrl(thumbnailUrl)
                 .authorId(this.authorId)
                 .ramenShopId(ramenShopId)
+                .viewCount(this.viewCount)
                 .createdAt(this.createdAt)
                 .build();
     }

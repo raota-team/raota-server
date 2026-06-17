@@ -29,6 +29,8 @@ public record CommunityPostDetailResponse(
         Long likeCount,
         @Schema(description = "댓글 수")
         Long commentCount,
+        @Schema(description = "조회 수")
+        Integer viewCount,
         @Schema(description = "로그인한 사용자의 좋아요 여부")
         Boolean isLiked
 ) {

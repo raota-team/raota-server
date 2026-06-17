@@ -6,6 +6,7 @@ import com.raota.infrastructure.auth.OAuth2AuthenticationFailureHandler;
 import com.raota.infrastructure.auth.OAuth2AuthenticationSuccessHandler;
 import com.raota.infrastructure.auth.RestAccessDeniedHandler;
 import com.raota.infrastructure.auth.RestAuthenticationEntryPoint;
+import com.raota.infrastructure.auth.repository.HttpCookieOAuth2AuthorizationRequestRepository;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +30,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
-    private final com.raota.infrastructure.auth.repository.HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository; // 추가
+    private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final RestAccessDeniedHandler restAccessDeniedHandler;
     private final AuthProperties authProperties;

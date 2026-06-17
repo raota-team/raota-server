@@ -60,7 +60,8 @@ public class RamenShopCacheService {
                         store.region(),
                         store.tags(),
                         fileUploader.getAccessibleUrl(store.thumbnailUrl()),
-                        store.visits()
+                        store.visits(),
+                        store.viewCount()
                 ));
     }
 

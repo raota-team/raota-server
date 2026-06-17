@@ -55,6 +55,7 @@ class RamenShopIntegrationTest extends BaseIntegrationTest {
                 .body("data.items.name", hasItems("멘야 하쿠", "이리에 라멘"))
                 .body("data.items.find { it.name == '멘야 하쿠' }.tagLine", is("진한 국물 맛집"))
                 .body("data.items.find { it.name == '멘야 하쿠' }.tags", hasItems("토리파이탄", "혼밥"))
+                .body("data.items.find { it.name == '멘야 하쿠' }.viewCount", is(0))
                 .body("data.items.region", hasItems("서울 성동구", "서울 마포구"));
     }
 
@@ -93,6 +94,7 @@ class RamenShopIntegrationTest extends BaseIntegrationTest {
                 .body("data.name", is("멘야 하쿠"))
                 .body("data.branch_name", is("성수점"))
                 .body("data.naver_map_id", is("naver-999"))
+                .body("data.stats.view_count", is(1))
                 .body("data.tags", hasItems("태그1", "태그2"));
     }
 

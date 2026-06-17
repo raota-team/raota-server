@@ -62,6 +62,10 @@ public class PostEntity {
     private LocalDateTime createdAt;
 
     @Builder.Default
+    @Column(name = "view_count", nullable = false)
+    private int viewCount = 0;
+
+    @Builder.Default
     @Column(name = "is_deleted", nullable = false)
     private boolean isDeleted = false;
 
@@ -77,6 +81,10 @@ public class PostEntity {
         this.isDeleted = true;
     }
 
+    public void increaseViewCount() {
+        this.viewCount += 1;
+    }
+
     public Post toDomain() {
         return Post.of(
                 id,
@@ -87,6 +95,7 @@ public class PostEntity {
                 thumbnailUrl,
                 author.getId(),
                 ramenShop != null ? ramenShop.getId() : null,
+                viewCount,
                 createdAt
         );
     }
@@ -101,6 +110,7 @@ public class PostEntity {
                 .thumbnailUrl(post.getThumbnailUrl())
                 .author(author)
                 .ramenShop(ramenShop)
+                .viewCount(post.getViewCount())
                 .createdAt(post.getCreatedAt())
                 .build();
     }
