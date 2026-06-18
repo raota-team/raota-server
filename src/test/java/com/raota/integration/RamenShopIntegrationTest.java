@@ -88,6 +88,12 @@ class RamenShopIntegrationTest extends BaseIntegrationTest {
 
         given()
         .when()
+                .post("/ramen-shops/{shopId}/views", savedShop.getId())
+        .then()
+                .statusCode(HttpStatus.OK.value());
+
+        given()
+        .when()
                 .get("/ramen-shops/{shopId}", savedShop.getId())
         .then()
                 .statusCode(HttpStatus.OK.value())

@@ -1,10 +1,11 @@
-package com.raota.application.ramenShop;
+package com.raota.application.ramenlog;
 
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
 import com.raota.presentation.api.ramenShop.response.ProofPictureInfoResponse;
-import com.raota.domain.ramenShop.model.RamenProofPicture;
-import com.raota.domain.ramenShop.repository.RamenProofPictureRepository;
+import com.raota.domain.ramenlog.model.RamenLog;
+import com.raota.domain.ramenlog.model.RevisitIntention;
+import com.raota.domain.ramenlog.repository.RamenLogRepository;
 import com.raota.presentation.api.ramenShop.response.RamenShopProofPictureResponse;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
@@ -21,7 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 @AllArgsConstructor
 public class RamenProofPictureService {
 
-    private final RamenProofPictureRepository proofPictureRepository;
+    private final RamenLogRepository ramenLogRepository;
     private final MemberRepository memberRepository;
     private final RamenShopRepository ramenShopRepository;
     private final FileUploader fileUploader;
@@ -33,21 +34,24 @@ public class RamenProofPictureService {
         RamenShop ramenShop = ramenShopRepository.findById(shopId).orElseThrow(()->new IllegalArgumentException("없는 라멘집 입니다."));
 
         // 이 가게에 처음 방문하는 것인지 확인 (아직 삭제되지 않은 사진이 0개인 경우)
-        long currentPhotosInShop = proofPictureRepository.countByMemberProfileIdAndRamenShopIdAndIsDeletedFalse(memberId, shopId);
+        long currentPhotosInShop = ramenLogRepository.countByAuthorIdAndRamenShopIdAndIsDeletedFalse(memberId, shopId);
         if (currentPhotosInShop == 0) {
             member.increaseVisitedRestaurantCount();
         }
 
-        RamenProofPicture picture = RamenProofPicture.builder()
+        RamenLog picture = RamenLog.builder()
                 .ramenShop(ramenShop)
-                .memberProfile(member)
+                .author(member)
                 .imageUrl(imageUrl)
                 .imageName(menuName+"_"+member.getNickname())
-                .description(description)
+                .note(description)
                 .menuName(menuName)
+                .ramenType("기타")
+                .revisit(RevisitIntention.SOMETIMES)
+                .isPublic(true)
                 .build();
 
-        RamenProofPicture saved = proofPictureRepository.save(picture);
+        RamenLog saved = ramenLogRepository.save(picture);
 
         member.increasePhotoCount();
         ramenShop.increaseVisitCount();
@@ -62,15 +66,15 @@ public class RamenProofPictureService {
     }
 
     public Page<RamenShopProofPictureResponse> findProofPicture(Long shopId, Pageable pageable) {
-        return proofPictureRepository.searchPictures(shopId,pageable);
+        return ramenLogRepository.searchPictures(shopId,pageable);
     }
 
     @Transactional
     public void deletePicture(Long photoId, Long memberId) {
-        RamenProofPicture proofPicture = proofPictureRepository.findById(photoId)
+        RamenLog proofPicture = ramenLogRepository.findByIdAndIsDeletedFalse(photoId)
                 .orElseThrow(()->new IllegalArgumentException("찾을수 없는 사진입니다."));
 
-        if(!Objects.equals(memberId, proofPicture.getMemberProfile().getId())){
+        if(!Objects.equals(memberId, proofPicture.getAuthor().getId())){
             throw new IllegalArgumentException("권한이 없습니다.");
         }
 
@@ -80,7 +84,7 @@ public class RamenProofPictureService {
                 .orElseThrow(()->new IllegalArgumentException("없는 라멘집 입니다."));
 
         // 삭제 전, 이 가게에 남은 사진이 1개뿐이라면 '방문한 식당' 수 감소
-        long currentPhotosInShop = proofPictureRepository.countByMemberProfileIdAndRamenShopIdAndIsDeletedFalse(memberId, ramenShop.getId());
+        long currentPhotosInShop = ramenLogRepository.countByAuthorIdAndRamenShopIdAndIsDeletedFalse(memberId, ramenShop.getId());
         if (currentPhotosInShop == 1) {
             member.decreaseVisitedRestaurantCount();
         }

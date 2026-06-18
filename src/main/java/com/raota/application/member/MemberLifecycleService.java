@@ -5,7 +5,8 @@ import com.raota.domain.auth.repository.SocialAccountRepository;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.BookmarkRepository;
 import com.raota.domain.member.repository.MemberRepository;
-import com.raota.domain.ramenShop.repository.RamenProofPictureRepository;
+import com.raota.domain.ramenlog.repository.RamenLogLikeRepository;
+import com.raota.domain.ramenlog.repository.RamenLogRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +28,8 @@ public class MemberLifecycleService {
     private final AuthAccountService authAccountService;
     private final SocialAccountRepository socialAccountRepository;
     private final BookmarkRepository bookmarkRepository;
-    private final RamenProofPictureRepository ramenProofPictureRepository;
+    private final RamenLogLikeRepository ramenLogLikeRepository;
+    private final RamenLogRepository ramenLogRepository;
 
     @Transactional
     public void withdraw(Long memberId) {
@@ -46,7 +48,9 @@ public class MemberLifecycleService {
             authAccountService.logoutByMemberId(memberId);
             socialAccountRepository.deleteByMemberId(memberId);
             bookmarkRepository.deleteAllByMemberProfileId(memberId);
-            ramenProofPictureRepository.deleteAllByMemberProfileId(memberId);
+            ramenLogLikeRepository.deleteAllByMemberId(memberId);
+            ramenLogLikeRepository.deleteAllByRamenLogAuthorId(memberId);
+            ramenLogRepository.deleteAllByAuthorId(memberId);
             member.anonymizeRetainedProfile();
         });
 

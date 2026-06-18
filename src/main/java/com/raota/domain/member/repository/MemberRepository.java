@@ -35,8 +35,9 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
         m.backgroundImageUrl,
         m.bio,
         new com.raota.presentation.api.member.response.UserStatsDto(
-            (select count(distinct p.ramenShop.id) from RamenProofPicture p where p.memberProfile.id = m.id and p.isDeleted = false),
-            (select count(p) from RamenProofPicture p where p.memberProfile.id = m.id and p.isDeleted = false),
+            (select count(distinct p.ramenShop.id) from RamenLog p where p.author.id = m.id and p.isDeleted = false),
+            (select count(p) from RamenLog p where p.author.id = m.id and p.isDeleted = false),
+            (select count(l) from RamenLog l where l.author.id = m.id and l.isDeleted = false),
             (select count(b) from Bookmark b where b.memberProfile.id = m.id and b.isDeleted = false),
             (select count(p) from PostEntity p where p.author.id = m.id and p.isDeleted = false),
             (select count(c) from CommentEntity c where c.member.id = m.id and c.isDeleted = false and c.post.isDeleted = false)
@@ -122,9 +123,9 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
                 r.imageUrl,
                 CONCAT(CONCAT(r.address.city, ' '), r.address.district),
                 count(p.id),
-                max(p.uploadedAt))
+                max(p.createdAt))
             from MemberProfile m
-            join RamenProofPicture p on p.memberProfile = m
+            join RamenLog p on p.author = m
             join p.ramenShop r
             where m.id = :memberId and m.deletedAt is null and p.isDeleted = false
             group by r.id, r.name, r.imageUrl, r.address.city, r.address.district
@@ -134,7 +135,7 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
             countQuery = """
                     select count(distinct r.id)
                     from MemberProfile m
-                    join RamenProofPicture p on p.memberProfile = m
+                    join RamenLog p on p.author = m
                     join p.ramenShop r
                     where m.id = :memberId and m.deletedAt is null and p.isDeleted = false
                     """)
@@ -170,21 +171,21 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
         p.id,
         p.imageUrl,
         p.menuName,
-        p.description,
+        p.note,
         p.ramenShop.id,
         p.ramenShop.name,
-        p.uploadedAt
+        p.createdAt
     )
-    from RamenProofPicture p
-    where p.memberProfile.id = :memberId
-      and p.memberProfile.deletedAt is null
+    from RamenLog p
+    where p.author.id = :memberId
+      and p.author.deletedAt is null
       and p.isDeleted = false
 """,
             countQuery = """
     select count(p)
-    from RamenProofPicture p
-    where p.memberProfile.id = :memberId
-      and p.memberProfile.deletedAt is null
+    from RamenLog p
+    where p.author.id = :memberId
+      and p.author.deletedAt is null
       and p.isDeleted = false
 """)
     Page<PhotoSummaryResponse> findMyPhotos(@Param("memberId") Long memberId, Pageable pageable);

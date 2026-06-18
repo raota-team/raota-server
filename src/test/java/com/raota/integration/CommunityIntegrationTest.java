@@ -178,11 +178,23 @@ class CommunityIntegrationTest extends BaseIntegrationTest {
 
         given()
         .when()
+                .post("/community/posts/{postId}/views", post.getId())
+        .then()
+                .statusCode(HttpStatus.OK.value());
+
+        given()
+        .when()
                 .get("/community/posts/{postId}", post.getId())
         .then()
                 .statusCode(HttpStatus.OK.value())
                 .body("data.title", is("조회수 글"))
                 .body("data.viewCount", is(1));
+
+        given()
+        .when()
+                .post("/community/posts/{postId}/views", post.getId())
+        .then()
+                .statusCode(HttpStatus.OK.value());
 
         given()
         .when()

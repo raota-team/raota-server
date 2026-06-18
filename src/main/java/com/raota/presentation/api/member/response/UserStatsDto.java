@@ -8,6 +8,7 @@ import lombok.Getter;
 public class UserStatsDto {
     private Long visited_restaurant_count;
     private Long total_photo_count;
+    private Long total_log_count;
     private Long total_bookmark_count;
     private Long post_count;
     private Long comment_count;

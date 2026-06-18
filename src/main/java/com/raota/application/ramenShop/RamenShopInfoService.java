@@ -7,7 +7,7 @@ import com.raota.infrastructure.cache.CacheInvalidationPublisher;
 import com.raota.presentation.api.ramenShop.response.RamenShopResponse;
 import com.raota.presentation.api.ramenShop.request.RamenShopSortType;
 import com.raota.presentation.api.ramenShop.response.RamenShopBasicInfoResponse;
-import com.raota.domain.ramenShop.repository.RamenProofPictureRepository;
+import com.raota.domain.ramenlog.repository.RamenLogRepository;
 import com.raota.presentation.api.ramenShop.response.RecentVerifiedShopResponse;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -24,13 +24,13 @@ public class RamenShopInfoService {
     private final RamenShopCacheService ramenShopCacheService;
     private final RamenShopRepository ramenShopRepository;
     private final BookmarkRepository bookmarkRepository;
-    private final RamenProofPictureRepository ramenProofPictureRepository;
+    private final RamenLogRepository ramenLogRepository;
     private final CacheInvalidationPublisher cacheInvalidationPublisher;
     private final RamenShopViewRankingService ramenShopViewRankingService;
 
     @Transactional(readOnly = true)
     public List<RecentVerifiedShopResponse> getRecentVerifiedShops(int limit) {
-        return ramenProofPictureRepository.findRecentVerifiedShops(PageRequest.of(0, limit));
+        return ramenLogRepository.findRecentVerifiedShops(PageRequest.of(0, limit));
     }
 
     @Transactional(readOnly = true)

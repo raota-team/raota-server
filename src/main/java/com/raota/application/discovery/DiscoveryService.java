@@ -2,7 +2,7 @@ package com.raota.application.discovery;
 
 import com.raota.domain.member.repository.MemberRepository;
 import com.raota.application.ramenShop.RamenShopViewRankingService;
-import com.raota.domain.ramenShop.repository.RamenProofPictureRepository;
+import com.raota.domain.ramenlog.repository.RamenLogRepository;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.presentation.api.discovery.response.DiscoveryStatsResponse;
 import com.raota.presentation.api.discovery.response.TodayPopularRamenShopResponse;
@@ -17,20 +17,20 @@ import java.util.List;
 public class DiscoveryService {
 
     private final RamenShopRepository ramenShopRepository;
-    private final RamenProofPictureRepository ramenProofPictureRepository;
+    private final RamenLogRepository ramenLogRepository;
     private final MemberRepository memberRepository;
     private final JdbcTemplate oracleVectorJdbcTemplate;
     private final RamenShopViewRankingService ramenShopViewRankingService;
 
     public DiscoveryService(
             RamenShopRepository ramenShopRepository,
-            RamenProofPictureRepository ramenProofPictureRepository,
+            RamenLogRepository ramenLogRepository,
             MemberRepository memberRepository,
             @Qualifier("oracleVectorJdbcTemplate") JdbcTemplate oracleVectorJdbcTemplate,
             RamenShopViewRankingService ramenShopViewRankingService
     ) {
         this.ramenShopRepository = ramenShopRepository;
-        this.ramenProofPictureRepository = ramenProofPictureRepository;
+        this.ramenLogRepository = ramenLogRepository;
         this.memberRepository = memberRepository;
         this.oracleVectorJdbcTemplate = oracleVectorJdbcTemplate;
         this.ramenShopViewRankingService = ramenShopViewRankingService;
@@ -39,7 +39,7 @@ public class DiscoveryService {
     @Transactional(readOnly = true)
     public DiscoveryStatsResponse getStats() {
         long totalShops = ramenShopRepository.count();
-        long userReviews = ramenProofPictureRepository.count();
+        long userReviews = ramenLogRepository.countByIsDeletedFalse();
         long totalUsers = 4000;
 
         long externalReviews = 0;

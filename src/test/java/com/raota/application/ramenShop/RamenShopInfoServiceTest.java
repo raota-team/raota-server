@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.raota.domain.member.repository.BookmarkRepository;
 import com.raota.domain.ramenShop.model.RamenShop;
-import com.raota.domain.ramenShop.repository.RamenProofPictureRepository;
+import com.raota.domain.ramenlog.repository.RamenLogRepository;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.infrastructure.cache.CacheInvalidationPublisher;
 import com.raota.presentation.api.ramenShop.response.RamenShopBasicInfoResponse;
@@ -32,7 +32,7 @@ class RamenShopInfoServiceTest {
     private BookmarkRepository bookmarkRepository;
 
     @Mock
-    private RamenProofPictureRepository ramenProofPictureRepository;
+    private RamenLogRepository ramenLogRepository;
 
     @Mock
     private CacheInvalidationPublisher cacheInvalidationPublisher;
@@ -66,23 +66,17 @@ class RamenShopInfoServiceTest {
     }
 
     @Test
-    void getShopDetailInfoIncreasesViewCount() {
+    void increaseViewCountUpdatesShopAndRanking() {
         Long shopId = 1L;
         RamenShop shop = RamenShop.builder()
                 .name("멘야 하쿠")
                 .build();
-        RamenShopBasicInfoResponse cachedResponse = RamenShopBasicInfoResponse.builder()
-                .id(shopId)
-                .name("멘야 하쿠")
-                .build();
 
         given(ramenShopRepository.findById(shopId)).willReturn(Optional.of(shop));
-        given(ramenShopCacheService.getShopDetail(shopId)).willReturn(cachedResponse);
 
-        RamenShopBasicInfoResponse response = ramenShopInfoService.getShopDetailInfo(shopId, null);
+        ramenShopInfoService.increaseViewCount(shopId);
 
         assertThat(shop.getStats().viewCount()).isEqualTo(1);
-        assertThat(response.stats().getView_count()).isEqualTo(1);
         verify(ramenShopViewRankingService).increaseTodayViewCount(shopId);
         verify(cacheInvalidationPublisher).publish("ramenShopDetail", String.valueOf(shopId));
         verify(cacheInvalidationPublisher).publishAll("ramenShopList");

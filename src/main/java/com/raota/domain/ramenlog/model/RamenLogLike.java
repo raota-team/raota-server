@@ -1,4 +1,4 @@
-package com.raota.domain.ramenShop.model;
+package com.raota.domain.ramenlog.model;
 
 import com.raota.domain.member.model.MemberProfile;
 import jakarta.persistence.Column;
@@ -12,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -22,45 +23,28 @@ import org.hibernate.annotations.CreationTimestamp;
 
 @Getter
 @Entity
-@Table(name = "tb_ramen_proof_picture")
-@AllArgsConstructor
+@Table(
+        name = "tb_ramen_log_like",
+        uniqueConstraints = @UniqueConstraint(name = "uk_ramen_log_like", columnNames = {"ramen_log_id", "member_id"})
+)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
-public class RamenProofPicture {
+public class RamenLogLike {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ramen_shop_id", nullable = false, foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
-    private RamenShop ramenShop;
+    @JoinColumn(name = "ramen_log_id", nullable = false, foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    private RamenLog ramenLog;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false, foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
-    private MemberProfile memberProfile;
-
-    @Column(name = "image_name")
-    private String imageName;
-
-    @Column(name = "image_url", nullable = false)
-    private String imageUrl;
-
-    @Column(name = "description", nullable = false)
-    private String description;
-
-    @Column(name = "menu_name", nullable = false)
-    private String menuName;
-
-    @Builder.Default
-    @Column(name = "is_deleted", nullable = false)
-    private boolean isDeleted = false;
+    private MemberProfile member;
 
     @CreationTimestamp
-    @Column(name = "uploaded_at", nullable = false)
-    private LocalDateTime uploadedAt;
-
-    public void delete(){
-        this.isDeleted = true;
-    }
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 }

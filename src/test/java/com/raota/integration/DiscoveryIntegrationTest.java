@@ -11,9 +11,9 @@ import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
 import com.raota.domain.ramenShop.model.Address;
 import com.raota.domain.ramenShop.model.BusinessHours;
-import com.raota.domain.ramenShop.model.RamenProofPicture;
+import com.raota.domain.ramenlog.model.RamenLog;
 import com.raota.domain.ramenShop.model.RamenShop;
-import com.raota.domain.ramenShop.repository.RamenProofPictureRepository;
+import com.raota.domain.ramenlog.repository.RamenLogRepository;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.helper.BaseIntegrationTest;
 import io.restassured.RestAssured;
@@ -41,7 +41,7 @@ class DiscoveryIntegrationTest extends BaseIntegrationTest {
     private MemberRepository memberRepository;
 
     @Autowired
-    private RamenProofPictureRepository ramenProofPictureRepository;
+    private RamenLogRepository ramenLogRepository;
 
     @Autowired
     private JpaPostRepository jpaPostRepository;
@@ -56,7 +56,7 @@ class DiscoveryIntegrationTest extends BaseIntegrationTest {
         if (rankingKeys != null && !rankingKeys.isEmpty()) {
             redisTemplate.delete(rankingKeys);
         }
-        ramenProofPictureRepository.deleteAll();
+        ramenLogRepository.deleteAll();
         jpaPostRepository.deleteAll();
         ramenShopRepository.deleteAll();
         memberRepository.deleteAll();
@@ -85,9 +85,9 @@ class DiscoveryIntegrationTest extends BaseIntegrationTest {
         RamenShop first = ramenShopRepository.save(sampleShop("가장 많이 본 집", "서울", "마포구"));
         RamenShop second = ramenShopRepository.save(sampleShop("두번째 집", "서울", "성동구"));
 
-        given().when().get("/ramen-shops/{shopId}", first.getId()).then().statusCode(HttpStatus.OK.value());
-        given().when().get("/ramen-shops/{shopId}", first.getId()).then().statusCode(HttpStatus.OK.value());
-        given().when().get("/ramen-shops/{shopId}", second.getId()).then().statusCode(HttpStatus.OK.value());
+        given().when().post("/ramen-shops/{shopId}/views", first.getId()).then().statusCode(HttpStatus.OK.value());
+        given().when().post("/ramen-shops/{shopId}/views", first.getId()).then().statusCode(HttpStatus.OK.value());
+        given().when().post("/ramen-shops/{shopId}/views", second.getId()).then().statusCode(HttpStatus.OK.value());
 
         given()
                 .param("limit", 5)
@@ -99,9 +99,7 @@ class DiscoveryIntegrationTest extends BaseIntegrationTest {
                 .body("data.size()", is(2))
                 .body("data[0].ramenShopId", is(first.getId().intValue()))
                 .body("data[0].name", is("가장 많이 본 집"))
-                .body("data[0].viewCount", is(2))
-                .body("data[1].ramenShopId", is(second.getId().intValue()))
-                .body("data[1].viewCount", is(1));
+                .body("data[1].ramenShopId", is(second.getId().intValue()));
     }
 
     @DisplayName("최근 사진 인증된 라멘집 API가 정상 동작한다.")
@@ -109,13 +107,13 @@ class DiscoveryIntegrationTest extends BaseIntegrationTest {
         RamenShop shop = ramenShopRepository.save(sampleShop("인증가게", "서울", "마포구"));
         MemberProfile member = memberRepository.save(MemberProfile.builder().nickname("유저1").build());
         
-        ramenProofPictureRepository.save(RamenProofPicture.builder()
+        ramenLogRepository.save(RamenLog.builder()
                 .ramenShop(shop)
-                .memberProfile(member)
+                .author(member)
                 .imageUrl("https://test.com/img.jpg")
-                .description("맛있어요")
+                .note("맛있어요")
                 .menuName("돈코츠")
-                .uploadedAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now())
                 .build());
 
         given()

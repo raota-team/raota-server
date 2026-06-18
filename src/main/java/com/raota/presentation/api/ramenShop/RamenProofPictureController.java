@@ -6,7 +6,7 @@ import com.raota.presentation.api.ramenShop.response.RamenShopProofPictureRespon
 import com.raota.infrastructure.auth.LoginMember;
 import com.raota.presentation.common.ApiResponse;
 import com.raota.presentation.common.PageResponse;
-import com.raota.application.ramenShop.RamenProofPictureService;
+import com.raota.application.ramenlog.RamenProofPictureService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;

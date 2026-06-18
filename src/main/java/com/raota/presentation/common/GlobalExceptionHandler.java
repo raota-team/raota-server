@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -30,6 +31,16 @@ public class GlobalExceptionHandler {
                 exception.getMessage(),
                 exception);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.fail(exception.getMessage()));
+    }
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(
+            org.springframework.security.access.AccessDeniedException exception,
+            HttpServletRequest request
+    ) {
+        log.warn("Access denied. method={}, uri={}, message={}",
+                request.getMethod(), request.getRequestURI(), exception.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.fail(exception.getMessage()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -128,6 +139,20 @@ public class GlobalExceptionHandler {
                 exception);
         return ResponseEntity.badRequest()
                 .body(ApiResponse.fail("잘못된 요청 파라미터입니다: " + fieldName));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException exception,
+            HttpServletRequest request
+    ) {
+        String fieldName = exception.getBindingResult().getFieldError() == null
+                ? "unknown"
+                : exception.getBindingResult().getFieldError().getField();
+        String message = "잘못된 요청 파라미터입니다: " + fieldName;
+        log.warn("Request body validation failed. method={}, uri={}, message={}",
+                request.getMethod(), request.getRequestURI(), message);
+        return ResponseEntity.badRequest().body(ApiResponse.fail(message));
     }
 
     @ExceptionHandler(Exception.class)

@@ -11,9 +11,9 @@ import com.raota.domain.community.repository.command.JpaPostRepository;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
 import com.raota.domain.ramenShop.model.Address;
-import com.raota.domain.ramenShop.model.RamenProofPicture;
+import com.raota.domain.ramenlog.model.RamenLog;
 import com.raota.domain.ramenShop.model.RamenShop;
-import com.raota.domain.ramenShop.repository.RamenProofPictureRepository;
+import com.raota.domain.ramenlog.repository.RamenLogRepository;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.infrastructure.auth.JwtTokenProvider;
 import com.raota.helper.BaseIntegrationTest;
@@ -42,7 +42,7 @@ class MemberIntegrationTest extends BaseIntegrationTest {
     private JpaCommentRepository jpaCommentRepository;
 
     @Autowired
-    private RamenProofPictureRepository ramenProofPictureRepository;
+    private RamenLogRepository ramenLogRepository;
 
     @Autowired
     private RamenShopRepository ramenShopRepository;
@@ -61,7 +61,7 @@ class MemberIntegrationTest extends BaseIntegrationTest {
         RestAssured.port = port;
         jpaCommentRepository.deleteAll();
         jpaPostRepository.deleteAll();
-        ramenProofPictureRepository.deleteAll();
+        ramenLogRepository.deleteAll();
         ramenShopRepository.deleteAll();
         memberRepository.deleteAll();
 
@@ -249,11 +249,11 @@ class MemberIntegrationTest extends BaseIntegrationTest {
                 .address(Address.of("서울", "마포구", "테스트로 1", null))
                 .imageUrl("https://images.example.com/shop.jpg")
                 .build());
-        ramenProofPictureRepository.save(RamenProofPicture.builder()
+        ramenLogRepository.save(RamenLog.builder()
                 .ramenShop(ramenShop)
-                .memberProfile(savedMember)
+                .author(savedMember)
                 .imageUrl("https://images.example.com/proof.jpg")
-                .description("공개 조회 인증샷")
+                .note("공개 조회 인증샷")
                 .menuName("시오라멘")
                 .build());
 

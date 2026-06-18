@@ -14,7 +14,7 @@ import com.raota.domain.ramenShop.model.NormalMenu;
 import com.raota.domain.ramenShop.model.NormalMenus;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.MenuVoteRepository;
-import com.raota.domain.ramenShop.repository.RamenProofPictureRepository;
+import com.raota.domain.ramenlog.repository.RamenLogRepository;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.infrastructure.auth.JwtTokenProvider;
 import com.raota.helper.BaseIntegrationTest;
@@ -46,7 +46,7 @@ class RamenShopFeatureIntegrationTest extends BaseIntegrationTest {
     private MenuVoteRepository menuVoteRepository;
 
     @Autowired
-    private RamenProofPictureRepository ramenProofPictureRepository;
+    private RamenLogRepository ramenLogRepository;
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
@@ -61,7 +61,7 @@ class RamenShopFeatureIntegrationTest extends BaseIntegrationTest {
     @BeforeEach
     void setUp() {
         RestAssured.port = port;
-        ramenProofPictureRepository.deleteAll();
+        ramenLogRepository.deleteAll();
         menuVoteRepository.deleteAll();
         ramenShopRepository.deleteAll();
         memberRepository.deleteAll();

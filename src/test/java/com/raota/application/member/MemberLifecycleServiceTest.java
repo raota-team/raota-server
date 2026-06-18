@@ -11,7 +11,8 @@ import com.raota.domain.auth.repository.SocialAccountRepository;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.BookmarkRepository;
 import com.raota.domain.member.repository.MemberRepository;
-import com.raota.domain.ramenShop.repository.RamenProofPictureRepository;
+import com.raota.domain.ramenlog.repository.RamenLogLikeRepository;
+import com.raota.domain.ramenlog.repository.RamenLogRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -35,7 +36,9 @@ class MemberLifecycleServiceTest {
     @Mock
     private BookmarkRepository bookmarkRepository;
     @Mock
-    private RamenProofPictureRepository ramenProofPictureRepository;
+    private RamenLogLikeRepository ramenLogLikeRepository;
+    @Mock
+    private RamenLogRepository ramenLogRepository;
 
     @InjectMocks
     private MemberLifecycleService memberLifecycleService;
@@ -73,7 +76,9 @@ class MemberLifecycleServiceTest {
         verify(authAccountService).logoutByMemberId(10L);
         verify(socialAccountRepository).deleteByMemberId(10L);
         verify(bookmarkRepository).deleteAllByMemberProfileId(10L);
-        verify(ramenProofPictureRepository).deleteAllByMemberProfileId(10L);
+        verify(ramenLogLikeRepository).deleteAllByMemberId(10L);
+        verify(ramenLogLikeRepository).deleteAllByRamenLogAuthorId(10L);
+        verify(ramenLogRepository).deleteAllByAuthorId(10L);
         verify(memberRepository, never()).delete(expiredMember);
         assertThat(expiredMember.getNickname()).isEqualTo("탈퇴한 사용자");
         assertThat(expiredMember.getImageUrl()).isNull();

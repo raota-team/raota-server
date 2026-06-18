@@ -2,6 +2,8 @@ package com.raota.infrastructure.auth;
 
 import com.raota.application.auth.AuthAccountService;
 import com.raota.application.auth.AuthRefreshSession;
+import com.raota.domain.member.model.MemberProfile;
+import com.raota.domain.member.repository.MemberRepository;
 import com.raota.infrastructure.persistence.auth.RefreshTokenStore;
 
 import com.raota.helper.BaseIntegrationTest;
@@ -27,11 +29,14 @@ public class AuthTokenRotationTest extends BaseIntegrationTest {
     @Autowired
     RefreshTokenStore refreshTokenStore;
 
+    @Autowired
+    MemberRepository memberRepository;
+
     private final String oldToken = "old-token";
-    private final Long memberId = 1L;
 
     @Test
     void 정상_로테이션_테스트() {
+        Long memberId = saveActiveMember();
         refreshTokenStore.save(memberId, oldToken, Instant.now().plusSeconds(3600));
 
         AuthRefreshSession session = authAccountService.refresh(oldToken);
@@ -43,6 +48,7 @@ public class AuthTokenRotationTest extends BaseIntegrationTest {
 
     @Test
     void 만료된_토큰_테스트() {
+        Long memberId = saveActiveMember();
         refreshTokenStore.save(memberId, oldToken, Instant.now().minusSeconds(10));
 
         assertThatThrownBy(() -> authAccountService.refresh(oldToken))
@@ -59,5 +65,11 @@ public class AuthTokenRotationTest extends BaseIntegrationTest {
         assertThatThrownBy(() -> authAccountService.refresh(invalidToken))
                 .isInstanceOf(AuthenticationRequiredException.class)
                 .hasMessageContaining("유효하지 않은 리프레시 토큰입니다.");
+    }
+
+    private Long saveActiveMember() {
+        return memberRepository.save(MemberProfile.builder()
+                .nickname("토큰테스터")
+                .build()).getId();
     }
 }
