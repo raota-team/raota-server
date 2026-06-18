@@ -11,7 +11,10 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CommunityPostSearchRequest {
-    @Schema(description = "글 카테고리 필터 (예: 맛집후기)")
+    @Schema(
+            description = "글 카테고리 필터. REVIEW, TIP, QUESTION, FREE 또는 좋아요 3개 이상인 인기글을 뜻하는 POPULAR",
+            example = "POPULAR"
+    )
     private String category;
 
     @Schema(description = "맛집후기 카테고리에서 필터링할 라멘집 ID", nullable = true)

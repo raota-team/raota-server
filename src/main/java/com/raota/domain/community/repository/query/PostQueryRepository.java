@@ -4,6 +4,7 @@ import com.raota.domain.community.model.PostCategory;
 import com.raota.presentation.api.community.request.CommunityPostSearchRequest;
 import com.raota.presentation.api.community.request.CommunityRamenShopSearchRequest;
 import com.raota.presentation.api.community.response.CommunityHomePostResponse;
+import com.raota.presentation.api.community.response.CommunityPopularPostResponse;
 import com.raota.presentation.api.community.response.CommunityPostCardResponse;
 import com.raota.presentation.api.community.response.CommunityPostDetailResponse;
 import com.raota.presentation.api.community.response.CommunityRamenShopOptionResponse;
@@ -23,6 +24,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class PostQueryRepository {
 
+    private static final long POPULAR_POST_MIN_LIKE_COUNT = 3L;
+
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -30,12 +33,16 @@ public class PostQueryRepository {
         log.info("Searching posts with category filter: {}, ramenShopId filter: {}",
                 request.getCategory(), request.getRamenShopId());
 
-        PostCategory category = parseCategory(request.getCategory());
+        boolean popularOnly = isPopularCategory(request.getCategory());
+        PostCategory category = popularOnly ? null : parseCategory(request.getCategory());
 
         String whereClause = """
                 where p.isDeleted = false
                   and (:category is null or p.category = :category)
                   and (:ramenShopId is null or rs.id = :ramenShopId)
+                  and (:popularOnly = false or
+                       (select count(popularLike) from PostLikeEntity popularLike where popularLike.postId = p.id)
+                       >= :popularMinLikeCount)
                 """;
 
         Long totalCount = entityManager.createQuery(
@@ -44,6 +51,8 @@ public class PostQueryRepository {
                 )
                 .setParameter("category", category)
                 .setParameter("ramenShopId", request.getRamenShopId())
+                .setParameter("popularOnly", popularOnly)
+                .setParameter("popularMinLikeCount", POPULAR_POST_MIN_LIKE_COUNT)
                 .getSingleResult();
 
         TypedQuery<PostCardRow> query = entityManager.createQuery(
@@ -67,6 +76,8 @@ public class PostQueryRepository {
         List<PostCardRow> rows = query
                 .setParameter("category", category)
                 .setParameter("ramenShopId", request.getRamenShopId())
+                .setParameter("popularOnly", popularOnly)
+                .setParameter("popularMinLikeCount", POPULAR_POST_MIN_LIKE_COUNT)
                 .setFirstResult((int) pageable.getOffset())
                 .setMaxResults(pageable.getPageSize())
                 .getResultList();
@@ -179,6 +190,31 @@ public class PostQueryRepository {
                 .toList();
     }
 
+    public List<CommunityPopularPostResponse> findRecentPopularPosts(int limit) {
+        return entityManager.createQuery(
+                        """
+                        select new com.raota.domain.community.repository.query.PostQueryRepository$PopularPostRow(
+                               p.id, p.category, p.title,
+                               (select count(pl) from PostLikeEntity pl where pl.postId = p.id),
+                               (select count(c) from CommentEntity c where c.post.id = p.id and c.isDeleted = false),
+                               p.createdAt
+                        )
+                        from PostEntity p
+                        where p.isDeleted = false
+                          and (select count(popularLike) from PostLikeEntity popularLike where popularLike.postId = p.id)
+                              >= :popularMinLikeCount
+                        order by p.createdAt desc
+                        """,
+                        PopularPostRow.class
+                )
+                .setParameter("popularMinLikeCount", POPULAR_POST_MIN_LIKE_COUNT)
+                .setMaxResults(limit)
+                .getResultList()
+                .stream()
+                .map(PopularPostRow::toResponse)
+                .toList();
+    }
+
     private PostCategory parseCategory(String category) {
         if (category == null || category.isBlank()) {
             return null;
@@ -188,6 +224,10 @@ public class PostQueryRepository {
         } catch (IllegalArgumentException e) {
             return null;
         }
+    }
+
+    private boolean isPopularCategory(String category) {
+        return category != null && "POPULAR".equalsIgnoreCase(category.trim());
     }
 
     private String normalizeKeyword(String keyword) {
@@ -299,6 +339,36 @@ public class PostQueryRepository {
                     viewCount,
                     createdAt
             );
+        }
+    }
+
+    private record PopularPostRow(
+            Long postId,
+            PostCategory category,
+            String title,
+            Long likeCount,
+            Long commentCount,
+            LocalDateTime createdAt
+    ) {
+        private CommunityPopularPostResponse toResponse() {
+            return new CommunityPopularPostResponse(
+                    postId,
+                    category.name(),
+                    categoryDisplayName(category),
+                    title,
+                    likeCount,
+                    commentCount,
+                    createdAt
+            );
+        }
+
+        private static String categoryDisplayName(PostCategory category) {
+            return switch (category) {
+                case REVIEW -> "맛집후기";
+                case TIP -> "라멘꿀팁";
+                case QUESTION -> "Q&A";
+                case FREE -> "자유게시판";
+            };
         }
     }
 }

@@ -2,6 +2,7 @@ package com.raota.presentation.api.community;
 
 import com.raota.domain.community.repository.query.PostQueryRepository;
 import com.raota.presentation.api.community.response.CommunityHomePostResponse;
+import com.raota.presentation.api.community.response.CommunityPopularPostResponse;
 import com.raota.presentation.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -36,5 +37,20 @@ public class CommunityV1ApiController {
             @RequestParam(defaultValue = "3") int limit) {
         // Note: Sort is latest by default in findHomePosts
         return ResponseEntity.ok(ApiResponse.success(postQueryRepository.findHomePosts(category, limit)));
+    }
+
+    @Operation(
+            summary = "최근 인기글 조회",
+            description = "좋아요가 3개 이상인 게시글 중 작성일이 가장 최근인 게시글을 반환합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    @GetMapping("/posts/popular")
+    public ResponseEntity<ApiResponse<List<CommunityPopularPostResponse>>> getRecentPopularPosts(
+            @Parameter(description = "가져올 개수", example = "3")
+            @RequestParam(defaultValue = "3") int limit) {
+        int normalizedLimit = Math.max(1, Math.min(limit, 10));
+        return ResponseEntity.ok(ApiResponse.success(postQueryRepository.findRecentPopularPosts(normalizedLimit)));
     }
 }
