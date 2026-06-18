@@ -3,6 +3,7 @@ package com.raota.integration;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 import com.raota.presentation.api.community.request.CommunityCommentCreateRequest;
 import com.raota.presentation.api.community.request.CommunityPostCreateRequest;
@@ -19,6 +20,7 @@ import com.raota.infrastructure.auth.JwtTokenProvider;
 import com.raota.helper.BaseIntegrationTest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -301,5 +303,60 @@ class MemberIntegrationTest extends BaseIntegrationTest {
                 .statusCode(HttpStatus.OK.value())
                 .body("data.items.size()", is(1))
                 .body("data.items[0].restaurant_name", is("공개 조회 라멘집"));
+    }
+
+    @Test
+    @DisplayName("활동 카테고리를 비공개로 설정하면 타 사용자 조회와 통계를 차단한다.")
+    void private_activity_categories_are_hidden_from_other_users() {
+        Long userId = savedMember.getId();
+
+        given()
+                .header("Authorization", "Bearer " + accessToken)
+                .contentType(ContentType.JSON)
+                .body(Map.of(
+                        "logs", false,
+                        "visits", false,
+                        "posts", false,
+                        "comments", false
+                ))
+        .when()
+                .patch("/users/me/privacy-settings")
+        .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("data.logs", is(false))
+                .body("data.visits", is(false))
+                .body("data.posts", is(false))
+                .body("data.comments", is(false));
+
+        given()
+                .header("Authorization", "Bearer " + accessToken)
+        .when()
+                .get("/users/me/privacy-settings")
+        .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("data.logs", is(false));
+
+        given()
+        .when()
+                .get("/users/{userId}/profile", userId)
+        .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("data.activity_visibility.logs", is(false))
+                .body("data.stats.total_log_count", nullValue())
+                .body("data.stats.visited_restaurant_count", nullValue())
+                .body("data.stats.post_count", nullValue())
+                .body("data.stats.comment_count", nullValue());
+
+        given().get("/users/{userId}/photos", userId).then().statusCode(HttpStatus.FORBIDDEN.value());
+        given().get("/users/{userId}/visits", userId).then().statusCode(HttpStatus.FORBIDDEN.value());
+        given().get("/users/{userId}/posts", userId).then().statusCode(HttpStatus.FORBIDDEN.value());
+        given().get("/users/{userId}/comments", userId).then().statusCode(HttpStatus.FORBIDDEN.value());
+        given().get("/users/{userId}/ramen-logs", userId).then().statusCode(HttpStatus.FORBIDDEN.value());
+
+        given()
+                .header("Authorization", "Bearer " + accessToken)
+                .get("/users/{userId}/ramen-logs", userId)
+        .then()
+                .statusCode(HttpStatus.OK.value());
     }
 }

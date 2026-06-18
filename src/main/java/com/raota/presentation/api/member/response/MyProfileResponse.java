@@ -9,6 +9,21 @@ public record MyProfileResponse (
         String profile_image_url,
         String background_image_url,
         String userDescription,
-        UserStatsDto stats
+        UserStatsDto stats,
+        ActivityVisibilityResponse activity_visibility
 ){
+    public MyProfileResponse maskPrivateActivityStats() {
+        ActivityVisibilityResponse visibility = activity_visibility == null
+                ? ActivityVisibilityResponse.allPublic()
+                : activity_visibility;
+        return new MyProfileResponse(
+                user_id,
+                nickname,
+                profile_image_url,
+                background_image_url,
+                userDescription,
+                stats.maskPrivate(visibility),
+                visibility
+        );
+    }
 }

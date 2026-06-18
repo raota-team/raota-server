@@ -118,6 +118,51 @@ class RamenLogIntegrationTest extends BaseIntegrationTest {
                 .body("data.items[0].liked", equalTo(true));
     }
 
+    @Test
+    void privateLogCategoryHidesOtherwisePublicLogs() {
+        Long logId = given()
+                .header("Authorization", "Bearer " + accessToken)
+                .contentType(ContentType.JSON)
+                .body(payload(true))
+                .post("/ramen-logs")
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .extract()
+                .jsonPath()
+                .getLong("data.id");
+
+        given()
+                .header("Authorization", "Bearer " + accessToken)
+                .contentType(ContentType.JSON)
+                .body(Map.of(
+                        "logs", false,
+                        "visits", true,
+                        "posts", true,
+                        "comments", true
+                ))
+                .patch("/users/me/privacy-settings")
+                .then()
+                .statusCode(HttpStatus.OK.value());
+
+        given()
+                .get("/ramen-logs?size=8")
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("data.items.size()", equalTo(0));
+
+        given()
+                .get("/ramen-logs/{logId}", logId)
+                .then()
+                .statusCode(HttpStatus.FORBIDDEN.value());
+
+        given()
+                .header("Authorization", "Bearer " + accessToken)
+                .get("/ramen-logs/{logId}", logId)
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("data.mine", equalTo(true));
+    }
+
     private Map<String, Object> payload(boolean isPublic) {
         return Map.of(
                 "shopId", shop.getId(),

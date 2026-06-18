@@ -2,13 +2,16 @@ package com.raota.presentation.api.member;
 
 import com.raota.presentation.api.member.contract.MemberInfoApi;
 import com.raota.presentation.api.member.request.UpdateProfileRequest;
+import com.raota.presentation.api.member.request.ActivityVisibilityUpdateRequest;
 import com.raota.presentation.api.member.response.BookmarkSummaryResponse;
 import com.raota.presentation.api.member.response.MemberSummaryResponse;
 import com.raota.presentation.api.member.response.MyProfileResponse;
 import com.raota.presentation.api.member.response.PhotoSummaryResponse;
 import com.raota.presentation.api.member.response.VisitSummaryResponse;
+import com.raota.presentation.api.member.response.ActivityVisibilityResponse;
 import com.raota.application.member.MemberLifecycleService;
 import com.raota.application.member.MemberInfoService;
+import com.raota.application.member.MemberActivityVisibilityService;
 import com.raota.infrastructure.auth.LoginMember;
 import com.raota.infrastructure.auth.RefreshTokenCookieManager;
 import com.raota.presentation.common.ApiResponse;
@@ -27,6 +30,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
 
 @AllArgsConstructor
 @RestController
@@ -35,6 +39,7 @@ public class MemberInfoController implements MemberInfoApi {
     private final MemberInfoService memberInfoService;
     private final MemberLifecycleService memberLifecycleService;
     private final RefreshTokenCookieManager refreshTokenCookieManager;
+    private final MemberActivityVisibilityService memberActivityVisibilityService;
 
     @Override
     @GetMapping("/me/summary")
@@ -64,6 +69,21 @@ public class MemberInfoController implements MemberInfoApi {
                 memberId
         );
         return ResponseEntity.ok(ApiResponse.success(updated));
+    }
+
+    @GetMapping("/me/privacy-settings")
+    public ResponseEntity<ApiResponse<ActivityVisibilityResponse>> getPrivacySettings(
+            @LoginMember Long memberId
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(memberActivityVisibilityService.get(memberId)));
+    }
+
+    @PatchMapping("/me/privacy-settings")
+    public ResponseEntity<ApiResponse<ActivityVisibilityResponse>> updatePrivacySettings(
+            @Valid @RequestBody ActivityVisibilityUpdateRequest request,
+            @LoginMember Long memberId
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(memberActivityVisibilityService.update(memberId, request)));
     }
 
     @Override
@@ -125,16 +145,18 @@ public class MemberInfoController implements MemberInfoApi {
     @Override
     @GetMapping("/{userId}/profile")
     public ResponseEntity<ApiResponse<MyProfileResponse>> getUserProfileById(
-            @PathVariable Long userId) {
-        return ResponseEntity.ok(ApiResponse.success(memberInfoService.getMyProfile(userId)));
+            @PathVariable Long userId,
+            @LoginMember(required = false) Long viewerId) {
+        return ResponseEntity.ok(ApiResponse.success(memberInfoService.getUserProfile(userId, viewerId)));
     }
 
     @Override
     @GetMapping("/{userId}/photos")
     public ResponseEntity<ApiResponse<PageResponse<PhotoSummaryResponse>>> getUserPhotosById(
             @PathVariable Long userId,
+            @LoginMember(required = false) Long viewerId,
             Pageable pageable) {
-        Page<PhotoSummaryResponse> photos = memberInfoService.getMyPhotoList(userId, pageable);
+        Page<PhotoSummaryResponse> photos = memberInfoService.getUserPhotoList(userId, viewerId, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(photos)));
     }
 
@@ -142,8 +164,9 @@ public class MemberInfoController implements MemberInfoApi {
     @GetMapping("/{userId}/visits")
     public ResponseEntity<ApiResponse<PageResponse<VisitSummaryResponse>>> getUserVisitsById(
             @PathVariable Long userId,
+            @LoginMember(required = false) Long viewerId,
             Pageable pageable) {
-        Page<VisitSummaryResponse> page = memberInfoService.getMyVisits(userId, pageable);
+        Page<VisitSummaryResponse> page = memberInfoService.getUserVisits(userId, viewerId, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(page)));
     }
 
@@ -151,8 +174,10 @@ public class MemberInfoController implements MemberInfoApi {
     @GetMapping("/{userId}/posts")
     public ResponseEntity<ApiResponse<PageResponse<com.raota.presentation.api.community.response.CommunityPostCardResponse>>> getUserPostsById(
             @PathVariable Long userId,
+            @LoginMember(required = false) Long viewerId,
             @PageableDefault(size = 5, direction = Sort.Direction.DESC) Pageable pageable) {
-        Page<com.raota.presentation.api.community.response.CommunityPostCardResponse> response = memberInfoService.getMyPosts(userId, pageable);
+        Page<com.raota.presentation.api.community.response.CommunityPostCardResponse> response =
+                memberInfoService.getUserPosts(userId, viewerId, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(response)));
     }
 
@@ -160,8 +185,10 @@ public class MemberInfoController implements MemberInfoApi {
     @GetMapping("/{userId}/comments")
     public ResponseEntity<ApiResponse<PageResponse<com.raota.presentation.api.community.response.CommunityCommentItemResponse>>> getUserCommentsById(
             @PathVariable Long userId,
+            @LoginMember(required = false) Long viewerId,
             @PageableDefault(size = 5, direction = Sort.Direction.DESC) Pageable pageable) {
-        Page<com.raota.presentation.api.community.response.CommunityCommentItemResponse> response = memberInfoService.getMyComments(userId, pageable);
+        Page<com.raota.presentation.api.community.response.CommunityCommentItemResponse> response =
+                memberInfoService.getUserComments(userId, viewerId, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(response)));
     }
 }

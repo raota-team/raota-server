@@ -2,6 +2,7 @@ package com.raota.application.ramenlog;
 
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
+import com.raota.application.member.MemberActivityVisibilityService;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.domain.ramenlog.model.RamenLog;
@@ -41,6 +42,7 @@ public class RamenLogService {
     private final RamenShopRepository ramenShopRepository;
     private final FileUploader fileUploader;
     private final CacheInvalidationPublisher cacheInvalidationPublisher;
+    private final MemberActivityVisibilityService memberActivityVisibilityService;
 
     public Page<RamenLogResponse> getPublicLogs(
             Long viewerId,
@@ -56,6 +58,7 @@ public class RamenLogService {
 
     public RamenLogResponse getLog(Long logId, Long viewerId) {
         RamenLog log = getActiveLog(logId);
+        memberActivityVisibilityService.requireLogsVisible(log.getAuthor().getId(), viewerId);
         if (!log.isPublic() && !Objects.equals(log.getAuthor().getId(), viewerId)) {
             throw new EntityNotFoundException("라멘로그를 찾을 수 없습니다.");
         }
@@ -69,6 +72,7 @@ public class RamenLogService {
             Long shopId,
             Pageable pageable
     ) {
+        memberActivityVisibilityService.requireLogsVisible(targetMemberId, viewerId);
         requireMember(targetMemberId);
         Specification<RamenLog> specification = filter(
                 includePrivate ? null : true,
@@ -80,7 +84,12 @@ public class RamenLogService {
                 .map(log -> toResponse(log, viewerId));
     }
 
-    public List<RamenLogShopResponse> getMemberLogShops(Long targetMemberId, boolean includePrivate) {
+    public List<RamenLogShopResponse> getMemberLogShops(
+            Long targetMemberId,
+            Long viewerId,
+            boolean includePrivate
+    ) {
+        memberActivityVisibilityService.requireLogsVisible(targetMemberId, viewerId);
         requireMember(targetMemberId);
         List<RamenLog> logs = ramenLogRepository.findAll(filter(
                 includePrivate ? null : true,
@@ -235,6 +244,11 @@ public class RamenLogService {
 
             if (isPublic != null) {
                 predicates.add(criteriaBuilder.equal(root.get("isPublic"), isPublic));
+                if (isPublic) {
+                    predicates.add(criteriaBuilder.isTrue(
+                            root.get("author").get("activityVisibility").get("logsPublic")
+                    ));
+                }
             }
             if (memberId != null) {
                 predicates.add(criteriaBuilder.equal(root.get("author").get("id"), memberId));

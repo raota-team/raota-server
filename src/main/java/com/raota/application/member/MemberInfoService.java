@@ -21,6 +21,7 @@ public class MemberInfoService {
 
     private final MemberRepository memberRepository;
     private final MemberProvisioningService memberProvisioningService;
+    private final MemberActivityVisibilityService memberActivityVisibilityService;
     private final FileUploader fileUploader;
 
     public MyProfileResponse getMyProfile(Long memberId) {
@@ -30,6 +31,13 @@ public class MemberInfoService {
             throw new IllegalArgumentException("없는 유저 정보 입니다.");
         }
         return response;
+    }
+
+    public MyProfileResponse getUserProfile(Long userId, Long viewerId) {
+        MyProfileResponse response = getMyProfile(userId);
+        return java.util.Objects.equals(userId, viewerId)
+                ? response
+                : response.maskPrivateActivityStats();
     }
 
     public MemberSummaryResponse getMemberSummary(Long memberId) {
@@ -99,5 +107,33 @@ public class MemberInfoService {
 
     public Page<com.raota.presentation.api.community.response.CommunityCommentItemResponse> getMyComments(Long memberId, Pageable pageable) {
         return memberRepository.findMyComments(memberId, pageable);
+    }
+
+    public Page<PhotoSummaryResponse> getUserPhotoList(Long userId, Long viewerId, Pageable pageable) {
+        memberActivityVisibilityService.requireLogsVisible(userId, viewerId);
+        return getMyPhotoList(userId, pageable);
+    }
+
+    public Page<VisitSummaryResponse> getUserVisits(Long userId, Long viewerId, Pageable pageable) {
+        memberActivityVisibilityService.requireVisitsVisible(userId, viewerId);
+        return getMyVisits(userId, pageable);
+    }
+
+    public Page<com.raota.presentation.api.community.response.CommunityPostCardResponse> getUserPosts(
+            Long userId,
+            Long viewerId,
+            Pageable pageable
+    ) {
+        memberActivityVisibilityService.requirePostsVisible(userId, viewerId);
+        return getMyPosts(userId, pageable);
+    }
+
+    public Page<com.raota.presentation.api.community.response.CommunityCommentItemResponse> getUserComments(
+            Long userId,
+            Long viewerId,
+            Pageable pageable
+    ) {
+        memberActivityVisibilityService.requireCommentsVisible(userId, viewerId);
+        return getMyComments(userId, pageable);
     }
 }

@@ -128,7 +128,7 @@ public class RamenLogController {
     public ResponseEntity<ApiResponse<List<RamenLogShopResponse>>> getMyLogShops(
             @LoginMember Long memberId
     ) {
-        return ResponseEntity.ok(ApiResponse.success(ramenLogService.getMemberLogShops(memberId, true)));
+        return ResponseEntity.ok(ApiResponse.success(ramenLogService.getMemberLogShops(memberId, memberId, true)));
     }
 
     @Operation(summary = "사용자 공개 라멘로그 가게 필터 목록 조회")
@@ -138,6 +138,6 @@ public class RamenLogController {
             @LoginMember(required = false) Long viewerId
     ) {
         boolean owner = viewerId != null && viewerId.equals(userId);
-        return ResponseEntity.ok(ApiResponse.success(ramenLogService.getMemberLogShops(userId, owner)));
+        return ResponseEntity.ok(ApiResponse.success(ramenLogService.getMemberLogShops(userId, viewerId, owner)));
     }
 }

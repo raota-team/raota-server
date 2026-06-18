@@ -56,6 +56,10 @@ public class MemberProfile {
     @Builder.Default
     private MemberActivityStats memberActivityStats = MemberActivityStats.init();
 
+    @Embedded
+    @Builder.Default
+    private MemberActivityVisibility activityVisibility = MemberActivityVisibility.allPublic();
+
     public void updateProfile(String nickname, String imageUrl, String backgroundImageUrl, String bio) {
         if (nickname == null || nickname.isBlank()) {
             throw new IllegalArgumentException("닉네임은 null 또는 빈 값일 수 없습니다.");
@@ -86,6 +90,14 @@ public class MemberProfile {
         this.backgroundImageUrl = null;
         this.bio = null;
         this.isRegistrationCompleted = false;
+        this.activityVisibility = MemberActivityVisibility.allPublic();
+    }
+
+    public void updateActivityVisibility(boolean logs, boolean visits, boolean posts, boolean comments) {
+        if (this.activityVisibility == null) {
+            this.activityVisibility = MemberActivityVisibility.allPublic();
+        }
+        this.activityVisibility.update(logs, visits, posts, comments);
     }
 
     public void increasePostCount() {

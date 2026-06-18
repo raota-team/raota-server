@@ -102,7 +102,8 @@ public interface MemberInfoApi {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
     ResponseEntity<ApiResponse<MyProfileResponse>> getUserProfileById(
-            @PathVariable Long userId);
+            @PathVariable Long userId,
+            @Parameter(hidden = true) Long viewerId);
 
     @Operation(summary = "사용자 인증샷 목록 조회", description = "특정 사용자의 인증샷 목록을 페이징으로 조회합니다.")
     @ApiResponses({
@@ -110,6 +111,7 @@ public interface MemberInfoApi {
     })
     ResponseEntity<ApiResponse<PageResponse<PhotoSummaryResponse>>> getUserPhotosById(
             @PathVariable Long userId,
+            @Parameter(hidden = true) Long viewerId,
             @ParameterObject Pageable pageable);
 
     @Operation(summary = "사용자 방문 목록 조회", description = "특정 사용자의 방문 기록을 페이징으로 조회합니다.")
@@ -118,6 +120,7 @@ public interface MemberInfoApi {
     })
     ResponseEntity<ApiResponse<PageResponse<VisitSummaryResponse>>> getUserVisitsById(
             @PathVariable Long userId,
+            @Parameter(hidden = true) Long viewerId,
             @ParameterObject Pageable pageable);
 
     @Operation(summary = "사용자 글 목록 조회", description = "특정 사용자의 글 목록을 페이징으로 조회합니다. 기본 페이지 크기는 5입니다.")
@@ -126,6 +129,7 @@ public interface MemberInfoApi {
     })
     ResponseEntity<ApiResponse<PageResponse<com.raota.presentation.api.community.response.CommunityPostCardResponse>>> getUserPostsById(
             @PathVariable Long userId,
+            @Parameter(hidden = true) Long viewerId,
             @ParameterObject Pageable pageable);
 
     @Operation(summary = "사용자 댓글 목록 조회", description = "특정 사용자의 댓글 목록을 페이징으로 조회합니다. 기본 페이지 크기는 5입니다.")
@@ -134,5 +138,6 @@ public interface MemberInfoApi {
     })
     ResponseEntity<ApiResponse<PageResponse<com.raota.presentation.api.community.response.CommunityCommentItemResponse>>> getUserCommentsById(
             @PathVariable Long userId,
+            @Parameter(hidden = true) Long viewerId,
             @ParameterObject Pageable pageable);
 }

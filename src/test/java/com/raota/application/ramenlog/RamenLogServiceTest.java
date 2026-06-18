@@ -18,6 +18,7 @@ import com.raota.domain.ramenlog.repository.RamenLogLikeRepository;
 import com.raota.domain.ramenlog.repository.RamenLogRepository;
 import com.raota.infrastructure.file.FileUploader;
 import com.raota.infrastructure.cache.CacheInvalidationPublisher;
+import com.raota.application.member.MemberActivityVisibilityService;
 import com.raota.presentation.api.ramenlog.request.RamenLogUpsertRequest;
 import com.raota.presentation.api.ramenlog.response.RamenLogLikeResponse;
 import com.raota.presentation.api.ramenlog.response.RamenLogResponse;
@@ -40,6 +41,7 @@ class RamenLogServiceTest {
     @Mock private RamenShopRepository ramenShopRepository;
     @Mock private FileUploader fileUploader;
     @Mock private CacheInvalidationPublisher cacheInvalidationPublisher;
+    @Mock private MemberActivityVisibilityService memberActivityVisibilityService;
     @InjectMocks private RamenLogService ramenLogService;
 
     @Test

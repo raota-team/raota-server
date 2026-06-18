@@ -41,6 +41,12 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
             (select count(b) from Bookmark b where b.memberProfile.id = m.id and b.isDeleted = false),
             (select count(p) from PostEntity p where p.author.id = m.id and p.isDeleted = false),
             (select count(c) from CommentEntity c where c.member.id = m.id and c.isDeleted = false and c.post.isDeleted = false)
+        ),
+        new com.raota.presentation.api.member.response.ActivityVisibilityResponse(
+            m.activityVisibility.logsPublic,
+            m.activityVisibility.visitsPublic,
+            m.activityVisibility.postsPublic,
+            m.activityVisibility.commentsPublic
         )
     )
     from MemberProfile m

@@ -59,12 +59,18 @@ public interface RamenLogRepository extends JpaRepository<RamenLog, Long>, JpaSp
             p.createdAt
         )
         from RamenLog p
-        where p.ramenShop.id = :shopId and p.isDeleted = false and p.isPublic = true
+        where p.ramenShop.id = :shopId
+          and p.isDeleted = false
+          and p.isPublic = true
+          and p.author.activityVisibility.logsPublic = true
         order by p.createdAt desc
         """,
             countQuery = """
         select count(p) from RamenLog p
-        where p.ramenShop.id = :shopId and p.isDeleted = false and p.isPublic = true
+        where p.ramenShop.id = :shopId
+          and p.isDeleted = false
+          and p.isPublic = true
+          and p.author.activityVisibility.logsPublic = true
         """
     )
     Page<RamenShopProofPictureResponse> searchPictures(@Param("shopId") Long shopId, Pageable pageable);
@@ -76,13 +82,18 @@ public interface RamenLogRepository extends JpaRepository<RamenLog, Long>, JpaSp
             concat(s.address.city, concat(' ', s.address.district)),
             p.imageUrl,
             (select count(p2) from RamenLog p2
-             where p2.ramenShop.id = s.id and p2.isDeleted = false and p2.isPublic = true)
+             where p2.ramenShop.id = s.id
+               and p2.isDeleted = false
+               and p2.isPublic = true
+               and p2.author.activityVisibility.logsPublic = true)
         )
         from RamenLog p
         join p.ramenShop s
         where p.id in (
             select max(p3.id) from RamenLog p3
-            where p3.isDeleted = false and p3.isPublic = true
+            where p3.isDeleted = false
+              and p3.isPublic = true
+              and p3.author.activityVisibility.logsPublic = true
             group by p3.ramenShop.id
         )
         order by p.createdAt desc
