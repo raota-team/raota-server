@@ -3,9 +3,11 @@ package com.raota.application.member;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
+import com.raota.infrastructure.cache.CacheInvalidationPublisher;
 import com.raota.presentation.api.member.request.ActivityVisibilityUpdateRequest;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -20,6 +22,9 @@ class MemberActivityVisibilityServiceTest {
 
     @Mock
     private MemberRepository memberRepository;
+
+    @Mock
+    private CacheInvalidationPublisher cacheInvalidationPublisher;
 
     @InjectMocks
     private MemberActivityVisibilityService service;
@@ -38,6 +43,7 @@ class MemberActivityVisibilityServiceTest {
         assertThat(result.visits()).isTrue();
         assertThat(result.posts()).isFalse();
         assertThat(result.comments()).isTrue();
+        verify(cacheInvalidationPublisher).publishAll("ramenShopList");
     }
 
     @Test

@@ -14,6 +14,10 @@ import com.raota.domain.ramenShop.model.NormalMenu;
 import com.raota.domain.ramenShop.model.NormalMenus;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
+import com.raota.domain.member.model.MemberProfile;
+import com.raota.domain.member.repository.MemberRepository;
+import com.raota.domain.ramenlog.model.RamenLog;
+import com.raota.domain.ramenlog.repository.RamenLogRepository;
 import java.time.LocalTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,11 +43,18 @@ class RamenShopInfoControllerTest extends BaseIntegrationTest {
     @Autowired
     private RamenShopRepository ramenShopRepository;
 
+    @Autowired
+    private RamenLogRepository ramenLogRepository;
+
+    @Autowired
+    private MemberRepository memberRepository;
+
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
                 .apply(springSecurity())
                 .build();
+        ramenLogRepository.deleteAll();
         ramenShopRepository.deleteAll();
     }
 
@@ -190,6 +201,32 @@ class RamenShopInfoControllerTest extends BaseIntegrationTest {
     }
 
     @Test
+    void shopListReturnsRamenLogCountAndLatestThreePreviewImages() throws Exception {
+        RamenShop shop = ramenShopRepository.save(sampleShop("미리보기 라멘", "미리보기시", "미리보기구"));
+        MemberProfile member = memberRepository.save(MemberProfile.builder()
+                .nickname("미리보기 작성자")
+                .build());
+
+        saveRamenLog(shop, member, "https://example.com/log-1.jpg", true);
+        saveRamenLog(shop, member, "https://example.com/log-2.jpg", true);
+        saveRamenLog(shop, member, "https://example.com/log-3.jpg", true);
+        saveRamenLog(shop, member, "https://example.com/log-4.jpg", true);
+        saveRamenLog(shop, member, "https://example.com/private-log.jpg", false);
+
+        mockMvc.perform(get("/ramen-shops")
+                        .param("city", "미리보기시"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].ramenLogCount").value(4))
+                .andExpect(jsonPath("$.data.items[0].ramenLogPreviewImageUrls.length()").value(3))
+                .andExpect(jsonPath("$.data.items[0].ramenLogPreviewImageUrls[0]")
+                        .value("https://example.com/log-4.jpg"))
+                .andExpect(jsonPath("$.data.items[0].ramenLogPreviewImageUrls[1]")
+                        .value("https://example.com/log-3.jpg"))
+                .andExpect(jsonPath("$.data.items[0].ramenLogPreviewImageUrls[2]")
+                        .value("https://example.com/log-2.jpg"));
+    }
+
+    @Test
     void searchByNameSortReturnsAscendingOrder() throws Exception {
         ramenShopRepository.save(sampleShop("카", "서울", "성동구"));
         ramenShopRepository.save(sampleShop("가", "서울", "성동구"));
@@ -233,5 +270,15 @@ class RamenShopInfoControllerTest extends BaseIntegrationTest {
                 .imageUrl("https://example.com/" + name + "-menu.jpg")
                 .build());
         return ramenShop;
+    }
+
+    private void saveRamenLog(RamenShop shop, MemberProfile member, String imageUrl, boolean isPublic) {
+        ramenLogRepository.saveAndFlush(RamenLog.builder()
+                .ramenShop(shop)
+                .author(member)
+                .menuName("기본 라멘")
+                .imageUrl(imageUrl)
+                .isPublic(isPublic)
+                .build());
     }
 }

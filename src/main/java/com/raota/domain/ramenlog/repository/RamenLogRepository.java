@@ -4,6 +4,7 @@ import com.raota.domain.ramenlog.model.RamenLog;
 import com.raota.presentation.api.ramenShop.response.ProofPictureInfoResponse;
 import com.raota.presentation.api.ramenShop.response.RamenShopProofPictureResponse;
 import com.raota.presentation.api.ramenShop.response.RecentVerifiedShopResponse;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -75,6 +76,32 @@ public interface RamenLogRepository extends JpaRepository<RamenLog, Long>, JpaSp
     )
     Page<RamenShopProofPictureResponse> searchPictures(@Param("shopId") Long shopId, Pageable pageable);
 
+    @Query(value = """
+        select
+            ranked.ramen_shop_id as ramenShopId,
+            ranked.image_url as imageUrl,
+            ranked.ramen_log_count as ramenLogCount
+        from (
+            select
+                p.ramen_shop_id,
+                p.image_url,
+                count(*) over (partition by p.ramen_shop_id) as ramen_log_count,
+                row_number() over (
+                    partition by p.ramen_shop_id
+                    order by p.created_at desc, p.id desc
+                ) as preview_rank
+            from tb_ramen_log p
+            join tb_member_profile m on m.id = p.member_id
+            where p.ramen_shop_id in (:shopIds)
+              and p.is_deleted = false
+              and p.is_public = true
+              and m.logs_public = true
+        ) ranked
+        where ranked.preview_rank <= 3
+        order by ranked.ramen_shop_id, ranked.preview_rank
+        """, nativeQuery = true)
+    List<RamenLogPreviewRow> findPreviewRowsByShopIds(@Param("shopIds") Collection<Long> shopIds);
+
     @Query("""
         select new com.raota.presentation.api.ramenShop.response.RecentVerifiedShopResponse(
             s.id,
@@ -100,4 +127,10 @@ public interface RamenLogRepository extends JpaRepository<RamenLog, Long>, JpaSp
         order by p.createdAt desc
         """)
     List<RecentVerifiedShopResponse> findRecentVerifiedShops(Pageable pageable);
+
+    interface RamenLogPreviewRow {
+        Long getRamenShopId();
+        String getImageUrl();
+        long getRamenLogCount();
+    }
 }

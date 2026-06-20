@@ -3,6 +3,7 @@ package com.raota.application.member;
 import com.raota.domain.member.model.MemberActivityVisibility;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
+import com.raota.infrastructure.cache.CacheInvalidationPublisher;
 import com.raota.presentation.api.member.request.ActivityVisibilityUpdateRequest;
 import com.raota.presentation.api.member.response.ActivityVisibilityResponse;
 import jakarta.persistence.EntityNotFoundException;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberActivityVisibilityService {
 
     private final MemberRepository memberRepository;
+    private final CacheInvalidationPublisher cacheInvalidationPublisher;
 
     public ActivityVisibilityResponse get(Long memberId) {
         return ActivityVisibilityResponse.from(requireMember(memberId).getActivityVisibility());
@@ -26,12 +28,17 @@ public class MemberActivityVisibilityService {
     @Transactional
     public ActivityVisibilityResponse update(Long memberId, ActivityVisibilityUpdateRequest request) {
         MemberProfile member = requireMember(memberId);
+        boolean logsVisibilityChanged = member.getActivityVisibility() == null
+                || member.getActivityVisibility().isLogsPublic() != request.logs();
         member.updateActivityVisibility(
                 request.logs(),
                 request.visits(),
                 request.posts(),
                 request.comments()
         );
+        if (logsVisibilityChanged) {
+            cacheInvalidationPublisher.publishAll("ramenShopList");
+        }
         return ActivityVisibilityResponse.from(member.getActivityVisibility());
     }
 
