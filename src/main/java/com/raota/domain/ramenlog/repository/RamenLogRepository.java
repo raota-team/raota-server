@@ -89,7 +89,8 @@ public interface RamenLogRepository extends JpaRepository<RamenLog, Long>, JpaSp
         )
         from RamenLog p
         join p.ramenShop s
-        where p.id in (
+        where s.published = true
+          and p.id in (
             select max(p3.id) from RamenLog p3
             where p3.isDeleted = false
               and p3.isPublic = true

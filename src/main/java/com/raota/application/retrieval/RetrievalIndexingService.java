@@ -80,7 +80,7 @@ public class RetrievalIndexingService {
     }
 
     public void indexAllShops() {
-        List<RamenShop> shops = ramenShopRepository.findAll();
+        List<RamenShop> shops = ramenShopRepository.findAllByPublishedTrue();
 
         for (RamenShop shop : shops) {
             addDocuments(ramenShopProfileDocumentFactory.create(shop));

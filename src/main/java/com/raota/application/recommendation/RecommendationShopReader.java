@@ -15,7 +15,7 @@ public class RecommendationShopReader {
     }
 
     public RamenShop getRamenShop(Long shopId) {
-        return ramenShopRepository.findById(shopId)
+        return ramenShopRepository.findByIdAndPublishedTrue(shopId)
                 .orElseThrow(() -> new IllegalArgumentException("라멘샵을 찾을 수 없습니다. id=" + shopId));
     }
 

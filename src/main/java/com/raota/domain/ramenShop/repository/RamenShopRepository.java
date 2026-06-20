@@ -5,6 +5,7 @@ import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.presentation.api.discovery.response.TodayPopularRamenShopResponse;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,6 +13,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface RamenShopRepository extends JpaRepository<RamenShop, Long> {
+
+    Optional<RamenShop> findByIdAndPublishedTrue(Long id);
+
+    List<RamenShop> findAllByPublishedTrue();
+
+    List<RamenShop> findAllByIdBetweenOrderByIdAsc(Long fromId, Long toId);
+
+    long countByPublishedTrue();
 
     @Query(
             value = """
@@ -26,7 +35,8 @@ public interface RamenShopRepository extends JpaRepository<RamenShop, Long> {
             s.stats.viewCount
         )
         from RamenShop s
-        where (:city is null or :city = '' or s.address.city = :city)
+        where s.published = true
+          and (:city is null or :city = '' or s.address.city = :city)
           and (:district is null or :district = '' or s.address.district = :district)
           and (:keyword is null or :keyword = '' or s.name like concat('%', :keyword, '%'))
           and (
@@ -41,7 +51,8 @@ public interface RamenShopRepository extends JpaRepository<RamenShop, Long> {
             countQuery = """
         select count(s)
         from RamenShop s
-        where (:city is null or :city = '' or s.address.city = :city)
+        where s.published = true
+          and (:city is null or :city = '' or s.address.city = :city)
           and (:district is null or :district = '' or s.address.district = :district)
           and (:keyword is null or :keyword = '' or s.name like concat('%', :keyword, '%'))
           and (
@@ -66,6 +77,7 @@ public interface RamenShopRepository extends JpaRepository<RamenShop, Long> {
             )
             from RamenShop s
             where s.id in :shopIds
+              and s.published = true
             """)
     List<TodayPopularRamenShopResponse> findPopularTodayShops(@Param("shopIds") Collection<Long> shopIds);
 }

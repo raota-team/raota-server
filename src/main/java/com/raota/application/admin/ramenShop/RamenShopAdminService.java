@@ -38,7 +38,8 @@ public class RamenShopAdminService {
                                 .filter(value -> value != null && !value.isBlank())
                                 .reduce((left, right) -> left + " " + right)
                                 .orElse(""),
-                        fileUploader.getAccessibleUrl(shop.getImageUrl())
+                        fileUploader.getAccessibleUrl(shop.getImageUrl()),
+                        shop.isPublished()
                 ))
                 .toList();
     }
@@ -66,12 +67,14 @@ public class RamenShopAdminService {
                 .catchTableUrl(blankToNull(form.getCatchTableUrl()))
                 .description(blankToNull(form.getDescription()))
                 .imageUrl(blankToNull(form.getImageUrl()))
+                .published(form.isPublishedValue())
                 .normalMenus(NormalMenus.init())
                 .eventMenus(EventMenus.init())
                 .build();
 
         ramenShop.replaceNormalMenus(form.toNormalMenus());
         ramenShop.replaceEventMenus(form.toEventMenus());
+        ramenShop.updatePublished(form.isPublishedValue());
 
         Long shopId = ramenShopRepository.save(ramenShop).getId();
         cacheInvalidationPublisher.publishAll("ramenShopList");
@@ -103,6 +106,29 @@ public class RamenShopAdminService {
         ramenShop.replaceEventMenus(form.toEventMenus());
         cacheInvalidationPublisher.publish("ramenShopDetail", String.valueOf(shopId));
         cacheInvalidationPublisher.publishAll("ramenShopList");
+    }
+
+    @Transactional
+    public void updateVisibility(Long shopId, boolean published) {
+        RamenShop ramenShop = getShop(shopId);
+        ramenShop.updatePublished(published);
+        cacheInvalidationPublisher.publish("ramenShopDetail", String.valueOf(shopId));
+        cacheInvalidationPublisher.publishAll("ramenShopList");
+    }
+
+    @Transactional
+    public int updateVisibility(Long fromId, Long toId, boolean published) {
+        if (fromId > toId) {
+            throw new IllegalArgumentException("시작 ID는 종료 ID보다 클 수 없습니다.");
+        }
+
+        List<RamenShop> shops = ramenShopRepository.findAllByIdBetweenOrderByIdAsc(fromId, toId);
+        shops.forEach(shop -> {
+            shop.updatePublished(published);
+            cacheInvalidationPublisher.publish("ramenShopDetail", String.valueOf(shop.getId()));
+        });
+        cacheInvalidationPublisher.publishAll("ramenShopList");
+        return shops.size();
     }
 
     @Transactional

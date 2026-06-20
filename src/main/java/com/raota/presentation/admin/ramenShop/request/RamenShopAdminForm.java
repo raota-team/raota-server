@@ -67,6 +67,8 @@ public class RamenShopAdminForm {
 
     private String tags;
 
+    private Boolean published = true;
+
     @Valid
     private List<NormalMenuForm> normalMenus = new ArrayList<>();
 
@@ -105,6 +107,7 @@ public class RamenShopAdminForm {
         form.setCatchTableUrl(ramenShop.getCatchTableUrl());
         form.setDescription(ramenShop.getDescription());
         form.setImageUrl(ramenShop.getImageUrl());
+        form.setPublished(ramenShop.isPublished());
         form.setTags(String.join(", ", ramenShop.getTags() == null ? List.of() : ramenShop.getTags()));
         form.setNormalMenus(new ArrayList<>(
                 (ramenShop.getNormalMenus() == null ? List.<NormalMenu>of() : ramenShop.getNormalMenus().getValues()).stream()
@@ -162,6 +165,10 @@ public class RamenShopAdminForm {
                 .filter(menu -> !menu.isEmpty())
                 .map(EventMenuForm::toEntity)
                 .toList();
+    }
+
+    public boolean isPublishedValue() {
+        return published == null || published;
     }
 
     public void ensureMenuRows() {

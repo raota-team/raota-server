@@ -164,6 +164,37 @@
             line-height: 1.4;
         }
 
+        .shop-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+        }
+
+        .shop-meta span {
+            margin-top: 0;
+        }
+
+        .visibility-badge {
+            display: inline-flex;
+            width: fit-content;
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .visibility-badge.published {
+            color: #1d6f32;
+            background: rgba(44, 132, 63, 0.12);
+        }
+
+        .visibility-badge.hidden {
+            color: var(--muted);
+            background: rgba(38, 23, 12, 0.08);
+        }
+
         .empty {
             padding: 16px 18px;
             margin: 0 18px 20px;
@@ -415,7 +446,7 @@
     <section class="hero">
         <div>
             <h1>라멘집 상세 관리</h1>
-            <p>라멘집 정보, 대표 이미지, 운영시간, 메뉴를 한 화면에서 추가하고 수정할 수 있다.</p>
+            <p>라멘집 정보, 공개 상태, 대표 이미지, 운영시간, 메뉴를 한 화면에서 추가하고 수정할 수 있다.</p>
         </div>
         <div class="badge" th:text="${editMode} ? '수정 모드' : '신규 등록 모드'"></div>
     </section>
@@ -440,7 +471,12 @@
                     <div class="thumb placeholder" th:unless="${shop.imageUrl != null and !shop.imageUrl.isBlank()}">NO IMAGE</div>
                     <div>
                         <strong th:text="${shop.name}"></strong>
-                        <span th:text="${shop.address}"></span>
+                        <div class="shop-meta">
+                            <span th:text="${shop.address}"></span>
+                            <span class="visibility-badge"
+                                  th:classappend="${shop.published} ? ' published' : ' hidden'"
+                                  th:text="${shop.published} ? '공개' : '숨김'"></span>
+                        </div>
                     </div>
                 </a>
             </div>
@@ -494,6 +530,14 @@
                         <label for="tags">태그</label>
                         <input id="tags" type="text" th:field="*{tags}" placeholder="진한국물, 츠케멘, 혼밥">
                         <div class="hint">쉼표로 구분하면 상세 페이지 태그 목록으로 저장된다.</div>
+                    </div>
+
+                    <div class="field-wide">
+                        <label class="checkbox">
+                            <input type="checkbox" th:field="*{published}">
+                            서비스에 공개
+                        </label>
+                        <div class="hint">끄면 관리자 화면에는 남지만 일반 목록·검색·상세·추천에서는 노출되지 않는다.</div>
                     </div>
 
                     <div class="field">

@@ -104,6 +104,30 @@ class RamenShopIntegrationTest extends BaseIntegrationTest {
                 .body("data.tags", hasItems("태그1", "태그2"));
     }
 
+    @Test
+    @DisplayName("숨김 처리된 라멘집은 일반 목록에 노출되지 않는다.")
+    void hidden_shop_is_excluded_from_public_list() {
+        RamenShop hiddenShop = RamenShop.builder()
+                .name("숨김 라멘")
+                .address(Address.of("서울", "성동구", "도로명", "상세"))
+                .businessHours(BusinessHours.of("일요일", LocalTime.of(11, 0), LocalTime.of(20, 0), null, null, "불가"))
+                .tags(List.of("기본"))
+                .description("설명")
+                .published(false)
+                .normalMenus(NormalMenus.init())
+                .eventMenus(EventMenus.init())
+                .build();
+        ramenShopRepository.save(hiddenShop);
+
+        given()
+                .param("city", "서울")
+        .when()
+                .get("/ramen-shops")
+        .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("data.items.size()", is(0));
+    }
+
     private RamenShop sampleShop(String name, String city, String district) {
         return RamenShop.builder()
                 .name(name)

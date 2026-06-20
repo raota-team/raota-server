@@ -129,6 +129,28 @@ class RamenShopInfoControllerTest extends BaseIntegrationTest {
     }
 
     @Test
+    void hiddenShopIsExcludedFromListAndDetail() throws Exception {
+        RamenShop hiddenShop = RamenShop.builder()
+                .name("숨김 라멘")
+                .address(Address.of("서울", "성동구", "어딘가 2", "1층"))
+                .businessHours(BusinessHours.of("일요일", LocalTime.of(11, 0), LocalTime.of(20, 0), null, null, "불가"))
+                .tags(List.of("돈코츠"))
+                .description("숨김 매장")
+                .published(false)
+                .normalMenus(NormalMenus.init())
+                .eventMenus(EventMenus.init())
+                .build();
+        RamenShop savedShop = ramenShopRepository.save(hiddenShop);
+
+        mockMvc.perform(get("/ramen-shops").param("city", "서울"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items.length()").value(0));
+
+        mockMvc.perform(get("/ramen-shops/{shopId}", savedShop.getId()))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void searchByViewsSortReturnsViewCountPriorityOrder() throws Exception {
         RamenShop low = sampleShop("로우", "정렬시", "A");
         low.increaseViewCount();

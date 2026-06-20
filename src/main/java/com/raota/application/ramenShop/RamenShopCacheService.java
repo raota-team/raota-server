@@ -29,7 +29,7 @@ public class RamenShopCacheService {
     @Transactional(readOnly = true)
     @Cacheable(cacheNames = "ramenShopDetail", key = "#shopId.toString()")
     public RamenShopBasicInfoResponse getShopDetail(Long shopId) {
-        RamenShop ramenShop = ramenShopRepository.findById(shopId)
+        RamenShop ramenShop = ramenShopRepository.findByIdAndPublishedTrue(shopId)
                 .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
 
         return RamenShopBasicInfoResponse.from(

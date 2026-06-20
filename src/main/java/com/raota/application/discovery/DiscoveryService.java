@@ -38,7 +38,7 @@ public class DiscoveryService {
 
     @Transactional(readOnly = true)
     public DiscoveryStatsResponse getStats() {
-        long totalShops = ramenShopRepository.count();
+        long totalShops = ramenShopRepository.countByPublishedTrue();
         long userReviews = ramenLogRepository.countByIsDeletedFalse();
         long totalUsers = 4000;
 

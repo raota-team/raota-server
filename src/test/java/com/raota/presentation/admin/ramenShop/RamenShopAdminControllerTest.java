@@ -75,6 +75,7 @@ class RamenShopAdminControllerTest extends BaseIntegrationTest {
                         .param("catchTableUrl", "https://app.catchtable.co.kr/ct/shop/new-ramen")
                         .param("description", "진한 돈코츠 국물과 차슈가 강점인 가게")
                         .param("imageUrl", "https://mock.cdn.com/ramen-shop/test.jpg")
+                        .param("published", "true")
                         .param("tags", "진한국물, 혼밥")
                         .param("normalMenus[0].name", "돈코츠 라멘")
                         .param("normalMenus[0].price", "11000")
@@ -94,6 +95,7 @@ class RamenShopAdminControllerTest extends BaseIntegrationTest {
         assertThat(shops.getFirst().getBusinessHours().parkingInfo()).isEqualTo("불가");
         assertThat(shops.getFirst().getNormalMenus().getValues()).hasSize(1);
         assertThat(shops.getFirst().getEventMenus().getValues()).hasSize(1);
+        assertThat(shops.getFirst().isPublished()).isTrue();
     }
 
     @Test
@@ -132,6 +134,7 @@ class RamenShopAdminControllerTest extends BaseIntegrationTest {
                         .param("instagramUrl", "https://instagram.com/updated-shop")
                         .param("catchTableUrl", "https://app.catchtable.co.kr/ct/shop/updated-shop")
                         .param("description", "츠케멘과 한정 메뉴 구성이 강한 라멘집")
+                        .param("published", "false")
                         .param("tags", "츠케멘, 진한국물")
                         .param("normalMenus[0].name", "츠케멘")
                         .param("normalMenus[0].price", "13000")
@@ -156,6 +159,7 @@ class RamenShopAdminControllerTest extends BaseIntegrationTest {
         assertThat(updatedShop.getNormalMenus().getValues().getFirst().getName()).isEqualTo("츠케멘");
         assertThat(updatedShop.getEventMenus().getValues()).hasSize(1);
         assertThat(updatedShop.getEventMenus().getValues().getFirst().getBadgeText()).isEqualTo("COLLAB");
+        assertThat(updatedShop.isPublished()).isFalse();
     }
 
     @Test
@@ -187,6 +191,7 @@ class RamenShopAdminControllerTest extends BaseIntegrationTest {
                                   "closeTime": "21:00",
                                   "instagramUrl": "https://instagram.com/json_ramen",
                                   "description": "JSON으로 등록한 라멘집",
+                                  "published": false,
                                   "tags": "쇼유, 혼밥",
                                   "normalMenus": [
                                     { "name": "쇼유 라멘", "price": 12000, "signature": true }
@@ -202,6 +207,7 @@ class RamenShopAdminControllerTest extends BaseIntegrationTest {
         assertThat(shop.getName()).isEqualTo("제이슨 라멘");
         assertThat(shop.getAddress().latitude()).isEqualByComparingTo("37.12345678");
         assertThat(shop.getNormalMenus().getValues()).hasSize(1);
+        assertThat(shop.isPublished()).isFalse();
     }
 
     @Test
@@ -223,6 +229,7 @@ class RamenShopAdminControllerTest extends BaseIntegrationTest {
                                   "parkingInfo": "불가",
                                   "instagramUrl": "https://instagram.com/json_updated",
                                   "description": "JSON으로 수정한 라멘집",
+                                  "published": false,
                                   "tags": "츠케멘",
                                   "normalMenus": [
                                     { "name": "츠케멘", "price": 14000, "signature": true }
@@ -240,6 +247,48 @@ class RamenShopAdminControllerTest extends BaseIntegrationTest {
         assertThat(updatedShop.getName()).isEqualTo("JSON 수정 후");
         assertThat(updatedShop.getNormalMenus().getValues().getFirst().getName()).isEqualTo("츠케멘");
         assertThat(updatedShop.getEventMenus().getValues()).hasSize(1);
+        assertThat(updatedShop.isPublished()).isFalse();
+    }
+
+    @Test
+    void updateShopVisibilityWithJsonApi() throws Exception {
+        RamenShop savedShop = ramenShopRepository.save(sampleShop("숨김 전환 대상"));
+
+        mockMvc.perform(patch("/admin/api/ramen-shops/{shopId}/visibility", savedShop.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "published": false
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.shopId").value(savedShop.getId()));
+
+        RamenShop updatedShop = ramenShopRepository.findById(savedShop.getId()).orElseThrow();
+        assertThat(updatedShop.isPublished()).isFalse();
+    }
+
+    @Test
+    void updateShopVisibilityByIdRangeWithJsonApi() throws Exception {
+        RamenShop first = ramenShopRepository.save(sampleShop("범위 첫 매장"));
+        RamenShop second = ramenShopRepository.save(sampleShop("범위 둘째 매장"));
+
+        mockMvc.perform(patch("/admin/api/ramen-shops/visibility")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "fromId": %d,
+                                  "toId": %d,
+                                  "published": false
+                                }
+                                """.formatted(first.getId(), second.getId())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.updatedCount").value(2));
+
+        assertThat(ramenShopRepository.findById(first.getId()).orElseThrow().isPublished()).isFalse();
+        assertThat(ramenShopRepository.findById(second.getId()).orElseThrow().isPublished()).isFalse();
     }
 
     @Test

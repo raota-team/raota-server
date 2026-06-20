@@ -4,6 +4,7 @@ public record RamenShopAdminSummaryResponse(
         Long id,
         String name,
         String address,
-        String imageUrl
+        String imageUrl,
+        boolean published
 ) {
 }

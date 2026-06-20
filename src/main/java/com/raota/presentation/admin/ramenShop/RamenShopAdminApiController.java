@@ -1,8 +1,11 @@
 package com.raota.presentation.admin.ramenShop;
 
 import com.raota.presentation.admin.ramenShop.request.RamenShopAdminForm;
+import com.raota.presentation.admin.ramenShop.request.RamenShopVisibilityBulkUpdateRequest;
+import com.raota.presentation.admin.ramenShop.request.RamenShopVisibilityUpdateRequest;
 import com.raota.presentation.admin.ramenShop.response.RamenShopAdminMutationResponse;
 import com.raota.presentation.admin.ramenShop.response.RamenShopAdminSummaryResponse;
+import com.raota.presentation.admin.ramenShop.response.RamenShopVisibilityBulkUpdateResponse;
 import com.raota.application.admin.ramenShop.RamenShopAdminService;
 import com.raota.presentation.common.ApiResponse;
 import jakarta.validation.Valid;
@@ -56,6 +59,38 @@ public class RamenShopAdminApiController {
         rejectIfInvalid(bindingResult);
         ramenShopAdminService.updateShop(shopId, form);
         return ResponseEntity.ok(ApiResponse.success("라멘집 정보가 수정되었습니다.", new RamenShopAdminMutationResponse(shopId)));
+    }
+
+    @PatchMapping("/{shopId}/visibility")
+    public ResponseEntity<ApiResponse<RamenShopAdminMutationResponse>> updateVisibility(
+            @PathVariable Long shopId,
+            @Valid @RequestBody RamenShopVisibilityUpdateRequest request
+    ) {
+        ramenShopAdminService.updateVisibility(shopId, request.published());
+        return ResponseEntity.ok(ApiResponse.success(
+                request.published() ? "라멘집이 공개되었습니다." : "라멘집이 숨김 처리되었습니다.",
+                new RamenShopAdminMutationResponse(shopId)
+        ));
+    }
+
+    @PatchMapping("/visibility")
+    public ResponseEntity<ApiResponse<RamenShopVisibilityBulkUpdateResponse>> updateVisibility(
+            @Valid @RequestBody RamenShopVisibilityBulkUpdateRequest request
+    ) {
+        int updatedCount = ramenShopAdminService.updateVisibility(
+                request.fromId(),
+                request.toId(),
+                request.published()
+        );
+        return ResponseEntity.ok(ApiResponse.success(
+                "라멘집 공개 상태가 일괄 변경되었습니다.",
+                new RamenShopVisibilityBulkUpdateResponse(
+                        request.fromId(),
+                        request.toId(),
+                        request.published(),
+                        updatedCount
+                )
+        ));
     }
 
     @DeleteMapping("/{shopId}")

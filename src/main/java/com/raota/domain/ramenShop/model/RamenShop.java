@@ -65,6 +65,10 @@ public class RamenShop {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Builder.Default
+    @Column(name = "is_published", nullable = false)
+    private boolean published = true;
+
     @Embedded
     @Builder.Default
     private NormalMenus normalMenus = NormalMenus.init();
@@ -114,6 +118,10 @@ public class RamenShop {
         }
         eventMenus.clear();
         menus.forEach(this::addEventMenu);
+    }
+
+    public void updatePublished(boolean published) {
+        this.published = published;
     }
 
     public void increaseBookmarkCount() {

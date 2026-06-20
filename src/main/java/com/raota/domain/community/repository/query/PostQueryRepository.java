@@ -125,7 +125,8 @@ public class PostQueryRepository {
                         """
                         select count(rs)
                         from RamenShop rs
-                        where (:keyword is null
+                        where rs.published = true
+                          and (:keyword is null
                                or rs.name like :keyword
                                or rs.address.city like :keyword
                                or rs.address.district like :keyword)
@@ -141,7 +142,8 @@ public class PostQueryRepository {
                                rs.id, rs.name, concat(rs.address.city, ' ', rs.address.district), rs.imageUrl
                         )
                         from RamenShop rs
-                        where (:keyword is null
+                        where rs.published = true
+                          and (:keyword is null
                                or rs.name like :keyword
                                or rs.address.city like :keyword
                                or rs.address.district like :keyword)

@@ -35,7 +35,7 @@ public class RamenShopInfoService {
 
     @Transactional(readOnly = true)
     public RamenShopBasicInfoResponse getShopDetailInfo(Long shopId, Long memberId) {
-        RamenShop ramenShop = ramenShopRepository.findById(shopId)
+        RamenShop ramenShop = ramenShopRepository.findByIdAndPublishedTrue(shopId)
                 .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
         int viewCount = ramenShop.getStats().viewCount();
 
@@ -51,7 +51,7 @@ public class RamenShopInfoService {
 
     @Transactional
     public void increaseViewCount(Long shopId) {
-        RamenShop ramenShop = ramenShopRepository.findById(shopId)
+        RamenShop ramenShop = ramenShopRepository.findByIdAndPublishedTrue(shopId)
                 .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
         ramenShop.increaseViewCount();
         ramenShopViewRankingService.increaseTodayViewCount(shopId);
