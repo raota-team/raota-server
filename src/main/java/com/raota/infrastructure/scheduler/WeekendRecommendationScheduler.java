@@ -23,10 +23,10 @@ public class WeekendRecommendationScheduler {
         }
     }
 
-    @Scheduled(cron = "0 0 6 ? * MON", zone = "Asia/Seoul")
-    public void generateWeeklyWeekendRecommendation() {
-        log.info("Start weekly weekend ramen recommendation generation");
-        weekendCurationService.generateWeeklyCuration();
-        log.info("Finish weekly weekend ramen recommendation generation");
+    @Scheduled(cron = "0 0 6 * * *", zone = "Asia/Seoul")
+    public void generateDailyRamenRecommendation() {
+        log.info("Start daily ramen recommendation generation");
+        weekendCurationService.generateDailyCuration();
+        log.info("Finish daily ramen recommendation generation");
     }
 }

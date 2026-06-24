@@ -67,7 +67,7 @@ class WeekendCurationServiceTest {
 
         mockCuration = WeekendCuration.builder()
                 .id(1L)
-                .yearWeek(202625)
+                .yearWeek(20260624)
                 .ramenType(mockRamenType)
                 .title("비 오는 날의 진한 한 그릇")
                 .reason("비 오는 날엔 돈코츠죠.")
@@ -111,7 +111,7 @@ class WeekendCurationServiceTest {
 
     @Test
     @DisplayName("주간 큐레이션 생성 성공")
-    void generateWeeklyCuration_Success() throws Exception {
+    void generateDailyCuration_Success() throws Exception {
         // given
         given(weekendCurationRepository.findByYearWeek(anyInt())).willReturn(Optional.empty());
         given(weatherClient.getWeatherOutlook()).willReturn("비가 옵니다.");
@@ -129,7 +129,7 @@ class WeekendCurationServiceTest {
         given(redisObjectMapper.writeValueAsString(any())).willReturn("json-string");
 
         // when
-        weekendCurationService.generateWeeklyCuration();
+        weekendCurationService.generateDailyCuration();
 
         // then
         verify(weatherClient).getWeatherOutlook();

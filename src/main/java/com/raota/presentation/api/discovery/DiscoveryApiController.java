@@ -40,9 +40,9 @@ public class DiscoveryApiController implements DiscoveryApi {
     }
 
     @Override
-    @GetMapping("/weekend-recommendations")
-    public ResponseEntity<ApiResponse<List<WeekendRecommendationResponse>>> getWeekendRecommendations() {
-        WeekendRecommendationResponse recommendation = recommendationService.getWeekendRecommendation();
+    @GetMapping({"/today-recommendations", "/weekend-recommendations"})
+    public ResponseEntity<ApiResponse<List<WeekendRecommendationResponse>>> getTodayRecommendations() {
+        WeekendRecommendationResponse recommendation = recommendationService.getTodayRecommendation();
         
         if (recommendation == null) {
             return ResponseEntity.ok(ApiResponse.success(Collections.emptyList()));
@@ -52,8 +52,8 @@ public class DiscoveryApiController implements DiscoveryApi {
     }
 
     @Override
-    @PostMapping("/weekend-recommendations/generate")
-    public ResponseEntity<ApiResponse<WeekendRecommendationResponse>> generateWeekendRecommendation() {
-        return ResponseEntity.ok(ApiResponse.success(recommendationService.generateWeekendRecommendation()));
+    @PostMapping({"/today-recommendations/generate", "/weekend-recommendations/generate"})
+    public ResponseEntity<ApiResponse<WeekendRecommendationResponse>> generateTodayRecommendation() {
+        return ResponseEntity.ok(ApiResponse.success(recommendationService.generateTodayRecommendation()));
     }
 }

@@ -36,14 +36,14 @@ public class RecommendationService {
         return followUpChatService.followUpChat(request);
     }
 
-    public com.raota.presentation.api.discovery.response.WeekendRecommendationResponse getWeekendRecommendation() {
+    public com.raota.presentation.api.discovery.response.WeekendRecommendationResponse getTodayRecommendation() {
         return weekendCurationService.getLatestCuration()
                 .map(this::toWeekendRecommendationResponse)
                 .orElse(null);
     }
 
-    public WeekendRecommendationResponse generateWeekendRecommendation() {
-        return toWeekendRecommendationResponse(weekendCurationService.generateWeeklyCuration());
+    public WeekendRecommendationResponse generateTodayRecommendation() {
+        return toWeekendRecommendationResponse(weekendCurationService.generateDailyCuration());
     }
 
     private WeekendRecommendationResponse toWeekendRecommendationResponse(WeekendCuration curation) {

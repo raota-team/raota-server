@@ -14,8 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
-import java.time.temporal.WeekFields;
-import java.util.Locale;
 import java.util.Optional;
 import tools.jackson.databind.ObjectMapper;
 
@@ -31,10 +29,10 @@ public class WeekendCurationService {
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper redisObjectMapper;
 
-    private static final String REDIS_KEY_LATEST_CURATION = "curation:weekend:latest";
+    private static final String REDIS_KEY_LATEST_CURATION = "curation:daily:latest";
 
     /**
-     * 이번 주말의 추천 정보를 조회한다.
+     * 오늘의 추천 정보를 조회한다.
      * Redis 캐시를 우선 조회하고, 없으면 DB에서 최신 데이터를 가져와 캐싱.
      */
     public Optional<WeekendCuration> getLatestCuration() {
@@ -53,14 +51,14 @@ public class WeekendCurationService {
     }
 
     /**
-     * AI를 통해 이번 주 주간 추천 정보를 생성한다. (배치용)
+     * AI를 통해 오늘의 추천 정보를 생성한다. (배치용)
      */
     @Transactional
-    public WeekendCuration generateWeeklyCuration() {
-        int currentYearWeek = calculateYearWeek();
+    public WeekendCuration generateDailyCuration() {
+        int currentDateKey = calculateDateKey();
         
-        // 이미 해당 주차에 데이터가 있다면 중복 생성 방지
-        Optional<WeekendCuration> existing = weekendCurationRepository.findByYearWeek(currentYearWeek);
+        // 이미 오늘 데이터가 있다면 중복 생성 방지
+        Optional<WeekendCuration> existing = weekendCurationRepository.findByYearWeek(currentDateKey);
         if (existing.isPresent()) {
             cacheCuration(existing.get());
             return existing.get();
@@ -73,10 +71,10 @@ public class WeekendCurationService {
         RamenType selectedType = findRamenTypeByName(aiResponse.ramenTypeName());
 
         WeekendCuration curation = WeekendCuration.builder()
-                .yearWeek(currentYearWeek)
+                .yearWeek(currentDateKey)
                 .ramenType(selectedType)
                 .title(defaultIfBlank(aiResponse.title(), selectedType.getName() + " 추천"))
-                .reason(defaultIfBlank(aiResponse.reason(), "이번 주말 날씨와 잘 어울리는 라멘입니다."))
+                .reason(defaultIfBlank(aiResponse.reason(), "오늘 날씨와 잘 어울리는 라멘입니다."))
                 .build();
 
         WeekendCuration saved = weekendCurationRepository.save(curation);
@@ -95,11 +93,9 @@ public class WeekendCurationService {
         }
     }
 
-    private int calculateYearWeek() {
+    private int calculateDateKey() {
         LocalDate now = LocalDate.now();
-        WeekFields weekFields = WeekFields.of(Locale.getDefault());
-        int weekNumber = now.get(weekFields.weekOfWeekBasedYear());
-        return (now.getYear() * 100) + weekNumber;
+        return Integer.parseInt(now.toString().replace("-", ""));
     }
 
     private RamenType findRamenTypeByName(String name) {

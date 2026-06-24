@@ -17,9 +17,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.time.LocalDate;
-import java.time.temporal.WeekFields;
-import java.util.Locale;
-
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -48,7 +45,7 @@ class WeekendRecommendationIntegrationTest extends BaseIntegrationTest {
     void setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
 
-        redisTemplate.delete("curation:weekend:latest");
+        redisTemplate.delete("curation:daily:latest");
         jdbcTemplate.update("DELETE FROM tb_weekend_curation");
         jdbcTemplate.update("DELETE FROM tb_ramen_type");
 
@@ -60,42 +57,40 @@ class WeekendRecommendationIntegrationTest extends BaseIntegrationTest {
         RamenType savedType = ramenTypeRepository.save(tonkotsu);
 
         WeekendCuration curation = WeekendCuration.builder()
-                .yearWeek(currentYearWeek())
+                .yearWeek(currentDateKey())
                 .ramenType(savedType)
-                .title("비 오는 주말의 진한 한 그릇")
+                .title("비 오는 오늘의 진한 한 그릇")
                 .reason("테스트 추천 사유")
                 .build();
         weekendCurationRepository.save(curation);
     }
 
     @Test
-    @DisplayName("이번 주말의 라멘 추천 API 호출 성공")
-    void getWeekendRecommendations_Success() throws Exception {
-        mockMvc.perform(get("/api/v1/discovery/weekend-recommendations")
+    @DisplayName("오늘의 라멘 추천 API 호출 성공")
+    void getTodayRecommendations_Success() throws Exception {
+        mockMvc.perform(get("/api/v1/discovery/today-recommendations")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").isArray())
                 .andExpect(jsonPath("$.data[0].name").value("돈코츠 라멘"))
-                .andExpect(jsonPath("$.data[0].title").value("비 오는 주말의 진한 한 그릇"))
+                .andExpect(jsonPath("$.data[0].title").value("비 오는 오늘의 진한 한 그릇"))
                 .andExpect(jsonPath("$.data[0].reason").value("테스트 추천 사유"));
     }
 
     @Test
-    @DisplayName("이번 주말의 라멘 추천 수동 생성 API 호출 성공")
-    void generateWeekendRecommendations_Success() throws Exception {
-        mockMvc.perform(post("/api/v1/discovery/weekend-recommendations/generate")
+    @DisplayName("오늘의 라멘 추천 수동 생성 API 호출 성공")
+    void generateTodayRecommendations_Success() throws Exception {
+        mockMvc.perform(post("/api/v1/discovery/today-recommendations/generate")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.name").value("돈코츠 라멘"))
-                .andExpect(jsonPath("$.data.title").value("비 오는 주말의 진한 한 그릇"))
+                .andExpect(jsonPath("$.data.title").value("비 오는 오늘의 진한 한 그릇"))
                 .andExpect(jsonPath("$.data.reason").value("테스트 추천 사유"));
     }
 
-    private int currentYearWeek() {
-        LocalDate now = LocalDate.now();
-        WeekFields weekFields = WeekFields.of(Locale.getDefault());
-        return (now.getYear() * 100) + now.get(weekFields.weekOfWeekBasedYear());
+    private int currentDateKey() {
+        return Integer.parseInt(LocalDate.now().toString().replace("-", ""));
     }
 }

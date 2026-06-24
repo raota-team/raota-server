@@ -33,15 +33,15 @@ public interface DiscoveryApi {
             @Parameter(description = "가져올 라멘집 개수", example = "5")
             int limit);
 
-    @Operation(summary = "이번 주말의 라멘 추천 조회", description = "이번 주말에 사용자에게 추천할 라멘 종류 데이터 1건을 조회합니다.")
+    @Operation(summary = "오늘의 라멘 추천 조회", description = "오늘 사용자에게 추천할 라멘 종류 데이터 1건을 조회합니다.")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<List<WeekendRecommendationResponse>>> getWeekendRecommendations();
+    ResponseEntity<ApiResponse<List<WeekendRecommendationResponse>>> getTodayRecommendations();
 
-    @Operation(summary = "이번 주말의 라멘 추천 수동 생성", description = "날씨 조회, AI 분석, DB/Redis 저장 흐름을 즉시 실행합니다.")
+    @Operation(summary = "오늘의 라멘 추천 수동 생성", description = "날씨 조회, AI 분석, DB/Redis 저장 흐름을 즉시 실행합니다.")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<WeekendRecommendationResponse>> generateWeekendRecommendation();
+    ResponseEntity<ApiResponse<WeekendRecommendationResponse>> generateTodayRecommendation();
 }
