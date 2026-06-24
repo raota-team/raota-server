@@ -6,7 +6,7 @@ import com.raota.presentation.api.community.request.CommunityCommentUpdateReques
 import com.raota.presentation.api.community.response.CommunityCommentItemResponse;
 import com.raota.presentation.api.community.response.CommunityCommentThreadResponse;
 import com.raota.domain.community.repository.query.CommentQueryRepository;
-import com.raota.application.community.CommentService;
+import com.raota.application.community.service.CommentService;
 import com.raota.infrastructure.auth.LoginMember;
 import com.raota.presentation.common.ApiResponse;
 import com.raota.presentation.common.PageResponse;

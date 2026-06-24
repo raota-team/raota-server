@@ -7,7 +7,7 @@ import com.raota.presentation.api.community.request.CommunityCommentCreateReques
 import com.raota.domain.community.repository.command.CommentRepository;
 import com.raota.domain.community.repository.command.PostRepository;
 import com.raota.domain.community.repository.command.entity.CommentEntity;
-import com.raota.application.community.CommentService;
+import com.raota.application.community.service.CommentService;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
 import java.util.Optional;

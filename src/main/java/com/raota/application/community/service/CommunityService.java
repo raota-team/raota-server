@@ -1,4 +1,4 @@
-package com.raota.application.community;
+package com.raota.application.community.service;
 
 import com.raota.domain.community.model.Post;
 import com.raota.domain.community.model.PostCategory;

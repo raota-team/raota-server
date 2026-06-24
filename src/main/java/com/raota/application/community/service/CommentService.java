@@ -1,4 +1,4 @@
-package com.raota.application.community;
+package com.raota.application.community.service;
 
 import com.raota.domain.community.model.Comment;
 import com.raota.presentation.api.community.request.CommunityCommentCreateRequest;

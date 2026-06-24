@@ -1,4 +1,4 @@
-package com.raota.application.community;
+package com.raota.application.community.service;
 
 import com.raota.domain.community.repository.command.PostLikeRepository;
 import com.raota.domain.community.repository.command.PostRepository;

@@ -24,38 +24,9 @@ Raota Server는 라멘 매장 정보, 방문 인증샷, 메뉴 투표, 북마크
 - AI 기반 취향 추천, 매장 비교, 리뷰 요약, 후속 채팅
 - 관리자용 라멘 매장 CRUD 및 검색/RAG 인덱싱 API
 
-## APIs
+## 문서
 
-실행 후 Swagger UI에서 상세한 API 스펙을 확인할 수 있습니다.
-
-- Swagger UI: `http://localhost:8080/swagger-ui/index.html`
-- OpenAPI Docs: `http://localhost:8080/v3/api-docs`
-- Health Check: `http://localhost:8080/actuator/health`
-
-### API 요약
-
-| Domain | Method | Endpoint | Description |
-| --- | --- | --- | --- |
-| Auth | `POST` | `/auth/refresh` | Access Token 재발급 |
-| Auth | `POST` | `/auth/logout` | Refresh Token 폐기 및 로그아웃 |
-| Ramen Shop | `GET` | `/ramen-shops` | 라멘 매장 목록 검색 |
-| Ramen Shop | `GET` | `/ramen-shops/{shopId}` | 라멘 매장 상세 조회 |
-| Ramen Shop | `POST` | `/ramen-shops/{shopId}/bookmark` | 북마크 토글 |
-| Ramen Shop | `POST` | `/ramen-shops/{shopId}/reports` | 매장 정보 오류 제보 |
-| Menu Vote | `GET` | `/ramen-shops/{shopId}/votes` | 메뉴 투표 현황 조회 |
-| Menu Vote | `POST` | `/ramen-shops/{shopId}/votes/menus/{menuId}` | 메뉴 투표/변경/취소 |
-| Photo | `POST` | `/ramen-shops/{shopId}/photos` | 인증샷 등록 |
-| Photo | `GET` | `/ramen-shops/{shopId}/photos` | 인증샷 목록 조회 |
-| File | `GET` | `/files/upload-ticket` | 업로드 티켓 발급 |
-| Community | `GET` | `/community/posts` | 게시글 목록 조회 |
-| Community | `POST` | `/community/posts` | 게시글 작성 |
-| Community | `POST` | `/community/posts/{postId}/likes` | 게시글 좋아요 토글 |
-| Comment | `GET` | `/community/posts/{postId}/comments` | 댓글 스레드 조회 |
-| Member | `GET` | `/users/me/profile` | 내 프로필 조회 |
-| Recommendation | `POST` | `/recommendations/taste` | 취향 기반 매장 추천 |
-| Recommendation | `POST` | `/recommendations/compare` | 매장 비교 |
-| Admin | `GET` | `/admin/ramen-shops` | 관리자 매장 관리 화면 |
-| Admin API | `POST` | `/admin/api/retrieval/shops/reindex` | 매장 검색 문서 재색인 |
+- [아키텍처 규칙](docs/architecture.md)
 
 ## 기술 스택
 
@@ -87,8 +58,6 @@ Raota Server는 라멘 매장 정보, 방문 인증샷, 메뉴 투표, 북마크
 
 <img width="747" height="486" alt="image" src="https://github.com/user-attachments/assets/c6e2fafe-e5bd-4993-80db-338835615b45" />
 
-
-
 ### 패키지 구조
 
 ```text
@@ -119,8 +88,7 @@ src/main/java/com/raota
 
 ## 프로젝트 팀원
 
-| Backend |
-| :---: |
-| 박희태 |
-|<img width="200" height="200" alt="image" src="https://github.com/user-attachments/assets/48ace07a-44a2-4477-a79e-af255dc204ff" />
-
+|                                                              Backend                                                               |
+|:----------------------------------------------------------------------------------------------------------------------------------:|
+|                                                                박희태                                                                 |
+| <img width="200" height="200" alt="image" src="https://github.com/user-attachments/assets/48ace07a-44a2-4477-a79e-af255dc204ff" /> |
