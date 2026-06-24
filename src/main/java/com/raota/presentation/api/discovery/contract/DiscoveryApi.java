@@ -2,7 +2,7 @@ package com.raota.presentation.api.discovery.contract;
 
 import com.raota.presentation.api.discovery.response.DiscoveryStatsResponse;
 import com.raota.presentation.api.discovery.response.TodayPopularRamenShopResponse;
-import com.raota.presentation.api.discovery.response.WeekendRecommendationResponse;
+import com.raota.presentation.api.discovery.response.TodayRecommendationResponse;
 import com.raota.presentation.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -37,11 +37,11 @@ public interface DiscoveryApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<List<WeekendRecommendationResponse>>> getTodayRecommendations();
+    ResponseEntity<ApiResponse<List<TodayRecommendationResponse>>> getTodayRecommendations();
 
     @Operation(summary = "오늘의 라멘 추천 수동 생성", description = "날씨 조회, AI 분석, DB/Redis 저장 흐름을 즉시 실행합니다.")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<WeekendRecommendationResponse>> generateTodayRecommendation();
+    ResponseEntity<ApiResponse<TodayRecommendationResponse>> generateTodayRecommendation();
 }

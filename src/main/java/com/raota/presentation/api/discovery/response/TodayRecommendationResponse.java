@@ -1,11 +1,11 @@
 package com.raota.presentation.api.discovery.response;
 
-import com.raota.domain.recommendation.model.WeekendCuration;
+import com.raota.domain.recommendation.model.DailyCuration;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
-public class WeekendRecommendationResponse {
+public class TodayRecommendationResponse {
     private final String id;
     private final String name;
     private final String title;
@@ -14,7 +14,7 @@ public class WeekendRecommendationResponse {
     private final String reason;
 
     @Builder
-    public WeekendRecommendationResponse(String id, String name, String title, String location, String imageUrl, String reason) {
+    public TodayRecommendationResponse(String id, String name, String title, String location, String imageUrl, String reason) {
         this.id = id;
         this.name = name;
         this.title = title;
@@ -23,8 +23,8 @@ public class WeekendRecommendationResponse {
         this.reason = reason;
     }
 
-    public static WeekendRecommendationResponse from(WeekendCuration curation, String imageUrl) {
-        return WeekendRecommendationResponse.builder()
+    public static TodayRecommendationResponse from(DailyCuration curation, String imageUrl) {
+        return TodayRecommendationResponse.builder()
                 .id(curation.getRamenType().getId().toString())
                 .name(curation.getRamenType().getName())
                 .title(curation.getTitle())

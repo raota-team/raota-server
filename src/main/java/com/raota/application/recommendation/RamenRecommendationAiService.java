@@ -26,7 +26,7 @@ public class RamenRecommendationAiService {
     private final ChatModel chatModel;
     private final ObjectMapper redisObjectMapper;
 
-    @Value("classpath:/prompts/weekend-ramen-recommendation.st")
+    @Value("classpath:/prompts/today-ramen-recommendation.st")
     private Resource promptResource;
 
     private static final List<String> RAMEN_NAMES = List.of(

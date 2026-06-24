@@ -5,7 +5,7 @@ import com.raota.application.recommendation.RecommendationService;
 import com.raota.presentation.api.discovery.contract.DiscoveryApi;
 import com.raota.presentation.api.discovery.response.DiscoveryStatsResponse;
 import com.raota.presentation.api.discovery.response.TodayPopularRamenShopResponse;
-import com.raota.presentation.api.discovery.response.WeekendRecommendationResponse;
+import com.raota.presentation.api.discovery.response.TodayRecommendationResponse;
 import com.raota.presentation.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -40,9 +40,9 @@ public class DiscoveryApiController implements DiscoveryApi {
     }
 
     @Override
-    @GetMapping({"/today-recommendations", "/weekend-recommendations"})
-    public ResponseEntity<ApiResponse<List<WeekendRecommendationResponse>>> getTodayRecommendations() {
-        WeekendRecommendationResponse recommendation = recommendationService.getTodayRecommendation();
+    @GetMapping("/today-recommendations")
+    public ResponseEntity<ApiResponse<List<TodayRecommendationResponse>>> getTodayRecommendations() {
+        TodayRecommendationResponse recommendation = recommendationService.getTodayRecommendation();
         
         if (recommendation == null) {
             return ResponseEntity.ok(ApiResponse.success(Collections.emptyList()));
@@ -52,8 +52,8 @@ public class DiscoveryApiController implements DiscoveryApi {
     }
 
     @Override
-    @PostMapping({"/today-recommendations/generate", "/weekend-recommendations/generate"})
-    public ResponseEntity<ApiResponse<WeekendRecommendationResponse>> generateTodayRecommendation() {
+    @PostMapping("/today-recommendations/generate")
+    public ResponseEntity<ApiResponse<TodayRecommendationResponse>> generateTodayRecommendation() {
         return ResponseEntity.ok(ApiResponse.success(recommendationService.generateTodayRecommendation()));
     }
 }

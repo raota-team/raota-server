@@ -1,7 +1,7 @@
 package com.raota.infrastructure.scheduler;
 
 import com.raota.application.member.MemberLifecycleService;
-import com.raota.application.recommendation.WeekendCurationService;
+import com.raota.application.recommendation.DailyCurationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -10,10 +10,10 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class WeekendRecommendationScheduler {
+public class DailyRecommendationScheduler {
 
     private final MemberLifecycleService memberLifecycleService;
-    private final WeekendCurationService weekendCurationService;
+    private final DailyCurationService dailyCurationService;
 
     @Scheduled(cron = "0 30 4 * * *", zone = "Asia/Seoul")
     public void purgeExpiredWithdrawnMembers() {
@@ -26,7 +26,7 @@ public class WeekendRecommendationScheduler {
     @Scheduled(cron = "0 0 6 * * *", zone = "Asia/Seoul")
     public void generateDailyRamenRecommendation() {
         log.info("Start daily ramen recommendation generation");
-        weekendCurationService.generateDailyCuration();
+        dailyCurationService.generateDailyCuration();
         log.info("Finish daily ramen recommendation generation");
     }
 }

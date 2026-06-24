@@ -1,9 +1,9 @@
 package com.raota.application.recommendation;
 
 import com.raota.domain.recommendation.model.RamenType;
-import com.raota.domain.recommendation.model.WeekendCuration;
+import com.raota.domain.recommendation.model.DailyCuration;
 import com.raota.domain.recommendation.repository.RamenTypeRepository;
-import com.raota.domain.recommendation.repository.WeekendCurationRepository;
+import com.raota.domain.recommendation.repository.DailyCurationRepository;
 import com.raota.infrastructure.external.KmaWeatherClient;
 import com.raota.application.recommendation.dto.AiRamenRecommendationResponse;
 import tools.jackson.databind.ObjectMapper;
@@ -27,10 +27,10 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class WeekendCurationServiceTest {
+class DailyCurationServiceTest {
 
     @Mock
-    private WeekendCurationRepository weekendCurationRepository;
+    private DailyCurationRepository dailyCurationRepository;
 
     @Mock
     private RamenTypeRepository ramenTypeRepository;
@@ -51,10 +51,10 @@ class WeekendCurationServiceTest {
     private ValueOperations<String, String> valueOperations;
 
     @InjectMocks
-    private WeekendCurationService weekendCurationService;
+    private DailyCurationService dailyCurationService;
 
     private RamenType mockRamenType;
-    private WeekendCuration mockCuration;
+    private DailyCuration mockCuration;
 
     @BeforeEach
     void setUp() {
@@ -65,9 +65,9 @@ class WeekendCurationServiceTest {
                 .imageUrl("tonkotsu.jpg")
                 .build();
 
-        mockCuration = WeekendCuration.builder()
+        mockCuration = DailyCuration.builder()
                 .id(1L)
-                .yearWeek(20260624)
+                .dateKey(20260624)
                 .ramenType(mockRamenType)
                 .title("비 오는 날의 진한 한 그릇")
                 .reason("비 오는 날엔 돈코츠죠.")
@@ -80,15 +80,15 @@ class WeekendCurationServiceTest {
         // given
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
         given(valueOperations.get(anyString())).willReturn("cached-json");
-        given(redisObjectMapper.readValue("cached-json", WeekendCuration.class)).willReturn(mockCuration);
+        given(redisObjectMapper.readValue("cached-json", DailyCuration.class)).willReturn(mockCuration);
 
         // when
-        Optional<WeekendCuration> result = weekendCurationService.getLatestCuration();
+        Optional<DailyCuration> result = dailyCurationService.getLatestCuration();
 
         // then
         assertThat(result).isPresent();
         assertThat(result.get().getReason()).isEqualTo("비 오는 날엔 돈코츠죠.");
-        verify(weekendCurationRepository, never()).findLatest();
+        verify(dailyCurationRepository, never()).findLatest();
     }
 
     @Test
@@ -97,23 +97,23 @@ class WeekendCurationServiceTest {
         // given
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
         given(valueOperations.get(anyString())).willReturn(null);
-        given(weekendCurationRepository.findLatest()).willReturn(Optional.of(mockCuration));
+        given(dailyCurationRepository.findLatest()).willReturn(Optional.of(mockCuration));
         given(redisObjectMapper.writeValueAsString(any())).willReturn("json-string");
 
         // when
-        Optional<WeekendCuration> result = weekendCurationService.getLatestCuration();
+        Optional<DailyCuration> result = dailyCurationService.getLatestCuration();
 
         // then
         assertThat(result).isPresent();
-        verify(weekendCurationRepository).findLatest();
+        verify(dailyCurationRepository).findLatest();
         verify(valueOperations).set(anyString(), eq("json-string"));
     }
 
     @Test
-    @DisplayName("주간 큐레이션 생성 성공")
+    @DisplayName("오늘의 큐레이션 생성 성공")
     void generateDailyCuration_Success() throws Exception {
         // given
-        given(weekendCurationRepository.findByYearWeek(anyInt())).willReturn(Optional.empty());
+        given(dailyCurationRepository.findByDateKey(anyInt())).willReturn(Optional.empty());
         given(weatherClient.getWeatherOutlook()).willReturn("비가 옵니다.");
         
         AiRamenRecommendationResponse aiResponse = AiRamenRecommendationResponse.builder()
@@ -124,17 +124,17 @@ class WeekendCurationServiceTest {
         given(aiService.getRecommendation(anyString())).willReturn(aiResponse);
         
         given(ramenTypeRepository.findAll()).willReturn(List.of(mockRamenType));
-        given(weekendCurationRepository.save(any())).willReturn(mockCuration);
+        given(dailyCurationRepository.save(any())).willReturn(mockCuration);
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
         given(redisObjectMapper.writeValueAsString(any())).willReturn("json-string");
 
         // when
-        weekendCurationService.generateDailyCuration();
+        dailyCurationService.generateDailyCuration();
 
         // then
         verify(weatherClient).getWeatherOutlook();
         verify(aiService).getRecommendation(anyString());
-        verify(weekendCurationRepository).save(any());
+        verify(dailyCurationRepository).save(any());
         verify(valueOperations).set(anyString(), eq("json-string"));
     }
 }

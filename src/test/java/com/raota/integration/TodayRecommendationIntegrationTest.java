@@ -1,9 +1,9 @@
 package com.raota.integration;
 
 import com.raota.domain.recommendation.model.RamenType;
-import com.raota.domain.recommendation.model.WeekendCuration;
+import com.raota.domain.recommendation.model.DailyCuration;
 import com.raota.domain.recommendation.repository.RamenTypeRepository;
-import com.raota.domain.recommendation.repository.WeekendCurationRepository;
+import com.raota.domain.recommendation.repository.DailyCurationRepository;
 import com.raota.helper.BaseIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-class WeekendRecommendationIntegrationTest extends BaseIntegrationTest {
+class TodayRecommendationIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private WebApplicationContext webApplicationContext;
@@ -31,7 +31,7 @@ class WeekendRecommendationIntegrationTest extends BaseIntegrationTest {
     private RamenTypeRepository ramenTypeRepository;
 
     @Autowired
-    private WeekendCurationRepository weekendCurationRepository;
+    private DailyCurationRepository dailyCurationRepository;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -46,7 +46,7 @@ class WeekendRecommendationIntegrationTest extends BaseIntegrationTest {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
 
         redisTemplate.delete("curation:daily:latest");
-        jdbcTemplate.update("DELETE FROM tb_weekend_curation");
+        jdbcTemplate.update("DELETE FROM tb_daily_curation");
         jdbcTemplate.update("DELETE FROM tb_ramen_type");
 
         RamenType tonkotsu = RamenType.builder()
@@ -56,13 +56,13 @@ class WeekendRecommendationIntegrationTest extends BaseIntegrationTest {
                 .build();
         RamenType savedType = ramenTypeRepository.save(tonkotsu);
 
-        WeekendCuration curation = WeekendCuration.builder()
-                .yearWeek(currentDateKey())
+        DailyCuration curation = DailyCuration.builder()
+                .dateKey(currentDateKey())
                 .ramenType(savedType)
                 .title("비 오는 오늘의 진한 한 그릇")
                 .reason("테스트 추천 사유")
                 .build();
-        weekendCurationRepository.save(curation);
+        dailyCurationRepository.save(curation);
     }
 
     @Test

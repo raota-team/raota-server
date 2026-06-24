@@ -1,6 +1,6 @@
 package com.raota.infrastructure.persistence.recommendation.entity;
 
-import com.raota.domain.recommendation.model.WeekendCuration;
+import com.raota.domain.recommendation.model.DailyCuration;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -18,17 +18,17 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 
 @Entity
-@Table(name = "tb_weekend_curation")
+@Table(name = "tb_daily_curation")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class WeekendCurationEntity {
+public class DailyCurationEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private Integer yearWeek;
+    @Column(name = "date_key", nullable = false, unique = true)
+    private Integer dateKey;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ramen_type_id", nullable = false)
@@ -48,9 +48,9 @@ public class WeekendCurationEntity {
     private LocalDateTime createdAt;
 
     @Builder
-    public WeekendCurationEntity(Long id, Integer yearWeek, RamenTypeEntity ramenType, String title, String reason, String customImageUrl, LocalDateTime createdAt) {
+    public DailyCurationEntity(Long id, Integer dateKey, RamenTypeEntity ramenType, String title, String reason, String customImageUrl, LocalDateTime createdAt) {
         this.id = id;
-        this.yearWeek = yearWeek;
+        this.dateKey = dateKey;
         this.ramenType = ramenType;
         this.title = title;
         this.reason = reason;
@@ -58,10 +58,10 @@ public class WeekendCurationEntity {
         this.createdAt = createdAt != null ? createdAt : LocalDateTime.now();
     }
 
-    public static WeekendCurationEntity from(WeekendCuration domain) {
-        return WeekendCurationEntity.builder()
+    public static DailyCurationEntity from(DailyCuration domain) {
+        return DailyCurationEntity.builder()
                 .id(domain.getId())
-                .yearWeek(domain.getYearWeek())
+                .dateKey(domain.getDateKey())
                 .ramenType(RamenTypeEntity.from(domain.getRamenType()))
                 .title(domain.getTitle())
                 .reason(domain.getReason())
@@ -70,10 +70,10 @@ public class WeekendCurationEntity {
                 .build();
     }
 
-    public WeekendCuration toDomain() {
-        return WeekendCuration.builder()
+    public DailyCuration toDomain() {
+        return DailyCuration.builder()
                 .id(this.id)
-                .yearWeek(this.yearWeek)
+                .dateKey(this.dateKey)
                 .ramenType(this.ramenType.toDomain())
                 .title(this.title)
                 .reason(this.reason)

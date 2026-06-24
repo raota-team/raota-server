@@ -5,9 +5,9 @@ import lombok.Builder;
 import lombok.Getter;
 
 @Getter
-public class WeekendCuration {
+public class DailyCuration {
     private final Long id;
-    private final Integer yearWeek;
+    private final Integer dateKey;
     private final RamenType ramenType;
     private final String title;
     private final String reason;
@@ -15,9 +15,9 @@ public class WeekendCuration {
     private final LocalDateTime createdAt;
 
     @Builder
-    public WeekendCuration(Long id, Integer yearWeek, RamenType ramenType, String title, String reason, String customImageUrl, LocalDateTime createdAt) {
+    public DailyCuration(Long id, Integer dateKey, RamenType ramenType, String title, String reason, String customImageUrl, LocalDateTime createdAt) {
         this.id = id;
-        this.yearWeek = yearWeek;
+        this.dateKey = dateKey;
         this.ramenType = ramenType;
         this.title = title;
         this.reason = reason;

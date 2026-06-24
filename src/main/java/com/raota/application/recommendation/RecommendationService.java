@@ -1,8 +1,8 @@
 package com.raota.application.recommendation;
 
-import com.raota.domain.recommendation.model.WeekendCuration;
+import com.raota.domain.recommendation.model.DailyCuration;
 import com.raota.infrastructure.file.FileUploader;
-import com.raota.presentation.api.discovery.response.WeekendRecommendationResponse;
+import com.raota.presentation.api.discovery.response.TodayRecommendationResponse;
 import com.raota.presentation.api.recommendation.request.*;
 import com.raota.presentation.api.recommendation.response.*;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +16,7 @@ public class RecommendationService {
     private final ShopComparisonService shopComparisonService;
     private final ReviewSummaryService reviewSummaryService;
     private final FollowUpChatService followUpChatService;
-    private final WeekendCurationService weekendCurationService;
+    private final DailyCurationService dailyCurationService;
     private final FileUploader fileUploader;
 
     public TasteRecommendationResponse recommendByTaste(TasteRecommendationRequest request, Long memberId) {
@@ -36,18 +36,18 @@ public class RecommendationService {
         return followUpChatService.followUpChat(request);
     }
 
-    public com.raota.presentation.api.discovery.response.WeekendRecommendationResponse getTodayRecommendation() {
-        return weekendCurationService.getLatestCuration()
-                .map(this::toWeekendRecommendationResponse)
+    public TodayRecommendationResponse getTodayRecommendation() {
+        return dailyCurationService.getLatestCuration()
+                .map(this::toTodayRecommendationResponse)
                 .orElse(null);
     }
 
-    public WeekendRecommendationResponse generateTodayRecommendation() {
-        return toWeekendRecommendationResponse(weekendCurationService.generateDailyCuration());
+    public TodayRecommendationResponse generateTodayRecommendation() {
+        return toTodayRecommendationResponse(dailyCurationService.generateDailyCuration());
     }
 
-    private WeekendRecommendationResponse toWeekendRecommendationResponse(WeekendCuration curation) {
+    private TodayRecommendationResponse toTodayRecommendationResponse(DailyCuration curation) {
         String imageUrl = fileUploader.getAccessibleUrl(curation.getEffectiveImageUrl());
-        return WeekendRecommendationResponse.from(curation, imageUrl);
+        return TodayRecommendationResponse.from(curation, imageUrl);
     }
 }
