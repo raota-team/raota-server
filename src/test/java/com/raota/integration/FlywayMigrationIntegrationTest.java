@@ -1,6 +1,6 @@
 package com.raota.integration;
 
-import com.raota.helper.BaseIntegrationTest;
+import com.raota.support.BaseIntegrationTest;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;

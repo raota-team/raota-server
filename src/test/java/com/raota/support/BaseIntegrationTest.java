@@ -1,7 +1,11 @@
-package com.raota.helper;
+package com.raota.support;
 
 import com.redis.testcontainers.RedisContainer;
+import org.junit.jupiter.api.AfterEach;
 import org.flywaydb.core.Flyway;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -17,6 +21,9 @@ public abstract class BaseIntegrationTest {
 
     @MockitoBean
     protected VectorStore vectorStore;
+
+    @Autowired
+    private CacheManager cacheManager;
 
     protected static final MySQLContainer<?> MYSQL_CONTAINER;
     protected static final RedisContainer REDIS_CONTAINER;
@@ -46,5 +53,18 @@ public abstract class BaseIntegrationTest {
         registry.add("spring.datasource.password", MYSQL_CONTAINER::getPassword);
         registry.add("spring.data.redis.host", REDIS_CONTAINER::getHost);
         registry.add("spring.data.redis.port", () -> REDIS_CONTAINER.getMappedPort(6379));
+    }
+
+    @AfterEach
+    void clearCaches() {
+        cacheManager.getCacheNames().stream()
+                .map(cacheManager::getCache)
+                .forEach(this::clear);
+    }
+
+    private void clear(Cache cache) {
+        if (cache != null) {
+            cache.clear();
+        }
     }
 }

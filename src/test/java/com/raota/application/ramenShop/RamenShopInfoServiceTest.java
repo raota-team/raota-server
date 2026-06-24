@@ -53,7 +53,7 @@ class RamenShopInfoServiceTest {
                 .is_bookmarked(false)
                 .build();
 
-        given(ramenShopRepository.findById(shopId)).willReturn(Optional.of(RamenShop.builder()
+        given(ramenShopRepository.findByIdAndPublishedTrue(shopId)).willReturn(Optional.of(RamenShop.builder()
                 .name("멘야 하쿠")
                 .build()));
         given(ramenShopCacheService.getShopDetail(shopId)).willReturn(cachedResponse);
@@ -72,7 +72,7 @@ class RamenShopInfoServiceTest {
                 .name("멘야 하쿠")
                 .build();
 
-        given(ramenShopRepository.findById(shopId)).willReturn(Optional.of(shop));
+        given(ramenShopRepository.findByIdAndPublishedTrue(shopId)).willReturn(Optional.of(shop));
 
         ramenShopInfoService.increaseViewCount(shopId);
 
