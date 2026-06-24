@@ -1,5 +1,6 @@
 package com.raota.presentation.api.community.request;
 
+import com.raota.application.community.command.CreatePostCommand;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -8,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class CommunityPostCreateRequest {
+public class CommunityCreatePostRequest {
     @Schema(description = "글 카테고리")
     private String category;
 
@@ -26,4 +27,16 @@ public class CommunityPostCreateRequest {
 
     @Schema(description = "본문(마크다운/일반 텍스트/TipTap JSON 문자열). 이미지 URL은 본문에 포함")
     private String content;
+
+    public CreatePostCommand toCommand(Long authorId) {
+        return new CreatePostCommand(
+                category,
+                ramenShopId,
+                title,
+                thumbnailUrl,
+                contentFormat,
+                content,
+                authorId
+        );
+    }
 }

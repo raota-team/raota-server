@@ -1,9 +1,10 @@
 package com.raota.presentation.api.community;
 
 import com.raota.presentation.api.community.contract.CommunityApi;
-import com.raota.presentation.api.community.request.CommunityPostCreateRequest;
+import com.raota.presentation.api.community.request.CommunityCreatePostRequest;
 import com.raota.presentation.api.community.request.CommunityPostSearchRequest;
 import com.raota.presentation.api.community.request.CommunityRamenShopSearchRequest;
+import com.raota.presentation.api.community.request.CommunityUpdatePostRequest;
 import com.raota.presentation.api.community.response.CommunityPostCardResponse;
 import com.raota.presentation.api.community.response.CommunityPostDetailResponse;
 import com.raota.presentation.api.community.response.CommunityRamenShopOptionResponse;
@@ -71,20 +72,20 @@ public class CommunityController implements CommunityApi {
     @Override
     @PostMapping("/posts")
     public ResponseEntity<ApiResponse<CommunityPostDetailResponse>> createCommunityPost(
-            @RequestBody CommunityPostCreateRequest request,
+            @RequestBody CommunityCreatePostRequest request,
             @LoginMember Long memberId) {
-        
-        Long postId = postService.createPost(request, memberId);
+
+        Long postId = postService.createPost(request.toCommand(memberId));
         return ResponseEntity.ok(ApiResponse.success(postQueryRepository.getPostDetail(postId, memberId)));
     }
 
-    @Override
     @PatchMapping("/posts/{postId}")
+    @Override
     public ResponseEntity<ApiResponse<CommunityPostDetailResponse>> updateCommunityPost(
             @PathVariable Long postId,
-            @RequestBody CommunityPostCreateRequest request,
+            @RequestBody CommunityUpdatePostRequest request,
             @LoginMember Long memberId) {
-        postService.updatePost(postId, request, memberId);
+        postService.updatePost(request.toCommand(postId, memberId));
         return ResponseEntity.ok(ApiResponse.success(postQueryRepository.getPostDetail(postId, memberId)));
     }
 

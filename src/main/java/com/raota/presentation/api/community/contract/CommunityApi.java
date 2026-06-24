@@ -1,8 +1,10 @@
 package com.raota.presentation.api.community.contract;
 
-import com.raota.presentation.api.community.request.CommunityPostCreateRequest;
+import com.raota.infrastructure.auth.LoginMember;
+import com.raota.presentation.api.community.request.CommunityCreatePostRequest;
 import com.raota.presentation.api.community.request.CommunityPostSearchRequest;
 import com.raota.presentation.api.community.request.CommunityRamenShopSearchRequest;
+import com.raota.presentation.api.community.request.CommunityUpdatePostRequest;
 import com.raota.presentation.api.community.response.CommunityPostCardResponse;
 import com.raota.presentation.api.community.response.CommunityPostDetailResponse;
 import com.raota.presentation.api.community.response.CommunityRamenShopOptionResponse;
@@ -15,6 +17,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @Tag(name = "커뮤니티", description = "커뮤니티 API")
 public interface CommunityApi {
@@ -51,8 +56,8 @@ public interface CommunityApi {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
     ResponseEntity<ApiResponse<CommunityPostDetailResponse>> createCommunityPost(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "글 작성 요청") 
-            CommunityPostCreateRequest request,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "글 작성 요청")
+            CommunityCreatePostRequest request,
             @Parameter(hidden = true) Long memberId);
 
     @Operation(summary = "커뮤니티 글 수정",
@@ -61,10 +66,9 @@ public interface CommunityApi {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
     ResponseEntity<ApiResponse<CommunityPostDetailResponse>> updateCommunityPost(
-            @Parameter(description = "글 ID") Long postId,
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "글 수정 요청") 
-            CommunityPostCreateRequest request,
-            @Parameter(hidden = true) Long memberId);
+            @PathVariable Long postId,
+            @RequestBody CommunityUpdatePostRequest request,
+            @LoginMember Long memberId);
 
     @Operation(summary = "커뮤니티 글 삭제",
             description = "본인이 작성한 글을 삭제(소프트 딜리트)합니다.")

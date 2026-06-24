@@ -1,8 +1,9 @@
 package com.raota.application.community.service;
 
+import com.raota.application.community.command.CreatePostCommand;
+import com.raota.application.community.command.UpdatePostCommand;
 import com.raota.domain.community.model.Post;
 import com.raota.domain.community.model.PostCategory;
-import com.raota.presentation.api.community.request.CommunityPostCreateRequest;
 import com.raota.domain.community.repository.command.PostRepository;
 import com.raota.domain.community.repository.command.entity.PostEntity;
 import com.raota.domain.member.model.MemberProfile;
@@ -26,25 +27,22 @@ public class PostService {
     private final RamenShopRepository ramenShopRepository;
     private final ApplicationEventPublisher eventPublisher;
 
-    public Long createPost(
-            CommunityPostCreateRequest request, 
-            Long authorId
-    ) {
+    public Long createPost(CreatePostCommand command) {
         Post post = Post.create(
-                PostCategory.valueOf(request.getCategory()),
-                request.getTitle(),
-                request.getContent(),
-                request.getContentFormat(),
-                request.getThumbnailUrl(),
-                authorId,
-                request.getRamenShopId()
+                PostCategory.valueOf(command.category()),
+                command.title(),
+                command.content(),
+                command.contentFormat(),
+                command.thumbnailUrl(),
+                command.authorId(),
+                command.ramenShopId()
         );
 
         Post savedPost = postRepository.save(post);
 
         Long postId = savedPost.getId();
 
-        MemberProfile author = memberRepository.findById(authorId)
+        MemberProfile author = memberRepository.findById(command.authorId())
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         author.increasePostCount();
 
@@ -55,27 +53,27 @@ public class PostService {
         return postId;
     }
 
-    public void updatePost(Long postId, CommunityPostCreateRequest request, Long authorId) {
-        PostEntity postEntity = postRepository.findEntityById(postId)
+    public void updatePost(UpdatePostCommand command) {
+        PostEntity postEntity = postRepository.findEntityById(command.postId())
                 .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
 
-        if (!postEntity.getAuthor().getId().equals(authorId)) {
+        if (!postEntity.getAuthor().getId().equals(command.authorId())) {
             throw new IllegalStateException("수정 권한이 없습니다.");
         }
 
         PostCategory beforeCategory = postEntity.getCategory();
         RamenShop ramenShop = null;
 
-        if (request.getRamenShopId() != null) {
-            ramenShop = ramenShopRepository.findById(request.getRamenShopId())
+        if (command.ramenShopId() != null) {
+            ramenShop = ramenShopRepository.findById(command.ramenShopId())
                     .orElseThrow(() -> new IllegalArgumentException("없는 라멘집 입니다."));
         }
 
         postEntity.update(
-                PostCategory.valueOf(request.getCategory()),
-                request.getTitle(),
-                request.getContent(),
-                request.getThumbnailUrl(),
+                PostCategory.valueOf(command.category()),
+                command.title(),
+                command.content(),
+                command.thumbnailUrl(),
                 ramenShop
         );
 

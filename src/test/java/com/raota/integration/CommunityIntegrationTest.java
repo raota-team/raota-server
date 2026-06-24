@@ -7,7 +7,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import com.raota.domain.community.model.Post;
 import com.raota.domain.community.model.PostCategory;
 import com.raota.presentation.api.community.request.CommunityCommentCreateRequest;
-import com.raota.presentation.api.community.request.CommunityPostCreateRequest;
+import com.raota.presentation.api.community.request.CommunityCreatePostRequest;
 import com.raota.domain.community.repository.command.JpaCommentRepository;
 import com.raota.domain.community.repository.command.JpaPostRepository;
 import com.raota.domain.community.repository.command.PostLikeRepository;
@@ -22,7 +22,6 @@ import com.raota.helper.BaseIntegrationTest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import java.time.LocalDateTime;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -73,7 +72,7 @@ class CommunityIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("로그인한 사용자는 리뷰 게시판에 글을 작성할 수 있다.")
     void create_post_success() {
-        CommunityPostCreateRequest request = new CommunityPostCreateRequest(
+        CommunityCreatePostRequest request = new CommunityCreatePostRequest(
                 "REVIEW", null, "테스트 제목", null, "PLAIN", "테스트 내용입니다."
         );
 

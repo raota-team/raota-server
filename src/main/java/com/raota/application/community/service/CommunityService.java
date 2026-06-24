@@ -2,7 +2,7 @@ package com.raota.application.community.service;
 
 import com.raota.domain.community.model.Post;
 import com.raota.domain.community.model.PostCategory;
-import com.raota.presentation.api.community.request.CommunityPostCreateRequest;
+import com.raota.presentation.api.community.request.CommunityCreatePostRequest;
 import com.raota.domain.community.repository.command.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CommunityService {
     private final PostRepository postRepository;
 
-    public Long createPost(CommunityPostCreateRequest request, Long authorId, String thumbnailUrl) {
+    public Long createPost(CommunityCreatePostRequest request, Long authorId, String thumbnailUrl) {
         Post post = Post.create(
                 PostCategory.valueOf(request.getCategory()),
                 request.getTitle(),
