@@ -4,7 +4,7 @@ import com.raota.domain.recommendation.model.RamenType;
 import com.raota.domain.recommendation.model.DailyCuration;
 import com.raota.domain.recommendation.repository.RamenTypeRepository;
 import com.raota.domain.recommendation.repository.DailyCurationRepository;
-import com.raota.helper.BaseIntegrationTest;
+import com.raota.support.BaseIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

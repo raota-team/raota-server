@@ -1,5 +1,6 @@
 package com.raota.presentation.api.community.response;
 
+import com.raota.application.community.result.PopularPostResult;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 
@@ -19,4 +20,15 @@ public record CommunityPopularPostResponse(
         @Schema(description = "작성 일시")
         LocalDateTime createdAt
 ) {
+    public static CommunityPopularPostResponse from(PopularPostResult result) {
+        return new CommunityPopularPostResponse(
+                result.postId(),
+                result.category(),
+                result.categoryName(),
+                result.title(),
+                result.likeCount(),
+                result.commentCount(),
+                result.createdAt()
+        );
+    }
 }

@@ -39,8 +39,5 @@ out/
 
 /src/main/resources/application-local.yml
 
-# Local/generated API docs
-/docs/
-
 # Local archives generated from personal account exports
 /archive/

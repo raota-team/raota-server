@@ -7,22 +7,20 @@ import static org.hamcrest.Matchers.notNullValue;
 import com.raota.domain.community.model.Post;
 import com.raota.domain.community.model.PostCategory;
 import com.raota.presentation.api.community.request.CommunityCommentCreateRequest;
-import com.raota.presentation.api.community.request.CommunityPostCreateRequest;
-import com.raota.domain.community.repository.command.JpaCommentRepository;
-import com.raota.domain.community.repository.command.JpaPostRepository;
-import com.raota.domain.community.repository.command.PostLikeRepository;
-import com.raota.domain.community.repository.command.entity.PostLikeEntity;
+import com.raota.presentation.api.community.request.CommunityCreatePostRequest;
+import com.raota.infrastructure.persistence.community.command.JpaCommentRepository;
+import com.raota.infrastructure.persistence.community.command.JpaPostRepository;
+import com.raota.domain.community.repository.PostLikeRepository;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
 import com.raota.domain.ramenShop.model.Address;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.infrastructure.auth.JwtTokenProvider;
-import com.raota.helper.BaseIntegrationTest;
+import com.raota.support.BaseIntegrationTest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import java.time.LocalDateTime;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -73,7 +71,7 @@ class CommunityIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("로그인한 사용자는 리뷰 게시판에 글을 작성할 수 있다.")
     void create_post_success() {
-        CommunityPostCreateRequest request = new CommunityPostCreateRequest(
+        CommunityCreatePostRequest request = new CommunityCreatePostRequest(
                 "REVIEW", null, "테스트 제목", null, "PLAIN", "테스트 내용입니다."
         );
 
@@ -268,10 +266,7 @@ class CommunityIntegrationTest extends BaseIntegrationTest {
 
     private void addLikes(Long postId, int count) {
         for (int index = 1; index <= count; index++) {
-            postLikeRepository.save(PostLikeEntity.builder()
-                    .postId(postId)
-                    .memberId(10_000L + postId * 10 + index)
-                    .build());
+            postLikeRepository.toggle(postId, 10_000L + postId * 10 + index);
         }
     }
 

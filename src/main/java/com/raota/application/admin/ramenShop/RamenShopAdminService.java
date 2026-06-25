@@ -104,6 +104,7 @@ public class RamenShopAdminService {
         );
         ramenShop.replaceNormalMenus(form.toNormalMenus());
         ramenShop.replaceEventMenus(form.toEventMenus());
+        ramenShop.updatePublished(form.isPublishedValue());
         cacheInvalidationPublisher.publish("ramenShopDetail", String.valueOf(shopId));
         cacheInvalidationPublisher.publishAll("ramenShopList");
     }

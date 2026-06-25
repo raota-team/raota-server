@@ -6,7 +6,7 @@ import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
 import com.raota.infrastructure.persistence.auth.RefreshTokenStore;
 
-import com.raota.helper.BaseIntegrationTest;
+import com.raota.support.BaseIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 

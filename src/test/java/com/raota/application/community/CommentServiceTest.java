@@ -3,11 +3,10 @@ package com.raota.application.community;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.raota.presentation.api.community.request.CommunityCommentCreateRequest;
-import com.raota.domain.community.repository.command.CommentRepository;
-import com.raota.domain.community.repository.command.PostRepository;
-import com.raota.domain.community.repository.command.entity.CommentEntity;
-import com.raota.application.community.CommentService;
+import com.raota.application.community.command.CreateCommentCommand;
+import com.raota.domain.community.repository.CommentRepository;
+import com.raota.domain.community.repository.PostRepository;
+import com.raota.application.community.service.CommentService;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
 import java.util.Optional;
@@ -34,17 +33,15 @@ class CommentServiceTest {
         Long parentId = 10L;
         Long memberId = 1L;
 
-        CommentEntity parentComment = mock(CommentEntity.class);
-        CommentEntity grandParentComment = mock(CommentEntity.class);
-        when(parentComment.getParent()).thenReturn(grandParentComment);
-
         when(postRepository.findById(postId)).thenReturn(Optional.of(mock(com.raota.domain.community.model.Post.class)));
-        when(commentRepository.findEntityById(parentId)).thenReturn(Optional.of(parentComment));
+        doThrow(new IllegalArgumentException("답글에는 답글을 달 수 없습니다. (최대 Depth 1)"))
+                .when(commentRepository)
+                .validateReplyTarget(parentId);
 
-        CommunityCommentCreateRequest request = new CommunityCommentCreateRequest("답글의 답글", parentId);
+        CreateCommentCommand command = new CreateCommentCommand(postId, memberId, parentId, "답글의 답글");
 
         // when & then
-        assertThatThrownBy(() -> commentService.createComment(postId, request, memberId))
+        assertThatThrownBy(() -> commentService.createComment(command))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("답글에는 답글을 달 수 없습니다.");
     }
@@ -57,19 +54,13 @@ class CommentServiceTest {
         Long authorId = 1L;
 
         MemberProfile author = mock(MemberProfile.class);
-        when(author.getId()).thenReturn(authorId);
-
-        CommentEntity comment = mock(CommentEntity.class);
-        when(comment.getMember()).thenReturn(author);
-
-        when(commentRepository.findEntityById(commentId)).thenReturn(Optional.of(comment));
         when(memberRepository.findById(authorId)).thenReturn(Optional.of(author));
 
         // when
         commentService.deleteComment(commentId, authorId);
 
         // then
-        verify(comment).delete();
+        verify(commentRepository).softDelete(commentId, authorId);
         verify(author).decreaseCommentCount();
     }
 }

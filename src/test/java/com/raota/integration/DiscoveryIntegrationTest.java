@@ -6,7 +6,7 @@ import static org.hamcrest.Matchers.is;
 
 import com.raota.domain.community.model.Post;
 import com.raota.domain.community.model.PostCategory;
-import com.raota.domain.community.repository.command.JpaPostRepository;
+import com.raota.infrastructure.persistence.community.command.JpaPostRepository;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
 import com.raota.domain.ramenShop.model.Address;
@@ -15,7 +15,7 @@ import com.raota.domain.ramenlog.model.RamenLog;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenlog.repository.RamenLogRepository;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
-import com.raota.helper.BaseIntegrationTest;
+import com.raota.support.BaseIntegrationTest;
 import io.restassured.RestAssured;
 import java.time.LocalDateTime;
 import java.time.LocalTime;

@@ -31,7 +31,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 
 
-import com.raota.helper.BaseIntegrationTest;
+import com.raota.support.BaseIntegrationTest;
 
 @Transactional
 class RamenShopAdminControllerTest extends BaseIntegrationTest {

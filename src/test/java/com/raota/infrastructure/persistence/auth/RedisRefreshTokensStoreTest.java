@@ -2,10 +2,8 @@ package com.raota.infrastructure.persistence.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.raota.infrastructure.persistence.auth.RedisRefreshTokenStore;
-import com.raota.infrastructure.persistence.auth.RefreshTokenStore;
 import com.raota.infrastructure.auth.AuthRedisProperties;
-import com.raota.helper.BaseIntegrationTest;
+import com.raota.support.BaseIntegrationTest;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

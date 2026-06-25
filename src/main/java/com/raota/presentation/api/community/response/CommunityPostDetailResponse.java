@@ -1,5 +1,6 @@
 package com.raota.presentation.api.community.response;
 
+import com.raota.application.community.result.PostDetailResult;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -34,4 +35,22 @@ public record CommunityPostDetailResponse(
         @Schema(description = "로그인한 사용자의 좋아요 여부")
         Boolean isLiked
 ) {
+    public static CommunityPostDetailResponse from(PostDetailResult result) {
+        return new CommunityPostDetailResponse(
+                result.category(),
+                result.storeName(),
+                result.title(),
+                result.authorName(),
+                result.authorId(),
+                result.authorImageUrl(),
+                result.createdAt(),
+                result.imageUrls(),
+                result.contentFormat(),
+                result.content(),
+                result.likeCount(),
+                result.commentCount(),
+                result.viewCount(),
+                result.isLiked()
+        );
+    }
 }

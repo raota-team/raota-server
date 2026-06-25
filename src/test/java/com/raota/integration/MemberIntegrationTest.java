@@ -6,9 +6,9 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
 import com.raota.presentation.api.community.request.CommunityCommentCreateRequest;
-import com.raota.presentation.api.community.request.CommunityPostCreateRequest;
-import com.raota.domain.community.repository.command.JpaCommentRepository;
-import com.raota.domain.community.repository.command.JpaPostRepository;
+import com.raota.presentation.api.community.request.CommunityCreatePostRequest;
+import com.raota.infrastructure.persistence.community.command.JpaCommentRepository;
+import com.raota.infrastructure.persistence.community.command.JpaPostRepository;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
 import com.raota.domain.ramenShop.model.Address;
@@ -17,7 +17,7 @@ import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenlog.repository.RamenLogRepository;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.infrastructure.auth.JwtTokenProvider;
-import com.raota.helper.BaseIntegrationTest;
+import com.raota.support.BaseIntegrationTest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import java.util.Map;
@@ -114,7 +114,7 @@ class MemberIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("커뮤니티 활동(글/댓글 작성) 시 마이페이지의 통계 정보가 실시간으로 업데이트된다.")
     void my_activity_stats_update_realtime() {
-        CommunityPostCreateRequest postRequest = new CommunityPostCreateRequest(
+        CommunityCreatePostRequest postRequest = new CommunityCreatePostRequest(
                 "REVIEW", null, "마이페이지 제목", null, "PLAIN", "내용"
         );
         given()
@@ -172,7 +172,7 @@ class MemberIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("삭제된 게시글과 그 게시글의 댓글은 마이페이지 목록과 통계에서 제외된다.")
     void deleted_post_and_its_comments_are_excluded_from_my_page() {
-        CommunityPostCreateRequest postRequest = new CommunityPostCreateRequest(
+        CommunityCreatePostRequest postRequest = new CommunityCreatePostRequest(
                 "REVIEW", null, "삭제될 게시글", null, "PLAIN", "내용"
         );
         given()
@@ -226,7 +226,7 @@ class MemberIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("사용자 ID로 공개 프로필/활동 목록을 조회할 수 있다.")
     void get_user_public_profile_and_activity_lists_by_user_id() {
-        CommunityPostCreateRequest postRequest = new CommunityPostCreateRequest(
+        CommunityCreatePostRequest postRequest = new CommunityCreatePostRequest(
                 "REVIEW", null, "공개 조회 게시글", null, "PLAIN", "내용"
         );
         given()

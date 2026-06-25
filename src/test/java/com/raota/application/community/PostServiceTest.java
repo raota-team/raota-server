@@ -3,18 +3,16 @@ package com.raota.application.community;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.raota.application.community.command.CreatePostCommand;
+import com.raota.application.community.command.UpdatePostCommand;
 import com.raota.domain.community.model.Post;
 import com.raota.domain.community.model.PostCategory;
-import com.raota.presentation.api.community.request.CommunityPostCreateRequest;
-import com.raota.domain.community.repository.command.PostRepository;
-import com.raota.domain.community.repository.command.entity.PostEntity;
-import com.raota.application.community.PostService;
+import com.raota.domain.community.repository.PostRepository;
+import com.raota.application.community.service.PostService;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
-import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.domain.retrieval.event.PostIndexingAction;
 import com.raota.domain.retrieval.event.PostIndexingEvent;
-import java.time.LocalDateTime;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,7 +28,6 @@ class PostServiceTest {
 
     @Mock private PostRepository postRepository;
     @Mock private MemberRepository memberRepository;
-    @Mock private RamenShopRepository ramenShopRepository;
     @Mock private ApplicationEventPublisher eventPublisher;
     @InjectMocks private PostService postService;
 
@@ -41,8 +38,8 @@ class PostServiceTest {
         Long authorId = 1L;
         Long savedPostId = 100L;
 
-        CommunityPostCreateRequest request = new CommunityPostCreateRequest(
-                "REVIEW", null, "제목", null, "PLAIN", "내용"
+        CreatePostCommand command = new CreatePostCommand(
+                "REVIEW", null, "제목", null, "PLAIN", "내용", authorId
         );
 
         MemberProfile author = mock(MemberProfile.class);
@@ -55,7 +52,7 @@ class PostServiceTest {
         when(postRepository.save(any(Post.class))).thenReturn(savedPost);
 
         // when
-        postService.createPost(request, authorId);
+        postService.createPost(command);
 
         // then
         ArgumentCaptor<PostIndexingEvent> eventCaptor = ArgumentCaptor.forClass(PostIndexingEvent.class);
@@ -72,8 +69,8 @@ class PostServiceTest {
         // given
         Long authorId = 1L;
 
-        CommunityPostCreateRequest request = new CommunityPostCreateRequest(
-                "FREE", null, "제목", null, "PLAIN", "내용"
+        CreatePostCommand command = new CreatePostCommand(
+                "FREE", null, "제목", null, "PLAIN", "내용", authorId
         );
 
         MemberProfile author = mock(MemberProfile.class);
@@ -86,7 +83,7 @@ class PostServiceTest {
         when(postRepository.save(any(Post.class))).thenReturn(savedPost);
 
         // when
-        postService.createPost(request, authorId);
+        postService.createPost(command);
 
         // then
         verify(eventPublisher, never()).publishEvent(any());
@@ -100,20 +97,21 @@ class PostServiceTest {
         Long authorId = 1L;
         Long otherId = 2L;
 
-        MemberProfile author = mock(MemberProfile.class);
-        when(author.getId()).thenReturn(authorId);
-
-        PostEntity post = mock(PostEntity.class);
-        when(post.getAuthor()).thenReturn(author);
-
-        when(postRepository.findEntityById(postId)).thenReturn(Optional.of(post));
-
-        CommunityPostCreateRequest request = new CommunityPostCreateRequest(
-                "FREE", null, "제목", null, "PLAIN", "내용"
+        UpdatePostCommand command = new UpdatePostCommand(
+                postId, "FREE", null, "제목", null, "PLAIN", "내용", otherId
         );
+        when(postRepository.update(
+                postId,
+                otherId,
+                PostCategory.FREE,
+                "제목",
+                "내용",
+                null,
+                null
+        )).thenThrow(new IllegalStateException("수정 권한이 없습니다."));
 
         // when & then
-        assertThatThrownBy(() -> postService.updatePost(postId, request, otherId))
+        assertThatThrownBy(() -> postService.updatePost(command))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("수정 권한이 없습니다.");
     }
@@ -125,22 +123,21 @@ class PostServiceTest {
         Long postId = 1L;
         Long authorId = 1L;
 
-        MemberProfile author = mock(MemberProfile.class);
-        when(author.getId()).thenReturn(authorId);
-
-        PostEntity post = mock(PostEntity.class);
-        when(post.getId()).thenReturn(postId);
-        when(post.getAuthor()).thenReturn(author);
-        when(post.getCategory()).thenReturn(PostCategory.REVIEW);
-
-        when(postRepository.findEntityById(postId)).thenReturn(Optional.of(post));
-
-        CommunityPostCreateRequest request = new CommunityPostCreateRequest(
-                "REVIEW", null, "수정 제목", null, "PLAIN", "수정 내용"
+        UpdatePostCommand command = new UpdatePostCommand(
+                postId, "REVIEW", null, "수정 제목", null, "PLAIN", "수정 내용", authorId
         );
+        when(postRepository.update(
+                postId,
+                authorId,
+                PostCategory.REVIEW,
+                "수정 제목",
+                "수정 내용",
+                null,
+                null
+        )).thenReturn(new PostRepository.PostUpdateResult(postId, PostCategory.REVIEW, PostCategory.REVIEW));
 
         // when
-        postService.updatePost(postId, request, authorId);
+        postService.updatePost(command);
 
         // then
         ArgumentCaptor<PostIndexingEvent> eventCaptor = ArgumentCaptor.forClass(PostIndexingEvent.class);
@@ -158,20 +155,15 @@ class PostServiceTest {
         Long postId = 1L;
         Long authorId = 1L;
 
+        when(postRepository.delete(postId, authorId)).thenReturn(PostCategory.FREE);
         MemberProfile author = mock(MemberProfile.class);
-        when(author.getId()).thenReturn(authorId);
-
-        PostEntity post = mock(PostEntity.class);
-        when(post.getAuthor()).thenReturn(author);
-
-        when(postRepository.findEntityById(postId)).thenReturn(Optional.of(post));
         when(memberRepository.findById(authorId)).thenReturn(Optional.of(author));
 
         // when
         postService.deletePost(postId, authorId);
 
         // then
-        verify(post).delete();
+        verify(postRepository).delete(postId, authorId);
         verify(author).decreasePostCount();
     }
 
@@ -182,14 +174,8 @@ class PostServiceTest {
         Long postId = 1L;
         Long authorId = 1L;
 
+        when(postRepository.delete(postId, authorId)).thenReturn(PostCategory.REVIEW);
         MemberProfile author = mock(MemberProfile.class);
-        when(author.getId()).thenReturn(authorId);
-
-        PostEntity post = mock(PostEntity.class);
-        when(post.getAuthor()).thenReturn(author);
-        when(post.getCategory()).thenReturn(PostCategory.REVIEW);
-
-        when(postRepository.findEntityById(postId)).thenReturn(Optional.of(post));
         when(memberRepository.findById(authorId)).thenReturn(Optional.of(author));
 
         // when

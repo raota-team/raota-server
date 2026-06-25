@@ -1,18 +1,16 @@
 package com.raota.presentation.api.community;
 
+import com.raota.application.community.service.CommentQueryService;
+import com.raota.application.community.service.CommentService;
+import com.raota.infrastructure.auth.LoginMember;
 import com.raota.presentation.api.community.contract.CommunityCommentApi;
 import com.raota.presentation.api.community.request.CommunityCommentCreateRequest;
 import com.raota.presentation.api.community.request.CommunityCommentUpdateRequest;
 import com.raota.presentation.api.community.response.CommunityCommentItemResponse;
 import com.raota.presentation.api.community.response.CommunityCommentThreadResponse;
-import com.raota.domain.community.repository.query.CommentQueryRepository;
-import com.raota.application.community.CommentService;
-import com.raota.infrastructure.auth.LoginMember;
 import com.raota.presentation.common.ApiResponse;
 import com.raota.presentation.common.PageResponse;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -30,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class CommunityCommentController implements CommunityCommentApi {
 
     private final CommentService commentService;
-    private final CommentQueryRepository commentQueryRepository;
+    private final CommentQueryService commentQueryService;
 
     @Override
     @PostMapping("/posts/{postId}/comments")
@@ -38,10 +36,10 @@ public class CommunityCommentController implements CommunityCommentApi {
             @PathVariable Long postId,
             @RequestBody CommunityCommentCreateRequest request,
             @LoginMember Long memberId) {
-        Long commentId = commentService.createComment(postId, request, memberId);
-        CommunityCommentItemResponse response = commentQueryRepository.getComment(commentId)
-                .orElseThrow(() -> new IllegalStateException("생성된 댓글을 찾을 수 없습니다."));
-        return ResponseEntity.ok(ApiResponse.success(response));
+        Long commentId = commentService.createComment(request.toCommand(postId, memberId));
+        return ResponseEntity.ok(ApiResponse.success(CommunityCommentItemResponse.from(
+                commentQueryService.getComment(commentId)
+        )));
     }
 
     @Override
@@ -49,31 +47,10 @@ public class CommunityCommentController implements CommunityCommentApi {
     public ResponseEntity<ApiResponse<PageResponse<CommunityCommentThreadResponse>>> getComments(
             @PathVariable Long postId,
             Pageable pageable) {
-        // 1. 부모 댓글 목록 조회 (페이지네이션)
-        PageResponse<CommunityCommentItemResponse> parents = commentQueryRepository.getParentComments(postId, pageable);
-        
-        // 2. 각 부모별 답글 조회 및 변환
-        List<CommunityCommentThreadResponse> threads = parents.items().stream()
-                .map(parent -> {
-                    List<CommunityCommentItemResponse> replies = commentQueryRepository.getReplies(parent.commentId());
-                    return new CommunityCommentThreadResponse(
-                            parent.commentId(),
-                            parent.authorNickname(),
-                            parent.authorId(),
-                            parent.authorImageUrl(),
-                            parent.createdAt(),
-                            parent.content(),
-                            parent.isDeleted(),
-                            replies
-                    );
-                })
-                .toList();
-        
-        PageResponse<CommunityCommentThreadResponse> response = PageResponse.from(
-                new PageImpl<>(threads, pageable, parents.page().totalElements())
-        );
-        
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(
+                commentQueryService.getCommentThreads(postId, pageable)
+                        .map(CommunityCommentThreadResponse::from)
+        )));
     }
 
     @Override
@@ -82,10 +59,10 @@ public class CommunityCommentController implements CommunityCommentApi {
             @PathVariable Long commentId,
             @RequestBody CommunityCommentUpdateRequest request,
             @LoginMember Long memberId) {
-        commentService.updateComment(commentId, request, memberId);
-        CommunityCommentItemResponse response = commentQueryRepository.getComment(commentId)
-                .orElseThrow(() -> new IllegalStateException("수정된 댓글을 찾을 수 없습니다."));
-        return ResponseEntity.ok(ApiResponse.success(response));
+        commentService.updateComment(request.toCommand(commentId, memberId));
+        return ResponseEntity.ok(ApiResponse.success(CommunityCommentItemResponse.from(
+                commentQueryService.getComment(commentId)
+        )));
     }
 
     @Override

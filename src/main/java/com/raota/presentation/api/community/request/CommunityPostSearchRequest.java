@@ -1,5 +1,6 @@
 package com.raota.presentation.api.community.request;
 
+import com.raota.application.community.query.PostSearchQuery;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -19,4 +20,8 @@ public class CommunityPostSearchRequest {
 
     @Schema(description = "맛집후기 카테고리에서 필터링할 라멘집 ID", nullable = true)
     private Long ramenShopId;
+
+    public PostSearchQuery toQuery() {
+        return new PostSearchQuery(category, ramenShopId);
+    }
 }

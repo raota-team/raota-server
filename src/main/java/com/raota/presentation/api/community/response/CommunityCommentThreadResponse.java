@@ -1,5 +1,6 @@
 package com.raota.presentation.api.community.response;
 
+import com.raota.application.community.result.CommentThreadResult;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,4 +23,18 @@ public record CommunityCommentThreadResponse(
         @Schema(description = "답글 목록(depth 1)")
         List<CommunityCommentItemResponse> replies
 ) {
+    public static CommunityCommentThreadResponse from(CommentThreadResult result) {
+        return new CommunityCommentThreadResponse(
+                result.commentId(),
+                result.authorNickname(),
+                result.authorId(),
+                result.authorImageUrl(),
+                result.createdAt(),
+                result.content(),
+                result.isDeleted(),
+                result.replies().stream()
+                        .map(CommunityCommentItemResponse::from)
+                        .toList()
+        );
+    }
 }

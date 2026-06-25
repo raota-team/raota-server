@@ -1,5 +1,6 @@
 package com.raota.presentation.api.community.response;
 
+import com.raota.application.community.result.CommentItemResult;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 
@@ -25,4 +26,18 @@ public record CommunityCommentItemResponse(
         @Schema(description = "삭제 여부")
         Boolean isDeleted
 ) {
+    public static CommunityCommentItemResponse from(CommentItemResult result) {
+        return new CommunityCommentItemResponse(
+                result.commentId(),
+                result.parentCommentId(),
+                result.postId(),
+                result.authorNickname(),
+                result.authorId(),
+                result.authorImageUrl(),
+                result.taggedParentAuthorNickname(),
+                result.createdAt(),
+                result.content(),
+                result.isDeleted()
+        );
+    }
 }
