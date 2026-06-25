@@ -1,6 +1,7 @@
-package com.raota.domain.community.repository.command;
+package com.raota.infrastructure.persistence.community.command;
 
-import com.raota.domain.community.repository.command.entity.PostLikeEntity;
+import com.raota.domain.community.repository.PostLikeRepository;
+import com.raota.infrastructure.persistence.community.entity.PostLikeEntity;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,18 +18,19 @@ public class JpaPostLikeRepository implements PostLikeRepository {
     private final JpaPostLikeEntityRepository jpaRepository;
 
     @Override
-    public PostLikeEntity save(PostLikeEntity postLike) {
-        return jpaRepository.save(postLike);
-    }
+    public boolean toggle(Long postId, Long memberId) {
+        Optional<PostLikeEntity> existingLike = jpaRepository.findByPostIdAndMemberId(postId, memberId);
 
-    @Override
-    public void delete(PostLikeEntity postLike) {
-        jpaRepository.delete(postLike);
-    }
+        if (existingLike.isPresent()) {
+            jpaRepository.delete(existingLike.get());
+            return false;
+        }
 
-    @Override
-    public Optional<PostLikeEntity> findByPostIdAndMemberId(Long postId, Long memberId) {
-        return jpaRepository.findByPostIdAndMemberId(postId, memberId);
+        jpaRepository.save(PostLikeEntity.builder()
+                .postId(postId)
+                .memberId(memberId)
+                .build());
+        return true;
     }
 
     @Override

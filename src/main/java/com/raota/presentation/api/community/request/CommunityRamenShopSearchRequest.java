@@ -1,5 +1,6 @@
 package com.raota.presentation.api.community.request;
 
+import com.raota.application.community.query.RamenShopOptionSearchQuery;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -13,4 +14,8 @@ import lombok.Setter;
 public class CommunityRamenShopSearchRequest {
     @Schema(description = "가게명 검색 키워드")
     private String keyword;
+
+    public RamenShopOptionSearchQuery toQuery() {
+        return new RamenShopOptionSearchQuery(keyword);
+    }
 }

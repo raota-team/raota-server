@@ -1,4 +1,4 @@
-package com.raota.domain.community.repository.command.entity;
+package com.raota.infrastructure.persistence.community.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

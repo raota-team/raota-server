@@ -1,6 +1,6 @@
 package com.raota.presentation.api.community;
 
-import com.raota.domain.community.repository.query.PostQueryRepository;
+import com.raota.application.community.service.PostQueryService;
 import com.raota.presentation.api.community.response.CommunityHomePostResponse;
 import com.raota.presentation.api.community.response.CommunityPopularPostResponse;
 import com.raota.presentation.common.ApiResponse;
@@ -23,7 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CommunityV1ApiController {
 
-    private final PostQueryRepository postQueryRepository;
+    private final PostQueryService postQueryService;
 
     @Operation(summary = "라멘 꿀팁 조회", description = "커뮤니티의 '꿀팁' 카테고리 게시글 목록을 요약 형태로 반환합니다.")
     @ApiResponses({
@@ -36,7 +36,10 @@ public class CommunityV1ApiController {
             @Parameter(description = "가져올 개수", example = "3")
             @RequestParam(defaultValue = "3") int limit) {
         // Note: Sort is latest by default in findHomePosts
-        return ResponseEntity.ok(ApiResponse.success(postQueryRepository.findHomePosts(category, limit)));
+        return ResponseEntity.ok(ApiResponse.success(postQueryService.findHomePosts(category, limit)
+                .stream()
+                .map(CommunityHomePostResponse::from)
+                .toList()));
     }
 
     @Operation(
@@ -50,7 +53,9 @@ public class CommunityV1ApiController {
     public ResponseEntity<ApiResponse<List<CommunityPopularPostResponse>>> getRecentPopularPosts(
             @Parameter(description = "가져올 개수", example = "3")
             @RequestParam(defaultValue = "3") int limit) {
-        int normalizedLimit = Math.max(1, Math.min(limit, 10));
-        return ResponseEntity.ok(ApiResponse.success(postQueryRepository.findRecentPopularPosts(normalizedLimit)));
+        return ResponseEntity.ok(ApiResponse.success(postQueryService.findRecentPopularPosts(limit)
+                .stream()
+                .map(CommunityPopularPostResponse::from)
+                .toList()));
     }
 }

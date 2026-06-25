@@ -8,10 +8,9 @@ import com.raota.domain.community.model.Post;
 import com.raota.domain.community.model.PostCategory;
 import com.raota.presentation.api.community.request.CommunityCommentCreateRequest;
 import com.raota.presentation.api.community.request.CommunityCreatePostRequest;
-import com.raota.domain.community.repository.command.JpaCommentRepository;
-import com.raota.domain.community.repository.command.JpaPostRepository;
-import com.raota.domain.community.repository.command.PostLikeRepository;
-import com.raota.domain.community.repository.command.entity.PostLikeEntity;
+import com.raota.infrastructure.persistence.community.command.JpaCommentRepository;
+import com.raota.infrastructure.persistence.community.command.JpaPostRepository;
+import com.raota.domain.community.repository.PostLikeRepository;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
 import com.raota.domain.ramenShop.model.Address;
@@ -267,10 +266,7 @@ class CommunityIntegrationTest extends BaseIntegrationTest {
 
     private void addLikes(Long postId, int count) {
         for (int index = 1; index <= count; index++) {
-            postLikeRepository.save(PostLikeEntity.builder()
-                    .postId(postId)
-                    .memberId(10_000L + postId * 10 + index)
-                    .build());
+            postLikeRepository.toggle(postId, 10_000L + postId * 10 + index);
         }
     }
 

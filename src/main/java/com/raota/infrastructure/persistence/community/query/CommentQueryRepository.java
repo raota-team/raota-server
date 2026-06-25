@@ -1,26 +1,27 @@
-package com.raota.domain.community.repository.query;
+package com.raota.infrastructure.persistence.community.query;
 
-import com.raota.presentation.api.community.response.CommunityCommentItemResponse;
-import com.raota.presentation.common.PageResponse;
+import com.raota.application.community.port.CommentQueryPort;
+import com.raota.application.community.result.CommentItemResult;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public class CommentQueryRepository {
+public class CommentQueryRepository implements CommentQueryPort {
 
     @PersistenceContext
     private EntityManager entityManager;
 
-    public Optional<CommunityCommentItemResponse> getComment(Long commentId) {
+    public Optional<CommentItemResult> getComment(Long commentId) {
         List<CommentRow> rows = entityManager.createQuery(
                         """
-                        select new com.raota.domain.community.repository.query.CommentQueryRepository$CommentRow(
+                        select new com.raota.infrastructure.persistence.community.query.CommentQueryRepository$CommentRow(
                                c.id, c.parent.id, c.post.id, m.nickname, m.id, m.imageUrl, pm.nickname,
                                c.content, c.createdAt, c.isDeleted
                         )
@@ -35,10 +36,10 @@ public class CommentQueryRepository {
                 .setParameter("commentId", commentId)
                 .getResultList();
 
-        return rows.stream().findFirst().map(CommentRow::toResponse);
+        return rows.stream().findFirst().map(CommentRow::toResult);
     }
 
-    public PageResponse<CommunityCommentItemResponse> getParentComments(Long postId, Pageable pageable) {
+    public Page<CommentItemResult> getParentComments(Long postId, Pageable pageable) {
         Long totalCount = entityManager.createQuery(
                         """
                         select count(c)
@@ -52,7 +53,7 @@ public class CommentQueryRepository {
 
         List<CommentRow> rows = entityManager.createQuery(
                         """
-                        select new com.raota.domain.community.repository.query.CommentQueryRepository$CommentRow(
+                        select new com.raota.infrastructure.persistence.community.query.CommentQueryRepository$CommentRow(
                                c.id, null, c.post.id, m.nickname, m.id, m.imageUrl, null,
                                c.content, c.createdAt, c.isDeleted
                         )
@@ -68,17 +69,17 @@ public class CommentQueryRepository {
                 .setMaxResults(pageable.getPageSize())
                 .getResultList();
 
-        List<CommunityCommentItemResponse> items = rows.stream()
-                .map(CommentRow::toResponse)
+        List<CommentItemResult> items = rows.stream()
+                .map(CommentRow::toResult)
                 .toList();
 
-        return PageResponse.from(new PageImpl<>(items, pageable, totalCount));
+        return new PageImpl<>(items, pageable, totalCount);
     }
 
-    public List<CommunityCommentItemResponse> getReplies(Long parentId) {
+    public List<CommentItemResult> getReplies(Long parentId) {
         List<CommentRow> rows = entityManager.createQuery(
                         """
-                        select new com.raota.domain.community.repository.query.CommentQueryRepository$CommentRow(
+                        select new com.raota.infrastructure.persistence.community.query.CommentQueryRepository$CommentRow(
                                c.id, c.parent.id, c.post.id, m.nickname, m.id, m.imageUrl, pm.nickname,
                                c.content, c.createdAt, c.isDeleted
                         )
@@ -95,7 +96,7 @@ public class CommentQueryRepository {
                 .getResultList();
 
         return rows.stream()
-                .map(CommentRow::toResponse)
+                .map(CommentRow::toResult)
                 .toList();
     }
 
@@ -111,8 +112,8 @@ public class CommentQueryRepository {
             LocalDateTime createdAt,
             Boolean isDeleted
     ) {
-        private CommunityCommentItemResponse toResponse() {
-            return new CommunityCommentItemResponse(
+        private CommentItemResult toResult() {
+            return new CommentItemResult(
                     commentId,
                     parentCommentId,
                     postId,

@@ -1,8 +1,9 @@
-package com.raota.domain.community.repository.command;
+package com.raota.infrastructure.persistence.community.command;
 
 import com.raota.domain.community.model.Comment;
-import com.raota.domain.community.repository.command.entity.CommentEntity;
-import com.raota.domain.community.repository.command.entity.PostEntity;
+import com.raota.domain.community.repository.CommentRepository;
+import com.raota.infrastructure.persistence.community.entity.CommentEntity;
+import com.raota.infrastructure.persistence.community.entity.PostEntity;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
 import java.util.List;
@@ -44,8 +45,38 @@ public class JpaCommentRepository implements CommentRepository {
     }
 
     @Override
-    public Optional<CommentEntity> findEntityById(Long id) {
-        return jpaRepository.findById(id);
+    public void validateReplyTarget(Long parentId) {
+        if (parentId == null) {
+            return;
+        }
+
+        CommentEntity parent = findCommentEntity(parentId, "부모 댓글이 존재하지 않습니다.");
+
+        if (parent.getParent() != null) {
+            throw new IllegalArgumentException("답글에는 답글을 달 수 없습니다. (최대 Depth 1)");
+        }
+    }
+
+    @Override
+    public void update(Long id, Long authorId, String content) {
+        CommentEntity commentEntity = findCommentEntity(id, "댓글을 찾을 수 없습니다.");
+
+        if (!commentEntity.getMember().getId().equals(authorId)) {
+            throw new IllegalStateException("수정 권한이 없습니다.");
+        }
+
+        commentEntity.update(content);
+    }
+
+    @Override
+    public void softDelete(Long id, Long authorId) {
+        CommentEntity commentEntity = findCommentEntity(id, "댓글을 찾을 수 없습니다.");
+
+        if (!commentEntity.getMember().getId().equals(authorId)) {
+            throw new IllegalStateException("삭제 권한이 없습니다.");
+        }
+
+        commentEntity.delete();
     }
 
     @Override
@@ -66,5 +97,10 @@ public class JpaCommentRepository implements CommentRepository {
 
     public void flush() {
         jpaRepository.flush();
+    }
+
+    private CommentEntity findCommentEntity(Long id, String message) {
+        return jpaRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException(message));
     }
 }

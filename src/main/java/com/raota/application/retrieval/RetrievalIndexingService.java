@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.raota.domain.community.model.Post;
-import com.raota.domain.community.repository.command.PostRepository;
+import com.raota.domain.community.repository.PostRepository;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.domain.retrieval.document.RetrievalDocumentSource;

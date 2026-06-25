@@ -1,5 +1,6 @@
 package com.raota.presentation.api.community.response;
 
+import com.raota.application.community.result.PostCardResult;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 
@@ -33,4 +34,22 @@ public record CommunityPostCardResponse(
         @Schema(description = "조회 수")
         Integer viewCount
 ) {
+    public static CommunityPostCardResponse from(PostCardResult result) {
+        return new CommunityPostCardResponse(
+                result.postId(),
+                result.category(),
+                result.ramenShopId(),
+                result.storeName(),
+                result.title(),
+                result.contentPreview(),
+                result.imageUrl(),
+                result.authorName(),
+                result.authorId(),
+                result.authorImageUrl(),
+                result.createdAt(),
+                result.likeCount(),
+                result.commentCount(),
+                result.viewCount()
+        );
+    }
 }

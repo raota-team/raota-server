@@ -7,12 +7,10 @@ import com.raota.application.community.command.CreatePostCommand;
 import com.raota.application.community.command.UpdatePostCommand;
 import com.raota.domain.community.model.Post;
 import com.raota.domain.community.model.PostCategory;
-import com.raota.domain.community.repository.command.PostRepository;
-import com.raota.domain.community.repository.command.entity.PostEntity;
+import com.raota.domain.community.repository.PostRepository;
 import com.raota.application.community.service.PostService;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
-import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.domain.retrieval.event.PostIndexingAction;
 import com.raota.domain.retrieval.event.PostIndexingEvent;
 import java.util.Optional;
@@ -99,17 +97,18 @@ class PostServiceTest {
         Long authorId = 1L;
         Long otherId = 2L;
 
-        MemberProfile author = mock(MemberProfile.class);
-        when(author.getId()).thenReturn(authorId);
-
-        PostEntity post = mock(PostEntity.class);
-        when(post.getAuthor()).thenReturn(author);
-
-        when(postRepository.findEntityById(postId)).thenReturn(Optional.of(post));
-
         UpdatePostCommand command = new UpdatePostCommand(
                 postId, "FREE", null, "제목", null, "PLAIN", "내용", otherId
         );
+        when(postRepository.update(
+                postId,
+                otherId,
+                PostCategory.FREE,
+                "제목",
+                "내용",
+                null,
+                null
+        )).thenThrow(new IllegalStateException("수정 권한이 없습니다."));
 
         // when & then
         assertThatThrownBy(() -> postService.updatePost(command))
@@ -124,19 +123,18 @@ class PostServiceTest {
         Long postId = 1L;
         Long authorId = 1L;
 
-        MemberProfile author = mock(MemberProfile.class);
-        when(author.getId()).thenReturn(authorId);
-
-        PostEntity post = mock(PostEntity.class);
-        when(post.getId()).thenReturn(postId);
-        when(post.getAuthor()).thenReturn(author);
-        when(post.getCategory()).thenReturn(PostCategory.REVIEW);
-
-        when(postRepository.findEntityById(postId)).thenReturn(Optional.of(post));
-
         UpdatePostCommand command = new UpdatePostCommand(
                 postId, "REVIEW", null, "수정 제목", null, "PLAIN", "수정 내용", authorId
         );
+        when(postRepository.update(
+                postId,
+                authorId,
+                PostCategory.REVIEW,
+                "수정 제목",
+                "수정 내용",
+                null,
+                null
+        )).thenReturn(new PostRepository.PostUpdateResult(postId, PostCategory.REVIEW, PostCategory.REVIEW));
 
         // when
         postService.updatePost(command);
@@ -157,20 +155,15 @@ class PostServiceTest {
         Long postId = 1L;
         Long authorId = 1L;
 
+        when(postRepository.delete(postId, authorId)).thenReturn(PostCategory.FREE);
         MemberProfile author = mock(MemberProfile.class);
-        when(author.getId()).thenReturn(authorId);
-
-        PostEntity post = mock(PostEntity.class);
-        when(post.getAuthor()).thenReturn(author);
-
-        when(postRepository.findEntityById(postId)).thenReturn(Optional.of(post));
         when(memberRepository.findById(authorId)).thenReturn(Optional.of(author));
 
         // when
         postService.deletePost(postId, authorId);
 
         // then
-        verify(post).delete();
+        verify(postRepository).delete(postId, authorId);
         verify(author).decreasePostCount();
     }
 
@@ -181,14 +174,8 @@ class PostServiceTest {
         Long postId = 1L;
         Long authorId = 1L;
 
+        when(postRepository.delete(postId, authorId)).thenReturn(PostCategory.REVIEW);
         MemberProfile author = mock(MemberProfile.class);
-        when(author.getId()).thenReturn(authorId);
-
-        PostEntity post = mock(PostEntity.class);
-        when(post.getAuthor()).thenReturn(author);
-        when(post.getCategory()).thenReturn(PostCategory.REVIEW);
-
-        when(postRepository.findEntityById(postId)).thenReturn(Optional.of(post));
         when(memberRepository.findById(authorId)).thenReturn(Optional.of(author));
 
         // when

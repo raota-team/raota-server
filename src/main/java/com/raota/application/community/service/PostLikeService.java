@@ -1,9 +1,7 @@
 package com.raota.application.community.service;
 
-import com.raota.domain.community.repository.command.PostLikeRepository;
-import com.raota.domain.community.repository.command.PostRepository;
-import com.raota.domain.community.repository.command.entity.PostLikeEntity;
-import java.util.Optional;
+import com.raota.domain.community.repository.PostLikeRepository;
+import com.raota.domain.community.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,17 +21,6 @@ public class PostLikeService {
         postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다."));
 
-        Optional<PostLikeEntity> existingLike = postLikeRepository.findByPostIdAndMemberId(postId, memberId);
-
-        if (existingLike.isPresent()) {
-            postLikeRepository.delete(existingLike.get());
-            return false;
-        } else {
-            postLikeRepository.save(PostLikeEntity.builder()
-                    .postId(postId)
-                    .memberId(memberId)
-                    .build());
-            return true;
-        }
+        return postLikeRepository.toggle(postId, memberId);
     }
 }
