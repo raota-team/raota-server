@@ -113,7 +113,7 @@ public class CommunityPostController implements CommunityApi {
             @PageableDefault(size = 10, direction = Sort.Direction.DESC) Pageable pageable,
             CommunityRamenShopSearchRequest request) {
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(
-                postQueryService.getRamenShopOptions(request.toQuery(), pageable)
+                postQueryService.getRamenShopOptions(request.getKeyword(), pageable)
                         .map(CommunityRamenShopOptionResponse::from)
         )));
     }

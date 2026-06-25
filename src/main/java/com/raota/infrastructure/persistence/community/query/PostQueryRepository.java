@@ -1,7 +1,6 @@
 package com.raota.infrastructure.persistence.community.query;
 
 import com.raota.application.community.query.PostSearchQuery;
-import com.raota.application.community.query.RamenShopOptionSearchQuery;
 import com.raota.application.community.port.PostQueryPort;
 import com.raota.application.community.result.HomePostResult;
 import com.raota.application.community.result.PopularPostResult;
@@ -119,8 +118,8 @@ public class PostQueryRepository implements PostQueryPort {
         return rows.getFirst().toResult(memberId != null);
     }
 
-    public Page<RamenShopOptionResult> getRamenShopOptions(RamenShopOptionSearchQuery request, Pageable pageable) {
-        String normalizedKeyword = normalizeKeyword(request.keyword());
+    public Page<RamenShopOptionResult> getRamenShopOptions(String keyword, Pageable pageable) {
+        String normalizedKeyword = normalizeKeyword(keyword);
 
         Long totalCount = entityManager.createQuery(
                         """

@@ -2,7 +2,6 @@ package com.raota.application.community.service;
 
 import com.raota.application.community.port.PostQueryPort;
 import com.raota.application.community.query.PostSearchQuery;
-import com.raota.application.community.query.RamenShopOptionSearchQuery;
 import com.raota.application.community.result.HomePostResult;
 import com.raota.application.community.result.PopularPostResult;
 import com.raota.application.community.result.PostCardResult;
@@ -30,8 +29,8 @@ public class PostQueryService {
         return postQueryPort.getPostDetail(postId, memberId);
     }
 
-    public Page<RamenShopOptionResult> getRamenShopOptions(RamenShopOptionSearchQuery query, Pageable pageable) {
-        return postQueryPort.getRamenShopOptions(query, pageable);
+    public Page<RamenShopOptionResult> getRamenShopOptions(String keyword, Pageable pageable) {
+        return postQueryPort.getRamenShopOptions(keyword, pageable);
     }
 
     public List<HomePostResult> findHomePosts(String category, int limit) {
@@ -39,7 +38,7 @@ public class PostQueryService {
     }
 
     public List<PopularPostResult> findRecentPopularPosts(int limit) {
-        int normalizedLimit = Math.max(1, Math.min(limit, 10));
+        int normalizedLimit = Math.clamp(limit, 1, 10);
         return postQueryPort.findRecentPopularPosts(normalizedLimit);
     }
 }

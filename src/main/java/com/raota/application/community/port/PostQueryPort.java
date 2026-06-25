@@ -1,7 +1,6 @@
 package com.raota.application.community.port;
 
 import com.raota.application.community.query.PostSearchQuery;
-import com.raota.application.community.query.RamenShopOptionSearchQuery;
 import com.raota.application.community.result.HomePostResult;
 import com.raota.application.community.result.PopularPostResult;
 import com.raota.application.community.result.PostCardResult;
@@ -17,7 +16,7 @@ public interface PostQueryPort {
 
     PostDetailResult getPostDetail(Long postId, Long memberId);
 
-    Page<RamenShopOptionResult> getRamenShopOptions(RamenShopOptionSearchQuery query, Pageable pageable);
+    Page<RamenShopOptionResult> getRamenShopOptions(String keyword, Pageable pageable);
 
     List<HomePostResult> findHomePosts(String categoryName, int limit);
 
