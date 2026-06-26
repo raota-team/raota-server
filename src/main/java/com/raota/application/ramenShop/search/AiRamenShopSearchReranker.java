@@ -68,6 +68,39 @@ public class AiRamenShopSearchReranker {
             }
         }
 
+        boost += calculateFoodTypeBoost(menuNames, tags, text, query.foodTypes());
+
+        return boost;
+    }
+
+    private double calculateFoodTypeBoost(List<String> menuNames, List<String> tags, String text, List<String> foodTypes) {
+        if (foodTypes == null || foodTypes.isEmpty()) {
+            return 0;
+        }
+
+        List<String> requestedAliases = RamenFoodKeywordDictionary.aliasesFor(foodTypes);
+        List<String> conflictAliases = RamenFoodKeywordDictionary.conflictAliasesFor(foodTypes);
+        boolean requestedStructuredMatch = containsAny(menuNames, requestedAliases) || containsAny(tags, requestedAliases);
+        boolean requestedTextMatch = containsAny(text, requestedAliases);
+        boolean conflictStructuredMatch = containsAny(menuNames, conflictAliases) || containsAny(tags, conflictAliases);
+        boolean conflictTextMatch = containsAny(text, conflictAliases);
+
+        double boost = 0;
+        if (requestedStructuredMatch) {
+            boost += 0.45;
+        }
+        if (requestedTextMatch) {
+            boost += 0.12;
+        }
+        if (!requestedStructuredMatch && !requestedTextMatch) {
+            if (conflictStructuredMatch) {
+                boost -= 0.35;
+            }
+            if (conflictTextMatch) {
+                boost -= 0.15;
+            }
+        }
+
         return boost;
     }
 
@@ -75,6 +108,18 @@ public class AiRamenShopSearchReranker {
         return values.stream()
                 .map(value -> value.toLowerCase(Locale.ROOT))
                 .anyMatch(value -> value.contains(keyword));
+    }
+
+    private boolean containsAny(List<String> values, List<String> keywords) {
+        return values.stream()
+                .map(value -> value.toLowerCase(Locale.ROOT))
+                .anyMatch(value -> containsAny(value, keywords));
+    }
+
+    private boolean containsAny(String value, List<String> keywords) {
+        return keywords.stream()
+                .map(keyword -> keyword.toLowerCase(Locale.ROOT))
+                .anyMatch(value::contains);
     }
 
     private List<String> metadataValues(Object value) {
