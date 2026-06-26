@@ -6,7 +6,6 @@ import com.raota.application.ramenShop.port.RamenShopSearchDocumentPort;
 import com.raota.application.ramenShop.query.ParsedAiRamenShopSearchQuery;
 import com.raota.application.ramenShop.result.AiRamenShopSearchHit;
 import com.raota.application.ramenShop.result.AiRamenShopSearchResult;
-import com.raota.application.ramenShop.result.RamenShopSearchDocument;
 import com.raota.application.ramenShop.search.AiRamenShopSearchQueryParser;
 import com.raota.application.ramenShop.search.AiRamenShopSearchReranker;
 import com.raota.domain.ramenShop.model.RamenShop;
@@ -52,9 +51,7 @@ public class AiRamenShopSearchService {
     }
 
     private List<AiRamenShopSearchHit> searchRelevantShopDocuments(ParsedAiRamenShopSearchQuery query) {
-        List<RamenShopSearchDocument> documents = searchDocumentPort.searchShopProfiles(query.expandedQuery(), 30, 0.35);
-
-        return reranker.rerank(documents, query, 6);
+        return reranker.rerank(searchDocumentPort.searchShopDocuments(query.expandedQuery(), 30, 0.35), query, 6);
     }
 
     private AiRamenShopSearchResult buildSearchResponse(
@@ -70,7 +67,6 @@ public class AiRamenShopSearchService {
     private AiRamenShopSearchResult.ShopResult toRecommendedShopResponse(
             AiRamenShopSearchHit hit,
             Long memberId) {
-        RamenShopSearchDocument document = hit.document();
         RamenShop shop = ramenShopRepository.findById(hit.shopId()).orElseThrow();
 
         return new AiRamenShopSearchResult.ShopResult(

@@ -3,6 +3,7 @@ package com.raota.application.ramenShop.search;
 import com.raota.application.ramenShop.query.ParsedAiRamenShopSearchQuery;
 import com.raota.application.ramenShop.result.AiRamenShopSearchHit;
 import com.raota.application.ramenShop.result.RamenShopSearchDocument;
+import com.raota.domain.retrieval.document.RetrievalDocumentType;
 import com.raota.domain.retrieval.document.RetrievalMetadataKeys;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -24,31 +25,25 @@ public class AiRamenShopSearchReranker {
             return List.of();
         }
 
-        Map<Long, AiRamenShopSearchHit> bestByShop = new LinkedHashMap<>();
+        Map<Long, ShopSearchEvidence> evidenceByShop = new LinkedHashMap<>();
         for (RamenShopSearchDocument document : documents) {
             Long shopId = parseShopId(document.metadata().get(RetrievalMetadataKeys.SHOP_ID));
             if (shopId == null) {
                 continue;
             }
-            AiRamenShopSearchHit hit = new AiRamenShopSearchHit(
-                    shopId,
-                    document,
-                    calculateFinalScore(document, query)
-            );
-            AiRamenShopSearchHit current = bestByShop.get(shopId);
-            if (current == null || hit.finalScore() > current.finalScore()) {
-                bestByShop.put(shopId, hit);
-            }
+            evidenceByShop.computeIfAbsent(shopId, ShopSearchEvidence::new)
+                    .add(document, calculateBoost(document, query));
         }
 
-        return bestByShop.values().stream()
+        return evidenceByShop.values().stream()
+                .map(ShopSearchEvidence::toHit)
                 .sorted(Comparator.comparingDouble(AiRamenShopSearchHit::finalScore).reversed())
                 .limit(limit)
                 .toList();
     }
 
-    private double calculateFinalScore(RamenShopSearchDocument document, ParsedAiRamenShopSearchQuery query) {
-        double score = document.score();
+    private double calculateBoost(RamenShopSearchDocument document, ParsedAiRamenShopSearchQuery query) {
+        double boost = 0;
         List<String> menuNames = metadataValues(document.metadata().get(RetrievalMetadataKeys.MENU_NAMES));
         List<String> tags = metadataValues(document.metadata().get(RetrievalMetadataKeys.TAGS));
         String region = String.valueOf(document.metadata().getOrDefault(RetrievalMetadataKeys.REGION, ""));
@@ -57,23 +52,23 @@ public class AiRamenShopSearchReranker {
         for (String keyword : query.foodKeywords()) {
             String normalizedKeyword = keyword.toLowerCase(Locale.ROOT);
             if (containsAny(menuNames, normalizedKeyword)) {
-                score += 0.20;
+                boost += 0.20;
             }
             if (containsAny(tags, normalizedKeyword)) {
-                score += 0.10;
+                boost += 0.10;
             }
             if (text.contains(normalizedKeyword)) {
-                score += 0.05;
+                boost += 0.05;
             }
         }
 
         for (String queryRegion : query.regions()) {
             if (region.contains(queryRegion)) {
-                score += 0.10;
+                boost += 0.10;
             }
         }
 
-        return score;
+        return boost;
     }
 
     private boolean containsAny(List<String> values, String keyword) {
@@ -104,5 +99,41 @@ public class AiRamenShopSearchReranker {
             return null;
         }
         return Long.valueOf(value);
+    }
+
+    private boolean isProfileDocument(RamenShopSearchDocument document) {
+        return RetrievalDocumentType.SHOP_PROFILE.name()
+                .equals(String.valueOf(document.metadata().get(RetrievalMetadataKeys.DOCUMENT_TYPE)));
+    }
+
+    private class ShopSearchEvidence {
+        private final Long shopId;
+        private double bestProfileScore;
+        private double bestReviewScore;
+        private double bestBoost;
+        private int reviewHitCount;
+
+        private ShopSearchEvidence(Long shopId) {
+            this.shopId = shopId;
+        }
+
+        private void add(RamenShopSearchDocument document, double boost) {
+            if (isProfileDocument(document)) {
+                bestProfileScore = Math.max(bestProfileScore, document.score());
+            } else {
+                bestReviewScore = Math.max(bestReviewScore, document.score());
+                reviewHitCount++;
+            }
+            bestBoost = Math.max(bestBoost, boost);
+        }
+
+        private AiRamenShopSearchHit toHit() {
+            double finalScore = bestProfileScore * 0.45
+                    + bestReviewScore * 0.35
+                    + Math.log(reviewHitCount + 1) * 0.08
+                    + bestBoost;
+
+            return new AiRamenShopSearchHit(shopId, finalScore);
+        }
     }
 }
