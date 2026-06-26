@@ -1,6 +1,8 @@
 package com.raota.presentation.api.ramenShop.contract;
 
+import com.raota.presentation.api.ramenShop.request.AiRamenShopSearchRequest;
 import com.raota.presentation.api.ramenShop.request.RamenShopReportRequest;
+import com.raota.presentation.api.ramenShop.response.AiRamenShopSearchResponse;
 import com.raota.presentation.api.ramenShop.response.RamenShopResponse;
 import com.raota.presentation.api.ramenShop.request.RamenShopSearchRequest;
 import com.raota.presentation.api.ramenShop.response.RamenShopBasicInfoResponse;
@@ -14,6 +16,7 @@ import com.raota.presentation.api.ramenShop.response.RecentVerifiedShopResponse;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Tag(name = "라멘 가게", description = "라멘 가게 조회/방문 API")
@@ -45,6 +48,14 @@ public interface RamenShopInfoApi {
             @Parameter(description = "페이지 크기", example = "12")
             @RequestParam(defaultValue = "12") int size,
             RamenShopSearchRequest request);
+
+    @Operation(summary = "AI 가게 검색", description = "자연어 검색어로 라멘 가게 목록을 조회합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    ResponseEntity<ApiResponse<AiRamenShopSearchResponse>> searchAiRamenShops(
+            @RequestBody AiRamenShopSearchRequest request,
+            @Parameter(hidden = true) Long memberId);
 
     @Operation(summary = "가게 북마크 토글", description = "가게를 찜하거나 해제합니다.")
     @ApiResponses({

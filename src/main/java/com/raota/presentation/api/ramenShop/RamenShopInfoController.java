@@ -1,8 +1,12 @@
 package com.raota.presentation.api.ramenShop;
 
 import com.raota.application.member.BookmarkService;
+import com.raota.application.ramenShop.service.AiRamenShopSearchService;
+import com.raota.application.ramenShop.result.AiRamenShopSearchResult;
 import com.raota.presentation.api.ramenShop.contract.RamenShopInfoApi;
+import com.raota.presentation.api.ramenShop.request.AiRamenShopSearchRequest;
 import com.raota.presentation.api.ramenShop.request.RamenShopReportRequest;
+import com.raota.presentation.api.ramenShop.response.AiRamenShopSearchResponse;
 import com.raota.presentation.api.ramenShop.response.RamenShopResponse;
 import com.raota.presentation.api.ramenShop.request.RamenShopSearchRequest;
 import com.raota.presentation.api.ramenShop.response.RamenShopBasicInfoResponse;
@@ -30,6 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class RamenShopInfoController implements RamenShopInfoApi {
 
     private final RamenShopInfoService ramenShopInfoService;
+    private final AiRamenShopSearchService aiRamenShopSearchService;
     private final BookmarkService bookmarkService;
     private final RamenShopReportService reportService;
 
@@ -62,6 +67,15 @@ public class RamenShopInfoController implements RamenShopInfoApi {
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(response)));
     }
 
+    @PostMapping("/ai-search")
+    @Override
+    public ResponseEntity<ApiResponse<AiRamenShopSearchResponse>> searchAiRamenShops(
+            @RequestBody AiRamenShopSearchRequest request,
+            @LoginMember(required = false) Long memberId) {
+        String query = request == null ? null : request.query();
+        return ResponseEntity.ok(ApiResponse.success(toResponse(aiRamenShopSearchService.search(query, memberId))));
+    }
+
     @Override
     @PostMapping("/{shopId}/bookmark")
     public ResponseEntity<ApiResponse<Boolean>> toggleBookmark(
@@ -79,5 +93,20 @@ public class RamenShopInfoController implements RamenShopInfoApi {
             @RequestBody RamenShopReportRequest request) {
         reportService.reportShop(shopId, memberId, request);
         return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    private AiRamenShopSearchResponse toResponse(AiRamenShopSearchResult result) {
+        return new AiRamenShopSearchResponse(result.shops().stream()
+                .map(shop -> new AiRamenShopSearchResponse.RecommendedShopResponse(
+                        shop.id(),
+                        shop.name(),
+                        shop.type(),
+                        shop.location(),
+                        shop.description(),
+                        shop.imageUrl(),
+                        shop.matchScore(),
+                        shop.bookmarked()
+                ))
+                .toList());
     }
 }

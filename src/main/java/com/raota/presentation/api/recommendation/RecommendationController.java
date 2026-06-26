@@ -1,6 +1,5 @@
 package com.raota.presentation.api.recommendation;
 import com.raota.application.recommendation.RecommendationService;
-import com.raota.infrastructure.auth.LoginMember;
 import com.raota.presentation.api.recommendation.contract.RecommendationApi;
 import com.raota.presentation.api.recommendation.request.*;
 import com.raota.presentation.api.recommendation.response.*;
@@ -14,13 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class RecommendationController implements RecommendationApi {
 
     private final RecommendationService recommendationService;
-
-    @Override
-    public ResponseEntity<ApiResponse<TasteRecommendationResponse>> recommendByTaste(
-            TasteRecommendationRequest request,
-            @LoginMember(required = false) Long memberId) {
-        return ResponseEntity.ok(ApiResponse.success(recommendationService.recommendByTaste(request, memberId)));
-    }
 
     @Override
     public ResponseEntity<ApiResponse<ShopComparisonResponse>> compareShops(ShopComparisonRequest request) {

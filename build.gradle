@@ -22,14 +22,13 @@ configurations {
 
 dependencyManagement {
     imports {
-        mavenBom "org.springframework.ai:spring-ai-bom:2.0.0-M6"
+        mavenBom "org.springframework.ai:spring-ai-bom:2.0.0"
     }
 }
 
 repositories {
     mavenLocal()
     mavenCentral()
-    maven { url 'https://repo.spring.io/milestone' }
 }
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'

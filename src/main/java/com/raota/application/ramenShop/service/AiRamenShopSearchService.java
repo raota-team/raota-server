@@ -1,179 +1,94 @@
 package com.raota.application.ramenShop.service;
 
 import com.raota.application.member.BookmarkService;
-import com.raota.application.recommendation.RecommendationShopReader;
+import com.raota.application.ramenShop.port.FileUrlPort;
+import com.raota.application.ramenShop.port.RamenShopSearchDocumentPort;
+import com.raota.application.ramenShop.query.ParsedAiRamenShopSearchQuery;
+import com.raota.application.ramenShop.result.AiRamenShopSearchHit;
+import com.raota.application.ramenShop.result.AiRamenShopSearchResult;
+import com.raota.application.ramenShop.result.RamenShopSearchDocument;
+import com.raota.application.ramenShop.search.AiRamenShopSearchQueryParser;
+import com.raota.application.ramenShop.search.AiRamenShopSearchReranker;
 import com.raota.domain.ramenShop.model.RamenShop;
-import com.raota.infrastructure.file.FileUploader;
-import com.raota.presentation.api.recommendation.request.TasteRecommendationRequest;
-import com.raota.presentation.api.recommendation.response.TasteRecommendationResponse;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
+import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.document.Document;
-import org.springframework.ai.vectorstore.SearchRequest;
-import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AiRamenShopSearchService {
 
-    private final ChatClient chatClient;
-    private final VectorStore vectorStore;
-    private final RecommendationShopReader recommendationShopReader;
-    private final FileUploader fileUploader;
-    private final Resource recommendationReasonTemplate;
+    private final RamenShopSearchDocumentPort searchDocumentPort;
+    private final RamenShopRepository ramenShopRepository;
+    private final FileUrlPort fileUrlPort;
     private final BookmarkService bookmarkService;
+    private final AiRamenShopSearchQueryParser queryParser;
+    private final AiRamenShopSearchReranker reranker;
+
 
     public AiRamenShopSearchService(
-            ChatClient.Builder chatClientBuilder,
-            VectorStore vectorStore,
-            RecommendationShopReader recommendationShopReader,
-            FileUploader fileUploader,
-            @Value("classpath:/prompts/system-persona.st") Resource systemPersona,
-            @Value("classpath:/prompts/taste-recommendation-reason.st") Resource recommendationReasonTemplate,
-            BookmarkService bookmarkService
+            RamenShopSearchDocumentPort searchDocumentPort,
+            RamenShopRepository ramenShopRepository,
+            FileUrlPort fileUrlPort,
+            BookmarkService bookmarkService,
+            AiRamenShopSearchQueryParser queryParser,
+            AiRamenShopSearchReranker reranker
     ) {
         this.bookmarkService = bookmarkService;
-        this.chatClient = chatClientBuilder
-                .defaultSystem(systemPersona)
-                .build();
-        this.vectorStore = vectorStore;
-        this.recommendationShopReader = recommendationShopReader;
-        this.fileUploader = fileUploader;
-        this.recommendationReasonTemplate = recommendationReasonTemplate;
+        this.searchDocumentPort = searchDocumentPort;
+        this.ramenShopRepository = ramenShopRepository;
+        this.fileUrlPort = fileUrlPort;
+        this.queryParser = queryParser;
+        this.reranker = reranker;
     }
 
-    public TasteRecommendationResponse recommendByTaste(TasteRecommendationRequest request, Long memberId) {
-        validateTasteRecommendationRequest(request);
+    public AiRamenShopSearchResult search(String query, Long memberId) {
+        if (query == null || query.isBlank()) {
+            throw new IllegalArgumentException("검색어는 필수입니다.");
+        }
+        ParsedAiRamenShopSearchQuery parsedQuery = queryParser.parse(query.trim());
+        List<AiRamenShopSearchHit> searchResult = searchRelevantShopDocuments(parsedQuery);
 
-        String query = buildTasteQuery(request);
-        List<Document> searchResult = searchRecommendedShops(query);
-        String context = buildRecommendationContext(searchResult);
-        Map<String, String> aiReasons = generateRecommendationReasons(query, context);
-
-        return buildTasteRecommendationResponse(searchResult, aiReasons, memberId);
+        return buildSearchResponse(searchResult, memberId);
     }
 
-    private void validateTasteRecommendationRequest(TasteRecommendationRequest request) {
-        if (request == null) {
-            throw new IllegalArgumentException("취향 추천 요청은 필수입니다.");
-        }
+    private List<AiRamenShopSearchHit> searchRelevantShopDocuments(ParsedAiRamenShopSearchQuery query) {
+        List<RamenShopSearchDocument> documents = searchDocumentPort.searchShopProfiles(query.expandedQuery(), 30, 0.35);
 
-        if (!recommendationShopReader.hasText(request.soup())) {
-            throw new IllegalArgumentException("국물 취향은 필수입니다.");
-        }
-
-        if (!recommendationShopReader.hasText(request.mood())) {
-            throw new IllegalArgumentException("상황/분위기는 필수입니다.");
-        }
-
-        if (!recommendationShopReader.hasText(request.priority())) {
-            throw new IllegalArgumentException("우선순위는 필수입니다.");
-        }
+        return reranker.rerank(documents, query, 6);
     }
 
-    private String buildTasteQuery(TasteRecommendationRequest request) {
-        StringBuilder queryBuilder = new StringBuilder()
-                .append(request.soup().trim())
-                .append(" ")
-                .append(request.mood().trim())
-                .append(" ")
-                .append(request.priority().trim());
-
-        if (recommendationShopReader.hasText(request.freeText())) {
-            queryBuilder.append(" ").append(request.freeText().trim());
-        }
-
-        return queryBuilder.toString();
-    }
-
-    private List<Document> searchRecommendedShops(String query) {
-        List<Document> documents = vectorStore.similaritySearch(
-                SearchRequest.builder()
-                        .query(query)
-                        .topK(8)
-                        .similarityThreshold(0.35)
-                        .build()
-        );
-
-        if (documents == null || documents.isEmpty()) {
-            return List.of();
-        }
-
-        Map<Long, Document> bestByShop = new LinkedHashMap<>();
-        for (Document document : documents) {
-            Long shopId = parseShopId(document.getMetadata().get("shopId"));
-            Document current = bestByShop.get(shopId);
-            if (current == null || document.getScore() > current.getScore()) {
-                bestByShop.put(shopId, document);
-            }
-        }
-
-        return bestByShop.values().stream()
-                .sorted(Comparator.comparingDouble(Document::getScore).reversed())
-                .limit(4)
-                .toList();
-    }
-
-    private String buildRecommendationContext(List<Document> searchResult) {
-        return searchResult.stream()
-                .map(doc -> String.format("ID: %s, 내용: %s",
-                        doc.getMetadata().get("shopId"), doc.getText()))
-                .collect(Collectors.joining("\n"));
-    }
-
-    private Map<String, String> generateRecommendationReasons(String query, String context) {
-        return chatClient.prompt()
-                .user(user -> user.text(recommendationReasonTemplate)
-                        .param("query", query)
-                        .param("context", context))
-                .call()
-                .entity(new ParameterizedTypeReference<Map<String, String>>() {
-                });
-    }
-
-    private TasteRecommendationResponse buildTasteRecommendationResponse(
-            List<Document> searchResult,
-            Map<String, String> aiReasons,
+    private AiRamenShopSearchResult buildSearchResponse(
+            List<AiRamenShopSearchHit> searchResult,
             Long memberId) {
-        List<TasteRecommendationResponse.RecommendedShopResponse> recommendedShops = searchResult.stream()
-                .map(document -> toRecommendedShopResponse(document, aiReasons, memberId))
+        List<AiRamenShopSearchResult.ShopResult> recommendedShops = searchResult.stream()
+                .map(hit -> toRecommendedShopResponse(hit, memberId))
                 .toList();
 
-        return new TasteRecommendationResponse(recommendedShops);
+        return new AiRamenShopSearchResult(recommendedShops);
     }
 
-    private TasteRecommendationResponse.RecommendedShopResponse toRecommendedShopResponse(
-            Document document,
-            Map<String, String> aiReasons,
+    private AiRamenShopSearchResult.ShopResult toRecommendedShopResponse(
+            AiRamenShopSearchHit hit,
             Long memberId) {
-        Long shopId = parseShopId(document.getMetadata().get("shopId"));
-        RamenShop shop = recommendationShopReader.getRamenShop(shopId);
+        RamenShopSearchDocument document = hit.document();
+        RamenShop shop = ramenShopRepository.findById(hit.shopId()).orElseThrow();
 
-        return new TasteRecommendationResponse.RecommendedShopResponse(
+        return new AiRamenShopSearchResult.ShopResult(
                 shop.getId(),
                 shop.getName(),
-                recommendationShopReader.primaryTag(shop),
-                recommendationShopReader.addressText(shop),
-                aiReasons.getOrDefault(String.valueOf(shopId), "취향에 맞는 추천 매장입니다."),
-                fileUploader.getAccessibleUrl(shop.getImageUrl()),
-                (int) (document.getScore() * 100),
+                primaryTag(shop),
+                shop.getAddress() == null ? "" : shop.getAddress().fullAddress(),
+                shop.getDescription(),
+                fileUrlPort.getAccessibleUrl(shop.getImageUrl()),
+                Math.min(100, (int) Math.round(hit.finalScore() * 100)),
                 bookmarkService.isBookmarked(memberId, shop.getId())
         );
     }
 
-    private Long parseShopId(Object rawShopId) {
-        if (rawShopId == null) {
-            throw new IllegalArgumentException("추천 결과에 shopId 메타데이터가 없습니다.");
+    private String primaryTag(RamenShop shop) {
+        if (shop.getTags() == null || shop.getTags().isEmpty()) {
+            return "";
         }
-
-        String value = rawShopId.toString().trim().replace("\"", "");
-        return Long.valueOf(value);
+        return shop.getTags().getFirst();
     }
 }
