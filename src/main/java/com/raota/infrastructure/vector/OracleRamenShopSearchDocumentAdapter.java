@@ -2,10 +2,10 @@ package com.raota.infrastructure.vector;
 
 import com.raota.application.ramenShop.port.RamenShopSearchDocumentPort;
 import com.raota.application.ramenShop.result.RamenShopSearchDocument;
-import com.raota.domain.retrieval.document.RetrievalDocumentSource;
 import com.raota.domain.retrieval.document.RetrievalDocumentType;
 import com.raota.domain.retrieval.document.RetrievalMetadataKeys;
 import java.util.List;
+import org.springframework.ai.vectorstore.filter.Filter;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
@@ -23,19 +23,11 @@ public class OracleRamenShopSearchDocumentAdapter implements RamenShopSearchDocu
     @Override
     public List<RamenShopSearchDocument> searchShopProfiles(String query, int topK, double similarityThreshold) {
         FilterExpressionBuilder builder = new FilterExpressionBuilder();
-        var filter = builder.and(
-                builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.SHOP_PROFILE.name()),
-                builder.eq(RetrievalMetadataKeys.SOURCE, RetrievalDocumentSource.RAMEN_SHOP.name())
-        ).build();
+        var documents = search(query, topK, similarityThreshold, buildShopProfileFilter(builder));
 
-        var documents = vectorStore.similaritySearch(
-                SearchRequest.builder()
-                        .query(query)
-                        .topK(topK)
-                        .similarityThreshold(similarityThreshold)
-                        .filterExpression(filter)
-                        .build()
-        );
+        if (documents == null || documents.isEmpty()) {
+            documents = search(query, topK, similarityThreshold, buildShopLinkedDocumentFilter(builder));
+        }
 
         if (documents == null || documents.isEmpty()) {
             return List.of();
@@ -48,5 +40,38 @@ public class OracleRamenShopSearchDocumentAdapter implements RamenShopSearchDocu
                         document.getScore()
                 ))
                 .toList();
+    }
+
+    private List<org.springframework.ai.document.Document> search(
+            String query,
+            int topK,
+            double similarityThreshold,
+            Filter.Expression filter
+    ) {
+        return vectorStore.similaritySearch(
+                SearchRequest.builder()
+                        .query(query)
+                        .topK(topK)
+                        .similarityThreshold(similarityThreshold)
+                        .filterExpression(filter)
+                        .build()
+        );
+    }
+
+    private Filter.Expression buildShopProfileFilter(FilterExpressionBuilder builder) {
+        return builder.eq(
+                RetrievalMetadataKeys.DOCUMENT_TYPE,
+                RetrievalDocumentType.SHOP_PROFILE.name()
+        ).build();
+    }
+
+    private Filter.Expression buildShopLinkedDocumentFilter(FilterExpressionBuilder builder) {
+        return builder.or(
+                builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.SHOP_PROFILE.name()),
+                builder.or(
+                        builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.REVIEW_CHUNK.name()),
+                        builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.EXTERNAL_REVIEW_CHUNK.name())
+                )
+        ).build();
     }
 }

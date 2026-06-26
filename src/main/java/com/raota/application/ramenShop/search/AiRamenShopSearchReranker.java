@@ -26,7 +26,10 @@ public class AiRamenShopSearchReranker {
 
         Map<Long, AiRamenShopSearchHit> bestByShop = new LinkedHashMap<>();
         for (RamenShopSearchDocument document : documents) {
-            Long shopId = parseShopId(document.metadata().get("shopId"));
+            Long shopId = parseShopId(document.metadata().get(RetrievalMetadataKeys.SHOP_ID));
+            if (shopId == null) {
+                continue;
+            }
             AiRamenShopSearchHit hit = new AiRamenShopSearchHit(
                     shopId,
                     document,
@@ -93,10 +96,13 @@ public class AiRamenShopSearchReranker {
 
     private Long parseShopId(Object rawShopId) {
         if (rawShopId == null) {
-            throw new IllegalArgumentException("추천 결과에 shopId 메타데이터가 없습니다.");
+            return null;
         }
 
         String value = rawShopId.toString().trim().replace("\"", "");
+        if (value.isBlank()) {
+            return null;
+        }
         return Long.valueOf(value);
     }
 }
