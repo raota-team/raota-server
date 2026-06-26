@@ -1,12 +1,16 @@
 package com.raota.presentation.api.ramenShop;
 
 import com.raota.application.member.BookmarkService;
-import com.raota.application.ramenShop.service.AiRamenShopSearchService;
 import com.raota.application.ramenShop.result.AiRamenShopSearchResult;
+import com.raota.application.ramenShop.result.RamenShopComparisonResult;
+import com.raota.application.ramenShop.service.AiRamenShopSearchService;
+import com.raota.application.ramenShop.service.RamenShopComparisonService;
 import com.raota.presentation.api.ramenShop.contract.RamenShopInfoApi;
 import com.raota.presentation.api.ramenShop.request.AiRamenShopSearchRequest;
+import com.raota.presentation.api.ramenShop.request.RamenShopComparisonRequest;
 import com.raota.presentation.api.ramenShop.request.RamenShopReportRequest;
 import com.raota.presentation.api.ramenShop.response.AiRamenShopSearchResponse;
+import com.raota.presentation.api.ramenShop.response.RamenShopComparisonResponse;
 import com.raota.presentation.api.ramenShop.response.RamenShopResponse;
 import com.raota.presentation.api.ramenShop.request.RamenShopSearchRequest;
 import com.raota.presentation.api.ramenShop.response.RamenShopBasicInfoResponse;
@@ -35,6 +39,7 @@ public class RamenShopInfoController implements RamenShopInfoApi {
 
     private final RamenShopInfoService ramenShopInfoService;
     private final AiRamenShopSearchService aiRamenShopSearchService;
+    private final RamenShopComparisonService ramenShopComparisonService;
     private final BookmarkService bookmarkService;
     private final RamenShopReportService reportService;
 
@@ -76,6 +81,18 @@ public class RamenShopInfoController implements RamenShopInfoApi {
         return ResponseEntity.ok(ApiResponse.success(toResponse(aiRamenShopSearchService.search(query, memberId))));
     }
 
+    @PostMapping("/compare")
+    @Override
+    public ResponseEntity<ApiResponse<RamenShopComparisonResponse>> compareRamenShops(
+            @RequestBody RamenShopComparisonRequest request) {
+        Long shopAId = request == null ? null : request.shopAId();
+        Long shopBId = request == null ? null : request.shopBId();
+        String focus = request == null ? null : request.focus();
+        return ResponseEntity.ok(ApiResponse.success(toResponse(
+                ramenShopComparisonService.compareShops(shopAId, shopBId, focus)
+        )));
+    }
+
     @Override
     @PostMapping("/{shopId}/bookmark")
     public ResponseEntity<ApiResponse<Boolean>> toggleBookmark(
@@ -108,5 +125,25 @@ public class RamenShopInfoController implements RamenShopInfoApi {
                         shop.bookmarked()
                 ))
                 .toList());
+    }
+
+    private RamenShopComparisonResponse toResponse(RamenShopComparisonResult result) {
+        return new RamenShopComparisonResponse(
+                new RamenShopComparisonResponse.ShopComparisonDetail(
+                        result.shopA().id(),
+                        result.shopA().name()
+                ),
+                new RamenShopComparisonResponse.ShopComparisonDetail(
+                        result.shopB().id(),
+                        result.shopB().name()
+                ),
+                result.focus(),
+                result.narratives().stream()
+                        .map(narrative -> new RamenShopComparisonResponse.ComparisonNarrative(
+                                narrative.title(),
+                                narrative.body()
+                        ))
+                        .toList()
+        );
     }
 }

@@ -1,6 +1,7 @@
 package com.raota.application.recommendation;
 
 import com.raota.application.recommendation.dto.AiFollowUpChatResult;
+import com.raota.application.ramenShop.search.RamenShopReader;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.retrieval.document.RetrievalDocumentType;
 import com.raota.domain.retrieval.document.RetrievalMetadataKeys;
@@ -25,19 +26,19 @@ public class FollowUpChatService {
     private static final String CONTEXT_TYPE_COMPARE = "compare";
     private static final int RECENT_MESSAGE_LIMIT = 6;
 
-    private final RecommendationShopReader recommendationShopReader;
+    private final RamenShopReader ramenShopReader;
     private final VectorStore vectorStore;
     private final ChatClient chatClient;
     private final Resource followUpChatTemplate;
 
     public FollowUpChatService(
-            RecommendationShopReader recommendationShopReader,
+            RamenShopReader ramenShopReader,
             VectorStore vectorStore,
             ChatClient.Builder chatClientBuilder,
             @Value("classpath:/prompts/system-persona.st") Resource systemPersona,
             @Value("classpath:/prompts/follow-up-chat.st") Resource followUpChatTemplate
     ) {
-        this.recommendationShopReader = recommendationShopReader;
+        this.ramenShopReader = ramenShopReader;
         this.vectorStore = vectorStore;
         this.chatClient = chatClientBuilder.defaultSystem(systemPersona).build();
         this.followUpChatTemplate = followUpChatTemplate;
@@ -47,7 +48,7 @@ public class FollowUpChatService {
         validateChatRequest(request);
 
         String contextType = normalizeContextType(request.contextType());
-        List<RamenShop> shops = recommendationShopReader.getRamenShops(request.shopIds());
+        List<RamenShop> shops = ramenShopReader.getRamenShops(request.shopIds());
         List<Document> documents = collectChatDocuments(contextType, shops, request.messages());
 
         if (documents.isEmpty()) {
@@ -94,7 +95,7 @@ public class FollowUpChatService {
         }
 
         if (request.messages().stream()
-                .anyMatch(message -> message == null || !recommendationShopReader.hasText(message.content()))) {
+                .anyMatch(message -> message == null || !ramenShopReader.hasText(message.content()))) {
             throw new IllegalArgumentException("대화 메시지 내용은 필수입니다.");
         }
     }
@@ -178,7 +179,7 @@ public class FollowUpChatService {
     }
 
     private AiChatResponse buildChatResponse(AiFollowUpChatResult aiResult) {
-        if (aiResult == null || !recommendationShopReader.hasText(aiResult.content())) {
+        if (aiResult == null || !ramenShopReader.hasText(aiResult.content())) {
             return fallbackResponse();
         }
 
@@ -212,9 +213,9 @@ public class FollowUpChatService {
             """.formatted(
                 shop.getId(),
                 shop.getName(),
-                recommendationShopReader.addressTextOrDefault(shop),
-                recommendationShopReader.tagsTextOrDefault(shop),
-                recommendationShopReader.descriptionTextOrDefault(shop)
+                ramenShopReader.addressTextOrDefault(shop),
+                ramenShopReader.tagsTextOrDefault(shop),
+                ramenShopReader.descriptionTextOrDefault(shop)
         );
     }
 
@@ -252,7 +253,7 @@ public class FollowUpChatService {
     }
 
     private String normalizeContextType(String contextType) {
-        if (!recommendationShopReader.hasText(contextType)) {
+        if (!ramenShopReader.hasText(contextType)) {
             return "";
         }
 
@@ -260,7 +261,7 @@ public class FollowUpChatService {
     }
 
     private String normalizeRole(String role) {
-        if (!recommendationShopReader.hasText(role)) {
+        if (!ramenShopReader.hasText(role)) {
             return "user";
         }
 

@@ -3,8 +3,10 @@ package com.raota.application.recommendation;
 import com.raota.domain.recommendation.model.DailyCuration;
 import com.raota.infrastructure.file.FileUploader;
 import com.raota.presentation.api.discovery.response.TodayRecommendationResponse;
-import com.raota.presentation.api.recommendation.request.*;
-import com.raota.presentation.api.recommendation.response.*;
+import com.raota.presentation.api.recommendation.request.AiChatRequest;
+import com.raota.presentation.api.recommendation.request.ReviewSummaryRequest;
+import com.raota.presentation.api.recommendation.response.AiChatResponse;
+import com.raota.presentation.api.recommendation.response.ReviewSummaryResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -12,16 +14,10 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class RecommendationService {
 
-    private final ShopComparisonService shopComparisonService;
     private final ReviewSummaryService reviewSummaryService;
     private final FollowUpChatService followUpChatService;
     private final DailyCurationService dailyCurationService;
     private final FileUploader fileUploader;
-
-    public ShopComparisonResponse compareShops(ShopComparisonRequest request) {
-        return shopComparisonService.compareShops(request);
-    }
-
 
     public ReviewSummaryResponse summarizeReviews(ReviewSummaryRequest request) {
         return reviewSummaryService.summarizeReviews(request);

@@ -1,4 +1,4 @@
-package com.raota.application.recommendation;
+package com.raota.application.ramenShop.search;
 
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
@@ -6,11 +6,11 @@ import java.util.List;
 import org.springframework.stereotype.Component;
 
 @Component
-public class RecommendationShopReader {
+public class RamenShopReader {
 
     private final RamenShopRepository ramenShopRepository;
 
-    public RecommendationShopReader(RamenShopRepository ramenShopRepository) {
+    public RamenShopReader(RamenShopRepository ramenShopRepository) {
         this.ramenShopRepository = ramenShopRepository;
     }
 

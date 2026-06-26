@@ -1,6 +1,7 @@
 package com.raota.application.recommendation;
 
 import com.raota.application.recommendation.dto.AiReviewSummaryResult;
+import com.raota.application.ramenShop.search.RamenShopReader;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.retrieval.document.RetrievalDocumentType;
 import com.raota.domain.retrieval.document.RetrievalMetadataKeys;
@@ -23,21 +24,21 @@ public class ReviewSummaryService {
     private static final int SAMPLE_REVIEW_LIMIT = 3;
     private static final int SAMPLE_REVIEW_MAX_LENGTH = 160;
 
-    private final RecommendationShopReader recommendationShopReader;
+    private final RamenShopReader ramenShopReader;
     private final VectorStore vectorStore;
     private final ChatClient chatClient;
     private final FileUploader fileUploader;
     private final Resource reviewSummaryTemplate;
 
     public ReviewSummaryService(
-            RecommendationShopReader recommendationShopReader,
+            RamenShopReader ramenShopReader,
             VectorStore vectorStore,
             ChatClient.Builder chatClientBuilder,
             FileUploader fileUploader,
             @Value("classpath:/prompts/system-persona.st") Resource systemPersona,
             @Value("classpath:/prompts/review-summary.st") Resource reviewSummaryTemplate
     ) {
-        this.recommendationShopReader = recommendationShopReader;
+        this.ramenShopReader = ramenShopReader;
         this.vectorStore = vectorStore;
         this.chatClient = chatClientBuilder.defaultSystem(systemPersona).build();
         this.fileUploader = fileUploader;
@@ -47,8 +48,8 @@ public class ReviewSummaryService {
     public ReviewSummaryResponse summarizeReviews(ReviewSummaryRequest request) {
         validateReviewSummaryRequest(request);
 
-        RamenShop ramenShop = recommendationShopReader.getRamenShop(request.shopId());
-        String focus = recommendationShopReader.normalizeText(request.focus());
+        RamenShop ramenShop = ramenShopReader.getRamenShop(request.shopId());
+        String focus = ramenShopReader.normalizeText(request.focus());
 
         List<Document> reviewDocuments = collectReviewDocuments(ramenShop, focus);
 
@@ -97,8 +98,8 @@ public class ReviewSummaryService {
         return new ReviewSummaryResponse.AiShopBasicInfo(
                 shop.getId(),
                 shop.getName(),
-                recommendationShopReader.primaryTag(shop),
-                recommendationShopReader.addressText(shop),
+                ramenShopReader.primaryTag(shop),
+                ramenShopReader.addressText(shop),
                 fileUploader.getAccessibleUrl(shop.getImageUrl()),
                 false
         );
@@ -150,8 +151,8 @@ public class ReviewSummaryService {
             String fallbackTitle,
             String fallbackBody
     ) {
-        if (detail == null || !recommendationShopReader.hasText(detail.title())
-                || !recommendationShopReader.hasText(detail.body())) {
+        if (detail == null || !ramenShopReader.hasText(detail.title())
+                || !ramenShopReader.hasText(detail.body())) {
             return new ReviewSummaryResponse.SummaryDetail(fallbackTitle, fallbackBody);
         }
 
@@ -215,7 +216,7 @@ public class ReviewSummaryService {
     }
 
     private String buildReviewSummaryQuery(RamenShop shop, String focus) {
-        if (recommendationShopReader.hasText(focus)) {
+        if (ramenShopReader.hasText(focus)) {
             return "%s %s 리뷰 장점 단점 추천 메뉴".formatted(shop.getName(), focus);
         }
 
@@ -233,8 +234,8 @@ public class ReviewSummaryService {
     ) {
         return chatClient.prompt()
                 .user(user -> user.text(reviewSummaryTemplate)
-                        .param("focus", recommendationShopReader.hasText(focus) ? focus : "전반적인 리뷰 요약")
-                        .param("shopInfo", recommendationShopReader.buildShopInfoContext(shop))
+                        .param("focus", ramenShopReader.hasText(focus) ? focus : "전반적인 리뷰 요약")
+                        .param("shopInfo", ramenShopReader.buildShopInfoContext(shop))
                         .param("reviewContext", buildReviewContext(reviewDocuments)))
                 .call()
                 .entity(AiReviewSummaryResult.class);

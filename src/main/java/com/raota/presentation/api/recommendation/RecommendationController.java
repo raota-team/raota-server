@@ -15,11 +15,6 @@ public class RecommendationController implements RecommendationApi {
     private final RecommendationService recommendationService;
 
     @Override
-    public ResponseEntity<ApiResponse<ShopComparisonResponse>> compareShops(ShopComparisonRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(recommendationService.compareShops(request)));
-    }
-
-    @Override
     public ResponseEntity<ApiResponse<ReviewSummaryResponse>> summarizeReviews(ReviewSummaryRequest request) {
         return ResponseEntity.ok(ApiResponse.success(recommendationService.summarizeReviews(request)));
     }

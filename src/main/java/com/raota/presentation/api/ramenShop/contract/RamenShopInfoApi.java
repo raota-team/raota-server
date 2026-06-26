@@ -1,8 +1,10 @@
 package com.raota.presentation.api.ramenShop.contract;
 
 import com.raota.presentation.api.ramenShop.request.AiRamenShopSearchRequest;
+import com.raota.presentation.api.ramenShop.request.RamenShopComparisonRequest;
 import com.raota.presentation.api.ramenShop.request.RamenShopReportRequest;
 import com.raota.presentation.api.ramenShop.response.AiRamenShopSearchResponse;
+import com.raota.presentation.api.ramenShop.response.RamenShopComparisonResponse;
 import com.raota.presentation.api.ramenShop.response.RamenShopResponse;
 import com.raota.presentation.api.ramenShop.request.RamenShopSearchRequest;
 import com.raota.presentation.api.ramenShop.response.RamenShopBasicInfoResponse;
@@ -56,6 +58,13 @@ public interface RamenShopInfoApi {
     ResponseEntity<ApiResponse<AiRamenShopSearchResponse>> searchAiRamenShops(
             @RequestBody AiRamenShopSearchRequest request,
             @Parameter(hidden = true) Long memberId);
+
+    @Operation(summary = "라멘 가게 1:1 비교", description = "현재 상세 페이지의 기준 가게와 사용자가 선택한 가게의 차이를 비교합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    ResponseEntity<ApiResponse<RamenShopComparisonResponse>> compareRamenShops(
+            @RequestBody RamenShopComparisonRequest request);
 
     @Operation(summary = "가게 북마크 토글", description = "가게를 찜하거나 해제합니다.")
     @ApiResponses({
