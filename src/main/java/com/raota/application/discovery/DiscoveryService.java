@@ -1,7 +1,7 @@
 package com.raota.application.discovery;
 
 import com.raota.domain.member.repository.MemberRepository;
-import com.raota.application.ramenShop.RamenShopViewRankingService;
+import com.raota.application.ramenShop.service.RamenShopViewRankingService;
 import com.raota.domain.ramenlog.repository.RamenLogRepository;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.presentation.api.discovery.response.DiscoveryStatsResponse;

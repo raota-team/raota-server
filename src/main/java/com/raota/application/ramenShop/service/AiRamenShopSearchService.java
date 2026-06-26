@@ -1,6 +1,7 @@
-package com.raota.application.recommendation;
+package com.raota.application.ramenShop.service;
 
 import com.raota.application.member.BookmarkService;
+import com.raota.application.recommendation.RecommendationShopReader;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.infrastructure.file.FileUploader;
 import com.raota.presentation.api.recommendation.request.TasteRecommendationRequest;
@@ -20,7 +21,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 @Service
-public class TasteRecommendationService {
+public class AiRamenShopSearchService {
 
     private final ChatClient chatClient;
     private final VectorStore vectorStore;
@@ -29,7 +30,7 @@ public class TasteRecommendationService {
     private final Resource recommendationReasonTemplate;
     private final BookmarkService bookmarkService;
 
-    public TasteRecommendationService(
+    public AiRamenShopSearchService(
             ChatClient.Builder chatClientBuilder,
             VectorStore vectorStore,
             RecommendationShopReader recommendationShopReader,

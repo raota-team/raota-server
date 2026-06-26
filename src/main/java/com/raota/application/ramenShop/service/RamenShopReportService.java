@@ -1,4 +1,4 @@
-package com.raota.application.ramenShop;
+package com.raota.application.ramenShop.service;
 
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;

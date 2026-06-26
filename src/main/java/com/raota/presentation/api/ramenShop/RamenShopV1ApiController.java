@@ -1,6 +1,6 @@
 package com.raota.presentation.api.ramenShop;
 
-import com.raota.application.ramenShop.RamenShopInfoService;
+import com.raota.application.ramenShop.service.RamenShopInfoService;
 import com.raota.presentation.api.ramenShop.response.RecentVerifiedShopResponse;
 import com.raota.presentation.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;

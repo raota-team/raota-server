@@ -1,5 +1,6 @@
 package com.raota.application.recommendation;
 
+import com.raota.application.ramenShop.service.AiRamenShopSearchService;
 import com.raota.domain.recommendation.model.DailyCuration;
 import com.raota.infrastructure.file.FileUploader;
 import com.raota.presentation.api.discovery.response.TodayRecommendationResponse;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class RecommendationService {
 
-    private final TasteRecommendationService tasteRecommendationService;
+    private final AiRamenShopSearchService aiRamenShopSearchService;
     private final ShopComparisonService shopComparisonService;
     private final ReviewSummaryService reviewSummaryService;
     private final FollowUpChatService followUpChatService;
@@ -20,7 +21,7 @@ public class RecommendationService {
     private final FileUploader fileUploader;
 
     public TasteRecommendationResponse recommendByTaste(TasteRecommendationRequest request, Long memberId) {
-        return tasteRecommendationService.recommendByTaste(request, memberId);
+        return aiRamenShopSearchService.recommendByTaste(request, memberId);
     }
 
     public ShopComparisonResponse compareShops(ShopComparisonRequest request) {

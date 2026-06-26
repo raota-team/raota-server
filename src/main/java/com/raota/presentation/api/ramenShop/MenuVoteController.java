@@ -2,7 +2,7 @@ package com.raota.presentation.api.ramenShop;
 
 import com.raota.presentation.api.ramenShop.response.VotingStatusResponse;
 import com.raota.presentation.api.ramenShop.contract.MenuVoteApi;
-import com.raota.application.ramenShop.MenuVoteService;
+import com.raota.application.ramenShop.service.MenuVoteService;
 import com.raota.infrastructure.auth.AnonymousVoteCookieManager;
 import com.raota.infrastructure.auth.LoginMember;
 import com.raota.presentation.common.ApiResponse;

@@ -1,4 +1,4 @@
-package com.raota.application.ramenShop;
+package com.raota.application.ramenShop.service;
 
 import com.raota.presentation.api.ramenShop.response.RamenShopBasicInfoResponse;
 import com.raota.presentation.api.ramenShop.response.RamenShopResponse;

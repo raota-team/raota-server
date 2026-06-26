@@ -1,4 +1,4 @@
-package com.raota.application.ramenShop;
+package com.raota.application.ramenShop.service;
 
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.presentation.api.discovery.response.TodayPopularRamenShopResponse;

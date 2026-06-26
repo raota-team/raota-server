@@ -6,6 +6,9 @@ import static org.mockito.Mockito.verify;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.raota.application.ramenShop.service.RamenShopCacheService;
+import com.raota.application.ramenShop.service.RamenShopInfoService;
+import com.raota.application.ramenShop.service.RamenShopViewRankingService;
 import com.raota.domain.member.repository.BookmarkRepository;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenlog.repository.RamenLogRepository;
