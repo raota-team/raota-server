@@ -89,7 +89,7 @@ public record RamenShopBasicInfoResponse(
                 ramenShop.getAddress().fullAddress(),
                 ramenShop.getInstagramUrl(),
                 ramenShop.getCatchTableUrl(),
-                ramenShop.getDescription(),
+                descriptionForDetailResponse(ramenShop),
                 ramenShop.getDetailedDescription(),
                 BusinessHoursDto.from(ramenShop.getBusinessHours()),
                 ShopStatDto.from(ramenShop.getStats()),
@@ -98,5 +98,13 @@ public record RamenShopBasicInfoResponse(
                 normalMenus,
                 eventMenus
         );
+    }
+
+    private static String descriptionForDetailResponse(RamenShop ramenShop) {
+        String detailedDescription = ramenShop.getDetailedDescription();
+        if (detailedDescription != null && !detailedDescription.isBlank()) {
+            return detailedDescription;
+        }
+        return ramenShop.getDescription();
     }
 }
