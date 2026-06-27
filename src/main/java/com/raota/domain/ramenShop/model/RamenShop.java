@@ -62,6 +62,9 @@ public class RamenShop {
     @Column(name = "description", columnDefinition = "text")
     private String description;
 
+    @Column(name = "detailed_description", columnDefinition = "text")
+    private String detailedDescription;
+
     @Column(name = "image_url")
     private String imageUrl;
 
@@ -92,6 +95,24 @@ public class RamenShop {
     public void updateBasicInfo(String name, String branchName, String naverMapId, Address address, BusinessHours businessHours,
                                 List<String> tags, String instagramUrl, String catchTableUrl,
                                 String description, String imageUrl) {
+        updateBasicInfo(
+                name,
+                branchName,
+                naverMapId,
+                address,
+                businessHours,
+                tags,
+                instagramUrl,
+                catchTableUrl,
+                description,
+                this.detailedDescription,
+                imageUrl
+        );
+    }
+
+    public void updateBasicInfo(String name, String branchName, String naverMapId, Address address, BusinessHours businessHours,
+                                List<String> tags, String instagramUrl, String catchTableUrl,
+                                String description, String detailedDescription, String imageUrl) {
         this.name = Objects.requireNonNull(name, "name");
         this.branchName = branchName;
         this.naverMapId = naverMapId;
@@ -101,6 +122,7 @@ public class RamenShop {
         this.instagramUrl = instagramUrl;
         this.catchTableUrl = catchTableUrl;
         this.description = description;
+        this.detailedDescription = detailedDescription;
         this.imageUrl = imageUrl;
     }
 

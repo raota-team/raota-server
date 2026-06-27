@@ -31,6 +31,7 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
     select new com.raota.presentation.api.member.response.MyProfileResponse(
         m.id,
         m.nickname,
+        (select max(sa.email) from SocialAccount sa where sa.memberId = m.id),
         m.imageUrl,
         m.backgroundImageUrl,
         m.bio,

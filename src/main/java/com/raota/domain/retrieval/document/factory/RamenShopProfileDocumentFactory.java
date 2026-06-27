@@ -41,7 +41,7 @@ public class RamenShopProfileDocumentFactory implements RetrievalDocumentFactory
                 formatBusinessHours(shop.getBusinessHours()),
                 visitCount(shop.getStats()),
                 bookmarkCount(shop.getStats()),
-                defaultText(shop.getDescription(), "가게 설명 정보는 아직 없다.")
+                defaultText(descriptionText(shop), "가게 설명 정보는 아직 없다.")
         );
 
         Map<String, Object> metadata = new HashMap<>();
@@ -116,5 +116,12 @@ public class RamenShopProfileDocumentFactory implements RetrievalDocumentFactory
             return fallback;
         }
         return value;
+    }
+
+    private String descriptionText(RamenShop shop) {
+        if (shop.getDetailedDescription() != null && !shop.getDetailedDescription().isBlank()) {
+            return shop.getDetailedDescription();
+        }
+        return shop.getDescription();
     }
 }

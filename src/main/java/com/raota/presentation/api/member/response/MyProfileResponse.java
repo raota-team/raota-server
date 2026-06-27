@@ -6,6 +6,7 @@ import com.raota.presentation.api.member.response.UserStatsDto;
 public record MyProfileResponse (
         Long user_id,
         String nickname,
+        String email,
         String profile_image_url,
         String background_image_url,
         String userDescription,
@@ -19,6 +20,7 @@ public record MyProfileResponse (
         return new MyProfileResponse(
                 user_id,
                 nickname,
+                null,
                 profile_image_url,
                 background_image_url,
                 userDescription,

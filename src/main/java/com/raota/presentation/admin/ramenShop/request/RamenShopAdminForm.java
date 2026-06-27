@@ -60,6 +60,8 @@ public class RamenShopAdminForm {
 
     private String description;
 
+    private String detailedDescription;
+
     private String parkingInfo;
 
     private String imageUrl;
@@ -106,6 +108,7 @@ public class RamenShopAdminForm {
         form.setInstagramUrl(ramenShop.getInstagramUrl());
         form.setCatchTableUrl(ramenShop.getCatchTableUrl());
         form.setDescription(ramenShop.getDescription());
+        form.setDetailedDescription(ramenShop.getDetailedDescription());
         form.setImageUrl(ramenShop.getImageUrl());
         form.setPublished(ramenShop.isPublished());
         form.setTags(String.join(", ", ramenShop.getTags() == null ? List.of() : ramenShop.getTags()));

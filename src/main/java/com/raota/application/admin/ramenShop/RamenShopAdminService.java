@@ -66,6 +66,7 @@ public class RamenShopAdminService {
                 .instagramUrl(blankToNull(form.getInstagramUrl()))
                 .catchTableUrl(blankToNull(form.getCatchTableUrl()))
                 .description(blankToNull(form.getDescription()))
+                .detailedDescription(blankToNull(form.getDetailedDescription()))
                 .imageUrl(blankToNull(form.getImageUrl()))
                 .published(form.isPublishedValue())
                 .normalMenus(NormalMenus.init())
@@ -100,6 +101,7 @@ public class RamenShopAdminService {
                 blankToNull(form.getInstagramUrl()),
                 blankToNull(form.getCatchTableUrl()),
                 blankToNull(form.getDescription()),
+                blankToNull(form.getDetailedDescription()),
                 nextImageUrl
         );
         ramenShop.replaceNormalMenus(form.toNormalMenus());

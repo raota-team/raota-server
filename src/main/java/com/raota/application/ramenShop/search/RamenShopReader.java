@@ -63,6 +63,9 @@ public class RamenShopReader {
     }
 
     public String descriptionTextOrDefault(RamenShop shop) {
+        if (hasText(shop.getDetailedDescription())) {
+            return shop.getDetailedDescription();
+        }
         if (!hasText(shop.getDescription())) {
             return "설명 정보 없음";
         }
