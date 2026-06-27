@@ -27,6 +27,7 @@ import oracle.sql.VECTOR;
 import oracle.sql.json.OracleJsonFactory;
 import oracle.sql.json.OracleJsonGenerator;
 import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
@@ -216,6 +217,47 @@ public class RetrievalIndexingService {
         vectorStore.delete(filter);
     }
 
+    public List<RetrievalDocumentResult> searchShopReviewDocuments(
+            Long shopId,
+            String query,
+            int topK,
+            double similarityThreshold
+    ) {
+        if (shopId == null) {
+            throw new IllegalArgumentException("shopId가 필요합니다.");
+        }
+
+        FilterExpressionBuilder builder = new FilterExpressionBuilder();
+        var filter = builder.and(
+                builder.eq(RetrievalMetadataKeys.SHOP_ID, String.valueOf(shopId)),
+                builder.or(
+                        builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.REVIEW_CHUNK.name()),
+                        builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.EXTERNAL_REVIEW_CHUNK.name())
+                )
+        ).build();
+
+        List<Document> documents = vectorStore.similaritySearch(
+                SearchRequest.builder()
+                        .query(query == null || query.isBlank() ? "라멘 리뷰 맛 국물 면 메뉴 분위기" : query)
+                        .topK(topK)
+                        .similarityThreshold(similarityThreshold)
+                        .filterExpression(filter)
+                        .build()
+        );
+
+        if (documents == null || documents.isEmpty()) {
+            return List.of();
+        }
+
+        return documents.stream()
+                .map(document -> new RetrievalDocumentResult(
+                        document.getText(),
+                        document.getScore(),
+                        document.getMetadata()
+                ))
+                .toList();
+    }
+
     private void addDocuments(List<Document> documents) {
         if (documents == null || documents.isEmpty()) {
             return;
@@ -392,6 +434,9 @@ public class RetrievalIndexingService {
     }
 
     public record ExternalReviewIndexResult(String source, int indexedCount, int skippedCount) {
+    }
+
+    public record RetrievalDocumentResult(String text, Double score, Map<String, Object> metadata) {
     }
 
 }
