@@ -50,6 +50,16 @@ public class RetrievalIndexingService {
             when matched then update set target.content = source.content, target.metadata = source.metadata, target.embedding = source.embedding
             when not matched then insert (target.id, target.content, target.metadata, target.embedding) values (source.id, source.content, source.metadata, source.embedding)
             """;
+    private static final String SHOP_REVIEW_DOCUMENTS_SQL = """
+            select
+                content,
+                json_serialize(metadata returning varchar2(32767)) as metadata_json
+            from SPRING_AI_VECTORS
+            where json_value(metadata, '$.shopId' returning varchar2(64)) = ?
+              and json_value(metadata, '$.documentType' returning varchar2(64)) in (?, ?)
+            order by json_value(metadata, '$.createdAt' returning varchar2(64)) desc nulls last
+            fetch first ? rows only
+            """;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final OracleJsonFactory oracleJsonFactory = new OracleJsonFactory();
@@ -227,6 +237,11 @@ public class RetrievalIndexingService {
             throw new IllegalArgumentException("shopId가 필요합니다.");
         }
 
+        List<RetrievalDocumentResult> exactShopDocuments = findShopReviewDocumentsByMetadata(shopId, topK);
+        if (!exactShopDocuments.isEmpty()) {
+            return exactShopDocuments;
+        }
+
         FilterExpressionBuilder builder = new FilterExpressionBuilder();
         var filter = builder.and(
                 builder.eq(RetrievalMetadataKeys.SHOP_ID, String.valueOf(shopId)),
@@ -250,12 +265,46 @@ public class RetrievalIndexingService {
         }
 
         return documents.stream()
+                .filter(document -> hasShopId(document, shopId))
                 .map(document -> new RetrievalDocumentResult(
                         document.getText(),
                         document.getScore(),
                         document.getMetadata()
                 ))
                 .toList();
+    }
+
+    private List<RetrievalDocumentResult> findShopReviewDocumentsByMetadata(Long shopId, int topK) {
+        int limit = Math.max(1, topK);
+        return oracleVectorJdbcTemplate.query(
+                SHOP_REVIEW_DOCUMENTS_SQL,
+                (resultSet, rowNum) -> new RetrievalDocumentResult(
+                        resultSet.getString("content"),
+                        null,
+                        readMetadataJson(resultSet.getString("metadata_json"))
+                ),
+                String.valueOf(shopId),
+                RetrievalDocumentType.REVIEW_CHUNK.name(),
+                RetrievalDocumentType.EXTERNAL_REVIEW_CHUNK.name(),
+                limit
+        );
+    }
+
+    private Map<String, Object> readMetadataJson(String metadataJson) {
+        if (metadataJson == null || metadataJson.isBlank()) {
+            return Map.of();
+        }
+        try {
+            return objectMapper.readValue(metadataJson, new TypeReference<>() {
+            });
+        } catch (JsonProcessingException e) {
+            return Map.of();
+        }
+    }
+
+    private boolean hasShopId(Document document, Long shopId) {
+        Object metadataShopId = document.getMetadata().get(RetrievalMetadataKeys.SHOP_ID);
+        return String.valueOf(shopId).equals(stringValue(metadataShopId));
     }
 
     private void addDocuments(List<Document> documents) {
