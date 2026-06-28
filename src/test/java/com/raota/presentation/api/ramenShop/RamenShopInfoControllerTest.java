@@ -128,6 +128,30 @@ class RamenShopInfoControllerTest extends BaseIntegrationTest {
     }
 
     @Test
+    void getShopMenuOptionsReturnsMenuNamesOnly() throws Exception {
+        RamenShop shop = sampleShop("멘야 하쿠", "서울", "성동구");
+        shop.addEventMenu(EventMenu.builder()
+                .name("한정 츠케멘")
+                .description("기간 한정 메뉴")
+                .price(13000)
+                .badgeText("LIMITED")
+                .imageUrl("https://example.com/event-menu.jpg")
+                .build());
+        RamenShop savedShop = ramenShopRepository.save(shop);
+
+        mockMvc.perform(get("/ramen-shops/{shopId}/menus", savedShop.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.shopId").value(savedShop.getId()))
+                .andExpect(jsonPath("$.data.shopName").value("멘야 하쿠"))
+                .andExpect(jsonPath("$.data.normalMenus[0].name").value("기본 라멘"))
+                .andExpect(jsonPath("$.data.normalMenus[0].price").doesNotExist())
+                .andExpect(jsonPath("$.data.normalMenus[0].image_url").doesNotExist())
+                .andExpect(jsonPath("$.data.eventMenus[0].name").value("한정 츠케멘"))
+                .andExpect(jsonPath("$.data.eventMenus[0].description").doesNotExist())
+                .andExpect(jsonPath("$.data.eventMenus[0].image_url").doesNotExist());
+    }
+
+    @Test
     void searchByKeywordReturnsMatchingItemsOnly() throws Exception {
         ramenShopRepository.save(sampleShop("멘야 하쿠", "서울", "성동구"));
         ramenShopRepository.save(sampleShop("이리에 라멘", "서울", "마포구"));

@@ -11,6 +11,7 @@ import com.raota.presentation.api.ramenShop.request.RamenShopComparisonRequest;
 import com.raota.presentation.api.ramenShop.request.RamenShopReportRequest;
 import com.raota.presentation.api.ramenShop.response.AiRamenShopSearchResponse;
 import com.raota.presentation.api.ramenShop.response.RamenShopComparisonResponse;
+import com.raota.presentation.api.ramenShop.response.RamenShopMenuOptionsResponse;
 import com.raota.presentation.api.ramenShop.response.RamenShopResponse;
 import com.raota.presentation.api.ramenShop.request.RamenShopSearchRequest;
 import com.raota.presentation.api.ramenShop.response.RamenShopBasicInfoResponse;
@@ -50,6 +51,13 @@ public class RamenShopInfoController implements RamenShopInfoApi {
             @LoginMember(required = false) Long memberId) {
         RamenShopBasicInfoResponse response = ramenShopInfoService.getShopDetailInfo(shopId,memberId);
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Override
+    @GetMapping("/{shopId}/menus")
+    public ResponseEntity<ApiResponse<RamenShopMenuOptionsResponse>> getShopMenuOptions(
+            @PathVariable Long shopId) {
+        return ResponseEntity.ok(ApiResponse.success(ramenShopInfoService.getShopMenuOptions(shopId)));
     }
 
     @Override

@@ -1,9 +1,12 @@
 package com.raota.application.ramenShop.service;
 
 import com.raota.domain.member.repository.BookmarkRepository;
+import com.raota.domain.ramenShop.model.EventMenus;
+import com.raota.domain.ramenShop.model.NormalMenus;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.infrastructure.cache.CacheInvalidationPublisher;
+import com.raota.presentation.api.ramenShop.response.RamenShopMenuOptionsResponse;
 import com.raota.presentation.api.ramenShop.response.RamenShopResponse;
 import com.raota.presentation.api.ramenShop.request.RamenShopSortType;
 import com.raota.presentation.api.ramenShop.response.RamenShopBasicInfoResponse;
@@ -47,6 +50,20 @@ public class RamenShopInfoService {
         }
 
         return cachedResponse.withBookmark(isBookmarked).withViewCount(viewCount);
+    }
+
+    @Transactional(readOnly = true)
+    public RamenShopMenuOptionsResponse getShopMenuOptions(Long shopId) {
+        RamenShop ramenShop = ramenShopRepository.findByIdAndPublishedTrue(shopId)
+                .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
+        NormalMenus normalMenus = ramenShop.getNormalMenus();
+        EventMenus eventMenus = ramenShop.getEventMenus();
+
+        return RamenShopMenuOptionsResponse.from(
+                ramenShop,
+                normalMenus == null ? List.of() : normalMenus.getValues(),
+                eventMenus == null ? List.of() : eventMenus.getValues()
+        );
     }
 
     @Transactional
