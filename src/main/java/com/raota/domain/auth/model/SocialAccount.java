@@ -64,7 +64,9 @@ public class SocialAccount {
     }
 
     public void updateProfile(String email, String nickname, String profileImageUrl) {
-        this.email = email;
+        if (email != null && !email.isBlank()) {
+            this.email = email;
+        }
         this.nickname = nickname;
         this.profileImageUrl = profileImageUrl;
     }
