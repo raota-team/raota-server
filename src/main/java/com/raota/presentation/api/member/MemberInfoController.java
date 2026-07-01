@@ -1,6 +1,7 @@
 package com.raota.presentation.api.member;
 
 import com.raota.presentation.api.member.contract.MemberInfoApi;
+import com.raota.presentation.api.member.request.UpdateEmailRequest;
 import com.raota.presentation.api.member.request.UpdateProfileRequest;
 import com.raota.presentation.api.member.request.ActivityVisibilityUpdateRequest;
 import com.raota.presentation.api.member.response.BookmarkSummaryResponse;
@@ -69,6 +70,15 @@ public class MemberInfoController implements MemberInfoApi {
                 memberId
         );
         return ResponseEntity.ok(ApiResponse.success(updated));
+    }
+
+    @Override
+    @PatchMapping("/me/email")
+    public ResponseEntity<ApiResponse<MyProfileResponse>> updateMyEmail(
+            @Valid @RequestBody UpdateEmailRequest request,
+            @LoginMember Long memberId
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(memberInfoService.updateMyEmail(request.email(), memberId)));
     }
 
     @GetMapping("/me/privacy-settings")

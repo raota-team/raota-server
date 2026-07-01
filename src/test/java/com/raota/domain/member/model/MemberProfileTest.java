@@ -1,6 +1,7 @@
 package com.raota.domain.member.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,5 +44,31 @@ class MemberProfileTest {
         memberProfile.fillEmailIfEmpty(" ");
 
         assertThat(memberProfile.getEmail()).isEqualTo("member@example.com");
+    }
+
+    @Test
+    @DisplayName("대표 이메일을 직접 수정한다")
+    void updateEmail() {
+        MemberProfile memberProfile = MemberProfile.builder()
+                .nickname("테스트")
+                .email("old@example.com")
+                .build();
+
+        memberProfile.updateEmail(" new@example.com ");
+
+        assertThat(memberProfile.getEmail()).isEqualTo("new@example.com");
+    }
+
+    @Test
+    @DisplayName("대표 이메일은 빈 값으로 수정할 수 없다")
+    void updateEmail_RejectsBlank() {
+        MemberProfile memberProfile = MemberProfile.builder()
+                .nickname("테스트")
+                .email("old@example.com")
+                .build();
+
+        assertThatThrownBy(() -> memberProfile.updateEmail(" "))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("이메일은 null 또는 빈 값일 수 없습니다.");
     }
 }

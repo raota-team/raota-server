@@ -106,6 +106,13 @@ public class MemberProfile {
         this.email = email;
     }
 
+    public void updateEmail(String email) {
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("이메일은 null 또는 빈 값일 수 없습니다.");
+        }
+        this.email = email.trim();
+    }
+
     public void updateActivityVisibility(boolean logs, boolean visits, boolean posts, boolean comments) {
         if (this.activityVisibility == null) {
             this.activityVisibility = MemberActivityVisibility.allPublic();

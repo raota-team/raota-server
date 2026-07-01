@@ -65,6 +65,14 @@ public class MemberInfoService {
         return getMyProfile(memberId);
     }
 
+    @Transactional
+    public MyProfileResponse updateMyEmail(String email, Long memberId) {
+        MemberProfile member = memberProvisioningService.getActiveRequired(memberId);
+        member.updateEmail(email);
+        memberRepository.save(member);
+        return getMyProfile(memberId);
+    }
+
     public Page<PhotoSummaryResponse> getMyPhotoList(Long memberId,Pageable pageable){
         return memberRepository.findMyPhotos(memberId,pageable)
                 .map(photo -> new PhotoSummaryResponse(

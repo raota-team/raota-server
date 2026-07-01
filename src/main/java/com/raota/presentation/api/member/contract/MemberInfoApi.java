@@ -1,6 +1,7 @@
 package com.raota.presentation.api.member.contract;
 
 import com.raota.presentation.api.member.request.UpdateProfileRequest;
+import com.raota.presentation.api.member.request.UpdateEmailRequest;
 import com.raota.presentation.api.member.response.BookmarkSummaryResponse;
 import com.raota.presentation.api.member.response.MemberSummaryResponse;
 import com.raota.presentation.api.member.response.MyCommentSummaryResponse;
@@ -46,6 +47,14 @@ public interface MemberInfoApi {
     })
     ResponseEntity<ApiResponse<MyProfileResponse>> updateMyProfile(
             UpdateProfileRequest request,
+            @Parameter(hidden = true) Long memberId);
+
+    @Operation(summary = "내 대표 이메일 수정", description = "로그인 사용자의 대표 이메일만 수정합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    ResponseEntity<ApiResponse<MyProfileResponse>> updateMyEmail(
+            UpdateEmailRequest request,
             @Parameter(hidden = true) Long memberId);
 
     @Operation(summary = "회원 탈퇴", description = "로그인 사용자를 소프트 딜리트 처리하고 탈퇴일로부터 30일 후 재가입 가능 상태로 전환합니다.")

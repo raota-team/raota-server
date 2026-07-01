@@ -1,7 +1,9 @@
 package com.raota.integration;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -13,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,5 +67,44 @@ class MemberInfoAuthIntegrationTest extends BaseIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.user_id").value(member.getId()))
                 .andExpect(jsonPath("$.data.nickname").value("테스터"));
+    }
+
+    @Test
+    void updateMyEmail() throws Exception {
+        MemberProfile member = memberRepository.save(MemberProfile.builder()
+                .nickname("테스터")
+                .email("old@example.com")
+                .build());
+
+        mockMvc.perform(patch("/users/me/email")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwtTokenProvider.createAccessToken(member.getId()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "new@example.com"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.email").value("new@example.com"));
+
+        assertThat(memberRepository.findById(member.getId()).orElseThrow().getEmail()).isEqualTo("new@example.com");
+    }
+
+    @Test
+    void updateMyEmailRejectsInvalidEmail() throws Exception {
+        MemberProfile member = memberRepository.save(MemberProfile.builder()
+                .nickname("테스터")
+                .email("old@example.com")
+                .build());
+
+        mockMvc.perform(patch("/users/me/email")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwtTokenProvider.createAccessToken(member.getId()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "invalid"
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
     }
 }
