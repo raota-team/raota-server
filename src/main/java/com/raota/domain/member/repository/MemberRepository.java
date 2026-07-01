@@ -31,7 +31,7 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
     select new com.raota.presentation.api.member.response.MyProfileResponse(
         m.id,
         m.nickname,
-        (select max(sa.email) from SocialAccount sa where sa.memberId = m.id),
+        m.email,
         m.imageUrl,
         m.backgroundImageUrl,
         m.bio,
@@ -55,6 +55,53 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
       and m.deletedAt is null
 """)
     MyProfileResponse findMemberDetailInfo(@Param("id") Long id);
+
+    @Query(value = """
+            select distinct m.*
+            from tb_member_profile m
+            left join tb_social_account sa on sa.member_id = m.id
+            where (:keywordBlank = true
+                   or lower(m.nickname) like :keyword
+                   or lower(coalesce(m.email, '')) like :keyword
+                   or (:keywordMemberId is not null and m.id = :keywordMemberId))
+              and (:registrationCompleted is null or m.is_registration_completed = :registrationCompleted)
+              and (:deleted is null
+                   or (:deleted = true and m.deleted_at is not null)
+                   or (:deleted = false and m.deleted_at is null))
+              and (:provider is null or sa.provider = :provider)
+              and (:emailPresent is null
+                   or (:emailPresent = true and m.email is not null and m.email <> '')
+                   or (:emailPresent = false and (m.email is null or m.email = '')))
+            order by m.created_at desc, m.id desc
+            """,
+            countQuery = """
+                    select count(distinct m.id)
+                    from tb_member_profile m
+                    left join tb_social_account sa on sa.member_id = m.id
+                    where (:keywordBlank = true
+                           or lower(m.nickname) like :keyword
+                           or lower(coalesce(m.email, '')) like :keyword
+                           or (:keywordMemberId is not null and m.id = :keywordMemberId))
+                      and (:registrationCompleted is null or m.is_registration_completed = :registrationCompleted)
+                      and (:deleted is null
+                           or (:deleted = true and m.deleted_at is not null)
+                           or (:deleted = false and m.deleted_at is null))
+                      and (:provider is null or sa.provider = :provider)
+                      and (:emailPresent is null
+                           or (:emailPresent = true and m.email is not null and m.email <> '')
+                           or (:emailPresent = false and (m.email is null or m.email = '')))
+                    """,
+            nativeQuery = true)
+    Page<MemberProfile> findAdminUsers(
+            @Param("keywordBlank") boolean keywordBlank,
+            @Param("keyword") String keyword,
+            @Param("keywordMemberId") Long keywordMemberId,
+            @Param("registrationCompleted") Boolean registrationCompleted,
+            @Param("deleted") Boolean deleted,
+            @Param("provider") String provider,
+            @Param("emailPresent") Boolean emailPresent,
+            Pageable pageable
+    );
 
     @Query(value = """
             select new com.raota.presentation.api.community.response.CommunityPostCardResponse(

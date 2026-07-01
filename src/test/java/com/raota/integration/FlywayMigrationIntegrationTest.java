@@ -93,4 +93,74 @@ class FlywayMigrationIntegrationTest extends BaseIntegrationTest {
             }
         }
     }
+
+    @Test
+    @DisplayName("V22에서 회원 대표 이메일 컬럼을 추가하고 기존 소셜 이메일을 백필한다.")
+    void memberEmailIsBackfilledFromSocialAccount() throws Exception {
+        String databaseName = "raota_migration_" + UUID.randomUUID().toString().replace("-", "");
+        String adminUrl = MYSQL_CONTAINER.getJdbcUrl();
+        String migrationUrl = adminUrl.replace("/raota", "/" + databaseName);
+
+        try (Connection connection = DriverManager.getConnection(
+                adminUrl,
+                MYSQL_CONTAINER.getUsername(),
+                MYSQL_CONTAINER.getPassword()
+        ); Statement statement = connection.createStatement()) {
+            statement.execute("CREATE DATABASE " + databaseName);
+        }
+
+        try {
+            Flyway.configure()
+                    .dataSource(migrationUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword())
+                    .locations("classpath:db/migration")
+                    .target(MigrationVersion.fromVersion("21"))
+                    .load()
+                    .migrate();
+
+            try (Connection connection = DriverManager.getConnection(
+                    migrationUrl,
+                    MYSQL_CONTAINER.getUsername(),
+                    MYSQL_CONTAINER.getPassword()
+            ); Statement statement = connection.createStatement()) {
+                statement.executeUpdate("""
+                        INSERT INTO tb_member_profile (id, nickname)
+                        VALUES (100, '백필회원')
+                        """);
+                statement.executeUpdate("""
+                        INSERT INTO tb_social_account
+                            (member_id, provider, provider_id, email, nickname, profile_image_url)
+                        VALUES
+                            (100, 'KAKAO', 'kakao-100', 'kakao@example.com', '카카오회원', null)
+                        """);
+            }
+
+            Flyway.configure()
+                    .dataSource(migrationUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword())
+                    .locations("classpath:db/migration")
+                    .load()
+                    .migrate();
+
+            try (Connection connection = DriverManager.getConnection(
+                    migrationUrl,
+                    MYSQL_CONTAINER.getUsername(),
+                    MYSQL_CONTAINER.getPassword()
+            ); Statement statement = connection.createStatement();
+                 ResultSet result = statement.executeQuery("""
+                         SELECT email
+                         FROM tb_member_profile
+                         WHERE id = 100
+                         """)) {
+                assertThat(result.next()).isTrue();
+                assertThat(result.getString("email")).isEqualTo("kakao@example.com");
+            }
+        } finally {
+            try (Connection connection = DriverManager.getConnection(
+                    adminUrl,
+                    MYSQL_CONTAINER.getUsername(),
+                    MYSQL_CONTAINER.getPassword()
+            ); Statement statement = connection.createStatement()) {
+                statement.execute("DROP DATABASE IF EXISTS " + databaseName);
+            }
+        }
+    }
 }

@@ -86,6 +86,7 @@ public class AuthServiceTest {
         assertThat(result.newMember()).isTrue();
         assertThat(result.memberId()).isEqualTo(memberProfile.getId());
         assertThat(result.refreshToken()).isEqualTo("test-refresh-token");
+        assertThat(memberProfile.getEmail()).isEqualTo(info.email());
 
         // 실제 토큰 유효성 검증
         assertThat(result.accessToken()).isNotBlank();
@@ -121,6 +122,7 @@ public class AuthServiceTest {
         assertThat(result.newMember()).isFalse();
         assertThat(result.memberId()).isEqualTo(memberProfile.getId());
         assertThat(result.refreshToken()).isEqualTo("test-refresh-token");
+        assertThat(memberProfile.getEmail()).isEqualTo(info.email());
 
         // 실제 토큰 유효성 검증
         AuthenticatedMember authenticatedMember = jwtTokenProvider.getAuthenticatedMember(result.accessToken());
@@ -128,6 +130,42 @@ public class AuthServiceTest {
 
         verify(memberProvisioningService, never()).createOAuthMember(any(), any());
         verify(authAccountService).login(any(), any(), eq(memberProfile.getId()));
+    }
+
+    @Test
+    @DisplayName("이미 대표 이메일이 있는 회원은 재로그인 시 소셜 이메일로 덮어쓰지 않는다")
+    void login_ExistingMemberKeepsMemberEmail(){
+        OAuth2UserInfo changedSocialEmailInfo = new OAuth2UserInfo(
+                AuthProvider.GOOGLE,
+                "test",
+                "changed@gmail.com",
+                "테스트",
+                "test.jpg"
+        );
+        MemberProfile emailOwnedMemberProfile = MemberProfile.builder()
+                .id(1L)
+                .nickname("test-user")
+                .email("member@gmail.com")
+                .imageUrl("http://example.com/image.png")
+                .build();
+        emailOwnedMemberProfile.completeRegistration();
+        SocialAccount existingAccount = SocialAccount.builder()
+                .provider(changedSocialEmailInfo.provider())
+                .providerUserId(changedSocialEmailInfo.providerUserId())
+                .email("old-social@gmail.com")
+                .nickname(changedSocialEmailInfo.nickname())
+                .profileImageUrl(changedSocialEmailInfo.profileImageUrl())
+                .memberId(emailOwnedMemberProfile.getId())
+                .build();
+
+        given(authAccountService.findSocialAccount(any())).willReturn(Optional.of(existingAccount));
+        given(memberProvisioningService.findById(existingAccount.getMemberId())).willReturn(Optional.of(emailOwnedMemberProfile));
+        given(authAccountService.login(any(), any(), eq(emailOwnedMemberProfile.getId()))).willReturn("test-refresh-token");
+
+        authService.login(changedSocialEmailInfo);
+
+        assertThat(emailOwnedMemberProfile.getEmail()).isEqualTo("member@gmail.com");
+        verify(authAccountService).login(any(), any(), eq(emailOwnedMemberProfile.getId()));
     }
 
     @Test

@@ -31,6 +31,8 @@ public class MemberProfile {
     @Column(nullable = false)
     private String nickname;
 
+    private String email;
+
     private String imageUrl;
 
     private String backgroundImageUrl;
@@ -86,11 +88,22 @@ public class MemberProfile {
 
     public void anonymizeRetainedProfile() {
         this.nickname = "탈퇴한 사용자";
+        this.email = null;
         this.imageUrl = null;
         this.backgroundImageUrl = null;
         this.bio = null;
         this.isRegistrationCompleted = false;
         this.activityVisibility = MemberActivityVisibility.allPublic();
+    }
+
+    public void fillEmailIfEmpty(String email) {
+        if (this.email != null && !this.email.isBlank()) {
+            return;
+        }
+        if (email == null || email.isBlank()) {
+            return;
+        }
+        this.email = email;
     }
 
     public void updateActivityVisibility(boolean logs, boolean visits, boolean posts, boolean comments) {
