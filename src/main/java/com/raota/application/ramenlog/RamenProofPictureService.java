@@ -11,6 +11,7 @@ import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.infrastructure.cache.CacheInvalidationPublisher;
 import com.raota.infrastructure.file.FileUploader;
+import java.time.LocalDate;
 import java.util.Objects;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -47,6 +48,7 @@ public class RamenProofPictureService {
                 .note(description)
                 .menuName(menuName)
                 .ramenType("기타")
+                .visitedAt(LocalDate.now())
                 .revisit(RevisitIntention.SOMETIMES)
                 .isPublic(true)
                 .build();

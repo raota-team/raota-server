@@ -39,7 +39,7 @@ public interface RamenLogRepository extends JpaRepository<RamenLog, Long>, JpaSp
         )
         from RamenLog p
         where p.author.id = :memberId and p.isDeleted = false
-        order by p.createdAt desc
+        order by p.visitedAt desc, p.createdAt desc
         """,
             countQuery = """
         select count(p) from RamenLog p
@@ -64,7 +64,7 @@ public interface RamenLogRepository extends JpaRepository<RamenLog, Long>, JpaSp
           and p.isDeleted = false
           and p.isPublic = true
           and p.author.activityVisibility.logsPublic = true
-        order by p.createdAt desc
+        order by p.visitedAt desc, p.createdAt desc
         """,
             countQuery = """
         select count(p) from RamenLog p
@@ -88,7 +88,7 @@ public interface RamenLogRepository extends JpaRepository<RamenLog, Long>, JpaSp
                 count(*) over (partition by p.ramen_shop_id) as ramen_log_count,
                 row_number() over (
                     partition by p.ramen_shop_id
-                    order by p.created_at desc, p.id desc
+                    order by p.visited_at desc, p.created_at desc, p.id desc
                 ) as preview_rank
             from tb_ramen_log p
             join tb_member_profile m on m.id = p.member_id
@@ -124,7 +124,7 @@ public interface RamenLogRepository extends JpaRepository<RamenLog, Long>, JpaSp
               and p3.author.activityVisibility.logsPublic = true
             group by p3.ramenShop.id
         )
-        order by p.createdAt desc
+        order by p.visitedAt desc, p.createdAt desc
         """)
     List<RecentVerifiedShopResponse> findRecentVerifiedShops(Pageable pageable);
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.raota.domain.ramenlog.model.RamenLog;
 import com.raota.domain.ramenlog.model.RevisitIntention;
 import com.raota.infrastructure.file.FileUploader;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -14,6 +15,7 @@ public record RamenLogResponse(
         String menuName,
         String ramenType,
         String imageUrl,
+        LocalDate visitedAt,
         LocalDateTime createdAt,
         String note,
         TasteNotesResponse tasteNotes,
@@ -39,6 +41,7 @@ public record RamenLogResponse(
                 log.getMenuName(),
                 log.getRamenType(),
                 fileUploader.getAccessibleUrl(log.getImageUrl()),
+                log.getVisitedAt(),
                 log.getCreatedAt(),
                 log.getNote(),
                 new TasteNotesResponse(

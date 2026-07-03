@@ -15,6 +15,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -97,6 +98,10 @@ public class RamenLog {
     @Builder.Default
     private long likeCount = 0;
 
+    @Column(name = "visited_at", nullable = false)
+    @Builder.Default
+    private LocalDate visitedAt = LocalDate.now();
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -120,6 +125,7 @@ public class RamenLog {
             List<String> seasoningNotes,
             List<String> toppingNotes,
             RevisitIntention revisit,
+            LocalDate visitedAt,
             boolean isPublic
     ) {
         this.ramenShop = ramenShop;
@@ -132,6 +138,7 @@ public class RamenLog {
         this.seasoningNotes = copyOf(seasoningNotes);
         this.toppingNotes = copyOf(toppingNotes);
         this.revisit = revisit;
+        this.visitedAt = visitedAt;
         this.isPublic = isPublic;
     }
 

@@ -126,6 +126,7 @@ public class RamenLogService {
                 .menuName(request.menuName().trim())
                 .ramenType(request.ramenType().trim())
                 .imageUrl(request.imageUrl().trim())
+                .visitedAt(request.visitedAt())
                 .note(normalizeNote(request.note()))
                 .brothNotes(safe(notes.broth()))
                 .noodleNotes(safe(notes.noodle()))
@@ -180,6 +181,7 @@ public class RamenLogService {
                 safe(notes.seasoning()),
                 safe(notes.topping()),
                 request.revisit(),
+                request.visitedAt(),
                 request.isPublic()
         );
         if (shopChanged) {
@@ -271,8 +273,8 @@ public class RamenLogService {
 
     private Pageable pageRequest(Pageable pageable, RamenLogSort sort) {
         Sort resolvedSort = sort == RamenLogSort.POPULAR
-                ? Sort.by(Sort.Order.desc("likeCount"), Sort.Order.desc("createdAt"))
-                : Sort.by(Sort.Order.desc("createdAt"));
+                ? Sort.by(Sort.Order.desc("likeCount"), Sort.Order.desc("visitedAt"), Sort.Order.desc("createdAt"))
+                : Sort.by(Sort.Order.desc("visitedAt"), Sort.Order.desc("createdAt"));
         return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), resolvedSort);
     }
 
