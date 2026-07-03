@@ -3,7 +3,7 @@ package com.raota.application.recommendation;
 import com.raota.application.recommendation.dto.AiReviewSummaryResult;
 import com.raota.application.ramenShop.search.RamenShopReader;
 import com.raota.domain.ramenShop.model.RamenShop;
-import com.raota.domain.retrieval.document.RetrievalDocumentType;
+import com.raota.domain.retrieval.document.RetrievalDocumentFilters;
 import com.raota.domain.retrieval.document.RetrievalMetadataKeys;
 import com.raota.infrastructure.file.FileUploader;
 import com.raota.presentation.api.recommendation.request.ReviewSummaryRequest;
@@ -14,7 +14,6 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -195,22 +194,12 @@ public class ReviewSummaryService {
     private List<Document> collectReviewDocuments(RamenShop shop, String focus) {
         String query = buildReviewSummaryQuery(shop, focus);
 
-        FilterExpressionBuilder builder = new FilterExpressionBuilder();
-
-        var filter = builder.and(
-                builder.eq(RetrievalMetadataKeys.SHOP_ID, String.valueOf(shop.getId())),
-                builder.or(
-                        builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.REVIEW_CHUNK.name()),
-                        builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.EXTERNAL_REVIEW_CHUNK.name())
-                )
-        ).build();
-
         return vectorStore.similaritySearch(
                 SearchRequest.builder()
                         .query(query)
                         .topK(12)
                         .similarityThreshold(0.45)
-                        .filterExpression(filter)
+                        .filterExpression(RetrievalDocumentFilters.externalReviewChunksForShop(shop.getId()))
                         .build()
         );
     }

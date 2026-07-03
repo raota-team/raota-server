@@ -3,7 +3,7 @@ package com.raota.application.recommendation;
 import com.raota.application.recommendation.dto.AiFollowUpChatResult;
 import com.raota.application.ramenShop.search.RamenShopReader;
 import com.raota.domain.ramenShop.model.RamenShop;
-import com.raota.domain.retrieval.document.RetrievalDocumentType;
+import com.raota.domain.retrieval.document.RetrievalDocumentFilters;
 import com.raota.domain.retrieval.document.RetrievalMetadataKeys;
 import com.raota.presentation.api.recommendation.request.AiChatRequest;
 import com.raota.presentation.api.recommendation.response.AiChatResponse;
@@ -119,23 +119,19 @@ public class FollowUpChatService {
     }
 
     private Filter.Expression buildChatFilter(FilterExpressionBuilder builder, List<RamenShop> shops) {
-        var shopFilter = builder.eq(RetrievalMetadataKeys.SHOP_ID, String.valueOf(shops.getFirst().getId()));
+        var shopFilter = builder.group(filterOp(RetrievalDocumentFilters.shopProfileOrExternalReviewsForShop(shops.getFirst().getId())));
         if (shops.size() == 2) {
             shopFilter = builder.or(
                     shopFilter,
-                    builder.eq(RetrievalMetadataKeys.SHOP_ID, String.valueOf(shops.get(1).getId()))
+                    builder.group(filterOp(RetrievalDocumentFilters.shopProfileOrExternalReviewsForShop(shops.get(1).getId())))
             );
         }
 
-        var documentTypeFilter = builder.or(
-                builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.SHOP_PROFILE.name()),
-                builder.or(
-                        builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.REVIEW_CHUNK.name()),
-                        builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.EXTERNAL_REVIEW_CHUNK.name())
-                )
-        );
+        return builder.group(shopFilter).build();
+    }
 
-        return builder.and(shopFilter, documentTypeFilter).build();
+    private FilterExpressionBuilder.Op filterOp(Filter.Expression expression) {
+        return new FilterExpressionBuilder.Op(expression);
     }
 
     private String buildChatQuery(

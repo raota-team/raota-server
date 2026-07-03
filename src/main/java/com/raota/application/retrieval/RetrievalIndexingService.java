@@ -7,6 +7,7 @@ import com.raota.domain.community.model.Post;
 import com.raota.domain.community.repository.PostRepository;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
+import com.raota.domain.retrieval.document.RetrievalDocumentFilters;
 import com.raota.domain.retrieval.document.RetrievalDocumentSource;
 import com.raota.domain.retrieval.document.RetrievalDocumentType;
 import com.raota.domain.retrieval.document.RetrievalMetadataKeys;
@@ -56,7 +57,8 @@ public class RetrievalIndexingService {
                 json_serialize(metadata returning varchar2(32767)) as metadata_json
             from SPRING_AI_VECTORS
             where json_value(metadata, '$.shopId' returning varchar2(64)) = ?
-              and json_value(metadata, '$.documentType' returning varchar2(64)) in (?, ?)
+              and json_value(metadata, '$.documentType' returning varchar2(64)) = ?
+              and json_value(metadata, '$.source' returning varchar2(64)) in (?, ?)
             order by json_value(metadata, '$.createdAt' returning varchar2(64)) desc nulls last
             fetch first ? rows only
             """;
@@ -242,21 +244,12 @@ public class RetrievalIndexingService {
             return exactShopDocuments;
         }
 
-        FilterExpressionBuilder builder = new FilterExpressionBuilder();
-        var filter = builder.and(
-                builder.eq(RetrievalMetadataKeys.SHOP_ID, String.valueOf(shopId)),
-                builder.or(
-                        builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.REVIEW_CHUNK.name()),
-                        builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.EXTERNAL_REVIEW_CHUNK.name())
-                )
-        ).build();
-
         List<Document> documents = vectorStore.similaritySearch(
                 SearchRequest.builder()
                         .query(query == null || query.isBlank() ? "라멘 리뷰 맛 국물 면 메뉴 분위기" : query)
                         .topK(topK)
                         .similarityThreshold(similarityThreshold)
-                        .filterExpression(filter)
+                        .filterExpression(RetrievalDocumentFilters.externalReviewChunksForShop(shopId))
                         .build()
         );
 
@@ -284,8 +277,9 @@ public class RetrievalIndexingService {
                         readMetadataJson(resultSet.getString("metadata_json"))
                 ),
                 String.valueOf(shopId),
-                RetrievalDocumentType.REVIEW_CHUNK.name(),
                 RetrievalDocumentType.EXTERNAL_REVIEW_CHUNK.name(),
+                RetrievalDocumentSource.CATCHTABLE.name(),
+                RetrievalDocumentSource.NAVER_REVIEW.name(),
                 limit
         );
     }
