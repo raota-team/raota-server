@@ -35,9 +35,6 @@ public class MenuVote {
     @JoinColumn(name = "member_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private MemberProfile memberProfile;
 
-    @Column(name = "anonymous_voter_id", length = 36)
-    private String anonymousVoterId;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ramen_shop_id", nullable = false, foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private RamenShop ramenShop;

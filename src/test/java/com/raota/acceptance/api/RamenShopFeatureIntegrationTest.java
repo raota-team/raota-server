@@ -20,7 +20,6 @@ import com.raota.infrastructure.auth.JwtTokenProvider;
 import com.raota.support.BaseIntegrationTest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
-import io.restassured.http.Cookie;
 import java.time.LocalTime;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -124,46 +123,17 @@ class RamenShopFeatureIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("비회원도 메뉴에 투표할 수 있으며, 익명 투표 쿠키가 발급된다.")
-    void vote_menu_anonymous_success() {
+    @DisplayName("비회원은 메뉴에 투표할 수 없다.")
+    void vote_menu_anonymous_requires_login() {
         Long menuId = jdbcTemplate.queryForObject(
                 "SELECT id FROM tb_normal_menu WHERE ramen_shop_id = ? LIMIT 1",
                 Long.class, savedShop.getId());
-
-        Cookie anonymousVoteCookie = given()
-        .when()
-                .post("/ramen-shops/{shopId}/votes/menus/{menuId}", savedShop.getId(), menuId)
-        .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("data.total_votes", is(equalTo(1)))
-                .extract()
-                .detailedCookie("raota_anonymous_vote_id");
-
-        org.assertj.core.api.Assertions.assertThat(anonymousVoteCookie).isNotNull();
-        org.assertj.core.api.Assertions.assertThat(anonymousVoteCookie.isHttpOnly()).isTrue();
-    }
-
-    @Test
-    @DisplayName("비회원도 익명 투표 쿠키로 같은 메뉴를 다시 투표하면 투표가 취소된다.")
-    void vote_menu_anonymous_toggle_success() {
-        Long menuId = jdbcTemplate.queryForObject(
-                "SELECT id FROM tb_normal_menu WHERE ramen_shop_id = ? LIMIT 1",
-                Long.class, savedShop.getId());
-
-        Cookie anonymousVoteCookie = given()
-                .post("/ramen-shops/{shopId}/votes/menus/{menuId}", savedShop.getId(), menuId)
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .extract()
-                .detailedCookie("raota_anonymous_vote_id");
 
         given()
-                .cookie(anonymousVoteCookie)
         .when()
                 .post("/ramen-shops/{shopId}/votes/menus/{menuId}", savedShop.getId(), menuId)
         .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("data.total_votes", is(equalTo(0)));
+                .statusCode(HttpStatus.UNAUTHORIZED.value());
     }
 
     @Test

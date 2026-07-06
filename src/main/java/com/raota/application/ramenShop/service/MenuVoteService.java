@@ -26,15 +26,11 @@ public class MenuVoteService {
     private final EntityManager entityManager;
 
     public VotingStatusResponse getVotingStatus(Long shopId, Long memberId) {
-        return getVotingStatus(shopId, memberId, null);
-    }
-
-    public VotingStatusResponse getVotingStatus(Long shopId, Long memberId, String anonymousVoteId) {
         List<VoteResultsDto> statusDto = voteRepository.findMenuVoteCounts(shopId);
         long totalCount = getTotalCount(statusDto);
 
         // 현재 유저가 투표한 메뉴 찾기 (취소되지 않은 활성 투표만)
-        Optional<MenuVote> userVote = findActiveVote(memberId, anonymousVoteId, shopId);
+        Optional<MenuVote> userVote = findActiveVote(memberId, shopId);
 
         statusDto.forEach(dto -> {
             double percentage = calculatePercentage(totalCount, dto);
@@ -54,14 +50,7 @@ public class MenuVoteService {
 
     @Transactional
     public VotingStatusResponse voteTheMenu(Long shopId, Long menuId, Long memberId) {
-        return voteTheMenu(shopId, menuId, memberId, null);
-    }
-
-    @Transactional
-    public VotingStatusResponse voteTheMenu(Long shopId, Long menuId, Long memberId, String anonymousVoteId) {
-        validateVoter(memberId, anonymousVoteId);
-
-        Optional<MenuVote> existingVote = findExistingVote(memberId, anonymousVoteId, shopId);
+        Optional<MenuVote> existingVote = findExistingVote(memberId, shopId);
 
         if (existingVote.isPresent()) {
             MenuVote vote = existingVote.get();
@@ -91,16 +80,16 @@ public class MenuVoteService {
             }
         } else {
             // 투표 기록이 아예 없었던 경우 -> 새 투표 생성
-            createNewVote(shopId, menuId, memberId, anonymousVoteId);
+            createNewVote(shopId, menuId, memberId);
         }
 
         voteRepository.flush();
         entityManager.clear();
 
-        return getVotingStatus(shopId, memberId, anonymousVoteId);
+        return getVotingStatus(shopId, memberId);
     }
 
-    private void createNewVote(Long shopId, Long menuId, Long memberId, String anonymousVoteId) {
+    private void createNewVote(Long shopId, Long menuId, Long memberId) {
         RamenShop ramenShop = ramenShopRepository.findById(shopId)
                 .orElseThrow(() -> new IllegalArgumentException("찾을수 없는 라멘가게 입니다."));
         NormalMenu menu = ramenShop.getNormalMenus().findMenuById(menuId)
@@ -113,7 +102,6 @@ public class MenuVoteService {
 
         MenuVote vote = MenuVote.builder()
                 .memberProfile(member)
-                .anonymousVoterId(memberId == null ? anonymousVoteId : null)
                 .ramenShop(ramenShop)
                 .normalMenu(menu)
                 .build();
@@ -121,27 +109,15 @@ public class MenuVoteService {
         voteRepository.save(vote);
     }
 
-    private Optional<MenuVote> findExistingVote(Long memberId, String anonymousVoteId, Long shopId) {
-        if (memberId != null) {
-            return voteRepository.findByMemberProfileIdAndRamenShopId(memberId, shopId);
-        }
-        return voteRepository.findByAnonymousVoterIdAndRamenShopId(anonymousVoteId, shopId);
+    private Optional<MenuVote> findExistingVote(Long memberId, Long shopId) {
+        return voteRepository.findByMemberProfileIdAndRamenShopId(memberId, shopId);
     }
 
-    private Optional<MenuVote> findActiveVote(Long memberId, String anonymousVoteId, Long shopId) {
-        if (memberId != null) {
-            return voteRepository.findByMemberProfileIdAndRamenShopIdAndIsCancelledFalse(memberId, shopId);
-        }
-        if (anonymousVoteId == null || anonymousVoteId.isBlank()) {
+    private Optional<MenuVote> findActiveVote(Long memberId, Long shopId) {
+        if (memberId == null) {
             return Optional.empty();
         }
-        return voteRepository.findByAnonymousVoterIdAndRamenShopIdAndIsCancelledFalse(anonymousVoteId, shopId);
-    }
-
-    private void validateVoter(Long memberId, String anonymousVoteId) {
-        if (memberId == null && (anonymousVoteId == null || anonymousVoteId.isBlank())) {
-            throw new IllegalArgumentException("투표자 정보가 필요합니다.");
-        }
+        return voteRepository.findByMemberProfileIdAndRamenShopIdAndIsCancelledFalse(memberId, shopId);
     }
 
     private long getTotalCount(List<VoteResultsDto> statusDto){
