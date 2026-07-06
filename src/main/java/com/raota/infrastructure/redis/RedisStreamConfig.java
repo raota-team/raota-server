@@ -5,6 +5,7 @@ import com.raota.infrastructure.messaging.MessagingTopics;
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -27,30 +28,38 @@ public class RedisStreamConfig {
     private final StringRedisTemplate stringRedisTemplate;
 
     private static final String CONSUMER_GROUP = "raota-retrieval-group";
-    private static final String CONSUMER_NAME = "instance-1"; // 서버 스케일아웃 시 UUID 등으로 유니크하게 변경 가능
 
-    @Bean
-    public Subscription postIndexingSubscription() {
-        initConsumerGroup(MessagingTopics.POST_INDEXING, CONSUMER_GROUP);
+    @Value("${app.redis.stream.consumer-name:${HOSTNAME:instance-1}}")
+    private String consumerName;
 
+    @Value("${app.redis.stream.poll-timeout-seconds:10}")
+    private long pollTimeoutSeconds;
+
+    @Bean(destroyMethod = "stop")
+    public StreamMessageListenerContainer<String, MapRecord<String, String, String>> postIndexingStreamListenerContainer() {
         StreamMessageListenerContainer.StreamMessageListenerContainerOptions<String, MapRecord<String, String, String>> options =
                 StreamMessageListenerContainer.StreamMessageListenerContainerOptions.builder()
-                        .pollTimeout(Duration.ofSeconds(1))
+                        .pollTimeout(Duration.ofSeconds(pollTimeoutSeconds))
                         .errorHandler(redisStreamErrorHandler)
                         .build();
 
-        StreamMessageListenerContainer<String, MapRecord<String, String, String>> listenerContainer =
-                StreamMessageListenerContainer.create(redisConnectionFactory, options);
+        return StreamMessageListenerContainer.create(redisConnectionFactory, options);
+    }
 
-        Subscription subscription = listenerContainer.receive(
-                Consumer.from(CONSUMER_GROUP, CONSUMER_NAME),
+    @Bean
+    public Subscription postIndexingSubscription(
+            StreamMessageListenerContainer<String, MapRecord<String, String, String>> postIndexingStreamListenerContainer
+    ) {
+        initConsumerGroup(MessagingTopics.POST_INDEXING, CONSUMER_GROUP);
+        Subscription subscription = postIndexingStreamListenerContainer.receive(
+                Consumer.from(CONSUMER_GROUP, consumerName),
                 StreamOffset.create(MessagingTopics.POST_INDEXING, ReadOffset.lastConsumed()),
                 postIndexingStreamListener
         );
 
         log.info("Redis Stream listener started. streamKey={}, consumerGroup={}, consumerName={}, pollTimeoutSeconds={}",
-                MessagingTopics.POST_INDEXING, CONSUMER_GROUP, CONSUMER_NAME, 1);
-        listenerContainer.start();
+                MessagingTopics.POST_INDEXING, CONSUMER_GROUP, consumerName, pollTimeoutSeconds);
+        postIndexingStreamListenerContainer.start();
         return subscription;
     }
 
