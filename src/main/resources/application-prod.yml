@@ -75,7 +75,7 @@ spring:
         api-key: ${GROQ_API_KEY}
         base-url: https://api.groq.com/openai/v1
         temperature: ${SPRING_AI_GROQ_CHAT_TEMPERATURE:0.6}
-        model: ${SPRING_AI_GROQ_CHAT_MODEL:qwen/qwen3-32b}
+        model: ${SPRING_AI_GROQ_CHAT_MODEL:openai/gpt-oss-120b}
       embedding:
         api-key: ${OPENAI_API_KEY}
         base-url: https://api.openai.com/v1
