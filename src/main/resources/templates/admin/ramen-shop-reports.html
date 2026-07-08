@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>라멘집 제보 관리</title>
+    <style>
+        :root {
+            --bg: #f5efe6;
+            --panel: #fffdf8;
+            --line: #dccdbc;
+            --ink: #26170c;
+            --muted: #756355;
+            --accent: #b33f1d;
+            --accent-soft: #f3d1bd;
+            --green: #1d6f32;
+            --shadow: 0 18px 36px rgba(38, 23, 12, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+            color: var(--ink);
+            background: linear-gradient(135deg, #efe2cf, #f9f6ef 50%, #ead2bc);
+        }
+
+        .shell {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 36px 20px 48px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: flex-end;
+            margin-bottom: 22px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2.2rem;
+        }
+
+        .topbar p {
+            margin: 8px 0 0;
+            color: var(--muted);
+        }
+
+        .nav {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .nav-link,
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 40px;
+            padding: 0 14px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            color: var(--ink);
+            background: rgba(255, 253, 248, 0.72);
+            text-decoration: none;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .button.primary {
+            border-color: var(--accent);
+            color: #fff;
+            background: var(--accent);
+        }
+
+        .panel {
+            overflow: hidden;
+            border: 1px solid rgba(126, 34, 8, 0.12);
+            border-radius: 8px;
+            background: var(--panel);
+            box-shadow: var(--shadow);
+        }
+
+        form {
+            display: grid;
+            grid-template-columns: minmax(240px, 1fr) 220px auto auto;
+            gap: 10px;
+            padding: 18px;
+            border-bottom: 1px solid rgba(126, 34, 8, 0.1);
+        }
+
+        input,
+        select {
+            min-height: 42px;
+            padding: 0 12px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            color: var(--ink);
+            background: #fff;
+            font: inherit;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1040px;
+        }
+
+        th,
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(126, 34, 8, 0.1);
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            color: var(--muted);
+            background: rgba(243, 209, 189, 0.35);
+            font-size: 0.84rem;
+        }
+
+        td {
+            line-height: 1.5;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .badge {
+            display: inline-flex;
+            width: fit-content;
+            padding: 5px 9px;
+            border-radius: 999px;
+            color: var(--accent);
+            background: var(--accent-soft);
+            font-size: 0.8rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .content {
+            max-width: 360px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .empty {
+            padding: 32px 18px;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .pager {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            padding: 16px 18px;
+        }
+
+        .pager-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        @media (max-width: 840px) {
+            .topbar {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .nav {
+                justify-content: flex-start;
+            }
+
+            form {
+                grid-template-columns: 1fr;
+            }
+
+            .pager {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+<main class="shell">
+    <header class="topbar">
+        <div>
+            <h1>라멘집 제보 관리</h1>
+            <p th:text="|총 ${reports.totalElements}건|">총 0건</p>
+        </div>
+        <nav class="nav">
+            <a class="nav-link" th:href="@{/admin}">어드민 홈</a>
+            <a class="nav-link" th:href="@{/admin/ramen-shops}">라멘집 관리</a>
+            <a class="nav-link" th:href="@{/admin/users}">유저 관리</a>
+        </nav>
+    </header>
+
+    <section class="panel">
+        <form method="get" th:action="@{/admin/ramen-shop-reports}">
+            <input type="search" name="keyword" placeholder="제보 ID, 라멘집, 회원, 내용" th:value="${keyword}">
+            <select name="reportType">
+                <option value="" th:selected="${reportType == null}">유형 전체</option>
+                <option th:each="type : ${reportTypes}"
+                        th:value="${type.name()}"
+                        th:text="${type.description}"
+                        th:selected="${reportType == type}">영업시간 오류</option>
+            </select>
+            <button class="button primary" type="submit">검색</button>
+            <a class="button" th:href="@{/admin/ramen-shop-reports}">초기화</a>
+        </form>
+
+        <div class="table-wrap" th:if="${!reports.empty}">
+            <table>
+                <thead>
+                <tr>
+                    <th>제보 ID</th>
+                    <th>라멘집</th>
+                    <th>제보자</th>
+                    <th>유형</th>
+                    <th>내용</th>
+                    <th>제보일</th>
+                    <th>바로가기</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="report : ${reports.content}">
+                    <td th:text="${report.id()}">1</td>
+                    <td>
+                        <strong th:text="${report.shopName()}">가게명</strong>
+                        <div class="muted" th:if="${report.branchName() != null and !report.branchName().isBlank()}"
+                             th:text="${report.branchName()}">지점</div>
+                        <div class="muted" th:text="|Shop #${report.shopId()}|">Shop #1</div>
+                    </td>
+                    <td>
+                        <strong th:text="${report.memberNickname()}">닉네임</strong>
+                        <div class="muted" th:text="${report.memberEmail() ?: '-'}">email@example.com</div>
+                        <div class="muted" th:text="|Member #${report.memberId()}|">Member #1</div>
+                    </td>
+                    <td>
+                        <span class="badge" th:text="${report.reportTypeDescription()}">영업시간 오류</span>
+                        <div class="muted" th:text="${report.reportType().name()}">OPENING_HOURS_ERROR</div>
+                    </td>
+                    <td class="content" th:text="${report.content()}">내용</td>
+                    <td th:text="${#temporals.format(report.reportedAt(), 'yyyy-MM-dd HH:mm')}">2026-01-01</td>
+                    <td>
+                        <a class="nav-link" th:href="@{/admin/ramen-shops(shopId=${report.shopId()})}">라멘집</a>
+                        <a class="nav-link" th:href="@{/admin/users/{id}(id=${report.memberId()})}">회원</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="empty" th:if="${reports.empty}">조건에 맞는 라멘집 제보가 없습니다.</div>
+
+        <div class="pager">
+            <span class="muted" th:text="|${reports.number + 1} / ${reports.totalPages == 0 ? 1 : reports.totalPages} 페이지|">1 / 1 페이지</span>
+            <div class="pager-actions">
+                <a class="button"
+                   th:if="${reports.hasPrevious()}"
+                   th:href="@{/admin/ramen-shop-reports(keyword=${keyword}, reportType=${reportType}, page=${reports.number - 1}, size=${reports.size})}">이전</a>
+                <a class="button"
+                   th:if="${reports.hasNext()}"
+                   th:href="@{/admin/ramen-shop-reports(keyword=${keyword}, reportType=${reportType}, page=${reports.number + 1}, size=${reports.size})}">다음</a>
+            </div>
+        </div>
+    </section>
+</main>
+</body>
+</html>

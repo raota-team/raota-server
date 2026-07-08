@@ -448,7 +448,11 @@
             <h1>라멘집 상세 관리</h1>
             <p>라멘집 정보, 공개 상태, 대표 이미지, 운영시간, 메뉴를 한 화면에서 추가하고 수정할 수 있다.</p>
         </div>
-        <div class="badge" th:text="${editMode} ? '수정 모드' : '신규 등록 모드'"></div>
+        <div>
+            <a class="button-link button-secondary" th:href="@{/admin}">어드민 홈</a>
+            <a class="button-link button-secondary" th:href="@{/admin/ramen-shop-reports}">라멘집 제보</a>
+            <div class="badge" th:text="${editMode} ? '수정 모드' : '신규 등록 모드'"></div>
+        </div>
     </section>
 
     <div class="layout">
