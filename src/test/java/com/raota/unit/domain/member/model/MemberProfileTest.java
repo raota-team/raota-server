@@ -4,10 +4,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.raota.domain.member.model.MemberProfile;
+import com.raota.domain.member.model.MemberRole;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class MemberProfileTest {
+
+    @Test
+    @DisplayName("신규 회원의 기본 역할은 USER다")
+    void defaultRoleIsUser() {
+        MemberProfile memberProfile = MemberProfile.builder()
+                .nickname("테스트")
+                .build();
+
+        assertThat(memberProfile.getRole()).isEqualTo(MemberRole.USER);
+    }
 
     @Test
     @DisplayName("대표 이메일이 비어 있으면 소셜 이메일로 채운다")

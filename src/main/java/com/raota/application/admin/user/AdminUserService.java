@@ -77,6 +77,7 @@ public class AdminUserService {
                 .toList();
 
         return new AdminUserDetailResponse(
+                member.getId(),
                 AdminUserProfileResponse.from(
                         member,
                         accessibleUrl(member.getImageUrl()),

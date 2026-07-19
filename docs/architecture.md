@@ -55,7 +55,7 @@ presentation.common
 - `contract`: API 문서화 인터페이스.
 - `request`: HTTP 요청 DTO.
 - `response`: HTTP 응답 DTO.
-- `admin`: 관리자 화면과 관리자 API 진입점.
+- `admin`: 관리자 REST API 진입점.
 - `common`: presentation 계층에서 공통으로 사용하는 응답, 예외, 웹 관련 객체.
 
 ### `application` 계층의 패키지 목록

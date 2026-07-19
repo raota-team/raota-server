@@ -19,6 +19,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 @Setter
 public class RamenShopAdminForm {
 
+    private Long id;
+
     @NotBlank(message = "가게 이름은 필수입니다.")
     private String name;
 
@@ -77,14 +79,9 @@ public class RamenShopAdminForm {
     @Valid
     private List<EventMenuForm> eventMenus = new ArrayList<>();
 
-    public static RamenShopAdminForm empty() {
-        RamenShopAdminForm form = new RamenShopAdminForm();
-        form.ensureMenuRows();
-        return form;
-    }
-
     public static RamenShopAdminForm from(RamenShop ramenShop) {
         RamenShopAdminForm form = new RamenShopAdminForm();
+        form.setId(ramenShop.getId());
         form.setName(ramenShop.getName());
         form.setBranchName(ramenShop.getBranchName());
         form.setNaverMapId(ramenShop.getNaverMapId());
@@ -122,7 +119,6 @@ public class RamenShopAdminForm {
                         .map(EventMenuForm::from)
                         .toList()
         ));
-        form.ensureMenuRows();
         return form;
     }
 
@@ -172,21 +168,6 @@ public class RamenShopAdminForm {
 
     public boolean isPublishedValue() {
         return published == null || published;
-    }
-
-    public void ensureMenuRows() {
-        if (normalMenus == null) {
-            normalMenus = new ArrayList<>();
-        }
-        if (eventMenus == null) {
-            eventMenus = new ArrayList<>();
-        }
-        if (normalMenus.isEmpty()) {
-            normalMenus.add(new NormalMenuForm());
-        }
-        if (eventMenus.isEmpty()) {
-            eventMenus.add(new EventMenuForm());
-        }
     }
 
     private String required(String value) {

@@ -1,23 +1,27 @@
 package com.raota.acceptance.presentation.admin.user;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import com.raota.domain.auth.model.AuthProvider;
 import com.raota.domain.auth.model.SocialAccount;
 import com.raota.domain.auth.repository.SocialAccountRepository;
 import com.raota.domain.member.model.MemberProfile;
+import com.raota.domain.member.model.MemberRole;
 import com.raota.domain.member.repository.MemberRepository;
+import com.raota.infrastructure.auth.JwtTokenProvider;
 import com.raota.support.BaseIntegrationTest;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
@@ -26,6 +30,7 @@ import org.springframework.web.context.WebApplicationContext;
 class AdminUserControllerTest extends BaseIntegrationTest {
 
     private MockMvc mockMvc;
+    private String adminToken;
 
     @Autowired
     private WebApplicationContext webApplicationContext;
@@ -36,24 +41,26 @@ class AdminUserControllerTest extends BaseIntegrationTest {
     @Autowired
     private SocialAccountRepository socialAccountRepository;
 
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
+
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                .apply(springSecurity())
+                .build();
         socialAccountRepository.deleteAll();
         memberRepository.deleteAll();
+
+        MemberProfile admin = memberRepository.saveAndFlush(MemberProfile.builder()
+                .nickname("관리자")
+                .role(MemberRole.ADMIN)
+                .build());
+        adminToken = jwtTokenProvider.createAccessToken(admin.getId());
     }
 
     @Test
-    void adminHomeRenders() throws Exception {
-        mockMvc.perform(get("/admin"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("admin/index"))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("라멘집 관리")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("유저 관리")));
-    }
-
-    @Test
-    void userListRendersAndFilters() throws Exception {
+    void 사용자_목록을_JSON으로_조회하고_필터링한다() throws Exception {
         MemberProfile kakaoMember = saveMember("카카오회원", "kakao@example.com", true, false);
         saveSocialAccount(kakaoMember, AuthProvider.KAKAO, "kakao-1", "kakao@example.com");
         MemberProfile googleMember = saveMember("구글회원", null, false, false);
@@ -61,28 +68,33 @@ class AdminUserControllerTest extends BaseIntegrationTest {
         MemberProfile deletedMember = saveMember("탈퇴회원", "deleted@example.com", true, true);
         saveSocialAccount(deletedMember, AuthProvider.KAKAO, "kakao-2", "deleted@example.com");
 
-        assertBody(getBody("/admin/users?keyword=카카오"))
+        mockMvc.perform(adminGet("/admin/api/users")
+                        .param("keyword", "카카오"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.items[0].id").value(kakaoMember.getId()))
+                .andExpect(jsonPath("$.data.items[0].role").value("USER"))
+                .andExpect(jsonPath("$.data.page.totalElements").value(1));
+
+        assertBody(getBody("/admin/api/users?keyword=" + kakaoMember.getId()))
                 .contains("카카오회원")
                 .doesNotContain("구글회원");
-        assertBody(getBody("/admin/users?keyword=" + kakaoMember.getId()))
-                .contains("카카오회원")
-                .doesNotContain("구글회원");
-        assertBody(getBody("/admin/users?provider=GOOGLE"))
+        assertBody(getBody("/admin/api/users?provider=GOOGLE"))
                 .contains("구글회원")
                 .doesNotContain("카카오회원");
-        assertBody(getBody("/admin/users?registrationCompleted=false"))
+        assertBody(getBody("/admin/api/users?registrationCompleted=false"))
                 .contains("구글회원")
                 .doesNotContain("카카오회원");
-        assertBody(getBody("/admin/users?deleted=true"))
+        assertBody(getBody("/admin/api/users?deleted=true"))
                 .contains("탈퇴회원")
                 .doesNotContain("카카오회원");
-        assertBody(getBody("/admin/users?emailPresent=false"))
+        assertBody(getBody("/admin/api/users?emailPresent=false"))
                 .contains("구글회원")
                 .doesNotContain("kakao@example.com");
     }
 
     @Test
-    void userDetailRendersProfileSocialStatsAndVisibility() throws Exception {
+    void 사용자_상세를_JSON으로_조회한다() throws Exception {
         MemberProfile member = MemberProfile.builder()
                 .nickname("상세회원")
                 .email("detail@example.com")
@@ -100,16 +112,17 @@ class AdminUserControllerTest extends BaseIntegrationTest {
         member = memberRepository.save(member);
         saveSocialAccount(member, AuthProvider.KAKAO, "kakao-detail", "social-detail@example.com");
 
-        mockMvc.perform(get("/admin/users/{memberId}", member.getId()))
+        mockMvc.perform(adminGet("/admin/api/users/{memberId}", member.getId()))
                 .andExpect(status().isOk())
-                .andExpect(view().name("admin/user-detail"))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("상세회원")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("detail@example.com")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("social-detail@example.com")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("라멘 좋아함")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("kakao-detail")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString(">7<")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("비공개")));
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.id").value(member.getId()))
+                .andExpect(jsonPath("$.data.profile.nickname").value("상세회원"))
+                .andExpect(jsonPath("$.data.profile.email").value("detail@example.com"))
+                .andExpect(jsonPath("$.data.profile.role").value("USER"))
+                .andExpect(jsonPath("$.data.socialAccounts[0].email").value("social-detail@example.com"))
+                .andExpect(jsonPath("$.data.socialAccounts[0].providerUserId").value("kakao-detail"))
+                .andExpect(jsonPath("$.data.activityStats.commentCount").value(7))
+                .andExpect(jsonPath("$.data.activityVisibility.visitsPublic").value(false));
     }
 
     private MemberProfile saveMember(String nickname, String email, boolean registrationCompleted, boolean deleted) {
@@ -144,11 +157,16 @@ class AdminUserControllerTest extends BaseIntegrationTest {
     }
 
     private String getBody(String path) throws Exception {
-        MvcResult result = mockMvc.perform(get(path))
+        MvcResult result = mockMvc.perform(adminGet(path))
                 .andExpect(status().isOk())
-                .andExpect(view().name("admin/users"))
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
                 .andReturn();
         return result.getResponse().getContentAsString();
+    }
+
+    private MockHttpServletRequestBuilder adminGet(String path, Object... uriVariables) {
+        return get(path, uriVariables)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken);
     }
 
     private org.assertj.core.api.AbstractStringAssert<?> assertBody(String body) {

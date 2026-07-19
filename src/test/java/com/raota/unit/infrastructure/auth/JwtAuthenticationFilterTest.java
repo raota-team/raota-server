@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import com.raota.application.member.MemberProvisioningService;
+import com.raota.domain.member.model.MemberRole;
 import com.raota.infrastructure.auth.AuthenticatedMember;
 import com.raota.infrastructure.auth.JwtAuthenticationException;
 import com.raota.infrastructure.auth.JwtAuthenticationFilter;
@@ -16,6 +17,7 @@ import com.raota.infrastructure.auth.RestAuthenticationEntryPoint;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import java.io.IOException;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,10 +54,10 @@ public class JwtAuthenticationFilterTest {
     }
 
     @Test
-    void 유효한_bearer_토큰이_들어온_경우() throws ServletException, IOException {
+    void 활성_ADMIN의_bearer_토큰이면_현재_DB_역할을_권한으로_설정한다() throws ServletException, IOException {
         request.addHeader("Authorization", "Bearer valid-token-string");
-        given(jwtTokenProvider.getAuthenticatedMember("valid-token-string")).willReturn(AuthenticatedMember.user(1L));
-        given(memberProvisioningService.isActiveMember(1L)).willReturn(true);
+        given(jwtTokenProvider.getMemberId("valid-token-string")).willReturn(1L);
+        given(memberProvisioningService.findActiveMemberRole(1L)).willReturn(Optional.of(MemberRole.ADMIN));
 
         jwtAuthenticationFilter.doFilter(request, response, filterChain);
 
@@ -63,6 +65,9 @@ public class JwtAuthenticationFilterTest {
 
         assertThat(auth).isNotNull();
         assertThat(auth.getPrincipal()).isInstanceOf(AuthenticatedMember.class);
+        assertThat(auth.getAuthorities())
+                .extracting(authority -> authority.getAuthority())
+                .containsExactly("ROLE_USER", "ROLE_ADMIN");
 
         verify(filterChain).doFilter(request, response);
     }
@@ -94,7 +99,7 @@ public class JwtAuthenticationFilterTest {
     void 유효하지_않은_토큰인_경우() throws ServletException, IOException {
         String invalidToken = "invalid-token";
         request.addHeader("Authorization", "Bearer " + invalidToken);
-        given(jwtTokenProvider.getAuthenticatedMember(invalidToken))
+        given(jwtTokenProvider.getMemberId(invalidToken))
                 .willThrow(new JwtAuthenticationException("유효하지 않은 토큰입니다.", new RuntimeException()));
 
         jwtAuthenticationFilter.doFilter(request, response, filterChain);
@@ -108,8 +113,8 @@ public class JwtAuthenticationFilterTest {
     @Test
     void 탈퇴한_회원의_토큰인_경우() throws ServletException, IOException {
         request.addHeader("Authorization", "Bearer withdrawn-token");
-        given(jwtTokenProvider.getAuthenticatedMember("withdrawn-token")).willReturn(AuthenticatedMember.user(1L));
-        given(memberProvisioningService.isActiveMember(1L)).willReturn(false);
+        given(jwtTokenProvider.getMemberId("withdrawn-token")).willReturn(1L);
+        given(memberProvisioningService.findActiveMemberRole(1L)).willReturn(Optional.empty());
 
         jwtAuthenticationFilter.doFilter(request, response, filterChain);
 

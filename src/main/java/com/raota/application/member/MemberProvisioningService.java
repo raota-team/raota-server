@@ -2,6 +2,7 @@ package com.raota.application.member;
 
 import com.raota.domain.member.model.MemberActivityStats;
 import com.raota.domain.member.model.MemberProfile;
+import com.raota.domain.member.model.MemberRole;
 import com.raota.domain.member.repository.MemberRepository;
 import com.raota.infrastructure.auth.WithdrawnMemberException;
 import java.util.Optional;
@@ -43,8 +44,8 @@ public class MemberProvisioningService {
     }
 
     @Transactional(readOnly = true)
-    public boolean isActiveMember(Long memberId) {
-        return memberRepository.existsByIdAndDeletedAtIsNull(memberId);
+    public Optional<MemberRole> findActiveMemberRole(Long memberId) {
+        return memberRepository.findActiveMemberRole(memberId);
     }
 
     @Transactional

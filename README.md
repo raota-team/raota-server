@@ -22,7 +22,7 @@ Raota Server는 라멘 매장 정보, 방문 인증샷, 메뉴 투표, 북마크
 - OAuth2 기반 소셜 로그인과 JWT Access/Refresh Token 인증
 - 마이페이지 활동 내역 조회
 - AI 기반 취향 추천, 매장 비교, 리뷰 요약, 후속 채팅
-- 관리자용 라멘 매장 CRUD 및 검색/RAG 인덱싱 API
+- `ADMIN` 권한으로 보호되는 라멘 매장 CRUD, 회원/제보 조회 및 검색/RAG 인덱싱 API
 
 ## 문서
 
