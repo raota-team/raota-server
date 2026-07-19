@@ -1,12 +1,14 @@
 package com.raota.presentation.admin.user.response;
 
 import com.raota.domain.member.model.MemberProfile;
+import com.raota.domain.member.model.MemberRole;
 import java.time.LocalDateTime;
 
 public record AdminUserProfileResponse(
         Long memberId,
         String nickname,
         String email,
+        MemberRole role,
         String imageUrl,
         String backgroundImageUrl,
         String bio,
@@ -21,6 +23,7 @@ public record AdminUserProfileResponse(
                 member.getId(),
                 member.getNickname(),
                 member.getEmail(),
+                member.getRole(),
                 imageUrl,
                 backgroundImageUrl,
                 member.getBio(),

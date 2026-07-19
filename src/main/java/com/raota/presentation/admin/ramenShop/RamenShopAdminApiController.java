@@ -94,9 +94,12 @@ public class RamenShopAdminApiController {
     }
 
     @DeleteMapping("/{shopId}")
-    public ResponseEntity<ApiResponse<Void>> deleteShop(@PathVariable Long shopId) {
+    public ResponseEntity<ApiResponse<RamenShopAdminMutationResponse>> deleteShop(@PathVariable Long shopId) {
         ramenShopAdminService.deleteShop(shopId);
-        return ResponseEntity.ok(ApiResponse.success("라멘집이 삭제되었습니다.", null));
+        return ResponseEntity.ok(ApiResponse.success(
+                "라멘집이 삭제되었습니다.",
+                new RamenShopAdminMutationResponse(shopId)
+        ));
     }
 
     private void rejectIfInvalid(BindingResult bindingResult) {

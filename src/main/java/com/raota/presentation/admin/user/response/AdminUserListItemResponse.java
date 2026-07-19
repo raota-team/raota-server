@@ -2,14 +2,16 @@ package com.raota.presentation.admin.user.response;
 
 import com.raota.domain.auth.model.SocialAccount;
 import com.raota.domain.member.model.MemberProfile;
+import com.raota.domain.member.model.MemberRole;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public record AdminUserListItemResponse(
-        Long memberId,
+        Long id,
         String nickname,
         String email,
+        MemberRole role,
         String providers,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
@@ -25,6 +27,7 @@ public record AdminUserListItemResponse(
                 member.getId(),
                 member.getNickname(),
                 member.getEmail(),
+                member.getRole(),
                 providers.isBlank() ? "-" : providers,
                 member.getCreatedAt(),
                 member.getUpdatedAt(),
