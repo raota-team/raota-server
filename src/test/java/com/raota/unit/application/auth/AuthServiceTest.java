@@ -16,7 +16,6 @@ import com.raota.application.auth.OAuth2LoginResult;
 import com.raota.application.auth.OAuth2UserInfo;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.application.member.MemberProvisioningService;
-import com.raota.infrastructure.auth.AuthenticatedMember;
 import com.raota.infrastructure.auth.AuthProperties;
 import com.raota.infrastructure.auth.JwtTokenProvider;
 import com.raota.infrastructure.auth.WithdrawnMemberException;
@@ -90,8 +89,7 @@ public class AuthServiceTest {
 
         // 실제 토큰 유효성 검증
         assertThat(result.accessToken()).isNotBlank();
-        AuthenticatedMember authenticatedMember = jwtTokenProvider.getAuthenticatedMember(result.accessToken());
-        assertThat(authenticatedMember.memberId()).isEqualTo(memberProfile.getId());
+        assertThat(jwtTokenProvider.getMemberId(result.accessToken())).isEqualTo(memberProfile.getId());
 
         verify(memberProvisioningService).createOAuthMember(any(), any());
         verify(authAccountService).login(any(), any(), eq(memberProfile.getId()));
@@ -125,8 +123,7 @@ public class AuthServiceTest {
         assertThat(memberProfile.getEmail()).isEqualTo(info.email());
 
         // 실제 토큰 유효성 검증
-        AuthenticatedMember authenticatedMember = jwtTokenProvider.getAuthenticatedMember(result.accessToken());
-        assertThat(authenticatedMember.memberId()).isEqualTo(memberProfile.getId());
+        assertThat(jwtTokenProvider.getMemberId(result.accessToken())).isEqualTo(memberProfile.getId());
 
         verify(memberProvisioningService, never()).createOAuthMember(any(), any());
         verify(authAccountService).login(any(), any(), eq(memberProfile.getId()));

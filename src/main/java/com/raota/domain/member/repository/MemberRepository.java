@@ -5,6 +5,7 @@ import com.raota.presentation.api.member.response.MyProfileResponse;
 import com.raota.presentation.api.member.response.PhotoSummaryResponse;
 import com.raota.presentation.api.member.response.VisitSummaryResponse;
 import com.raota.domain.member.model.MemberProfile;
+import com.raota.domain.member.model.MemberRole;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -18,6 +19,9 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
     Optional<MemberProfile> findByIdAndDeletedAtIsNull(Long id);
 
     boolean existsByIdAndDeletedAtIsNull(Long id);
+
+    @Query("select m.role from MemberProfile m where m.id = :id and m.deletedAt is null")
+    Optional<MemberRole> findActiveMemberRole(@Param("id") Long id);
 
     @Query("""
     select m

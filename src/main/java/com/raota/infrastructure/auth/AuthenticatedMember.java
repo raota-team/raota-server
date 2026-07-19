@@ -1,5 +1,6 @@
 package com.raota.infrastructure.auth;
 
+import com.raota.domain.member.model.MemberRole;
 import java.util.Collection;
 import java.util.List;
 import org.springframework.security.core.GrantedAuthority;
@@ -7,7 +8,14 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 public record AuthenticatedMember(Long memberId, Collection<? extends GrantedAuthority> authorities) {
 
-    public static AuthenticatedMember user(Long memberId) {
-        return new AuthenticatedMember(memberId, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+    public static AuthenticatedMember of(Long memberId, MemberRole role) {
+        List<SimpleGrantedAuthority> authorities = switch (role) {
+            case USER -> List.of(new SimpleGrantedAuthority("ROLE_USER"));
+            case ADMIN -> List.of(
+                    new SimpleGrantedAuthority("ROLE_USER"),
+                    new SimpleGrantedAuthority("ROLE_ADMIN")
+            );
+        };
+        return new AuthenticatedMember(memberId, authorities);
     }
 }

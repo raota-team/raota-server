@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
+import com.raota.domain.member.model.MemberRole;
 import com.raota.infrastructure.auth.AuthenticatedMember;
 import com.raota.infrastructure.auth.AuthenticationRequiredException;
 import com.raota.infrastructure.auth.LoginMember;
@@ -68,7 +69,7 @@ public class LoginMemberArgumentResolverTest {
     @Test
     void 인증된_사용자_객체에서_유저_아이디를_반환한다() throws NoSuchMethodException {
         MethodParameter parameter = getMethodParameter("supportedMethod", Long.class);
-        AuthenticatedMember member = AuthenticatedMember.user(1L);
+        AuthenticatedMember member = AuthenticatedMember.of(1L, MemberRole.USER);
         Authentication authentication = new UsernamePasswordAuthenticationToken(member, null, member.authorities());
         SecurityContextHolder.getContext().setAuthentication(authentication);
 

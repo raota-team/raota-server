@@ -34,14 +34,14 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public AuthenticatedMember getAuthenticatedMember(String token) {
+    public Long getMemberId(String token) {
         try {
             Claims claims = Jwts.parser()
                     .verifyWith(signingKey)
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
-            return AuthenticatedMember.user(Long.valueOf(claims.getSubject()));
+            return Long.valueOf(claims.getSubject());
         } catch (RuntimeException exception) {
             throw new JwtAuthenticationException("유효하지 않은 액세스 토큰입니다.", exception);
         }
