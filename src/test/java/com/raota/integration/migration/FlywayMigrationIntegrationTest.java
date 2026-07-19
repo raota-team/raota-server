@@ -163,4 +163,68 @@ class FlywayMigrationIntegrationTest extends BaseIntegrationTest {
             }
         }
     }
+
+    @Test
+    @DisplayName("V24에서 기존 회원 역할을 USER로 백필한다.")
+    void memberRoleIsBackfilledAsUser() throws Exception {
+        String databaseName = "raota_migration_" + UUID.randomUUID().toString().replace("-", "");
+        String adminUrl = MYSQL_CONTAINER.getJdbcUrl();
+        String migrationUrl = adminUrl.replace("/raota", "/" + databaseName);
+
+        try (Connection connection = DriverManager.getConnection(
+                adminUrl,
+                MYSQL_CONTAINER.getUsername(),
+                MYSQL_CONTAINER.getPassword()
+        ); Statement statement = connection.createStatement()) {
+            statement.execute("CREATE DATABASE " + databaseName);
+        }
+
+        try {
+            Flyway.configure()
+                    .dataSource(migrationUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword())
+                    .locations("classpath:db/migration")
+                    .target(MigrationVersion.fromVersion("23"))
+                    .load()
+                    .migrate();
+
+            try (Connection connection = DriverManager.getConnection(
+                    migrationUrl,
+                    MYSQL_CONTAINER.getUsername(),
+                    MYSQL_CONTAINER.getPassword()
+            ); Statement statement = connection.createStatement()) {
+                statement.executeUpdate("""
+                        INSERT INTO tb_member_profile (id, nickname)
+                        VALUES (100, '기존회원')
+                        """);
+            }
+
+            Flyway.configure()
+                    .dataSource(migrationUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword())
+                    .locations("classpath:db/migration")
+                    .load()
+                    .migrate();
+
+            try (Connection connection = DriverManager.getConnection(
+                    migrationUrl,
+                    MYSQL_CONTAINER.getUsername(),
+                    MYSQL_CONTAINER.getPassword()
+            ); Statement statement = connection.createStatement();
+                 ResultSet result = statement.executeQuery("""
+                         SELECT role
+                         FROM tb_member_profile
+                         WHERE id = 100
+                         """)) {
+                assertThat(result.next()).isTrue();
+                assertThat(result.getString("role")).isEqualTo("USER");
+            }
+        } finally {
+            try (Connection connection = DriverManager.getConnection(
+                    adminUrl,
+                    MYSQL_CONTAINER.getUsername(),
+                    MYSQL_CONTAINER.getPassword()
+            ); Statement statement = connection.createStatement()) {
+                statement.execute("DROP DATABASE IF EXISTS " + databaseName);
+            }
+        }
+    }
 }

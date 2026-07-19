@@ -3,6 +3,8 @@ package com.raota.domain.member.model;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -38,6 +40,11 @@ public class MemberProfile {
     private String backgroundImageUrl;
 
     private String bio;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private MemberRole role = MemberRole.USER;
 
     @Column(nullable = false)
     @Builder.Default

@@ -1,0 +1,2 @@
+ALTER TABLE tb_member_profile
+    ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'USER';
