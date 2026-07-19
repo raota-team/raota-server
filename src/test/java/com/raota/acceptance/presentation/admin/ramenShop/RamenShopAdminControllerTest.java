@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -132,7 +133,7 @@ class RamenShopAdminControllerTest extends BaseIntegrationTest {
     void updateShopWithJsonApi() throws Exception {
         RamenShop savedShop = ramenShopRepository.save(sampleShop("수정 전"));
 
-        mockMvc.perform(admin(patch("/admin/api/ramen-shops/{shopId}", savedShop.getId())
+        mockMvc.perform(admin(put("/admin/api/ramen-shops/{shopId}", savedShop.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -163,6 +164,7 @@ class RamenShopAdminControllerTest extends BaseIntegrationTest {
 
         RamenShop updatedShop = ramenShopRepository.findById(savedShop.getId()).orElseThrow();
         assertThat(updatedShop.getName()).isEqualTo("JSON 수정 후");
+        assertThat(updatedShop.getImageUrl()).isNull();
         assertThat(updatedShop.getNormalMenus().getValues().getFirst().getName()).isEqualTo("츠케멘");
         assertThat(updatedShop.getEventMenus().getValues()).hasSize(1);
         assertThat(updatedShop.isPublished()).isFalse();

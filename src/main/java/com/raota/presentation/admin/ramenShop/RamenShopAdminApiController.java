@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -50,7 +51,7 @@ public class RamenShopAdminApiController {
         return ResponseEntity.ok(ApiResponse.success("라멘집이 추가되었습니다.", new RamenShopAdminMutationResponse(shopId)));
     }
 
-    @PatchMapping("/{shopId}")
+    @PutMapping("/{shopId}")
     public ResponseEntity<ApiResponse<RamenShopAdminMutationResponse>> updateShop(
             @PathVariable Long shopId,
             @Valid @RequestBody RamenShopAdminForm form,
