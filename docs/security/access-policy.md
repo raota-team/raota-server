@@ -69,14 +69,14 @@
 - `GET /oauth2/authorization/**`
 - `GET /login/oauth2/code/**`
 - `GET /swagger-ui.html`, `GET /swagger-ui/**`
-- `GET /v3/api-docs`, `GET /v3/api-docs/**`
+- `GET /v3/api-docs`, `GET /v3/api-docs.yaml`, `GET /v3/api-docs/**`
 - `GET /actuator/health`, `GET /actuator/health/**`
 
 ### ADMIN
 
 - health를 제외한 모든 `/actuator/**`
 
-Prometheus를 외부 수집기에 연결할 때는 ADMIN Bearer Token 또는 별도의 관리 네트워크 정책을 먼저 결정한다.
+현재 저장소에는 Prometheus scraper 설정이 없으며 `/actuator/prometheus`는 ADMIN 진단 접근만 허용한다. 수명이 짧은 사용자 JWT를 운영 scraper 자격 증명으로 사용하지 않는다. 외부 수집기를 연결하기 전 별도 management port와 사설망 또는 서비스 인증을 먼저 설계한다.
 
 ## 적용 순서
 
@@ -87,6 +87,10 @@ Spring Security는 다음 순서로 규칙을 적용한다.
 3. `ADMIN` matcher에 `ROLE_ADMIN` 요구
 4. `AUTHENTICATED` matcher에 인증 요구
 5. 나머지 모든 요청에 인증 요구
+
+리소스 ID가 `Long`인 동적 경로는 `[0-9]+`로 제한한다. 그래야 같은 위치에 새 문자열 리터럴 경로가 추가돼도 기존 규칙에 흡수되지 않고 기본 인증 정책과 인벤토리 검사를 거친다.
+
+Spring MVC가 `GET` 매핑에 `HEAD`를 자동 지원하므로 명시된 공개 `GET` 규칙은 같은 경로의 `HEAD`도 허용한다. 미분류 `HEAD` 요청은 다른 요청과 동일하게 인증이 필요하다.
 
 ## 오류 응답 계약
 

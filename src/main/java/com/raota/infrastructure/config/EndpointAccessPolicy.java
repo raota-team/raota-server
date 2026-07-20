@@ -7,6 +7,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
 public final class EndpointAccessPolicy {
@@ -27,6 +28,7 @@ public final class EndpointAccessPolicy {
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/swagger-ui.html"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/swagger-ui/**"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/v3/api-docs"),
+            rule(AccessLevel.PUBLIC, HttpMethod.GET, "/v3/api-docs.yaml"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/v3/api-docs/**"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/actuator/health"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/actuator/health/**"),
@@ -37,10 +39,10 @@ public final class EndpointAccessPolicy {
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/favicon.ico"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/community/posts"),
-            rule(AccessLevel.PUBLIC, HttpMethod.GET, "/community/posts/{postId}"),
-            rule(AccessLevel.PUBLIC, HttpMethod.GET, "/community/posts/{postId}/comments"),
+            rule(AccessLevel.PUBLIC, HttpMethod.GET, "/community/posts/{postId:[0-9]+}"),
+            rule(AccessLevel.PUBLIC, HttpMethod.GET, "/community/posts/{postId:[0-9]+}/comments"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/community/ramen-shops"),
-            rule(AccessLevel.PUBLIC, HttpMethod.POST, "/community/posts/{postId}/views"),
+            rule(AccessLevel.PUBLIC, HttpMethod.POST, "/community/posts/{postId:[0-9]+}/views"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/api/v1/community/posts"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/api/v1/community/posts/popular"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/users/{userId:[0-9]+}/profile"),
@@ -51,14 +53,14 @@ public final class EndpointAccessPolicy {
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/users/{userId:[0-9]+}/ramen-logs"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/users/{userId:[0-9]+}/ramen-logs/shops"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/ramen-shops"),
-            rule(AccessLevel.PUBLIC, HttpMethod.GET, "/ramen-shops/{shopId}"),
-            rule(AccessLevel.PUBLIC, HttpMethod.GET, "/ramen-shops/{shopId}/menus"),
-            rule(AccessLevel.PUBLIC, HttpMethod.POST, "/ramen-shops/{shopId}/views"),
-            rule(AccessLevel.PUBLIC, HttpMethod.GET, "/ramen-shops/{shopId}/votes"),
-            rule(AccessLevel.PUBLIC, HttpMethod.GET, "/ramen-shops/{shopId}/photos"),
+            rule(AccessLevel.PUBLIC, HttpMethod.GET, "/ramen-shops/{shopId:[0-9]+}"),
+            rule(AccessLevel.PUBLIC, HttpMethod.GET, "/ramen-shops/{shopId:[0-9]+}/menus"),
+            rule(AccessLevel.PUBLIC, HttpMethod.POST, "/ramen-shops/{shopId:[0-9]+}/views"),
+            rule(AccessLevel.PUBLIC, HttpMethod.GET, "/ramen-shops/{shopId:[0-9]+}/votes"),
+            rule(AccessLevel.PUBLIC, HttpMethod.GET, "/ramen-shops/{shopId:[0-9]+}/photos"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/api/v1/shops/recent-verified"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/ramen-logs"),
-            rule(AccessLevel.PUBLIC, HttpMethod.GET, "/ramen-logs/{logId}"),
+            rule(AccessLevel.PUBLIC, HttpMethod.GET, "/ramen-logs/{logId:[0-9]+}"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/api/v1/discovery/stats"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/api/v1/discovery/popular-shops/today"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/api/v1/discovery/today-recommendations"),
@@ -66,12 +68,12 @@ public final class EndpointAccessPolicy {
 
             // Authenticated member endpoints
             rule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/community/posts"),
-            rule(AccessLevel.AUTHENTICATED, HttpMethod.PATCH, "/community/posts/{postId}"),
-            rule(AccessLevel.AUTHENTICATED, HttpMethod.DELETE, "/community/posts/{postId}"),
-            rule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/community/posts/{postId}/likes"),
-            rule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/community/posts/{postId}/comments"),
-            rule(AccessLevel.AUTHENTICATED, HttpMethod.PUT, "/community/comments/{commentId}"),
-            rule(AccessLevel.AUTHENTICATED, HttpMethod.DELETE, "/community/comments/{commentId}"),
+            rule(AccessLevel.AUTHENTICATED, HttpMethod.PATCH, "/community/posts/{postId:[0-9]+}"),
+            rule(AccessLevel.AUTHENTICATED, HttpMethod.DELETE, "/community/posts/{postId:[0-9]+}"),
+            rule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/community/posts/{postId:[0-9]+}/likes"),
+            rule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/community/posts/{postId:[0-9]+}/comments"),
+            rule(AccessLevel.AUTHENTICATED, HttpMethod.PUT, "/community/comments/{commentId:[0-9]+}"),
+            rule(AccessLevel.AUTHENTICATED, HttpMethod.DELETE, "/community/comments/{commentId:[0-9]+}"),
             rule(AccessLevel.AUTHENTICATED, HttpMethod.GET, "/users/me/summary"),
             rule(AccessLevel.AUTHENTICATED, HttpMethod.GET, "/users/me/profile"),
             rule(AccessLevel.AUTHENTICATED, HttpMethod.PATCH, "/users/me/profile"),
@@ -86,17 +88,17 @@ public final class EndpointAccessPolicy {
             rule(AccessLevel.AUTHENTICATED, HttpMethod.GET, "/users/me/comments"),
             rule(AccessLevel.AUTHENTICATED, HttpMethod.GET, "/users/me/ramen-logs"),
             rule(AccessLevel.AUTHENTICATED, HttpMethod.GET, "/users/me/ramen-logs/shops"),
-            rule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/ramen-shops/{shopId}/bookmark"),
-            rule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/ramen-shops/{shopId}/reports"),
-            rule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/ramen-shops/{shopId}/votes/menus/{menuId}"),
-            rule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/ramen-shops/{shopId}/photos"),
-            rule(AccessLevel.AUTHENTICATED, HttpMethod.DELETE, "/ramen-shops/{shopId}/photos/{photoId}"),
+            rule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/ramen-shops/{shopId:[0-9]+}/bookmark"),
+            rule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/ramen-shops/{shopId:[0-9]+}/reports"),
+            rule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/ramen-shops/{shopId:[0-9]+}/votes/menus/{menuId:[0-9]+}"),
+            rule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/ramen-shops/{shopId:[0-9]+}/photos"),
+            rule(AccessLevel.AUTHENTICATED, HttpMethod.DELETE, "/ramen-shops/{shopId:[0-9]+}/photos/{photoId:[0-9]+}"),
             rule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/ramen-shops/ai-search"),
             rule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/ramen-shops/compare"),
             rule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/ramen-logs"),
-            rule(AccessLevel.AUTHENTICATED, HttpMethod.PATCH, "/ramen-logs/{logId}"),
-            rule(AccessLevel.AUTHENTICATED, HttpMethod.DELETE, "/ramen-logs/{logId}"),
-            rule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/ramen-logs/{logId}/likes"),
+            rule(AccessLevel.AUTHENTICATED, HttpMethod.PATCH, "/ramen-logs/{logId:[0-9]+}"),
+            rule(AccessLevel.AUTHENTICATED, HttpMethod.DELETE, "/ramen-logs/{logId:[0-9]+}"),
+            rule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/ramen-logs/{logId:[0-9]+}/likes"),
             rule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/recommendations/summary"),
             rule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/recommendations/chat"),
             rule(AccessLevel.AUTHENTICATED, HttpMethod.GET, "/files/upload-ticket"),
@@ -127,7 +129,17 @@ public final class EndpointAccessPolicy {
     }
 
     private static Rule rule(AccessLevel accessLevel, HttpMethod method, String pattern) {
-        RequestMatcher matcher = method == null ? pathPattern(pattern) : pathPattern(method, pattern);
+        RequestMatcher matcher;
+        if (method == null) {
+            matcher = pathPattern(pattern);
+        } else if (accessLevel == AccessLevel.PUBLIC && method == HttpMethod.GET) {
+            matcher = new OrRequestMatcher(
+                    pathPattern(HttpMethod.GET, pattern),
+                    pathPattern(HttpMethod.HEAD, pattern)
+            );
+        } else {
+            matcher = pathPattern(method, pattern);
+        }
         return new Rule(accessLevel, method, pattern, matcher);
     }
 

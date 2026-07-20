@@ -39,6 +39,40 @@ class ApiAccessPolicyInventoryTest extends BaseIntegrationTest {
         });
     }
 
+    @Test
+    void 동적_경로는_숫자_ID만_기존_접근_정책에_포함한다() {
+        assertThat(matchingAccessLevels("GET", "/community/posts/drafts")).isEmpty();
+        assertThat(matchingAccessLevels("GET", "/community/posts/drafts/comments")).isEmpty();
+        assertThat(matchingAccessLevels("POST", "/community/posts/drafts/views")).isEmpty();
+        assertThat(matchingAccessLevels("GET", "/ramen-shops/internal")).isEmpty();
+        assertThat(matchingAccessLevels("GET", "/ramen-shops/internal/menus")).isEmpty();
+        assertThat(matchingAccessLevels("GET", "/ramen-logs/moderation")).isEmpty();
+
+        assertThat(matchingAccessLevels("GET", "/community/posts/1"))
+                .containsExactly(EndpointAccessPolicy.AccessLevel.PUBLIC);
+        assertThat(matchingAccessLevels("GET", "/ramen-shops/1"))
+                .containsExactly(EndpointAccessPolicy.AccessLevel.PUBLIC);
+        assertThat(matchingAccessLevels("GET", "/ramen-logs/1"))
+                .containsExactly(EndpointAccessPolicy.AccessLevel.PUBLIC);
+    }
+
+    @Test
+    void Springdoc_YAML_명세도_공개한다() {
+        assertThat(matchingAccessLevels("GET", "/v3/api-docs.yaml"))
+                .containsExactly(EndpointAccessPolicy.AccessLevel.PUBLIC);
+    }
+
+    @Test
+    void 공개_GET_경로는_암묵적인_HEAD_요청도_허용한다() {
+        assertThat(matchingAccessLevels("HEAD", "/"))
+                .containsExactly(EndpointAccessPolicy.AccessLevel.PUBLIC);
+        assertThat(matchingAccessLevels("HEAD", "/community/posts/1"))
+                .containsExactly(EndpointAccessPolicy.AccessLevel.PUBLIC);
+        assertThat(matchingAccessLevels("HEAD", "/actuator/health"))
+                .contains(EndpointAccessPolicy.AccessLevel.PUBLIC);
+        assertThat(matchingAccessLevels("HEAD", "/security-policy-unclassified")).isEmpty();
+    }
+
     private List<Endpoint> applicationEndpoints() {
         return requestMappingHandlerMapping.getHandlerMethods().entrySet().stream()
                 .filter(entry -> isApplicationController(entry.getValue()))
@@ -65,8 +99,12 @@ class ApiAccessPolicyInventoryTest extends BaseIntegrationTest {
 
     private Set<EndpointAccessPolicy.AccessLevel> matchingAccessLevels(Endpoint endpoint) {
         String examplePath = PATH_VARIABLE.matcher(endpoint.path()).replaceAll("1");
-        MockHttpServletRequest request = new MockHttpServletRequest(endpoint.method(), examplePath);
-        request.setServletPath(examplePath);
+        return matchingAccessLevels(endpoint.method(), examplePath);
+    }
+
+    private Set<EndpointAccessPolicy.AccessLevel> matchingAccessLevels(String method, String path) {
+        MockHttpServletRequest request = new MockHttpServletRequest(method, path);
+        request.setServletPath(path);
         return EndpointAccessPolicy.matchingAccessLevels(request);
     }
 

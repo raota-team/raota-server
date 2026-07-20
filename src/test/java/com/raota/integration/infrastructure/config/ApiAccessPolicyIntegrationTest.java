@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -126,6 +127,8 @@ class ApiAccessPolicyIntegrationTest extends BaseIntegrationTest {
     void health만_공개하고_나머지_Actuator는_ADMIN으로_제한한다() throws Exception {
         mockMvc.perform(get("/actuator/health"))
                 .andExpect(status().isOk());
+        mockMvc.perform(head("/actuator/health"))
+                .andExpect(status().isOk());
 
         mockMvc.perform(get("/actuator/metrics")
                         .header(HttpHeaders.AUTHORIZATION, bearer(createAccessToken(MemberRole.USER))))
@@ -150,6 +153,16 @@ class ApiAccessPolicyIntegrationTest extends BaseIntegrationTest {
         mockMvc.perform(get("/security-policy-unclassified")
                         .header(HttpHeaders.AUTHORIZATION, bearer(createAccessToken(MemberRole.USER))))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void 동적_공개_경로와_같은_위치의_문자열_경로는_기본적으로_인증이_필요하다() throws Exception {
+        mockMvc.perform(get("/community/posts/drafts"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/ramen-shops/internal"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/ramen-logs/moderation"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
