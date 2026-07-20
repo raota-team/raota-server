@@ -7,6 +7,8 @@ import com.raota.infrastructure.auth.OAuth2AuthenticationSuccessHandler;
 import com.raota.infrastructure.auth.RestAccessDeniedHandler;
 import com.raota.infrastructure.auth.RestAuthenticationEntryPoint;
 import com.raota.infrastructure.auth.repository.HttpCookieOAuth2AuthorizationRequestRepository;
+import com.raota.infrastructure.config.EndpointAccessPolicy.AccessLevel;
+import jakarta.servlet.DispatcherType;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -57,16 +59,8 @@ public class SecurityConfig {
                         .successHandler(oAuth2AuthenticationSuccessHandler)
                         .failureHandler(oAuth2AuthenticationFailureHandler))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers(
-                                "/oauth2/**",
-                                "/login/oauth2/**",
-                                "/auth/refresh",
-                                "/auth/logout",
-                                "/error",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**"
-                        ).permitAll()
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                        .requestMatchers(EndpointAccessPolicy.matchersFor(AccessLevel.PUBLIC)).permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/users/me").authenticated()
                         .requestMatchers("/users/me/**").authenticated()
