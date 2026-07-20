@@ -14,7 +14,6 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -61,20 +60,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(EndpointAccessPolicy.matchersFor(AccessLevel.PUBLIC)).permitAll()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/users/me").authenticated()
-                        .requestMatchers("/users/me/**").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/community/posts").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/community/posts/*/comments").authenticated()
-                        .requestMatchers(HttpMethod.PATCH, "/community/comments/*").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/community/comments/*").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/ramen-shops/*/photos").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/ramen-shops/*/votes/menus/*").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/ramen-logs").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/ramen-logs/*/likes").authenticated()
-                        .requestMatchers(HttpMethod.PATCH, "/ramen-logs/*").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/ramen-logs/*").authenticated()
-                        .anyRequest().permitAll())
+                        .requestMatchers(EndpointAccessPolicy.matchersFor(AccessLevel.ADMIN)).hasRole("ADMIN")
+                        .requestMatchers(EndpointAccessPolicy.matchersFor(AccessLevel.AUTHENTICATED)).authenticated()
+                        .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

@@ -27,7 +27,16 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
         errorWriter.write(
                 response,
                 HttpServletResponse.SC_UNAUTHORIZED,
-                AUTHENTICATION_REQUIRED_MESSAGE
+                responseMessage(authException)
         );
+    }
+
+    private String responseMessage(AuthenticationException authException) {
+        if (authException instanceof JwtAuthenticationException
+                && authException.getMessage() != null
+                && !authException.getMessage().isBlank()) {
+            return authException.getMessage();
+        }
+        return AUTHENTICATION_REQUIRED_MESSAGE;
     }
 }
