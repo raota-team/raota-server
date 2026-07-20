@@ -3,14 +3,19 @@ package com.raota.infrastructure.auth;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import org.springframework.http.MediaType;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
+
+    private static final String AUTHENTICATION_REQUIRED_MESSAGE = "인증이 필요합니다.";
+
+    private final RestSecurityErrorWriter errorWriter;
 
     @Override
     public void commence(
@@ -18,17 +23,11 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
             HttpServletResponse response,
             AuthenticationException authException
     ) throws IOException {
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.getWriter().write(failJson(authException.getMessage()));
-    }
-
-    private String failJson(String message) {
-        return "{\"status\":\"FAIL\",\"message\":\"" + escape(message) + "\"}";
-    }
-
-    private String escape(String value) {
-        return value == null ? "" : value.replace("\"", "\\\"");
+        response.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer");
+        errorWriter.write(
+                response,
+                HttpServletResponse.SC_UNAUTHORIZED,
+                AUTHENTICATION_REQUIRED_MESSAGE
+        );
     }
 }
