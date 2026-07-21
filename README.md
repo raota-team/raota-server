@@ -20,6 +20,7 @@ Raota Server는 라멘 매장 정보, 방문 인증샷, 메뉴 투표, 북마크
 - 방문 인증샷 등록/조회/삭제 및 업로드 티켓 발급
 - 커뮤니티 게시글, 좋아요, 스레드 댓글
 - OAuth2 기반 소셜 로그인과 JWT Access/Refresh Token 인증
+- 공개 API만 명시적으로 허용하고 나머지를 인증하는 fail-closed 접근 정책
 - 마이페이지 활동 내역 조회
 - AI 기반 취향 추천, 매장 비교, 리뷰 요약, 후속 채팅
 - `ADMIN` 권한으로 보호되는 라멘 매장 CRUD, 회원/제보 조회 및 검색/RAG 인덱싱 API
@@ -27,6 +28,7 @@ Raota Server는 라멘 매장 정보, 방문 인증샷, 메뉴 투표, 북마크
 ## 문서
 
 - [아키텍처 규칙](docs/architecture.md)
+- [API 접근 정책](docs/security/access-policy.md)
 
 ## 기술 스택
 

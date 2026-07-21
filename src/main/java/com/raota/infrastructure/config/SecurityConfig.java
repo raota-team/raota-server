@@ -7,12 +7,13 @@ import com.raota.infrastructure.auth.OAuth2AuthenticationSuccessHandler;
 import com.raota.infrastructure.auth.RestAccessDeniedHandler;
 import com.raota.infrastructure.auth.RestAuthenticationEntryPoint;
 import com.raota.infrastructure.auth.repository.HttpCookieOAuth2AuthorizationRequestRepository;
+import com.raota.infrastructure.config.EndpointAccessPolicy.AccessLevel;
+import jakarta.servlet.DispatcherType;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -57,30 +58,11 @@ public class SecurityConfig {
                         .successHandler(oAuth2AuthenticationSuccessHandler)
                         .failureHandler(oAuth2AuthenticationFailureHandler))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers(
-                                "/oauth2/**",
-                                "/login/oauth2/**",
-                                "/auth/refresh",
-                                "/auth/logout",
-                                "/error",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**"
-                        ).permitAll()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/users/me").authenticated()
-                        .requestMatchers("/users/me/**").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/community/posts").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/community/posts/*/comments").authenticated()
-                        .requestMatchers(HttpMethod.PATCH, "/community/comments/*").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/community/comments/*").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/ramen-shops/*/photos").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/ramen-shops/*/votes/menus/*").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/ramen-logs").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/ramen-logs/*/likes").authenticated()
-                        .requestMatchers(HttpMethod.PATCH, "/ramen-logs/*").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/ramen-logs/*").authenticated()
-                        .anyRequest().permitAll())
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                        .requestMatchers(EndpointAccessPolicy.matchersFor(AccessLevel.PUBLIC)).permitAll()
+                        .requestMatchers(EndpointAccessPolicy.matchersFor(AccessLevel.ADMIN)).hasRole("ADMIN")
+                        .requestMatchers(EndpointAccessPolicy.matchersFor(AccessLevel.AUTHENTICATED)).authenticated()
+                        .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
