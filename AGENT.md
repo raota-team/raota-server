@@ -107,6 +107,8 @@
 
 ### 커뮤니티
 - 게시글 목록, 상세, 생성, 수정, 삭제 API가 있다.
+- HTTP 표현과 동일한 조회 결과는 application result를 직접 반환하며, 필드 복사만 하는 presentation response DTO는 두지 않는다.
+- 회원 활동의 게시글·댓글 목록도 Community query 흐름을 재사용해 Member repository가 Community HTTP response를 직접 생성하지 않는다.
 - 게시글은 소프트 딜리트를 사용한다.
 - 게시글 좋아요 토글 API가 있다.
 - 좋아요 3개 이상인 게시글을 인기글로 간주하며, 인기글 목록과 최근 인기글 조회 API가 있다.

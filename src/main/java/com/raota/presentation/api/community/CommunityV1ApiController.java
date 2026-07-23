@@ -1,8 +1,8 @@
 package com.raota.presentation.api.community;
 
 import com.raota.application.community.service.PostQueryService;
-import com.raota.presentation.api.community.response.CommunityHomePostResponse;
-import com.raota.presentation.api.community.response.CommunityPopularPostResponse;
+import com.raota.application.community.result.HomePostResult;
+import com.raota.application.community.result.PopularPostResult;
 import com.raota.presentation.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -30,16 +30,13 @@ public class CommunityV1ApiController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
     @GetMapping("/posts")
-    public ResponseEntity<ApiResponse<List<CommunityHomePostResponse>>> getHomePosts(
+    public ResponseEntity<ApiResponse<List<HomePostResult>>> getHomePosts(
             @Parameter(description = "카테고리 (기본: tip)")
             @RequestParam(defaultValue = "tip") String category,
             @Parameter(description = "가져올 개수", example = "3")
             @RequestParam(defaultValue = "3") int limit) {
         // Note: Sort is latest by default in findHomePosts
-        return ResponseEntity.ok(ApiResponse.success(postQueryService.findHomePosts(category, limit)
-                .stream()
-                .map(CommunityHomePostResponse::from)
-                .toList()));
+        return ResponseEntity.ok(ApiResponse.success(postQueryService.findHomePosts(category, limit)));
     }
 
     @Operation(
@@ -50,12 +47,9 @@ public class CommunityV1ApiController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
     @GetMapping("/posts/popular")
-    public ResponseEntity<ApiResponse<List<CommunityPopularPostResponse>>> getRecentPopularPosts(
+    public ResponseEntity<ApiResponse<List<PopularPostResult>>> getRecentPopularPosts(
             @Parameter(description = "가져올 개수", example = "3")
             @RequestParam(defaultValue = "3") int limit) {
-        return ResponseEntity.ok(ApiResponse.success(postQueryService.findRecentPopularPosts(limit)
-                .stream()
-                .map(CommunityPopularPostResponse::from)
-                .toList()));
+        return ResponseEntity.ok(ApiResponse.success(postQueryService.findRecentPopularPosts(limit)));
     }
 }

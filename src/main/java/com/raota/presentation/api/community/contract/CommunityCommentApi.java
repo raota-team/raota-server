@@ -1,9 +1,9 @@
 package com.raota.presentation.api.community.contract;
 
+import com.raota.application.community.result.CommentItemResult;
+import com.raota.application.community.result.CommentThreadResult;
 import com.raota.presentation.api.community.request.CommunityCommentCreateRequest;
 import com.raota.presentation.api.community.request.CommunityCommentUpdateRequest;
-import com.raota.presentation.api.community.response.CommunityCommentItemResponse;
-import com.raota.presentation.api.community.response.CommunityCommentThreadResponse;
 import com.raota.presentation.common.ApiResponse;
 import com.raota.presentation.common.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,7 +22,7 @@ public interface CommunityCommentApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<PageResponse<CommunityCommentThreadResponse>>> getComments(
+    ResponseEntity<ApiResponse<PageResponse<CommentThreadResult>>> getComments(
             @Parameter(description = "글 ID", required = true) Long postId,
             @ParameterObject Pageable pageable);
 
@@ -31,7 +31,7 @@ public interface CommunityCommentApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<CommunityCommentItemResponse>> createComment(
+    ResponseEntity<ApiResponse<CommentItemResult>> createComment(
             @Parameter(description = "글 ID", required = true) Long postId,
             CommunityCommentCreateRequest request,
             @Parameter(hidden = true) Long memberId);
@@ -41,7 +41,7 @@ public interface CommunityCommentApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<CommunityCommentItemResponse>> updateComment(
+    ResponseEntity<ApiResponse<CommentItemResult>> updateComment(
             @Parameter(description = "댓글 ID", required = true) Long commentId,
             CommunityCommentUpdateRequest request,
             @Parameter(hidden = true) Long memberId);

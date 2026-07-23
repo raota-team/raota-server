@@ -25,6 +25,10 @@ public class PostQueryService {
         return postQueryPort.searchPostCards(query, pageable);
     }
 
+    public Page<PostCardResult> findPostCardsByAuthor(Long authorId, Pageable pageable) {
+        return postQueryPort.findPostCardsByAuthor(authorId, pageable);
+    }
+
     public PostDetailResult getPostDetail(Long postId, Long memberId) {
         return postQueryPort.getPostDetail(postId, memberId);
     }

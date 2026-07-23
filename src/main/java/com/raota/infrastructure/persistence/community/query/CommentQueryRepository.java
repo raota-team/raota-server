@@ -76,6 +76,49 @@ public class CommentQueryRepository implements CommentQueryPort {
         return new PageImpl<>(items, pageable, totalCount);
     }
 
+    @Override
+    public Page<CommentItemResult> findCommentsByAuthor(Long authorId, Pageable pageable) {
+        Long totalCount = entityManager.createQuery(
+                        """
+                        select count(c)
+                        from CommentEntity c
+                        where c.member.id = :authorId
+                          and c.member.deletedAt is null
+                          and c.isDeleted = false
+                          and c.post.isDeleted = false
+                        """,
+                        Long.class
+                )
+                .setParameter("authorId", authorId)
+                .getSingleResult();
+
+        List<CommentItemResult> items = entityManager.createQuery(
+                        """
+                        select new com.raota.infrastructure.persistence.community.query.CommentQueryRepository$CommentRow(
+                               c.id, c.parent.id, c.post.id, m.nickname, m.id, m.imageUrl, null,
+                               c.content, c.createdAt, c.isDeleted
+                        )
+                        from CommentEntity c
+                        join c.member m
+                        where m.id = :authorId
+                          and m.deletedAt is null
+                          and c.isDeleted = false
+                          and c.post.isDeleted = false
+                        order by c.createdAt desc
+                        """,
+                        CommentRow.class
+                )
+                .setParameter("authorId", authorId)
+                .setFirstResult((int) pageable.getOffset())
+                .setMaxResults(pageable.getPageSize())
+                .getResultList()
+                .stream()
+                .map(CommentRow::toResult)
+                .toList();
+
+        return new PageImpl<>(items, pageable, totalCount);
+    }
+
     public List<CommentItemResult> getReplies(Long parentId) {
         List<CommentRow> rows = entityManager.createQuery(
                         """

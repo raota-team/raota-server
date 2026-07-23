@@ -14,6 +14,8 @@ public interface PostQueryPort {
 
     Page<PostCardResult> searchPostCards(PostSearchQuery query, Pageable pageable);
 
+    Page<PostCardResult> findPostCardsByAuthor(Long authorId, Pageable pageable);
+
     PostDetailResult getPostDetail(Long postId, Long memberId);
 
     Page<RamenShopOptionResult> getRamenShopOptions(String keyword, Pageable pageable);

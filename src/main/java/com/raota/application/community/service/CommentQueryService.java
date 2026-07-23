@@ -31,4 +31,8 @@ public class CommentQueryService {
 
         return new PageImpl<>(threads, pageable, parents.getTotalElements());
     }
+
+    public Page<CommentItemResult> findCommentsByAuthor(Long authorId, Pageable pageable) {
+        return commentQueryPort.findCommentsByAuthor(authorId, pageable);
+    }
 }

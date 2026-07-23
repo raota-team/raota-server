@@ -117,6 +117,7 @@ Presentation DTO는 API 표현을 담당한다.
 - validation annotation, Swagger annotation, JSON naming, controller binding 관련 코드를 둘 수 있다.
 - `application` 또는 `domain`에서 import하지 않는다.
 - application command/query로 변환하는 메서드는 둘 수 있다.
+- 검색 조건이 단순한 query parameter 1~2개라면 별도 request DTO 없이 controller에서 application query를 만들 수 있다.
 
 Application DTO는 유스케이스 입출력을 담당한다.
 
@@ -124,6 +125,13 @@ Application DTO는 유스케이스 입출력을 담당한다.
 - 읽기 입력은 `application.<domain>.query`를 사용한다.
 - 유스케이스 출력은 presentation DTO가 API 관심사를 누수할 때 `application.<domain>.result`를 사용한다.
 - HTTP, JSON, Swagger, controller annotation, presentation response type에 의존하지 않는다.
+
+Application result와 HTTP response의 필드명·구조·노출 정책이 같고 별도 presentation 관심사가 없다면 controller가 application result를 그대로 직렬화할 수 있다.
+
+- 계층 모양을 맞추기 위한 필드 단위 복사 response DTO는 만들지 않는다.
+- API 버전별 구조, 필드명 변경, 포맷 변환, 마스킹 또는 Swagger/JSON 전용 설정이 필요할 때만 presentation response DTO를 둔다.
+- application result를 직접 반환하더라도 application은 HTTP, JSON과 Swagger annotation을 포함하지 않는다.
+- 서로 다른 도메인의 presentation response를 repository projection이나 application 반환 타입으로 공유하지 않는다.
 
 Domain에는 API DTO를 두지 않는다.
 

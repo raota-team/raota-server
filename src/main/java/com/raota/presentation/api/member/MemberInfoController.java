@@ -1,5 +1,7 @@
 package com.raota.presentation.api.member;
 
+import com.raota.application.community.result.CommentItemResult;
+import com.raota.application.community.result.PostCardResult;
 import com.raota.presentation.api.member.contract.MemberInfoApi;
 import com.raota.presentation.api.member.request.UpdateEmailRequest;
 import com.raota.presentation.api.member.request.UpdateProfileRequest;
@@ -136,19 +138,19 @@ public class MemberInfoController implements MemberInfoApi {
 
     @Override
     @GetMapping("/me/posts")
-    public ResponseEntity<ApiResponse<PageResponse<com.raota.presentation.api.community.response.CommunityPostCardResponse>>> getMyPosts(
+    public ResponseEntity<ApiResponse<PageResponse<PostCardResult>>> getMyPosts(
             @LoginMember Long memberId,
             @PageableDefault(size = 5, direction = Sort.Direction.DESC) Pageable pageable) {
-        Page<com.raota.presentation.api.community.response.CommunityPostCardResponse> response = memberInfoService.getMyPosts(memberId, pageable);
+        Page<PostCardResult> response = memberInfoService.getMyPosts(memberId, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(response)));
     }
 
     @Override
     @GetMapping("/me/comments")
-    public ResponseEntity<ApiResponse<PageResponse<com.raota.presentation.api.community.response.CommunityCommentItemResponse>>> getMyComments(
+    public ResponseEntity<ApiResponse<PageResponse<CommentItemResult>>> getMyComments(
             @LoginMember Long memberId,
             @PageableDefault(size = 5, direction = Sort.Direction.DESC) Pageable pageable) {
-        Page<com.raota.presentation.api.community.response.CommunityCommentItemResponse> response = memberInfoService.getMyComments(memberId, pageable);
+        Page<CommentItemResult> response = memberInfoService.getMyComments(memberId, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(response)));
     }
 
@@ -182,22 +184,22 @@ public class MemberInfoController implements MemberInfoApi {
 
     @Override
     @GetMapping("/{userId}/posts")
-    public ResponseEntity<ApiResponse<PageResponse<com.raota.presentation.api.community.response.CommunityPostCardResponse>>> getUserPostsById(
+    public ResponseEntity<ApiResponse<PageResponse<PostCardResult>>> getUserPostsById(
             @PathVariable Long userId,
             @LoginMember(required = false) Long viewerId,
             @PageableDefault(size = 5, direction = Sort.Direction.DESC) Pageable pageable) {
-        Page<com.raota.presentation.api.community.response.CommunityPostCardResponse> response =
+        Page<PostCardResult> response =
                 memberInfoService.getUserPosts(userId, viewerId, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(response)));
     }
 
     @Override
     @GetMapping("/{userId}/comments")
-    public ResponseEntity<ApiResponse<PageResponse<com.raota.presentation.api.community.response.CommunityCommentItemResponse>>> getUserCommentsById(
+    public ResponseEntity<ApiResponse<PageResponse<CommentItemResult>>> getUserCommentsById(
             @PathVariable Long userId,
             @LoginMember(required = false) Long viewerId,
             @PageableDefault(size = 5, direction = Sort.Direction.DESC) Pageable pageable) {
-        Page<com.raota.presentation.api.community.response.CommunityCommentItemResponse> response =
+        Page<CommentItemResult> response =
                 memberInfoService.getUserComments(userId, viewerId, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(response)));
     }

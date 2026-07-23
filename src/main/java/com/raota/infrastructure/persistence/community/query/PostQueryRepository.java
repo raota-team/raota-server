@@ -89,6 +89,51 @@ public class PostQueryRepository implements PostQueryPort {
         return new PageImpl<>(items, pageable, totalCount);
     }
 
+    @Override
+    public Page<PostCardResult> findPostCardsByAuthor(Long authorId, Pageable pageable) {
+        Long totalCount = entityManager.createQuery(
+                        """
+                        select count(p)
+                        from PostEntity p
+                        where p.author.id = :authorId
+                          and p.author.deletedAt is null
+                          and p.isDeleted = false
+                        """,
+                        Long.class
+                )
+                .setParameter("authorId", authorId)
+                .getSingleResult();
+
+        List<PostCardResult> items = entityManager.createQuery(
+                        """
+                        select new com.raota.infrastructure.persistence.community.query.PostQueryRepository$PostCardRow(
+                               p.id, p.category, rs.id, rs.name, p.title, p.content,
+                               p.thumbnailUrl, a.nickname, a.id, a.imageUrl, p.createdAt,
+                               (select count(pl) from PostLikeEntity pl where pl.postId = p.id),
+                               (select count(c) from CommentEntity c where c.post.id = p.id and c.isDeleted = false),
+                               p.viewCount
+                        )
+                        from PostEntity p
+                        left join p.ramenShop rs
+                        join p.author a
+                        where a.id = :authorId
+                          and a.deletedAt is null
+                          and p.isDeleted = false
+                        order by p.createdAt desc
+                        """,
+                        PostCardRow.class
+                )
+                .setParameter("authorId", authorId)
+                .setFirstResult((int) pageable.getOffset())
+                .setMaxResults(pageable.getPageSize())
+                .getResultList()
+                .stream()
+                .map(PostCardRow::toResult)
+                .toList();
+
+        return new PageImpl<>(items, pageable, totalCount);
+    }
+
     public PostDetailResult getPostDetail(Long postId, Long memberId) {
         List<PostDetailRow> rows = entityManager.createQuery(
                         """

@@ -3,15 +3,14 @@ package com.raota.presentation.api.community;
 import com.raota.application.community.service.PostLikeService;
 import com.raota.application.community.service.PostQueryService;
 import com.raota.application.community.service.PostService;
+import com.raota.application.community.query.PostSearchQuery;
+import com.raota.application.community.result.PostCardResult;
+import com.raota.application.community.result.PostDetailResult;
+import com.raota.application.community.result.RamenShopOptionResult;
 import com.raota.infrastructure.auth.LoginMember;
 import com.raota.presentation.api.community.contract.CommunityApi;
 import com.raota.presentation.api.community.request.CommunityCreatePostRequest;
-import com.raota.presentation.api.community.request.CommunityPostSearchRequest;
-import com.raota.presentation.api.community.request.CommunityRamenShopSearchRequest;
 import com.raota.presentation.api.community.request.CommunityUpdatePostRequest;
-import com.raota.presentation.api.community.response.CommunityPostCardResponse;
-import com.raota.presentation.api.community.response.CommunityPostDetailResponse;
-import com.raota.presentation.api.community.response.CommunityRamenShopOptionResponse;
 import com.raota.presentation.common.ApiResponse;
 import com.raota.presentation.common.PageResponse;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +25,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -47,23 +47,21 @@ public class CommunityPostController implements CommunityApi {
 
     @Override
     @GetMapping("/posts")
-        public ResponseEntity<ApiResponse<PageResponse<CommunityPostCardResponse>>> getCommunityPosts(
+    public ResponseEntity<ApiResponse<PageResponse<PostCardResult>>> getCommunityPosts(
             @PageableDefault(size = 10, direction = Sort.Direction.DESC) Pageable pageable,
-            CommunityPostSearchRequest request) {
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) Long ramenShopId) {
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(
-                postQueryService.searchPostCards(request.toQuery(), pageable)
-                        .map(CommunityPostCardResponse::from)
+                postQueryService.searchPostCards(new PostSearchQuery(category, ramenShopId), pageable)
         )));
     }
 
     @Override
     @GetMapping("/posts/{postId}")
-    public ResponseEntity<ApiResponse<CommunityPostDetailResponse>> getCommunityPostDetail(
+    public ResponseEntity<ApiResponse<PostDetailResult>> getCommunityPostDetail(
             @PathVariable Long postId,
             @LoginMember(required = false) Long memberId) {
-        return ResponseEntity.ok(ApiResponse.success(CommunityPostDetailResponse.from(
-                postQueryService.getPostDetail(postId, memberId)
-        )));
+        return ResponseEntity.ok(ApiResponse.success(postQueryService.getPostDetail(postId, memberId)));
     }
 
     @Override
@@ -76,26 +74,22 @@ public class CommunityPostController implements CommunityApi {
 
     @Override
     @PostMapping("/posts")
-    public ResponseEntity<ApiResponse<CommunityPostDetailResponse>> createCommunityPost(
+    public ResponseEntity<ApiResponse<PostDetailResult>> createCommunityPost(
             @RequestBody CommunityCreatePostRequest request,
             @LoginMember Long memberId) {
 
         Long postId = postService.createPost(request.toCommand(memberId));
-        return ResponseEntity.ok(ApiResponse.success(CommunityPostDetailResponse.from(
-                postQueryService.getPostDetail(postId, memberId)
-        )));
+        return ResponseEntity.ok(ApiResponse.success(postQueryService.getPostDetail(postId, memberId)));
     }
 
     @PatchMapping("/posts/{postId}")
     @Override
-    public ResponseEntity<ApiResponse<CommunityPostDetailResponse>> updateCommunityPost(
+    public ResponseEntity<ApiResponse<PostDetailResult>> updateCommunityPost(
             @PathVariable Long postId,
             @RequestBody CommunityUpdatePostRequest request,
             @LoginMember Long memberId) {
         postService.updatePost(request.toCommand(postId, memberId));
-        return ResponseEntity.ok(ApiResponse.success(CommunityPostDetailResponse.from(
-                postQueryService.getPostDetail(postId, memberId)
-        )));
+        return ResponseEntity.ok(ApiResponse.success(postQueryService.getPostDetail(postId, memberId)));
     }
 
     @Override
@@ -109,12 +103,11 @@ public class CommunityPostController implements CommunityApi {
 
     @Override
     @GetMapping("/ramen-shops")
-    public ResponseEntity<ApiResponse<PageResponse<CommunityRamenShopOptionResponse>>> getRamenShopOptions(
+    public ResponseEntity<ApiResponse<PageResponse<RamenShopOptionResult>>> getRamenShopOptions(
             @PageableDefault(size = 10, direction = Sort.Direction.DESC) Pageable pageable,
-            CommunityRamenShopSearchRequest request) {
+            @RequestParam(required = false) String keyword) {
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(
-                postQueryService.getRamenShopOptions(request.getKeyword(), pageable)
-                        .map(CommunityRamenShopOptionResponse::from)
+                postQueryService.getRamenShopOptions(keyword, pageable)
         )));
     }
 }

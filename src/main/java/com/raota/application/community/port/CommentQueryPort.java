@@ -12,5 +12,7 @@ public interface CommentQueryPort {
 
     Page<CommentItemResult> getParentComments(Long postId, Pageable pageable);
 
+    Page<CommentItemResult> findCommentsByAuthor(Long authorId, Pageable pageable);
+
     List<CommentItemResult> getReplies(Long parentId);
 }

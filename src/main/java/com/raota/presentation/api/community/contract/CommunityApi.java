@@ -1,13 +1,11 @@
 package com.raota.presentation.api.community.contract;
 
+import com.raota.application.community.result.PostCardResult;
+import com.raota.application.community.result.PostDetailResult;
+import com.raota.application.community.result.RamenShopOptionResult;
 import com.raota.infrastructure.auth.LoginMember;
 import com.raota.presentation.api.community.request.CommunityCreatePostRequest;
-import com.raota.presentation.api.community.request.CommunityPostSearchRequest;
-import com.raota.presentation.api.community.request.CommunityRamenShopSearchRequest;
 import com.raota.presentation.api.community.request.CommunityUpdatePostRequest;
-import com.raota.presentation.api.community.response.CommunityPostCardResponse;
-import com.raota.presentation.api.community.response.CommunityPostDetailResponse;
-import com.raota.presentation.api.community.response.CommunityRamenShopOptionResponse;
 import com.raota.presentation.common.ApiResponse;
 import com.raota.presentation.common.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,16 +27,17 @@ public interface CommunityApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<PageResponse<CommunityPostCardResponse>>> getCommunityPosts(
+    ResponseEntity<ApiResponse<PageResponse<PostCardResult>>> getCommunityPosts(
             @ParameterObject Pageable pageable,
-            @ParameterObject CommunityPostSearchRequest request);
+            @Parameter(description = "글 카테고리 필터. REVIEW, TIP, QUESTION, FREE 또는 POPULAR") String category,
+            @Parameter(description = "맛집후기 카테고리에서 필터링할 라멘집 ID") Long ramenShopId);
 
     @Operation(summary = "커뮤니티 글 상세 조회",
             description = "커뮤니티 글 상세 정보를 조회합니다.")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<CommunityPostDetailResponse>> getCommunityPostDetail(
+    ResponseEntity<ApiResponse<PostDetailResult>> getCommunityPostDetail(
             @Parameter(description = "글 ID", required = true) Long postId,
             @Parameter(hidden = true) Long memberId);
 
@@ -55,7 +54,7 @@ public interface CommunityApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<CommunityPostDetailResponse>> createCommunityPost(
+    ResponseEntity<ApiResponse<PostDetailResult>> createCommunityPost(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "글 작성 요청")
             CommunityCreatePostRequest request,
             @Parameter(hidden = true) Long memberId);
@@ -65,7 +64,7 @@ public interface CommunityApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<CommunityPostDetailResponse>> updateCommunityPost(
+    ResponseEntity<ApiResponse<PostDetailResult>> updateCommunityPost(
             @PathVariable Long postId,
             @RequestBody CommunityUpdatePostRequest request,
             @LoginMember Long memberId);
@@ -93,7 +92,7 @@ public interface CommunityApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<PageResponse<CommunityRamenShopOptionResponse>>> getRamenShopOptions(
+    ResponseEntity<ApiResponse<PageResponse<RamenShopOptionResult>>> getRamenShopOptions(
             @ParameterObject Pageable pageable,
-            @ParameterObject CommunityRamenShopSearchRequest request);
+            @Parameter(description = "가게명 검색 키워드") String keyword);
 }

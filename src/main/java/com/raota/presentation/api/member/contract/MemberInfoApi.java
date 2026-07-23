@@ -1,5 +1,7 @@
 package com.raota.presentation.api.member.contract;
 
+import com.raota.application.community.result.CommentItemResult;
+import com.raota.application.community.result.PostCardResult;
 import com.raota.presentation.api.member.request.UpdateProfileRequest;
 import com.raota.presentation.api.member.request.UpdateEmailRequest;
 import com.raota.presentation.api.member.response.BookmarkSummaryResponse;
@@ -94,7 +96,7 @@ public interface MemberInfoApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<PageResponse<com.raota.presentation.api.community.response.CommunityPostCardResponse>>> getMyPosts(
+    ResponseEntity<ApiResponse<PageResponse<PostCardResult>>> getMyPosts(
             @Parameter(hidden = true) Long memberId,
             @ParameterObject Pageable pageable);
 
@@ -102,7 +104,7 @@ public interface MemberInfoApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<PageResponse<com.raota.presentation.api.community.response.CommunityCommentItemResponse>>> getMyComments(
+    ResponseEntity<ApiResponse<PageResponse<CommentItemResult>>> getMyComments(
             @Parameter(hidden = true) Long memberId,
             @ParameterObject Pageable pageable);
 
@@ -136,7 +138,7 @@ public interface MemberInfoApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<PageResponse<com.raota.presentation.api.community.response.CommunityPostCardResponse>>> getUserPostsById(
+    ResponseEntity<ApiResponse<PageResponse<PostCardResult>>> getUserPostsById(
             @PathVariable Long userId,
             @Parameter(hidden = true) Long viewerId,
             @ParameterObject Pageable pageable);
@@ -145,7 +147,7 @@ public interface MemberInfoApi {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
-    ResponseEntity<ApiResponse<PageResponse<com.raota.presentation.api.community.response.CommunityCommentItemResponse>>> getUserCommentsById(
+    ResponseEntity<ApiResponse<PageResponse<CommentItemResult>>> getUserCommentsById(
             @PathVariable Long userId,
             @Parameter(hidden = true) Long viewerId,
             @ParameterObject Pageable pageable);

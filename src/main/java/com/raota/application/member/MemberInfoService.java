@@ -1,5 +1,9 @@
 package com.raota.application.member;
 
+import com.raota.application.community.result.CommentItemResult;
+import com.raota.application.community.result.PostCardResult;
+import com.raota.application.community.service.CommentQueryService;
+import com.raota.application.community.service.PostQueryService;
 import com.raota.presentation.api.member.response.BookmarkSummaryResponse;
 import com.raota.presentation.api.member.response.MemberSummaryResponse;
 import com.raota.presentation.api.member.response.MyProfileResponse;
@@ -22,6 +26,8 @@ public class MemberInfoService {
     private final MemberRepository memberRepository;
     private final MemberProvisioningService memberProvisioningService;
     private final MemberActivityVisibilityService memberActivityVisibilityService;
+    private final PostQueryService postQueryService;
+    private final CommentQueryService commentQueryService;
     private final FileUploader fileUploader;
 
     public MyProfileResponse getMyProfile(Long memberId) {
@@ -109,12 +115,12 @@ public class MemberInfoService {
                 ));
     }
 
-    public Page<com.raota.presentation.api.community.response.CommunityPostCardResponse> getMyPosts(Long memberId, Pageable pageable) {
-        return memberRepository.findMyPosts(memberId, pageable);
+    public Page<PostCardResult> getMyPosts(Long memberId, Pageable pageable) {
+        return postQueryService.findPostCardsByAuthor(memberId, pageable);
     }
 
-    public Page<com.raota.presentation.api.community.response.CommunityCommentItemResponse> getMyComments(Long memberId, Pageable pageable) {
-        return memberRepository.findMyComments(memberId, pageable);
+    public Page<CommentItemResult> getMyComments(Long memberId, Pageable pageable) {
+        return commentQueryService.findCommentsByAuthor(memberId, pageable);
     }
 
     public Page<PhotoSummaryResponse> getUserPhotoList(Long userId, Long viewerId, Pageable pageable) {
@@ -127,7 +133,7 @@ public class MemberInfoService {
         return getMyVisits(userId, pageable);
     }
 
-    public Page<com.raota.presentation.api.community.response.CommunityPostCardResponse> getUserPosts(
+    public Page<PostCardResult> getUserPosts(
             Long userId,
             Long viewerId,
             Pageable pageable
@@ -136,7 +142,7 @@ public class MemberInfoService {
         return getMyPosts(userId, pageable);
     }
 
-    public Page<com.raota.presentation.api.community.response.CommunityCommentItemResponse> getUserComments(
+    public Page<CommentItemResult> getUserComments(
             Long userId,
             Long viewerId,
             Pageable pageable
