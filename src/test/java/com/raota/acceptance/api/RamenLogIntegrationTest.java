@@ -14,6 +14,7 @@ import com.raota.support.BaseIntegrationTest;
 import com.raota.infrastructure.auth.JwtTokenProvider;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -162,6 +163,26 @@ class RamenLogIntegrationTest extends BaseIntegrationTest {
                 .then()
                 .statusCode(HttpStatus.OK.value())
                 .body("data.mine", equalTo(true));
+    }
+
+    @Test
+    void publicFeedIncludesLogsFromDeletedMembers() {
+        given()
+                .header("Authorization", "Bearer " + accessToken)
+                .contentType(ContentType.JSON)
+                .body(payload(true))
+                .post("/ramen-logs")
+                .then()
+                .statusCode(HttpStatus.OK.value());
+
+        member.softDelete(LocalDateTime.now());
+        memberRepository.saveAndFlush(member);
+
+        given()
+                .get("/ramen-logs?size=8")
+                .then()
+                .statusCode(HttpStatus.OK.value())
+                .body("data.items.size()", equalTo(1));
     }
 
     private Map<String, Object> payload(boolean isPublic) {

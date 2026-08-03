@@ -242,7 +242,6 @@ public class RamenLogService {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(criteriaBuilder.isFalse(root.get("isDeleted")));
-            predicates.add(criteriaBuilder.isNull(root.get("author").get("deletedAt")));
 
             if (isPublic != null) {
                 predicates.add(criteriaBuilder.equal(root.get("isPublic"), isPublic));
