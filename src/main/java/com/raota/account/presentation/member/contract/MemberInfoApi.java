@@ -1,13 +1,9 @@
-package com.raota.discovery.presentation.member.contract;
+package com.raota.account.presentation.member.contract;
 
-import com.raota.community.application.result.CommentItemResult;
-import com.raota.community.application.result.PostCardResult;
-import com.raota.account.presentation.member.request.UpdateProfileRequest;
 import com.raota.account.presentation.member.request.UpdateEmailRequest;
+import com.raota.account.presentation.member.request.UpdateProfileRequest;
 import com.raota.account.presentation.member.response.BookmarkSummaryResponse;
 import com.raota.account.presentation.member.response.MemberSummaryResponse;
-import com.raota.account.presentation.member.response.MyCommentSummaryResponse;
-import com.raota.account.presentation.member.response.MyPostSummaryResponse;
 import com.raota.account.presentation.member.response.MyProfileResponse;
 import com.raota.account.presentation.member.response.PhotoSummaryResponse;
 import com.raota.account.presentation.member.response.VisitSummaryResponse;
@@ -92,22 +88,6 @@ public interface MemberInfoApi {
             @Parameter(hidden = true) Long memberId,
             @ParameterObject Pageable pageable);
 
-    @Operation(summary = "내 글 목록 조회", description = "로그인 사용자의 글 목록을 페이징으로 조회합니다. 기본 페이지 크기는 5입니다.")
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
-    })
-    ResponseEntity<ApiResponse<PageResponse<PostCardResult>>> getMyPosts(
-            @Parameter(hidden = true) Long memberId,
-            @ParameterObject Pageable pageable);
-
-    @Operation(summary = "내 댓글 목록 조회", description = "댓글 내용과 댓글이 속한 글의 제목/작성일시를 페이징으로 조회합니다. 기본 페이지 크기는 5입니다.")
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
-    })
-    ResponseEntity<ApiResponse<PageResponse<CommentItemResult>>> getMyComments(
-            @Parameter(hidden = true) Long memberId,
-            @ParameterObject Pageable pageable);
-
     @Operation(summary = "사용자 프로필 조회", description = "특정 사용자의 프로필과 활동 통계를 반환합니다.")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
@@ -130,24 +110,6 @@ public interface MemberInfoApi {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
     ResponseEntity<ApiResponse<PageResponse<VisitSummaryResponse>>> getUserVisitsById(
-            @PathVariable Long userId,
-            @Parameter(hidden = true) Long viewerId,
-            @ParameterObject Pageable pageable);
-
-    @Operation(summary = "사용자 글 목록 조회", description = "특정 사용자의 글 목록을 페이징으로 조회합니다. 기본 페이지 크기는 5입니다.")
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
-    })
-    ResponseEntity<ApiResponse<PageResponse<PostCardResult>>> getUserPostsById(
-            @PathVariable Long userId,
-            @Parameter(hidden = true) Long viewerId,
-            @ParameterObject Pageable pageable);
-
-    @Operation(summary = "사용자 댓글 목록 조회", description = "특정 사용자의 댓글 목록을 페이징으로 조회합니다. 기본 페이지 크기는 5입니다.")
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
-    })
-    ResponseEntity<ApiResponse<PageResponse<CommentItemResult>>> getUserCommentsById(
             @PathVariable Long userId,
             @Parameter(hidden = true) Long viewerId,
             @ParameterObject Pageable pageable);

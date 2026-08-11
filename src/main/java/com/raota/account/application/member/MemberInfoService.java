@@ -1,18 +1,12 @@
-package com.raota.discovery.application.member;
+package com.raota.account.application.member;
 
-import com.raota.community.application.result.CommentItemResult;
-import com.raota.community.application.result.PostCardResult;
-import com.raota.community.application.service.CommentQueryService;
-import com.raota.community.application.service.PostQueryService;
-import com.raota.account.application.member.MemberActivityVisibilityService;
-import com.raota.account.application.member.MemberProvisioningService;
+import com.raota.account.domain.member.model.MemberProfile;
+import com.raota.account.domain.member.repository.MemberRepository;
 import com.raota.account.presentation.member.response.BookmarkSummaryResponse;
 import com.raota.account.presentation.member.response.MemberSummaryResponse;
 import com.raota.account.presentation.member.response.MyProfileResponse;
 import com.raota.account.presentation.member.response.PhotoSummaryResponse;
 import com.raota.account.presentation.member.response.VisitSummaryResponse;
-import com.raota.account.domain.member.model.MemberProfile;
-import com.raota.account.domain.member.repository.MemberRepository;
 import com.raota.global.file.FileUploader;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -28,8 +22,6 @@ public class MemberInfoService {
     private final MemberRepository memberRepository;
     private final MemberProvisioningService memberProvisioningService;
     private final MemberActivityVisibilityService memberActivityVisibilityService;
-    private final PostQueryService postQueryService;
-    private final CommentQueryService commentQueryService;
     private final FileUploader fileUploader;
 
     public MyProfileResponse getMyProfile(Long memberId) {
@@ -81,8 +73,8 @@ public class MemberInfoService {
         return getMyProfile(memberId);
     }
 
-    public Page<PhotoSummaryResponse> getMyPhotoList(Long memberId,Pageable pageable){
-        return memberRepository.findMyPhotos(memberId,pageable)
+    public Page<PhotoSummaryResponse> getMyPhotoList(Long memberId, Pageable pageable) {
+        return memberRepository.findMyPhotos(memberId, pageable)
                 .map(photo -> new PhotoSummaryResponse(
                         photo.photo_id(),
                         fileUploader.getAccessibleUrl(photo.image_url()),
@@ -105,8 +97,8 @@ public class MemberInfoService {
                 ));
     }
 
-    public Page<VisitSummaryResponse> getMyVisits(Long memberId,Pageable pageable) {
-        return memberRepository.findMyVisitRestaurant(memberId,pageable)
+    public Page<VisitSummaryResponse> getMyVisits(Long memberId, Pageable pageable) {
+        return memberRepository.findMyVisitRestaurant(memberId, pageable)
                 .map(visit -> new VisitSummaryResponse(
                         visit.restaurant_id(),
                         visit.restaurant_name(),
@@ -117,14 +109,6 @@ public class MemberInfoService {
                 ));
     }
 
-    public Page<PostCardResult> getMyPosts(Long memberId, Pageable pageable) {
-        return postQueryService.findPostCardsByAuthor(memberId, pageable);
-    }
-
-    public Page<CommentItemResult> getMyComments(Long memberId, Pageable pageable) {
-        return commentQueryService.findCommentsByAuthor(memberId, pageable);
-    }
-
     public Page<PhotoSummaryResponse> getUserPhotoList(Long userId, Long viewerId, Pageable pageable) {
         memberActivityVisibilityService.requireLogsVisible(userId, viewerId);
         return getMyPhotoList(userId, pageable);
@@ -133,23 +117,5 @@ public class MemberInfoService {
     public Page<VisitSummaryResponse> getUserVisits(Long userId, Long viewerId, Pageable pageable) {
         memberActivityVisibilityService.requireVisitsVisible(userId, viewerId);
         return getMyVisits(userId, pageable);
-    }
-
-    public Page<PostCardResult> getUserPosts(
-            Long userId,
-            Long viewerId,
-            Pageable pageable
-    ) {
-        memberActivityVisibilityService.requirePostsVisible(userId, viewerId);
-        return getMyPosts(userId, pageable);
-    }
-
-    public Page<CommentItemResult> getUserComments(
-            Long userId,
-            Long viewerId,
-            Pageable pageable
-    ) {
-        memberActivityVisibilityService.requireCommentsVisible(userId, viewerId);
-        return getMyComments(userId, pageable);
     }
 }
