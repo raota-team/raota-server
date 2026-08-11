@@ -10,16 +10,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.raota.domain.member.model.MemberProfile;
-import com.raota.domain.member.model.MemberRole;
-import com.raota.domain.member.repository.MemberRepository;
-import com.raota.domain.ramenShop.model.Address;
-import com.raota.domain.ramenShop.model.BusinessHours;
-import com.raota.domain.ramenShop.model.EventMenus;
-import com.raota.domain.ramenShop.model.NormalMenu;
-import com.raota.domain.ramenShop.model.NormalMenus;
-import com.raota.domain.ramenShop.model.RamenShop;
-import com.raota.domain.ramenShop.repository.RamenShopRepository;
+import com.raota.account.domain.member.model.MemberProfile;
+import com.raota.account.domain.member.model.MemberRole;
+import com.raota.account.domain.member.repository.MemberRepository;
+import com.raota.ramenshop.domain.model.Address;
+import com.raota.ramenshop.domain.model.BusinessHours;
+import com.raota.ramenshop.domain.model.EventMenus;
+import com.raota.ramenshop.domain.model.NormalMenu;
+import com.raota.ramenshop.domain.model.NormalMenus;
+import com.raota.ramenshop.domain.model.RamenShop;
+import com.raota.ramenshop.domain.repository.RamenShopRepository;
 import com.raota.account.infrastructure.auth.JwtTokenProvider;
 import com.raota.support.BaseIntegrationTest;
 import java.time.LocalTime;

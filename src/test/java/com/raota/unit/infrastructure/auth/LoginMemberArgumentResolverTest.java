@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
-import com.raota.domain.member.model.MemberRole;
+import com.raota.account.domain.member.model.MemberRole;
 import com.raota.account.infrastructure.auth.AuthenticatedMember;
 import com.raota.account.infrastructure.auth.AuthenticationRequiredException;
 import com.raota.account.infrastructure.auth.LoginMember;

@@ -26,7 +26,7 @@ class ModulithArchitectureTest {
         var modules = ApplicationModules.of(RaotaApplication.class);
 
         org.junit.jupiter.api.Assertions.assertEquals(
-                Set.of("global", "ramenlog", "account"),
+                Set.of("global", "ramenlog", "account", "community", "ramenshop", "agent", "discovery"),
                 modules.stream()
                         .map(module -> module.getIdentifier().toString())
                         .collect(java.util.stream.Collectors.toSet())

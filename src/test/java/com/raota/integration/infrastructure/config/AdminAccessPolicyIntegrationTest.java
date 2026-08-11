@@ -5,9 +5,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.raota.domain.member.model.MemberProfile;
-import com.raota.domain.member.model.MemberRole;
-import com.raota.domain.member.repository.MemberRepository;
+import com.raota.account.domain.member.model.MemberProfile;
+import com.raota.account.domain.member.model.MemberRole;
+import com.raota.account.domain.member.repository.MemberRepository;
 import com.raota.account.infrastructure.auth.JwtTokenProvider;
 import com.raota.support.BaseIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;

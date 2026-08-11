@@ -5,12 +5,12 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.raota.application.retrieval.RetrievalIndexingService;
-import com.raota.domain.community.model.Post;
-import com.raota.domain.community.repository.PostRepository;
-import com.raota.domain.ramenShop.repository.RamenShopRepository;
-import com.raota.domain.retrieval.document.factory.PostReviewChunkDocumentFactory;
-import com.raota.domain.retrieval.document.factory.RamenShopProfileDocumentFactory;
+import com.raota.agent.application.retrieval.RetrievalIndexingService;
+import com.raota.community.domain.model.Post;
+import com.raota.community.domain.repository.PostRepository;
+import com.raota.ramenshop.domain.repository.RamenShopRepository;
+import com.raota.agent.domain.retrieval.document.factory.PostReviewChunkDocumentFactory;
+import com.raota.agent.domain.retrieval.document.factory.RamenShopProfileDocumentFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;

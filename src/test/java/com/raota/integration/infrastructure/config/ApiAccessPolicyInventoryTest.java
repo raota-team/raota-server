@@ -82,7 +82,8 @@ class ApiAccessPolicyInventoryTest extends BaseIntegrationTest {
     }
 
     private boolean isApplicationController(HandlerMethod handlerMethod) {
-        return handlerMethod.getBeanType().getPackageName().startsWith("com.raota.presentation");
+        String packageName = handlerMethod.getBeanType().getPackageName();
+        return packageName.startsWith("com.raota.");
     }
 
     private List<Endpoint> endpoints(RequestMappingInfo requestMappingInfo) {

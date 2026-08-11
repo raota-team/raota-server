@@ -1,8 +1,8 @@
 package com.raota.account.application.auth;
 
 import com.raota.account.domain.auth.model.SocialAccount;
-import com.raota.application.member.MemberProvisioningService;
-import com.raota.domain.member.model.MemberProfile;
+import com.raota.account.application.member.MemberProvisioningService;
+import com.raota.account.domain.member.model.MemberProfile;
 import com.raota.account.infrastructure.auth.WithdrawnMemberException;
 import com.raota.account.infrastructure.auth.JwtTokenProvider;
 import java.util.Optional;
@@ -38,7 +38,7 @@ public class AuthService {
         existingMemberProfile
                 .filter(MemberProfile::isDeleted)
                 .ifPresent(member -> {
-                    throw new WithdrawnMemberException(com.raota.application.member.MemberLifecycleService.WITHDRAWN_MEMBER_MESSAGE);
+                    throw new WithdrawnMemberException(com.raota.account.application.member.MemberLifecycleService.WITHDRAWN_MEMBER_MESSAGE);
                 });
 
         String normalizedNickname = normalizeNickname(userInfo);

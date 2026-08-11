@@ -1,6 +1,6 @@
 package com.raota.global.file;
 
-import com.raota.presentation.api.file.response.PresignedUrlResponse;
+import com.raota.global.presentation.file.response.PresignedUrlResponse;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface FileUploader {

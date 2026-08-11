@@ -3,8 +3,8 @@ import com.raota.account.infrastructure.auth.JwtTokenProvider;
 
 import com.raota.account.domain.auth.model.RefreshToken;
 import com.raota.account.domain.auth.repository.RefreshTokenRepository;
-import com.raota.domain.member.model.MemberProfile;
-import com.raota.domain.member.repository.MemberRepository;
+import com.raota.account.domain.member.model.MemberProfile;
+import com.raota.account.domain.member.repository.MemberRepository;
 import io.restassured.RestAssured;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;

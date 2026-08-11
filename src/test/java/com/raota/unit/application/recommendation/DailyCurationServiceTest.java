@@ -1,13 +1,13 @@
 package com.raota.unit.application.recommendation;
 
-import com.raota.application.recommendation.DailyCurationService;
-import com.raota.application.recommendation.RamenRecommendationAiService;
-import com.raota.domain.recommendation.model.RamenType;
-import com.raota.domain.recommendation.model.DailyCuration;
-import com.raota.domain.recommendation.repository.RamenTypeRepository;
-import com.raota.domain.recommendation.repository.DailyCurationRepository;
-import com.raota.global.external.KmaWeatherClient;
-import com.raota.application.recommendation.dto.AiRamenRecommendationResponse;
+import com.raota.agent.application.recommendation.DailyCurationService;
+import com.raota.agent.application.recommendation.RamenRecommendationAiService;
+import com.raota.agent.domain.recommendation.model.RamenType;
+import com.raota.agent.domain.recommendation.model.DailyCuration;
+import com.raota.agent.domain.recommendation.repository.RamenTypeRepository;
+import com.raota.agent.domain.recommendation.repository.DailyCurationRepository;
+import com.raota.agent.infrastructure.external.KmaWeatherClient;
+import com.raota.agent.application.recommendation.dto.AiRamenRecommendationResponse;
 import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

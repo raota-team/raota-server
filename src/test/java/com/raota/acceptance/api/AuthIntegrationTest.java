@@ -6,8 +6,8 @@ import static org.hamcrest.Matchers.is;
 
 import com.raota.account.domain.auth.model.RefreshToken;
 import com.raota.account.domain.auth.repository.RefreshTokenRepository;
-import com.raota.domain.member.model.MemberProfile;
-import com.raota.domain.member.repository.MemberRepository;
+import com.raota.account.domain.member.model.MemberProfile;
+import com.raota.account.domain.member.repository.MemberRepository;
 import com.raota.support.BaseIntegrationTest;
 import io.restassured.RestAssured;
 import java.time.Instant;

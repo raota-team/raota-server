@@ -2,11 +2,11 @@ package com.raota.unit.domain.retrieval;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.raota.domain.community.model.Post;
-import com.raota.domain.community.model.PostCategory;
-import com.raota.domain.ramenShop.model.Address;
-import com.raota.domain.ramenShop.model.RamenShop;
-import com.raota.domain.retrieval.document.factory.PostReviewChunkDocumentFactory;
+import com.raota.community.domain.model.Post;
+import com.raota.community.domain.model.PostCategory;
+import com.raota.ramenshop.domain.model.Address;
+import com.raota.ramenshop.domain.model.RamenShop;
+import com.raota.agent.domain.retrieval.document.factory.PostReviewChunkDocumentFactory;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;

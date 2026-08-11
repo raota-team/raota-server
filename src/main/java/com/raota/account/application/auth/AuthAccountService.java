@@ -2,7 +2,7 @@ package com.raota.account.application.auth;
 
 import com.raota.account.domain.auth.model.SocialAccount;
 import com.raota.account.domain.auth.repository.SocialAccountRepository;
-import com.raota.domain.member.repository.MemberRepository;
+import com.raota.account.domain.member.repository.MemberRepository;
 import com.raota.account.infrastructure.persistence.auth.RefreshTokenStore;
 import com.raota.account.infrastructure.persistence.auth.StoredRefreshToken;
 import com.raota.account.infrastructure.auth.AuthProperties;
@@ -67,7 +67,7 @@ public class AuthAccountService {
 
         if (!memberRepository.existsByIdAndDeletedAtIsNull(refreshToken.memberId())) {
             refreshTokenStore.deleteByToken(refreshTokenValue);
-            throw new AuthenticationRequiredException(com.raota.application.member.MemberLifecycleService.WITHDRAWN_MEMBER_MESSAGE);
+            throw new AuthenticationRequiredException(com.raota.account.application.member.MemberLifecycleService.WITHDRAWN_MEMBER_MESSAGE);
         }
 
         if (refreshToken.isExpired(Instant.now())) {

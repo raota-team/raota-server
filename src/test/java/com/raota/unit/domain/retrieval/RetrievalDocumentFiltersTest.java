@@ -2,7 +2,7 @@ package com.raota.unit.domain.retrieval;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.raota.domain.retrieval.document.RetrievalDocumentFilters;
+import com.raota.agent.domain.retrieval.document.RetrievalDocumentFilters;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.vectorstore.oracle.SqlJsonPathFilterExpressionConverter;
 

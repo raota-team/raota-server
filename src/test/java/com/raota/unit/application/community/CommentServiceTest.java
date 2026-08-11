@@ -3,12 +3,12 @@ package com.raota.unit.application.community;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.raota.application.community.command.CreateCommentCommand;
-import com.raota.domain.community.repository.CommentRepository;
-import com.raota.domain.community.repository.PostRepository;
-import com.raota.application.community.service.CommentService;
-import com.raota.domain.member.model.MemberProfile;
-import com.raota.domain.member.repository.MemberRepository;
+import com.raota.community.application.command.CreateCommentCommand;
+import com.raota.community.domain.repository.CommentRepository;
+import com.raota.community.domain.repository.PostRepository;
+import com.raota.community.application.service.CommentService;
+import com.raota.account.domain.member.model.MemberProfile;
+import com.raota.account.domain.member.repository.MemberRepository;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,7 +33,7 @@ class CommentServiceTest {
         Long parentId = 10L;
         Long memberId = 1L;
 
-        when(postRepository.findById(postId)).thenReturn(Optional.of(mock(com.raota.domain.community.model.Post.class)));
+        when(postRepository.findById(postId)).thenReturn(Optional.of(mock(com.raota.community.domain.model.Post.class)));
         doThrow(new IllegalArgumentException("답글에는 답글을 달 수 없습니다. (최대 Depth 1)"))
                 .when(commentRepository)
                 .validateReplyTarget(parentId);

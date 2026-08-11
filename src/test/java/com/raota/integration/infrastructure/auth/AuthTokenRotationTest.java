@@ -2,8 +2,8 @@ package com.raota.integration.infrastructure.auth;
 
 import com.raota.account.application.auth.AuthAccountService;
 import com.raota.account.application.auth.AuthRefreshSession;
-import com.raota.domain.member.model.MemberProfile;
-import com.raota.domain.member.repository.MemberRepository;
+import com.raota.account.domain.member.model.MemberProfile;
+import com.raota.account.domain.member.repository.MemberRepository;
 import com.raota.account.infrastructure.auth.AuthenticationRequiredException;
 import com.raota.account.infrastructure.persistence.auth.RefreshTokenStore;
 

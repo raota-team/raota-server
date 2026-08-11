@@ -4,12 +4,12 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 
-import com.raota.domain.ramenShop.model.Address;
-import com.raota.domain.ramenShop.model.BusinessHours;
-import com.raota.domain.ramenShop.model.EventMenus;
-import com.raota.domain.ramenShop.model.NormalMenus;
-import com.raota.domain.ramenShop.model.RamenShop;
-import com.raota.domain.ramenShop.repository.RamenShopRepository;
+import com.raota.ramenshop.domain.model.Address;
+import com.raota.ramenshop.domain.model.BusinessHours;
+import com.raota.ramenshop.domain.model.EventMenus;
+import com.raota.ramenshop.domain.model.NormalMenus;
+import com.raota.ramenshop.domain.model.RamenShop;
+import com.raota.ramenshop.domain.repository.RamenShopRepository;
 import com.raota.support.BaseIntegrationTest;
 import io.restassured.RestAssured;
 import java.time.LocalTime;

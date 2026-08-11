@@ -1,0 +1,97 @@
+package com.raota.community.presentation.contract;
+
+import com.raota.community.application.result.PostCardResult;
+import com.raota.community.application.result.PostDetailResult;
+import com.raota.community.application.result.RamenShopOptionResult;
+import com.raota.account.infrastructure.auth.LoginMember;
+import com.raota.community.presentation.request.CommunityCreatePostRequest;
+import com.raota.community.presentation.request.CommunityUpdatePostRequest;
+import com.raota.global.presentation.common.ApiResponse;
+import com.raota.global.presentation.common.PageResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+
+@Tag(name = "커뮤니티", description = "커뮤니티 API")
+public interface CommunityApi {
+
+    @Operation(summary = "커뮤니티 글 목록 조회",
+            description = "카테고리, 라멘집 ID 필터와 페이징으로 커뮤니티 글 목록을 조회합니다. category=POPULAR이면 좋아요 3개 이상인 글을 최신순으로 조회합니다. 기본 페이지 크기는 10입니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    ResponseEntity<ApiResponse<PageResponse<PostCardResult>>> getCommunityPosts(
+            @ParameterObject Pageable pageable,
+            @Parameter(description = "글 카테고리 필터. REVIEW, TIP, QUESTION, FREE 또는 POPULAR") String category,
+            @Parameter(description = "맛집후기 카테고리에서 필터링할 라멘집 ID") Long ramenShopId);
+
+    @Operation(summary = "커뮤니티 글 상세 조회",
+            description = "커뮤니티 글 상세 정보를 조회합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    ResponseEntity<ApiResponse<PostDetailResult>> getCommunityPostDetail(
+            @Parameter(description = "글 ID", required = true) Long postId,
+            @Parameter(hidden = true) Long memberId);
+
+    @Operation(summary = "커뮤니티 글 조회수 증가",
+            description = "커뮤니티 게시글의 조회수를 1 증가시킵니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    ResponseEntity<ApiResponse<Void>> increasePostViewCount(
+            @Parameter(description = "글 ID", required = true) Long postId);
+
+    @Operation(summary = "커뮤니티 글 작성",
+            description = "JSON 형식으로 커뮤니티 글을 작성합니다. 이미지는 사전 업로드 후 URL로 포함되어야 합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    ResponseEntity<ApiResponse<PostDetailResult>> createCommunityPost(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "글 작성 요청")
+            CommunityCreatePostRequest request,
+            @Parameter(hidden = true) Long memberId);
+
+    @Operation(summary = "커뮤니티 글 수정",
+            description = "본인이 작성한 글을 수정합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    ResponseEntity<ApiResponse<PostDetailResult>> updateCommunityPost(
+            @PathVariable Long postId,
+            @RequestBody CommunityUpdatePostRequest request,
+            @LoginMember Long memberId);
+
+    @Operation(summary = "커뮤니티 글 삭제",
+            description = "본인이 작성한 글을 삭제(소프트 딜리트)합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    ResponseEntity<ApiResponse<Void>> deleteCommunityPost(
+            @Parameter(description = "글 ID") Long postId,
+            @Parameter(hidden = true) Long memberId);
+
+    @Operation(summary = "커뮤니티 글 좋아요 토글",
+            description = "게시글에 좋아요를 누르거나 취소합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    ResponseEntity<ApiResponse<Boolean>> togglePostLike(
+            @Parameter(description = "글 ID") Long postId,
+            @Parameter(hidden = true) Long memberId);
+
+    @Operation(summary = "커뮤니티 글 작성용 라멘집 목록 조회",
+            description = "맛집후기 카테고리 작성 시 선택할 라멘집 목록을 검색/페이징으로 조회합니다. 기본 페이지 크기는 10입니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    ResponseEntity<ApiResponse<PageResponse<RamenShopOptionResult>>> getRamenShopOptions(
+            @ParameterObject Pageable pageable,
+            @Parameter(description = "가게명 검색 키워드") String keyword);
+}

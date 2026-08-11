@@ -3,9 +3,9 @@ package com.raota.unit.infrastructure.messaging.redis;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.raota.domain.retrieval.event.PostIndexingEvent;
-import com.raota.global.messaging.redis.PostIndexingStreamListener;
-import com.raota.application.retrieval.RetrievalIndexingService;
+import com.raota.community.domain.event.PostIndexingEvent;
+import com.raota.agent.infrastructure.messaging.redis.PostIndexingStreamListener;
+import com.raota.agent.application.retrieval.RetrievalIndexingService;
 import java.util.Collections;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

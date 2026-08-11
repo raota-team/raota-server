@@ -7,8 +7,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-import com.raota.application.member.MemberProvisioningService;
-import com.raota.domain.member.model.MemberRole;
+import com.raota.account.application.member.MemberProvisioningService;
+import com.raota.account.domain.member.model.MemberRole;
 import com.raota.account.infrastructure.auth.AuthenticatedMember;
 import com.raota.account.infrastructure.auth.JwtAuthenticationException;
 import com.raota.account.infrastructure.auth.JwtAuthenticationFilter;

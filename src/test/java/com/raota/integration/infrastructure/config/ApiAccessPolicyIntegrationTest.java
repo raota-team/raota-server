@@ -11,12 +11,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.raota.application.ramenShop.result.AiRamenShopSearchResult;
-import com.raota.application.ramenShop.service.AiRamenShopSearchService;
-import com.raota.application.recommendation.RecommendationService;
-import com.raota.domain.member.model.MemberProfile;
-import com.raota.domain.member.model.MemberRole;
-import com.raota.domain.member.repository.MemberRepository;
+import com.raota.agent.application.ramenshop.result.AiRamenShopSearchResult;
+import com.raota.agent.application.ramenshop.service.AiRamenShopSearchService;
+import com.raota.agent.application.recommendation.RecommendationService;
+import com.raota.account.domain.member.model.MemberProfile;
+import com.raota.account.domain.member.model.MemberRole;
+import com.raota.account.domain.member.repository.MemberRepository;
 import com.raota.account.infrastructure.auth.JwtTokenProvider;
 import com.raota.support.BaseIntegrationTest;
 import java.util.List;

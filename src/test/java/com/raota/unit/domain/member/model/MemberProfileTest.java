@@ -3,8 +3,8 @@ package com.raota.unit.domain.member.model;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.raota.domain.member.model.MemberProfile;
-import com.raota.domain.member.model.MemberRole;
+import com.raota.account.domain.member.model.MemberProfile;
+import com.raota.account.domain.member.model.MemberRole;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

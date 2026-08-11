@@ -1,6 +1,6 @@
 package com.raota.account.infrastructure.auth;
 
-import com.raota.domain.member.model.MemberRole;
+import com.raota.account.domain.member.model.MemberRole;
 import java.util.Collection;
 import java.util.List;
 import org.springframework.security.core.GrantedAuthority;

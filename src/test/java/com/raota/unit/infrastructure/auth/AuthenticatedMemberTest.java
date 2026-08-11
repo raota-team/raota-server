@@ -2,7 +2,7 @@ package com.raota.unit.infrastructure.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.raota.domain.member.model.MemberRole;
+import com.raota.account.domain.member.model.MemberRole;
 import com.raota.account.infrastructure.auth.AuthenticatedMember;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.GrantedAuthority;
