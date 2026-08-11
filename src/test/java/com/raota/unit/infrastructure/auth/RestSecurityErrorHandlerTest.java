@@ -2,10 +2,10 @@ package com.raota.unit.infrastructure.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.raota.infrastructure.auth.JwtAuthenticationException;
-import com.raota.infrastructure.auth.RestAccessDeniedHandler;
-import com.raota.infrastructure.auth.RestAuthenticationEntryPoint;
-import com.raota.infrastructure.auth.RestSecurityErrorWriter;
+import com.raota.account.infrastructure.auth.JwtAuthenticationException;
+import com.raota.account.infrastructure.auth.RestAccessDeniedHandler;
+import com.raota.account.infrastructure.auth.RestAuthenticationEntryPoint;
+import com.raota.account.infrastructure.auth.RestSecurityErrorWriter;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

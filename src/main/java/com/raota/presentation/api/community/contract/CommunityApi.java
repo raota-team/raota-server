@@ -3,7 +3,7 @@ package com.raota.presentation.api.community.contract;
 import com.raota.application.community.result.PostCardResult;
 import com.raota.application.community.result.PostDetailResult;
 import com.raota.application.community.result.RamenShopOptionResult;
-import com.raota.infrastructure.auth.LoginMember;
+import com.raota.account.infrastructure.auth.LoginMember;
 import com.raota.presentation.api.community.request.CommunityCreatePostRequest;
 import com.raota.presentation.api.community.request.CommunityUpdatePostRequest;
 import com.raota.presentation.common.ApiResponse;
@@ -15,7 +15,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 

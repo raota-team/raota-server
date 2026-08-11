@@ -7,7 +7,7 @@ import com.raota.application.community.query.PostSearchQuery;
 import com.raota.application.community.result.PostCardResult;
 import com.raota.application.community.result.PostDetailResult;
 import com.raota.application.community.result.RamenShopOptionResult;
-import com.raota.infrastructure.auth.LoginMember;
+import com.raota.account.infrastructure.auth.LoginMember;
 import com.raota.presentation.api.community.contract.CommunityApi;
 import com.raota.presentation.api.community.request.CommunityCreatePostRequest;
 import com.raota.presentation.api.community.request.CommunityUpdatePostRequest;

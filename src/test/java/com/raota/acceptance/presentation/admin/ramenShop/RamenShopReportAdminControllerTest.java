@@ -13,7 +13,7 @@ import com.raota.domain.ramenShop.model.RamenShopReport;
 import com.raota.domain.ramenShop.model.RamenShopReportType;
 import com.raota.domain.ramenShop.repository.RamenShopReportRepository;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
-import com.raota.infrastructure.auth.JwtTokenProvider;
+import com.raota.account.infrastructure.auth.JwtTokenProvider;
 import com.raota.support.BaseIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

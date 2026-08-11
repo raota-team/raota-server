@@ -11,7 +11,7 @@ import com.raota.presentation.api.member.response.PhotoSummaryResponse;
 import com.raota.presentation.api.member.response.VisitSummaryResponse;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
-import com.raota.infrastructure.file.FileUploader;
+import com.raota.global.file.FileUploader;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

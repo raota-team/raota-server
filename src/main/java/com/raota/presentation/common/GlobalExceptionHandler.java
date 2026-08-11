@@ -1,6 +1,6 @@
 package com.raota.presentation.common;
 
-import com.raota.infrastructure.auth.AuthenticationRequiredException;
+import com.raota.account.infrastructure.auth.AuthenticationRequiredException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

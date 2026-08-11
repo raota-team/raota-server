@@ -17,7 +17,7 @@ import com.raota.presentation.api.ramenShop.request.RamenShopSearchRequest;
 import com.raota.presentation.api.ramenShop.response.RamenShopBasicInfoResponse;
 import com.raota.application.ramenShop.service.RamenShopInfoService;
 import com.raota.application.ramenShop.service.RamenShopReportService;
-import com.raota.infrastructure.auth.LoginMember;
+import com.raota.account.infrastructure.auth.LoginMember;
 import com.raota.presentation.common.ApiResponse;
 import com.raota.presentation.common.PageResponse;
 import lombok.RequiredArgsConstructor;

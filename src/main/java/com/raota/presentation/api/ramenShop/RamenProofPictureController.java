@@ -3,7 +3,7 @@ package com.raota.presentation.api.ramenShop;
 import com.raota.presentation.api.ramenShop.contract.RamenProofPictureApi;
 import com.raota.presentation.api.ramenShop.response.ProofPictureInfoResponse;
 import com.raota.presentation.api.ramenShop.response.RamenShopProofPictureResponse;
-import com.raota.infrastructure.auth.LoginMember;
+import com.raota.account.infrastructure.auth.LoginMember;
 import com.raota.presentation.common.ApiResponse;
 import com.raota.presentation.common.PageResponse;
 import com.raota.application.ramenlog.RamenProofPictureService;

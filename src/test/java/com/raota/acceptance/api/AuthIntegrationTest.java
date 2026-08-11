@@ -4,8 +4,8 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.is;
 
-import com.raota.domain.auth.model.RefreshToken;
-import com.raota.domain.auth.repository.RefreshTokenRepository;
+import com.raota.account.domain.auth.model.RefreshToken;
+import com.raota.account.domain.auth.repository.RefreshTokenRepository;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
 import com.raota.support.BaseIntegrationTest;

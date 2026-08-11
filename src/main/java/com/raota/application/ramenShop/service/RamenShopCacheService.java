@@ -11,7 +11,7 @@ import com.raota.domain.ramenShop.model.NormalMenus;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.domain.ramenlog.repository.RamenLogRepository;
-import com.raota.infrastructure.file.FileUploader;
+import com.raota.global.file.FileUploader;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;

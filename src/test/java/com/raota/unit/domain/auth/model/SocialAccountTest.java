@@ -2,8 +2,8 @@ package com.raota.unit.domain.auth.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.raota.domain.auth.model.AuthProvider;
-import com.raota.domain.auth.model.SocialAccount;
+import com.raota.account.domain.auth.model.AuthProvider;
+import com.raota.account.domain.auth.model.SocialAccount;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

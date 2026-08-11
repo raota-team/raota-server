@@ -1,7 +1,7 @@
 package com.raota.presentation.admin.user;
 
 import com.raota.application.admin.user.AdminUserService;
-import com.raota.domain.auth.model.AuthProvider;
+import com.raota.account.domain.auth.model.AuthProvider;
 import com.raota.presentation.admin.user.response.AdminUserDetailResponse;
 import com.raota.presentation.admin.user.response.AdminUserListItemResponse;
 import com.raota.presentation.common.ApiResponse;

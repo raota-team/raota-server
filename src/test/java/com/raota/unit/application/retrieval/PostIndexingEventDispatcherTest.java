@@ -3,9 +3,9 @@ package com.raota.unit.application.retrieval;
 import static org.mockito.Mockito.verify;
 
 import com.raota.domain.retrieval.event.PostIndexingEvent;
-import com.raota.infrastructure.messaging.redis.PostIndexingEventDispatcher;
-import com.raota.infrastructure.messaging.MessagePublisher;
-import com.raota.infrastructure.messaging.MessagingTopics;
+import com.raota.global.messaging.redis.PostIndexingEventDispatcher;
+import com.raota.global.messaging.MessagePublisher;
+import com.raota.global.messaging.MessagingTopics;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

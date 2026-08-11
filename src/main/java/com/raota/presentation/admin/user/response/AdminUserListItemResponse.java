@@ -1,6 +1,6 @@
 package com.raota.presentation.admin.user.response;
 
-import com.raota.domain.auth.model.SocialAccount;
+import com.raota.account.domain.auth.model.SocialAccount;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.model.MemberRole;
 import java.time.LocalDateTime;

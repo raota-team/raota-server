@@ -1,5 +1,5 @@
 package com.raota.unit.presentation.api.file;
-import com.raota.infrastructure.file.FileUploader;
+import com.raota.global.file.FileUploader;
 import com.raota.presentation.api.file.FIleController;
 import com.raota.presentation.api.file.response.PresignedUrlResponse;
 

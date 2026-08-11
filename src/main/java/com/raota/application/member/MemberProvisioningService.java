@@ -4,7 +4,7 @@ import com.raota.domain.member.model.MemberActivityStats;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.model.MemberRole;
 import com.raota.domain.member.repository.MemberRepository;
-import com.raota.infrastructure.auth.WithdrawnMemberException;
+import com.raota.account.infrastructure.auth.WithdrawnMemberException;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

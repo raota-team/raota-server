@@ -1,13 +1,13 @@
 package com.raota.application.admin.user;
 
-import com.raota.domain.auth.model.AuthProvider;
-import com.raota.domain.auth.model.SocialAccount;
-import com.raota.domain.auth.repository.SocialAccountRepository;
+import com.raota.account.domain.auth.model.AuthProvider;
+import com.raota.account.domain.auth.model.SocialAccount;
+import com.raota.account.domain.auth.repository.SocialAccountRepository;
 import com.raota.domain.member.model.MemberActivityStats;
 import com.raota.domain.member.model.MemberActivityVisibility;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
-import com.raota.infrastructure.file.FileUploader;
+import com.raota.global.file.FileUploader;
 import com.raota.presentation.admin.user.response.AdminUserActivityStatsResponse;
 import com.raota.presentation.admin.user.response.AdminUserActivityVisibilityResponse;
 import com.raota.presentation.admin.user.response.AdminUserDetailResponse;

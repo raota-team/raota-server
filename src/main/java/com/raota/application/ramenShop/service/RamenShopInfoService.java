@@ -5,7 +5,7 @@ import com.raota.domain.ramenShop.model.EventMenus;
 import com.raota.domain.ramenShop.model.NormalMenus;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
-import com.raota.infrastructure.cache.CacheInvalidationPublisher;
+import com.raota.global.cache.CacheInvalidationPublisher;
 import com.raota.presentation.api.ramenShop.response.RamenShopMenuOptionsResponse;
 import com.raota.presentation.api.ramenShop.response.RamenShopResponse;
 import com.raota.presentation.api.ramenShop.request.RamenShopSortType;

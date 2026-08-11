@@ -3,7 +3,7 @@ package com.raota.presentation.api.ramenShop;
 import com.raota.presentation.api.ramenShop.response.VotingStatusResponse;
 import com.raota.presentation.api.ramenShop.contract.MenuVoteApi;
 import com.raota.application.ramenShop.service.MenuVoteService;
-import com.raota.infrastructure.auth.LoginMember;
+import com.raota.account.infrastructure.auth.LoginMember;
 import com.raota.presentation.common.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;

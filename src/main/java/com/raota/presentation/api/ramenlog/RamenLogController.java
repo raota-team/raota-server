@@ -1,7 +1,7 @@
 package com.raota.presentation.api.ramenlog;
 
 import com.raota.application.ramenlog.RamenLogService;
-import com.raota.infrastructure.auth.LoginMember;
+import com.raota.account.infrastructure.auth.LoginMember;
 import com.raota.presentation.api.ramenlog.request.RamenLogSort;
 import com.raota.presentation.api.ramenlog.request.RamenLogUpsertRequest;
 import com.raota.presentation.api.ramenlog.response.RamenLogLikeResponse;

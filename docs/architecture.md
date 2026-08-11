@@ -17,7 +17,7 @@ com.raota
 - `presentation`: 외부 요청과 응답을 처리하고, 사용자 또는 클라이언트와 맞닿는 진입점을 담당한다.
 - `application`: 사용자의 목적을 유스케이스로 조합하고, 작업 흐름과 트랜잭션 경계를 담당한다.
 - `domain`: 비즈니스 개념과 핵심 규칙을 표현하고, 도메인의 상태와 행위를 담당한다.
-- `infrastructure`: 데이터 저장소, 외부 시스템, 프레임워크 등 기술 세부사항과의 연결을 담당한다.
+- `global`: 데이터 저장소, 외부 시스템, 프레임워크 등 기술 세부사항과의 연결을 담당한다.
 
 ## 의존성 규칙
 
@@ -86,7 +86,7 @@ domain.<domain>.service
 - `repository`: 도메인 저장소 interface.
 - `service`: 특정 모델에 넣기 어려운 도메인 규칙.
 
-### `infrastructure` 계층의 패키지 목록
+### `global` 계층의 패키지 목록
 
 ```text
 infrastructure.persistence.<domain>
@@ -150,7 +150,7 @@ application.common.port.FileStoragePort
 application.ramenshop.port.RamenShopCacheInvalidationPort
 ```
 
-구현체는 `infrastructure`에 둔다.
+구현체는 `global`에 둔다.
 
 ```text
 infrastructure.cache.RedisCacheInvalidationAdapter

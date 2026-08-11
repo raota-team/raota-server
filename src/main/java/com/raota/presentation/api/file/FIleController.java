@@ -1,6 +1,6 @@
 package com.raota.presentation.api.file;
 
-import com.raota.infrastructure.file.FileUploader;
+import com.raota.global.file.FileUploader;
 import com.raota.presentation.api.file.response.PresignedUrlResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

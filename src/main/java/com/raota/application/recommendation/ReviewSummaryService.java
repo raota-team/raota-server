@@ -5,7 +5,7 @@ import com.raota.application.ramenShop.search.RamenShopReader;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.retrieval.document.RetrievalDocumentFilters;
 import com.raota.domain.retrieval.document.RetrievalMetadataKeys;
-import com.raota.infrastructure.file.FileUploader;
+import com.raota.global.file.FileUploader;
 import com.raota.presentation.api.recommendation.request.ReviewSummaryRequest;
 import com.raota.presentation.api.recommendation.response.ReviewSummaryResponse;
 import java.util.List;

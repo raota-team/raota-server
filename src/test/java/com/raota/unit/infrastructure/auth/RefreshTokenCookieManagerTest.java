@@ -2,8 +2,8 @@ package com.raota.unit.infrastructure.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.raota.infrastructure.auth.AuthProperties;
-import com.raota.infrastructure.auth.RefreshTokenCookieManager;
+import com.raota.account.infrastructure.auth.AuthProperties;
+import com.raota.account.infrastructure.auth.RefreshTokenCookieManager;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseCookie;

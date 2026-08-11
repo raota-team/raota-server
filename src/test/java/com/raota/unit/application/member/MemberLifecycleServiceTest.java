@@ -6,10 +6,10 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-import com.raota.application.auth.AuthAccountService;
+import com.raota.account.application.auth.AuthAccountService;
 import com.raota.application.member.MemberLifecycleService;
 import com.raota.application.member.MemberProvisioningService;
-import com.raota.domain.auth.repository.SocialAccountRepository;
+import com.raota.account.domain.auth.repository.SocialAccountRepository;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.BookmarkRepository;
 import com.raota.domain.member.repository.MemberRepository;

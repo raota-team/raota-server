@@ -1,9 +1,9 @@
 package com.raota.presentation.api.auth;
 
 import com.raota.presentation.api.auth.response.AuthTokenResponse;
-import com.raota.application.auth.AuthService;
-import com.raota.application.auth.TokenRefreshResult;
-import com.raota.infrastructure.auth.RefreshTokenCookieManager;
+import com.raota.account.application.auth.AuthService;
+import com.raota.account.application.auth.TokenRefreshResult;
+import com.raota.account.infrastructure.auth.RefreshTokenCookieManager;
 import com.raota.presentation.common.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

@@ -2,14 +2,13 @@ package com.raota.unit.infrastructure.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
 import com.raota.domain.member.model.MemberRole;
-import com.raota.infrastructure.auth.AuthenticatedMember;
-import com.raota.infrastructure.auth.AuthenticationRequiredException;
-import com.raota.infrastructure.auth.LoginMember;
-import com.raota.infrastructure.auth.LoginMemberArgumentResolver;
+import com.raota.account.infrastructure.auth.AuthenticatedMember;
+import com.raota.account.infrastructure.auth.AuthenticationRequiredException;
+import com.raota.account.infrastructure.auth.LoginMember;
+import com.raota.account.infrastructure.auth.LoginMemberArgumentResolver;
 import java.lang.reflect.Method;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

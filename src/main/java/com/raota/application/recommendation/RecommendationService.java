@@ -1,7 +1,7 @@
 package com.raota.application.recommendation;
 
 import com.raota.domain.recommendation.model.DailyCuration;
-import com.raota.infrastructure.file.FileUploader;
+import com.raota.global.file.FileUploader;
 import com.raota.presentation.api.discovery.response.TodayRecommendationResponse;
 import com.raota.presentation.api.recommendation.request.AiChatRequest;
 import com.raota.presentation.api.recommendation.request.ReviewSummaryRequest;

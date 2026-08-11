@@ -8,7 +8,7 @@ import static org.mockito.Mockito.verify;
 import com.raota.application.member.MemberActivityVisibilityService;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
-import com.raota.infrastructure.cache.CacheInvalidationPublisher;
+import com.raota.global.cache.CacheInvalidationPublisher;
 import com.raota.presentation.api.member.request.ActivityVisibilityUpdateRequest;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;

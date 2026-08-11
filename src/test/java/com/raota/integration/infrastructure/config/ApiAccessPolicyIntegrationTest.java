@@ -17,7 +17,7 @@ import com.raota.application.recommendation.RecommendationService;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.model.MemberRole;
 import com.raota.domain.member.repository.MemberRepository;
-import com.raota.infrastructure.auth.JwtTokenProvider;
+import com.raota.account.infrastructure.auth.JwtTokenProvider;
 import com.raota.support.BaseIntegrationTest;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;

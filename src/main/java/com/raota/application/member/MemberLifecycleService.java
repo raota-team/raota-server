@@ -1,7 +1,7 @@
 package com.raota.application.member;
 
-import com.raota.application.auth.AuthAccountService;
-import com.raota.domain.auth.repository.SocialAccountRepository;
+import com.raota.account.application.auth.AuthAccountService;
+import com.raota.account.domain.auth.repository.SocialAccountRepository;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.BookmarkRepository;
 import com.raota.domain.member.repository.MemberRepository;

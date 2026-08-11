@@ -20,7 +20,7 @@ import com.raota.domain.ramenShop.model.NormalMenu;
 import com.raota.domain.ramenShop.model.NormalMenus;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
-import com.raota.infrastructure.auth.JwtTokenProvider;
+import com.raota.account.infrastructure.auth.JwtTokenProvider;
 import com.raota.support.BaseIntegrationTest;
 import java.time.LocalTime;
 import java.util.List;

@@ -1,11 +1,11 @@
 package com.raota.integration.infrastructure.auth;
 
-import com.raota.application.auth.AuthAccountService;
-import com.raota.application.auth.AuthRefreshSession;
+import com.raota.account.application.auth.AuthAccountService;
+import com.raota.account.application.auth.AuthRefreshSession;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
-import com.raota.infrastructure.auth.AuthenticationRequiredException;
-import com.raota.infrastructure.persistence.auth.RefreshTokenStore;
+import com.raota.account.infrastructure.auth.AuthenticationRequiredException;
+import com.raota.account.infrastructure.persistence.auth.RefreshTokenStore;
 
 import com.raota.support.BaseIntegrationTest;
 import org.junit.jupiter.api.Test;

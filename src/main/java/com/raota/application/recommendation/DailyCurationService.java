@@ -5,7 +5,7 @@ import com.raota.domain.recommendation.model.DailyCuration;
 import com.raota.domain.recommendation.model.RamenType;
 import com.raota.domain.recommendation.repository.DailyCurationRepository;
 import com.raota.domain.recommendation.repository.RamenTypeRepository;
-import com.raota.infrastructure.external.KmaWeatherClient;
+import com.raota.global.external.KmaWeatherClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;

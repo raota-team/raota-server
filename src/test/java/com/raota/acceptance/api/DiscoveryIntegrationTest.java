@@ -6,7 +6,7 @@ import static org.hamcrest.Matchers.is;
 
 import com.raota.domain.community.model.Post;
 import com.raota.domain.community.model.PostCategory;
-import com.raota.infrastructure.persistence.community.command.JpaPostRepository;
+import com.raota.global.persistence.community.command.JpaPostRepository;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
 import com.raota.domain.ramenShop.model.Address;

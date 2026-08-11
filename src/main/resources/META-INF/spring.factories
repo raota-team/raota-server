@@ -1,5 +1,5 @@
 org.springframework.boot.context.config.ConfigDataLocationResolver=\
-com.raota.infrastructure.config.OciVaultConfigDataLocationResolver
+com.raota.global.config.OciVaultConfigDataLocationResolver
 
 org.springframework.boot.context.config.ConfigDataLoader=\
-com.raota.infrastructure.config.OciVaultConfigDataLoader
+com.raota.global.config.OciVaultConfigDataLoader

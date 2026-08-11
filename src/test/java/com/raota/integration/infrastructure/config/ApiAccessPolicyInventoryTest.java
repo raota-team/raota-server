@@ -2,7 +2,7 @@ package com.raota.integration.infrastructure.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.raota.infrastructure.config.EndpointAccessPolicy;
+import com.raota.account.infrastructure.config.EndpointAccessPolicy;
 import com.raota.support.BaseIntegrationTest;
 import java.util.Comparator;
 import java.util.List;

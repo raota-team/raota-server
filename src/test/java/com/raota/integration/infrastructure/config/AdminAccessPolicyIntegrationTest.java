@@ -8,7 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.model.MemberRole;
 import com.raota.domain.member.repository.MemberRepository;
-import com.raota.infrastructure.auth.JwtTokenProvider;
+import com.raota.account.infrastructure.auth.JwtTokenProvider;
 import com.raota.support.BaseIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

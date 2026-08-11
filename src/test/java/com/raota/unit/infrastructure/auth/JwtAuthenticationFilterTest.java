@@ -9,11 +9,11 @@ import static org.mockito.Mockito.verify;
 
 import com.raota.application.member.MemberProvisioningService;
 import com.raota.domain.member.model.MemberRole;
-import com.raota.infrastructure.auth.AuthenticatedMember;
-import com.raota.infrastructure.auth.JwtAuthenticationException;
-import com.raota.infrastructure.auth.JwtAuthenticationFilter;
-import com.raota.infrastructure.auth.JwtTokenProvider;
-import com.raota.infrastructure.auth.RestAuthenticationEntryPoint;
+import com.raota.account.infrastructure.auth.AuthenticatedMember;
+import com.raota.account.infrastructure.auth.JwtAuthenticationException;
+import com.raota.account.infrastructure.auth.JwtAuthenticationFilter;
+import com.raota.account.infrastructure.auth.JwtTokenProvider;
+import com.raota.account.infrastructure.auth.RestAuthenticationEntryPoint;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import java.io.IOException;

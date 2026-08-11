@@ -3,7 +3,7 @@ package com.raota.application.member;
 import com.raota.domain.member.model.MemberActivityVisibility;
 import com.raota.domain.member.model.MemberProfile;
 import com.raota.domain.member.repository.MemberRepository;
-import com.raota.infrastructure.cache.CacheInvalidationPublisher;
+import com.raota.global.cache.CacheInvalidationPublisher;
 import com.raota.presentation.api.member.request.ActivityVisibilityUpdateRequest;
 import com.raota.presentation.api.member.response.ActivityVisibilityResponse;
 import jakarta.persistence.EntityNotFoundException;

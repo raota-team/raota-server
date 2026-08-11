@@ -13,7 +13,7 @@ import com.raota.domain.member.repository.BookmarkRepository;
 import com.raota.domain.ramenShop.model.RamenShop;
 import com.raota.domain.ramenlog.repository.RamenLogRepository;
 import com.raota.domain.ramenShop.repository.RamenShopRepository;
-import com.raota.infrastructure.cache.CacheInvalidationPublisher;
+import com.raota.global.cache.CacheInvalidationPublisher;
 import com.raota.presentation.api.ramenShop.response.RamenShopBasicInfoResponse;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;

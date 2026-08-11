@@ -11,7 +11,7 @@ import com.raota.domain.ramenShop.repository.RamenShopRepository;
 import com.raota.domain.ramenlog.repository.RamenLogLikeRepository;
 import com.raota.domain.ramenlog.repository.RamenLogRepository;
 import com.raota.support.BaseIntegrationTest;
-import com.raota.infrastructure.auth.JwtTokenProvider;
+import com.raota.account.infrastructure.auth.JwtTokenProvider;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import java.time.LocalDateTime;

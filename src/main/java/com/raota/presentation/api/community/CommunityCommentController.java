@@ -4,7 +4,7 @@ import com.raota.application.community.service.CommentQueryService;
 import com.raota.application.community.service.CommentService;
 import com.raota.application.community.result.CommentItemResult;
 import com.raota.application.community.result.CommentThreadResult;
-import com.raota.infrastructure.auth.LoginMember;
+import com.raota.account.infrastructure.auth.LoginMember;
 import com.raota.presentation.api.community.contract.CommunityCommentApi;
 import com.raota.presentation.api.community.request.CommunityCommentCreateRequest;
 import com.raota.presentation.api.community.request.CommunityCommentUpdateRequest;

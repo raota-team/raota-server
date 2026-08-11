@@ -3,7 +3,7 @@ package com.raota.presentation.api.ramenlog.response;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.raota.domain.ramenlog.model.RamenLog;
 import com.raota.domain.ramenlog.model.RevisitIntention;
-import com.raota.infrastructure.file.FileUploader;
+import com.raota.global.file.FileUploader;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
