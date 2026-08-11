@@ -6,13 +6,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.raota.domain.auth.model.AuthProvider;
-import com.raota.domain.auth.model.SocialAccount;
-import com.raota.domain.auth.repository.SocialAccountRepository;
-import com.raota.domain.member.model.MemberProfile;
-import com.raota.domain.member.model.MemberRole;
-import com.raota.domain.member.repository.MemberRepository;
-import com.raota.infrastructure.auth.JwtTokenProvider;
+import com.raota.account.domain.auth.model.AuthProvider;
+import com.raota.account.domain.auth.model.SocialAccount;
+import com.raota.account.domain.auth.repository.SocialAccountRepository;
+import com.raota.account.domain.member.model.MemberProfile;
+import com.raota.account.domain.member.model.MemberRole;
+import com.raota.account.domain.member.repository.MemberRepository;
+import com.raota.account.infrastructure.auth.JwtTokenProvider;
 import com.raota.support.BaseIntegrationTest;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;

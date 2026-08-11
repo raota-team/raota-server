@@ -1,0 +1,33 @@
+package com.raota.ramenshop.presentation.contract;
+
+import com.raota.ramenshop.presentation.response.VotingStatusResponse;
+import com.raota.global.presentation.common.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.ResponseEntity;
+
+@Tag(name = "메뉴 투표", description = "메뉴 투표 API")
+public interface MenuVoteApi {
+
+    @Operation(summary = "투표 현황 조회", description = "가게별 투표 현황을 조회합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    ResponseEntity<ApiResponse<VotingStatusResponse>> getVoteStatus(
+            @Parameter(description = "가게 ID", required = true) Long shopId,
+            @Parameter(hidden = true) Long memberId,
+            @Parameter(hidden = true) HttpServletRequest request);
+
+    @Operation(summary = "메뉴 투표", description = "로그인한 사용자가 특정 메뉴에 투표합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
+    })
+    ResponseEntity<ApiResponse<VotingStatusResponse>> votingMenu(
+            @Parameter(description = "가게 ID", required = true) Long shopId,
+            @Parameter(description = "메뉴 ID", required = true) Long menuId,
+            @Parameter(hidden = true) Long memberId,
+            @Parameter(hidden = true) HttpServletRequest request);
+}

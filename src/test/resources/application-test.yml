@@ -1,5 +1,7 @@
 # 테스트용 프로필: Testcontainers MySQL
 spring:
+  modulith:
+    detection-strategy: explicitly-annotated
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:

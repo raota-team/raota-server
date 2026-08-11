@@ -1,9 +1,9 @@
 package com.raota.acceptance.api;
 
-import com.raota.domain.recommendation.model.RamenType;
-import com.raota.domain.recommendation.model.DailyCuration;
-import com.raota.domain.recommendation.repository.RamenTypeRepository;
-import com.raota.domain.recommendation.repository.DailyCurationRepository;
+import com.raota.agent.domain.recommendation.model.RamenType;
+import com.raota.agent.domain.recommendation.model.DailyCuration;
+import com.raota.agent.domain.recommendation.repository.RamenTypeRepository;
+import com.raota.agent.domain.recommendation.repository.DailyCurationRepository;
 import com.raota.support.BaseIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
