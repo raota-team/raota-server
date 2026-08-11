@@ -12,6 +12,8 @@ server:
   forward-headers-strategy: native
 
 spring:
+  modulith:
+    detection-strategy: explicitly-annotated
   config:
     import: "optional:oci-vault:ap-chuncheon-1/ocid1.vault.oc1.ap-chuncheon-1.gju25j3taaark.ab4w4ljrvayyfb3dk5dp2yu45i7aw5u6jvl73tfjxaqfxgeq3do6izft5szq"
   autoconfigure:
