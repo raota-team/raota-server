@@ -124,11 +124,14 @@ class ApiAccessPolicyIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void health만_공개하고_나머지_Actuator는_ADMIN으로_제한한다() throws Exception {
+    void health와_Prometheus만_공개하고_나머지_Actuator는_ADMIN으로_제한한다() throws Exception {
         mockMvc.perform(get("/actuator/health"))
                 .andExpect(status().isOk());
         mockMvc.perform(head("/actuator/health"))
                 .andExpect(status().isOk());
+        MvcResult prometheusResult = mockMvc.perform(get("/actuator/prometheus"))
+                .andReturn();
+        assertThat(prometheusResult.getResponse().getStatus()).isNotIn(401, 403);
 
         mockMvc.perform(get("/actuator/metrics")
                         .header(HttpHeaders.AUTHORIZATION, bearer(createAccessToken(MemberRole.USER))))

@@ -32,6 +32,7 @@ public final class EndpointAccessPolicy {
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/v3/api-docs/**"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/actuator/health"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/actuator/health/**"),
+            rule(AccessLevel.PUBLIC, HttpMethod.GET, "/actuator/prometheus"),
 
             // Public application endpoints
             rule(AccessLevel.PUBLIC, HttpMethod.POST, "/auth/refresh"),
