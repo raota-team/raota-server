@@ -34,7 +34,7 @@ public class RagEvaluationRunService {
     private final RagEvaluationDatasetLoader datasetLoader;
     private final RagEvaluationRunJpaRepository runRepository;
     private final RagEvaluationCaseResultJpaRepository caseRepository;
-    private final RagEvaluationExecutionService executionService;
+    private final RagEvaluationRunner executionService;
     private final ObjectMapper objectMapper;
     private final String serverCommit;
     private final String appContractVersion;
@@ -45,7 +45,7 @@ public class RagEvaluationRunService {
             RagEvaluationDatasetLoader datasetLoader,
             RagEvaluationRunJpaRepository runRepository,
             RagEvaluationCaseResultJpaRepository caseRepository,
-            RagEvaluationExecutionService executionService,
+            RagEvaluationRunner executionService,
             ObjectMapper objectMapper,
             @Value("${app.rag.evaluation.server-commit:unknown}") String serverCommit,
             @Value("${app.rag.evaluation.app-contract-version:v1}") String appContractVersion,

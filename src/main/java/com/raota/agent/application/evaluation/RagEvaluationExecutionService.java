@@ -22,7 +22,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
-public class RagEvaluationExecutionService {
+public class RagEvaluationExecutionService implements RagEvaluationRunner {
     private static final Duration CASE_TIMEOUT = Duration.ofSeconds(60);
     private static final int MAX_ATTEMPTS = 2;
 
@@ -53,6 +53,7 @@ public class RagEvaluationExecutionService {
     }
 
     @Async("ragEvaluationTaskExecutor")
+    @Override
     public void execute(String runId, RagEvaluationDataset dataset, RagEvaluationSplit split) {
         try {
             transactionTemplate.executeWithoutResult(status -> runRepository.findById(runId)
