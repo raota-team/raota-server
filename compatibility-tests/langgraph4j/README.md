@@ -21,6 +21,6 @@
 
 ## 판정
 
-2026-09-15 기준 위 조합의 컴파일과 5개 테스트가 통과했습니다. LangGraph4j의 Spring AI 모듈 POM이 Spring AI 2.0.1을 기본으로 요청하지만 이 프로젝트의 BOM은 2.0.0을 선택하도록 고정했고 테스트에서 동작을 확인했습니다. 런타임 의존성에는 Spring AI 2.x와 Jackson 3.x가 사용되며, Jackson 3의 호환 의존성으로 `com.fasterxml.jackson.core:jackson-annotations:2.21`이 함께 보입니다. 제품 모듈에 도입하기 전에는 이 트리를 CI에서 다시 확인합니다.
+2026-09-15 기준 위 조합의 컴파일과 6개 테스트가 통과했습니다. 외부 LLM을 호출하지 않고 고정 응답 `ChatModel`을 사용해 Spring AI 모델 계약도 결정적으로 확인합니다. LangGraph4j의 Spring AI 모듈 POM이 Spring AI 2.0.1을 기본으로 요청하지만 이 프로젝트의 BOM은 2.0.0을 선택하도록 고정했고 테스트에서 동작을 확인했습니다. 런타임 의존성에는 Spring AI 2.x와 Jackson 3.x가 사용되며, Jackson 3의 호환 의존성으로 `com.fasterxml.jackson.core:jackson-annotations:2.21`이 함께 보입니다. 제품 모듈에 도입하기 전에는 이 트리를 CI에서 다시 확인합니다.
 
 제품 런타임에는 아직 LangGraph4j 의존성을 추가하지 않습니다. 호환성 테스트가 깨지거나 Spring AI 버전을 올려야 하는 경우 별도 업그레이드 이슈를 먼저 처리합니다.
