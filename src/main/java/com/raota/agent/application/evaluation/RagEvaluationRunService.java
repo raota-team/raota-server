@@ -145,6 +145,7 @@ public class RagEvaluationRunService {
 
     @Transactional(readOnly = true)
     public PageResponse<CaseView> cases(String runId, int page, int size, RagEvaluationCaseType type, RagEvaluationCaseStatus status) {
+        findRun(runId);
         List<CaseView> filtered = caseRepository.findByRunIdOrderByIdAsc(runId).stream()
                 .filter(item -> type == null || item.getCaseType() == type)
                 .filter(item -> status == null || item.getStatus() == status)

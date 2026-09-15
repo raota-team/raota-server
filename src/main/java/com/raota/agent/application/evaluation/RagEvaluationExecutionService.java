@@ -72,7 +72,9 @@ public class RagEvaluationExecutionService {
                 if (evaluationCase.type() == RagEvaluationCaseType.SEARCH) {
                     ensurePublishedShops(executionResult.returnedShopIds());
                 }
-                metricRows.add(metrics);
+                if (!evaluationCase.contractOnly()) {
+                    metricRows.add(metrics);
+                }
             }
 
             Map<String, Object> aggregate = new LinkedHashMap<>();
@@ -80,6 +82,7 @@ public class RagEvaluationExecutionService {
             aggregate.put("completedCaseCount", caseRepository.countByRunIdAndStatus(runId, RagEvaluationCaseStatus.COMPLETED));
             aggregate.put("errorCaseCount", caseRepository.countByRunIdAndStatus(runId, RagEvaluationCaseStatus.ERROR));
             aggregate.put("skippedCaseCount", caseRepository.countByRunIdAndStatus(runId, RagEvaluationCaseStatus.SKIPPED));
+            aggregate.put("averageLatencyMs", averageLatency(runId));
             aggregate.put("metrics", RagEvaluationMetricCalculator.average(metricRows));
             String aggregateJson = toJson(aggregate);
             transactionTemplate.executeWithoutResult(status -> runRepository.findById(runId)
@@ -202,6 +205,9 @@ public class RagEvaluationExecutionService {
 
     private Map<String, Object> expectedJson(RagEvaluationCase evaluationCase) {
         Map<String, Object> expected = new LinkedHashMap<>();
+        expected.put("caseType", evaluationCase.type());
+        expected.put("split", evaluationCase.split());
+        expected.put("authMode", evaluationCase.authMode());
         expected.put("relevantShops", evaluationCase.relevantShops());
         expected.put("expectsEmpty", evaluationCase.expectsEmpty());
         expected.put("requiredFacts", evaluationCase.requiredFacts());
@@ -211,6 +217,15 @@ public class RagEvaluationExecutionService {
         expected.put("primaryK", evaluationCase.primaryK());
         expected.put("diagnosticK", evaluationCase.diagnosticK());
         return expected;
+    }
+
+    private double averageLatency(String runId) {
+        return caseRepository.findByRunIdOrderByIdAsc(runId).stream()
+                .map(RagEvaluationCaseResultEntity::getLatencyMs)
+                .filter(java.util.Objects::nonNull)
+                .mapToLong(Long::longValue)
+                .average()
+                .orElse(0.0);
     }
 
     private String toJson(Object value) {
