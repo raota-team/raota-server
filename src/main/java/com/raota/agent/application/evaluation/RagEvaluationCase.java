@@ -21,6 +21,40 @@ public record RagEvaluationCase(
         Integer diagnosticK
 ) {
 
+    /** Backward-compatible constructor for callers that predate the evidence label. */
+    public RagEvaluationCase(
+            String caseId,
+            RagEvaluationCaseType type,
+            RagEvaluationSplit split,
+            JsonNode request,
+            String authMode,
+            List<RagExpectedShop> relevantShops,
+            Boolean expectsEmpty,
+            List<String> requiredFacts,
+            List<String> forbiddenClaims,
+            Boolean expectsFallback,
+            Boolean contractOnly,
+            Integer primaryK,
+            Integer diagnosticK
+    ) {
+        this(
+                caseId,
+                type,
+                split,
+                request,
+                authMode,
+                relevantShops,
+                expectsEmpty,
+                requiredFacts,
+                List.of(),
+                forbiddenClaims,
+                expectsFallback,
+                contractOnly,
+                primaryK,
+                diagnosticK
+        );
+    }
+
     public RagEvaluationCase {
         if (caseId == null || caseId.isBlank()) {
             throw new IllegalArgumentException("평가 사례 ID는 필수입니다.");
