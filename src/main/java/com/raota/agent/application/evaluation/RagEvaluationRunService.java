@@ -78,7 +78,7 @@ public class RagEvaluationRunService {
     }
 
     @Transactional
-    public RunStart start(String datasetVersion, RagEvaluationSplit split, String idempotencyKey) {
+    public synchronized RunStart start(String datasetVersion, RagEvaluationSplit split, String idempotencyKey) {
         if (idempotencyKey == null || idempotencyKey.isBlank()) {
             throw new IllegalArgumentException("Idempotency-Key 헤더는 필수입니다.");
         }

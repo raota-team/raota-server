@@ -172,7 +172,9 @@ public class RagEvaluationExecutionService {
         }
         String text = (result.errorType() + " " + result.errorMessage()).toLowerCase();
         return text.contains("timeout") || text.contains("429") || text.contains("5xx")
-                || text.contains("500") || text.contains("502") || text.contains("503") || text.contains("504");
+                || text.contains("500") || text.contains("502") || text.contains("503") || text.contains("504")
+                || text.contains("toomanyrequests") || text.contains("badgateway")
+                || text.contains("serviceunavailable") || text.contains("gatewaytimeout");
     }
 
     private Map<String, Double> calculateMetrics(RagEvaluationCase evaluationCase, RagExecutionResult result) {
