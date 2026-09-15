@@ -94,6 +94,9 @@ public class RagEvaluationRunService {
         if (existing.isPresent()) {
             RagEvaluationRunEntity run = existing.get();
             if (run.getIdempotencyExpiresAt() == null || run.getIdempotencyExpiresAt().isAfter(LocalDateTime.now())) {
+                if (!run.getDatasetVersion().equals(dataset.version()) || run.getSplit() != targetSplit) {
+                    throw new IllegalArgumentException("같은 Idempotency-Key로 다른 평가 요청을 보낼 수 없습니다.");
+                }
                 return new RunStart(run.getRunId(), run.getStatus(), true);
             }
             throw new IllegalArgumentException("Idempotency-Key가 만료되었습니다. 새 키를 사용하세요.");
@@ -165,8 +168,13 @@ public class RagEvaluationRunService {
 
     @Transactional
     public CaseView review(String runId, String caseId, Long reviewerMemberId, ReviewCommand command) {
-        if (command == null || command.finalScore() == null || command.finalScore() < 0 || command.finalScore() > 2) {
-            throw new IllegalArgumentException("최종 점수는 0~2 사이여야 합니다.");
+        RagEvaluationRunEntity run = findRun(runId);
+        if (run.getStatus() != RagEvaluationStatus.REVIEW_REQUIRED) {
+            throw new IllegalStateException("검수 대기 상태인 실행만 사례를 검수할 수 있습니다.");
+        }
+        if (command == null || command.finalScore() == null || command.finalScore() < 0 || command.finalScore() > 2
+                || command.approved() == null) {
+            throw new IllegalArgumentException("최종 점수는 0~2 사이이고 승인 여부는 필수입니다.");
         }
         RagEvaluationCaseResultEntity entity = caseRepository.findByRunIdAndCaseId(runId, caseId)
                 .orElseThrow(() -> new IllegalArgumentException("평가 사례를 찾을 수 없습니다: " + caseId));

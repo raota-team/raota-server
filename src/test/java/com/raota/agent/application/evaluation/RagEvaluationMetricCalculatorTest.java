@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.json.JsonMapper;
 
 class RagEvaluationMetricCalculatorTest {
 
@@ -47,5 +48,35 @@ class RagEvaluationMetricCalculatorTest {
 
         assertThat(average).containsEntry("hitrateAt1", 0.5)
                 .containsEntry("recallAt6", 0.5);
+    }
+
+    @Test
+    void calculatesGenerationCoverageAndFallbackAccuracy() {
+        RagEvaluationCase evaluationCase = new RagEvaluationCase(
+                "summary-1",
+                RagEvaluationCaseType.SUMMARY,
+                RagEvaluationSplit.DEV,
+                JsonMapper.builder().build().createObjectNode().put("shopId", 1),
+                "AUTHENTICATED",
+                List.of(),
+                false,
+                List.of("시오라멘", "웨이팅"),
+                List.of("확정할 수 없는 가격"),
+                false,
+                false,
+                1,
+                6
+        );
+
+        Map<String, Double> metrics = RagEvaluationMetricCalculator.calculateGeneration(
+                evaluationCase,
+                JsonMapper.builder().build().createObjectNode().put("body", "시오라멘은 웨이팅이 있습니다."),
+                false
+        );
+
+        assertThat(metrics).containsEntry("schemaValid", 1.0)
+                .containsEntry("requiredFactCoverage", 1.0)
+                .containsEntry("forbiddenClaimRate", 0.0)
+                .containsEntry("fallbackAccuracy", 1.0);
     }
 }
