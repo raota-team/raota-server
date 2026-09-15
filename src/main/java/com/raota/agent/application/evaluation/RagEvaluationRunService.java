@@ -34,7 +34,7 @@ public class RagEvaluationRunService {
     private final RagEvaluationDatasetLoader datasetLoader;
     private final RagEvaluationRunJpaRepository runRepository;
     private final RagEvaluationCaseResultJpaRepository caseRepository;
-    private final RagEvaluationRunner executionService;
+    private final RagEvaluationRunner runner;
     private final ObjectMapper objectMapper;
     private final String serverCommit;
     private final String appContractVersion;
@@ -45,7 +45,7 @@ public class RagEvaluationRunService {
             RagEvaluationDatasetLoader datasetLoader,
             RagEvaluationRunJpaRepository runRepository,
             RagEvaluationCaseResultJpaRepository caseRepository,
-            RagEvaluationRunner executionService,
+            RagEvaluationRunner runner,
             ObjectMapper objectMapper,
             @Value("${app.rag.evaluation.server-commit:unknown}") String serverCommit,
             @Value("${app.rag.evaluation.app-contract-version:v1}") String appContractVersion,
@@ -55,7 +55,7 @@ public class RagEvaluationRunService {
         this.datasetLoader = datasetLoader;
         this.runRepository = runRepository;
         this.caseRepository = caseRepository;
-        this.executionService = executionService;
+        this.runner = runner;
         this.objectMapper = objectMapper;
         this.serverCommit = serverCommit;
         this.appContractVersion = appContractVersion;
@@ -128,7 +128,7 @@ public class RagEvaluationRunService {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                executionService.execute(runId, dataset, targetSplit);
+                runner.execute(runId, dataset, targetSplit);
             }
         });
         return new RunStart(runId, RagEvaluationStatus.QUEUED, false);
