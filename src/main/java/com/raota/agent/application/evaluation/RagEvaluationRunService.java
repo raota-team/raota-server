@@ -10,6 +10,8 @@ import com.raota.agent.infrastructure.persistence.evaluation.entity.RagEvaluatio
 import com.raota.agent.infrastructure.persistence.evaluation.entity.RagEvaluationRunEntity;
 import com.raota.global.presentation.common.PageResponse;
 import java.time.LocalDateTime;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -142,6 +144,31 @@ public class RagEvaluationRunService {
     }
 
     @Transactional(readOnly = true)
+    public CursorPage<RunView> listCursor(String cursor, int size) {
+        int safeSize = size <= 0 ? DEFAULT_PAGE_SIZE : Math.min(size, 100);
+        List<RagEvaluationRunEntity> rows;
+        if (cursor == null || cursor.isBlank()) {
+            rows = runRepository.findAll(PageRequest.of(
+                    0,
+                    safeSize + 1,
+                    Sort.by(Sort.Direction.DESC, "createdAt")
+                            .and(Sort.by(Sort.Direction.DESC, "runId"))
+            )).getContent();
+        } else {
+            CursorValue value = decodeCursor(cursor);
+            rows = runRepository.findAfterCursor(
+                    value.createdAt(),
+                    value.runId(),
+                    PageRequest.of(0, safeSize + 1)
+            );
+        }
+        boolean hasNext = rows.size() > safeSize;
+        List<RunView> items = rows.stream().limit(safeSize).map(this::toRunView).toList();
+        String nextCursor = hasNext && !items.isEmpty() ? encodeCursor(items.getLast()) : null;
+        return new CursorPage<>(items, nextCursor, hasNext);
+    }
+
+    @Transactional(readOnly = true)
     public RunView get(String runId) {
         return toRunView(findRun(runId));
     }
@@ -267,11 +294,41 @@ public class RagEvaluationRunService {
         }
     }
 
+    private String encodeCursor(RunView view) {
+        if (view.createdAt() == null) {
+            return null;
+        }
+        String raw = view.createdAt() + "|" + view.runId();
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private CursorValue decodeCursor(String cursor) {
+        try {
+            String raw = new String(Base64.getUrlDecoder().decode(cursor), StandardCharsets.UTF_8);
+            int separator = raw.indexOf('|');
+            if (separator <= 0 || separator == raw.length() - 1) {
+                throw new IllegalArgumentException("잘못된 cursor입니다.");
+            }
+            return new CursorValue(
+                    LocalDateTime.parse(raw.substring(0, separator)),
+                    raw.substring(separator + 1)
+            );
+        } catch (IllegalArgumentException exception) {
+            throw new IllegalArgumentException("잘못된 cursor입니다.", exception);
+        }
+    }
+
     public record DatasetView(String version, int totalCases, Map<RagEvaluationCaseType, Long> countsByType,
                               List<RagEvaluationSplit> availableSplits) {
     }
 
     public record RunStart(String runId, RagEvaluationStatus status, boolean idempotentReplay) {
+    }
+
+    public record CursorPage<T>(List<T> items, String nextCursor, boolean hasNext) {
+    }
+
+    private record CursorValue(LocalDateTime createdAt, String runId) {
     }
 
     public record RunView(String runId, String datasetVersion, RagEvaluationSplit split, RagEvaluationStatus status,

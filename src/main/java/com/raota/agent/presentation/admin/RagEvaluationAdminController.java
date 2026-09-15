@@ -58,10 +58,14 @@ public class RagEvaluationAdminController {
     }
 
     @GetMapping("/runs")
-    public ResponseEntity<ApiResponse<PageResponse<RunView>>> runs(
+    public ResponseEntity<ApiResponse<?>> runs(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String cursor
     ) {
+        if (cursor != null && !cursor.isBlank()) {
+            return ResponseEntity.ok(ApiResponse.success(runService.listCursor(cursor, size)));
+        }
         return ResponseEntity.ok(ApiResponse.success(runService.list(page, size)));
     }
 
