@@ -30,14 +30,16 @@ public final class RagEvaluationMetricCalculator {
             return metrics;
         }
 
-        metrics.put("hitrateAt1", hitRate(returned, expected, 1));
-        metrics.put("recallAt1", recall(returned, expected, 1));
-        metrics.put("ndcgAt1", ndcg(returned, expected, 1));
-        metrics.put("hitrateAt" + diagnosticK, hitRate(returned, expected, diagnosticK));
-        metrics.put("recallAt" + diagnosticK, recall(returned, expected, diagnosticK));
-        metrics.put("precisionAt" + diagnosticK, precision(returned, expected, diagnosticK));
-        metrics.put("mrrAt" + diagnosticK, reciprocalRank(returned, expected, diagnosticK));
-        metrics.put("ndcgAt" + diagnosticK, ndcg(returned, expected, diagnosticK));
+        int primary = Math.max(1, primaryK);
+        int diagnostic = Math.max(primary, diagnosticK);
+        metrics.put("hitrateAt" + primary, hitRate(returned, expected, primary));
+        metrics.put("recallAt" + primary, recall(returned, expected, primary));
+        metrics.put("ndcgAt" + primary, ndcg(returned, expected, primary));
+        metrics.put("hitrateAt" + diagnostic, hitRate(returned, expected, diagnostic));
+        metrics.put("recallAt" + diagnostic, recall(returned, expected, diagnostic));
+        metrics.put("precisionAt" + diagnostic, precision(returned, expected, diagnostic));
+        metrics.put("mrrAt" + diagnostic, reciprocalRank(returned, expected, diagnostic));
+        metrics.put("ndcgAt" + diagnostic, ndcg(returned, expected, diagnostic));
         return metrics;
     }
 
