@@ -45,6 +45,11 @@ public class FollowUpChatService {
     }
 
     public AiChatResponse followUpChat(FollowUpChatQuery request) {
+        return followUpChatWithEvidence(request).response();
+    }
+
+    /** Executes a follow-up question and returns the documents used to ground the answer. */
+    public FollowUpChatExecution followUpChatWithEvidence(FollowUpChatQuery request) {
         validateChatRequest(request);
 
         String contextType = normalizeContextType(request.contextType());
@@ -52,12 +57,12 @@ public class FollowUpChatService {
         List<Document> documents = collectChatDocuments(contextType, shops, request.messages());
 
         if (documents.isEmpty()) {
-            return fallbackResponse();
+            return new FollowUpChatExecution(fallbackResponse(), documents);
         }
 
         AiFollowUpChatResult aiResult = generateChatResult(contextType, shops, documents, request.messages());
 
-        return buildChatResponse(aiResult);
+        return new FollowUpChatExecution(buildChatResponse(aiResult), documents);
     }
 
     private void validateChatRequest(FollowUpChatQuery request) {
@@ -267,6 +272,12 @@ public class FollowUpChatService {
         }
 
         return "user";
+    }
+
+    public record FollowUpChatExecution(AiChatResponse response, List<Document> evidence) {
+        public FollowUpChatExecution {
+            evidence = evidence == null ? List.of() : List.copyOf(evidence);
+        }
     }
 
 }

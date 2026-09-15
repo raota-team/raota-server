@@ -65,14 +65,17 @@ class DefaultRagEvaluationCaseExecutorTest {
 
     @Test
     void recognizesReviewSummaryFallbackResponse() {
-        when(reviewSummaryService.summarizeReviews(org.mockito.ArgumentMatchers.any(ReviewSummaryQuery.class))).thenReturn(
-                new ReviewSummaryResponse(
+        when(reviewSummaryService.summarizeReviewsWithEvidence(org.mockito.ArgumentMatchers.any(ReviewSummaryQuery.class))).thenReturn(
+                new ReviewSummaryService.ReviewSummaryExecution(
+                        new ReviewSummaryResponse(
                         new ReviewSummaryResponse.AiShopBasicInfo(7L, "라멘집", "시오", "서울", "", false),
                         0,
                         new ReviewSummaryResponse.AiSummary(
                                 new ReviewSummaryResponse.SummaryDetail("리뷰 데이터 부족", "리뷰가 없습니다."),
                                 new ReviewSummaryResponse.SummaryDetail("리뷰 데이터 부족", "리뷰가 없습니다."),
                                 new ReviewSummaryResponse.SummaryDetail("추천 메뉴 정보 부족", "리뷰가 없습니다.")
+                        ),
+                        List.of()
                         ),
                         List.of()
                 )

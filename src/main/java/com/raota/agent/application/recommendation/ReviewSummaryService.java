@@ -45,6 +45,11 @@ public class ReviewSummaryService {
     }
 
     public ReviewSummaryResponse summarizeReviews(ReviewSummaryQuery request) {
+        return summarizeReviewsWithEvidence(request).response();
+    }
+
+    /** Executes the summary use case while preserving the retrieved documents for evaluation and review. */
+    public ReviewSummaryExecution summarizeReviewsWithEvidence(ReviewSummaryQuery request) {
         validateReviewSummaryRequest(request);
 
         RamenShop ramenShop = ramenShopReader.getRamenShop(request.shopId());
@@ -53,12 +58,15 @@ public class ReviewSummaryService {
         List<Document> reviewDocuments = collectReviewDocuments(ramenShop, focus);
 
         if (hasInsufficientReviewDocuments(reviewDocuments)) {
-            return buildFallbackResponse(ramenShop);
+            return new ReviewSummaryExecution(buildFallbackResponse(ramenShop), reviewDocuments);
         }
 
         AiReviewSummaryResult aiResult = generateReviewSummaryResult(focus, ramenShop, reviewDocuments);
 
-        return buildReviewSummaryResponse(ramenShop, reviewDocuments, aiResult);
+        return new ReviewSummaryExecution(
+                buildReviewSummaryResponse(ramenShop, reviewDocuments, aiResult),
+                reviewDocuments
+        );
     }
 
     private void validateReviewSummaryRequest(ReviewSummaryQuery request) {
@@ -249,6 +257,12 @@ public class ReviewSummaryService {
                 createdAt == null ? "UNKNOWN" : createdAt,
                 document.getText()
         );
+    }
+
+    public record ReviewSummaryExecution(ReviewSummaryResponse response, List<Document> evidence) {
+        public ReviewSummaryExecution {
+            evidence = evidence == null ? List.of() : List.copyOf(evidence);
+        }
     }
 
 }

@@ -36,6 +36,11 @@ public class RamenShopComparisonService {
     }
 
     public RamenShopComparisonResult compareShops(RamenShopComparisonQuery query) {
+        return compareShopsWithEvidence(query).response();
+    }
+
+    /** Executes a comparison while preserving both shops' retrieved documents for review. */
+    public RamenShopComparisonExecution compareShopsWithEvidence(RamenShopComparisonQuery query) {
         if (query == null) {
             throw new IllegalArgumentException("매장 비교 요청은 필수입니다.");
         }
@@ -47,9 +52,16 @@ public class RamenShopComparisonService {
 
         List<RamenShopComparisonDocument> shopADocuments = collectComparisonDocuments(shopA, normalizedFocus);
         List<RamenShopComparisonDocument> shopBDocuments = collectComparisonDocuments(shopB, normalizedFocus);
+        List<RamenShopComparisonDocument> evidence = java.util.stream.Stream.concat(
+                shopADocuments == null ? java.util.stream.Stream.empty() : shopADocuments.stream(),
+                shopBDocuments == null ? java.util.stream.Stream.empty() : shopBDocuments.stream()
+        ).toList();
 
         if (hasInsufficientDocuments(shopADocuments, shopBDocuments)) {
-            return buildComparisonResult(shopA, shopB, normalizedFocus, null);
+            return new RamenShopComparisonExecution(
+                    buildComparisonResult(shopA, shopB, normalizedFocus, null),
+                    evidence
+            );
         }
 
         String contextA = buildComparisonContext(shopA, shopADocuments);
@@ -60,7 +72,10 @@ public class RamenShopComparisonService {
                 contextB
         );
 
-        return buildComparisonResult(shopA, shopB, normalizedFocus, aiResult);
+        return new RamenShopComparisonExecution(
+                buildComparisonResult(shopA, shopB, normalizedFocus, aiResult),
+                evidence
+        );
     }
 
     private void validateComparisonRequest(Long shopAId, Long shopBId) {
@@ -180,5 +195,14 @@ public class RamenShopComparisonService {
                 source == null ? "UNKNOWN" : source,
                 document.text()
         );
+    }
+
+    public record RamenShopComparisonExecution(
+            RamenShopComparisonResult response,
+            List<RamenShopComparisonDocument> evidence
+    ) {
+        public RamenShopComparisonExecution {
+            evidence = evidence == null ? List.of() : List.copyOf(evidence);
+        }
     }
 }

@@ -4,6 +4,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import com.raota.agent.application.ramenshop.command.AiRamenShopSearchCommand;
 import com.raota.agent.application.ramenshop.query.RamenShopComparisonQuery;
+import com.raota.agent.application.ramenshop.result.RamenShopComparisonDocument;
 import com.raota.agent.application.ramenshop.result.AiRamenShopSearchResult;
 import com.raota.agent.application.ramenshop.result.RamenShopComparisonResult;
 import com.raota.agent.application.ramenshop.service.AiRamenShopSearchService;
@@ -15,9 +16,13 @@ import com.raota.agent.application.recommendation.query.ReviewSummaryQuery;
 import com.raota.agent.presentation.recommendation.response.AiChatResponse;
 import com.raota.agent.presentation.recommendation.response.ReviewSummaryResponse;
 import com.raota.agent.application.ramenshop.result.AiRamenShopSearchResult.ShopResult;
+import com.raota.agent.domain.retrieval.document.RetrievalMetadataKeys;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import org.springframework.ai.document.Document;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -86,20 +91,11 @@ public class DefaultRagEvaluationCaseExecutor implements RagEvaluationCaseExecut
 
     private RagExecutionResult executeSummary(RagEvaluationCase evaluationCase, long startedAt) {
         JsonNode request = evaluationCase.request();
-        ReviewSummaryResponse result = reviewSummaryService.summarizeReviews(
+        ReviewSummaryService.ReviewSummaryExecution execution = reviewSummaryService.summarizeReviewsWithEvidence(
                 new ReviewSummaryQuery(requiredLong(request, "shopId"), optionalText(request, "focus"))
         );
-        List<RagEvaluationEvidence> evidence = result == null || result.sampleReviews() == null
-                ? List.of()
-                : result.sampleReviews().stream()
-                        .map(review -> new RagEvaluationEvidence(
-                                review.name(),
-                                "EXTERNAL_REVIEW",
-                                "review-summary",
-                                review.text(),
-                                java.util.Map.of()
-                        ))
-                        .toList();
+        ReviewSummaryResponse result = execution.response();
+        List<RagEvaluationEvidence> evidence = toReviewEvidence(execution.evidence());
         return success(result, List.of(), evidence, isFallback(evaluationCase, result), elapsedMs(startedAt));
     }
 
@@ -113,23 +109,26 @@ public class DefaultRagEvaluationCaseExecutor implements RagEvaluationCaseExecut
                     requiredText(message, "content")
             )));
         }
-        AiChatResponse result = followUpChatService.followUpChat(new FollowUpChatQuery(
+        FollowUpChatService.FollowUpChatExecution execution = followUpChatService.followUpChatWithEvidence(new FollowUpChatQuery(
                 optionalText(request, "contextType"),
                 longList(request == null ? null : request.get("shopIds")),
                 messages
         ));
-        return success(result, List.of(), List.of(), isFallback(evaluationCase, result), elapsedMs(startedAt));
+        AiChatResponse result = execution.response();
+        List<RagEvaluationEvidence> evidence = toVectorEvidence(execution.evidence());
+        return success(result, List.of(), evidence, isFallback(evaluationCase, result), elapsedMs(startedAt));
     }
 
     private RagExecutionResult executeCompare(RagEvaluationCase evaluationCase, long startedAt) {
         JsonNode request = evaluationCase.request();
-        RamenShopComparisonResult result = comparisonService.compareShops(
+        RamenShopComparisonService.RamenShopComparisonExecution execution = comparisonService.compareShopsWithEvidence(
                 new RamenShopComparisonQuery(
                         requiredLong(request, "shopAId"),
                         requiredLong(request, "shopBId"),
                         optionalText(request, "focus")
                 )
         );
+        RamenShopComparisonResult result = execution.response();
         List<Long> ids = result == null
                 ? List.of()
                 : java.util.stream.Stream.of(result.shopA(), result.shopB())
@@ -137,7 +136,7 @@ public class DefaultRagEvaluationCaseExecutor implements RagEvaluationCaseExecut
                         .map(RamenShopComparisonResult.ShopSummary::id)
                         .filter(java.util.Objects::nonNull)
                         .toList();
-        return success(result, ids, List.of(), isFallback(evaluationCase, result), elapsedMs(startedAt));
+        return success(result, ids, toComparisonEvidence(execution.evidence()), isFallback(evaluationCase, result), elapsedMs(startedAt));
     }
 
     private RagExecutionResult success(
@@ -213,5 +212,72 @@ public class DefaultRagEvaluationCaseExecutor implements RagEvaluationCaseExecut
 
     private long elapsedMs(long startedAt) {
         return Math.max(0, (System.nanoTime() - startedAt) / 1_000_000);
+    }
+
+    private List<RagEvaluationEvidence> toReviewEvidence(List<Document> documents) {
+        if (documents == null) {
+            return List.of();
+        }
+        return documents.stream()
+                .map(document -> new RagEvaluationEvidence(
+                        metadataText(document, RetrievalMetadataKeys.SOURCE_ID),
+                        "EXTERNAL_REVIEW",
+                        metadataText(document, RetrievalMetadataKeys.SOURCE),
+                        document == null ? "" : document.getText(),
+                        safeMetadata(document == null ? null : document.getMetadata())
+                ))
+                .toList();
+    }
+
+    private List<RagEvaluationEvidence> toVectorEvidence(List<Document> documents) {
+        if (documents == null) {
+            return List.of();
+        }
+        return documents.stream()
+                .map(document -> new RagEvaluationEvidence(
+                        metadataText(document, RetrievalMetadataKeys.SOURCE_ID),
+                        metadataText(document, RetrievalMetadataKeys.DOCUMENT_TYPE),
+                        metadataText(document, RetrievalMetadataKeys.SOURCE),
+                        document == null ? "" : document.getText(),
+                        safeMetadata(document == null ? null : document.getMetadata())
+                ))
+                .toList();
+    }
+
+    private List<RagEvaluationEvidence> toComparisonEvidence(List<RamenShopComparisonDocument> documents) {
+        if (documents == null) {
+            return List.of();
+        }
+        return documents.stream()
+                .map(document -> new RagEvaluationEvidence(
+                        metadataText(document == null ? null : document.metadata(), RetrievalMetadataKeys.SHOP_ID),
+                        metadataText(document == null ? null : document.metadata(), RetrievalMetadataKeys.DOCUMENT_TYPE),
+                        metadataText(document == null ? null : document.metadata(), RetrievalMetadataKeys.SOURCE),
+                        document == null ? "" : document.text(),
+                        safeMetadata(document == null ? null : document.metadata())
+                ))
+                .toList();
+    }
+
+    private String metadataText(Document document, String key) {
+        return metadataText(document == null ? null : document.getMetadata(), key);
+    }
+
+    private String metadataText(Map<String, Object> metadata, String key) {
+        Object value = metadata == null ? null : metadata.get(key);
+        return value == null ? "" : value.toString();
+    }
+
+    private Map<String, Object> safeMetadata(Map<String, Object> metadata) {
+        if (metadata == null || metadata.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, Object> safe = new LinkedHashMap<>();
+        metadata.forEach((key, value) -> {
+            if (key != null && value != null) {
+                safe.put(key, value);
+            }
+        });
+        return safe;
     }
 }
