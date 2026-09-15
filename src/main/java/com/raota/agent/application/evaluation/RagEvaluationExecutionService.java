@@ -228,6 +228,8 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
 
     private double averageLatency(String runId) {
         return caseRepository.findByRunIdOrderByIdAsc(runId).stream()
+                .filter(item -> item.getStatus() == RagEvaluationCaseStatus.COMPLETED
+                        || item.getStatus() == RagEvaluationCaseStatus.ERROR)
                 .map(RagEvaluationCaseResultEntity::getLatencyMs)
                 .filter(java.util.Objects::nonNull)
                 .mapToLong(Long::longValue)
