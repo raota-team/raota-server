@@ -4,7 +4,6 @@ import com.raota.discovery.application.DiscoveryService;
 import com.raota.agent.application.recommendation.RecommendationService;
 import com.raota.discovery.presentation.contract.DiscoveryApi;
 import com.raota.discovery.presentation.response.DiscoveryStatsResponse;
-import com.raota.ramenshop.application.result.TodayPopularRamenShopResponse;
 import com.raota.agent.presentation.recommendation.response.TodayRecommendationResponse;
 import com.raota.global.presentation.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Collections;
@@ -30,13 +28,6 @@ public class DiscoveryApiController implements DiscoveryApi {
     @GetMapping("/stats")
     public ResponseEntity<ApiResponse<DiscoveryStatsResponse>> getDiscoveryStats() {
         return ResponseEntity.ok(ApiResponse.success(discoveryService.getStats()));
-    }
-
-    @Override
-    @GetMapping("/popular-shops/today")
-    public ResponseEntity<ApiResponse<List<TodayPopularRamenShopResponse>>> getTodayPopularShops(
-            @RequestParam(defaultValue = "5") int limit) {
-        return ResponseEntity.ok(ApiResponse.success(discoveryService.getTodayPopularShops(limit)));
     }
 
     @Override

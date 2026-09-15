@@ -1,11 +1,9 @@
 package com.raota.discovery.presentation.contract;
 
 import com.raota.discovery.presentation.response.DiscoveryStatsResponse;
-import com.raota.ramenshop.application.result.TodayPopularRamenShopResponse;
 import com.raota.agent.presentation.recommendation.response.TodayRecommendationResponse;
 import com.raota.global.presentation.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
@@ -24,14 +22,6 @@ public interface DiscoveryApi {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
     })
     ResponseEntity<ApiResponse<DiscoveryStatsResponse>> getDiscoveryStats();
-
-    @Operation(summary = "오늘 많이 본 라멘집 조회", description = "오늘 00시부터 현재까지 상세 조회가 많은 라멘집을 순위순으로 반환합니다.")
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
-    })
-    ResponseEntity<ApiResponse<List<TodayPopularRamenShopResponse>>> getTodayPopularShops(
-            @Parameter(description = "가져올 라멘집 개수", example = "5")
-            int limit);
 
     @Operation(summary = "오늘의 라멘 추천 조회", description = "오늘 사용자에게 추천할 라멘 종류 데이터 1건을 조회합니다.")
     @ApiResponses({
