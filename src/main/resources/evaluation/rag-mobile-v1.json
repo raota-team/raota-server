@@ -64,6 +64,7 @@
       "request": { "query": "혼밥하기 좋고 웨이팅이 적은 라멘" },
       "relevantShops": [{ "shopId": 4, "relevance": 3 }, { "shopId": 1, "relevance": 2 }],
       "expectsEmpty": false,
+      "contractOnly": true,
       "primaryK": 1,
       "diagnosticK": 6
     },
@@ -279,6 +280,7 @@
       "request": { "query": "역 근처 빠르고 든든한 한 끼 라멘" },
       "relevantShops": [{ "shopId": 1, "relevance": 3 }, { "shopId": 4, "relevance": 2 }],
       "expectsEmpty": false,
+      "contractOnly": true,
       "primaryK": 1,
       "diagnosticK": 6
     },

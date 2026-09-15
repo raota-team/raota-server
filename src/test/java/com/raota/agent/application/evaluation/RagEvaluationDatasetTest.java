@@ -25,6 +25,9 @@ class RagEvaluationDatasetTest {
                     .containsEntry(RagEvaluationCaseType.SUMMARY, 6L)
                     .containsEntry(RagEvaluationCaseType.CHAT, 6L)
                     .containsEntry(RagEvaluationCaseType.COMPARE, 6L);
+            assertThat(dataset.cases()).filteredOn(RagEvaluationCase::contractOnly)
+                    .extracting(RagEvaluationCase::caseId)
+                    .containsExactlyInAnyOrder("search-dev-06", "search-holdout-04");
             assertThat(dataset.cases()).allSatisfy(item -> {
                 assertThat(item.primaryK()).isEqualTo(1);
                 assertThat(item.diagnosticK()).isEqualTo(6);
