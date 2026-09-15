@@ -1,8 +1,8 @@
-package com.raota.discovery.presentation.response;
+package com.raota.home.presentation.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-public record DiscoveryStatsResponse(
+public record HomeStatsResponse(
         @Schema(description = "등록된 라멘집 수")
         long totalShops,
         @Schema(description = "누적 리뷰(또는 AI 분석) 수")
