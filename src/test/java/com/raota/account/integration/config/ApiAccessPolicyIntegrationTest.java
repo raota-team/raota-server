@@ -125,6 +125,21 @@ class ApiAccessPolicyIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
+    void RAG_평가_관리_API는_ADMIN만_접근할_수_있다() throws Exception {
+        String path = "/admin/api/rag-evaluations/datasets";
+
+        mockMvc.perform(get(path))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get(path)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(createAccessToken(MemberRole.USER))))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get(path)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(createAccessToken(MemberRole.ADMIN))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.version").value("rag-mobile-v1"));
+    }
+
+    @Test
     void health와_Prometheus만_공개하고_나머지_Actuator는_ADMIN으로_제한한다() throws Exception {
         mockMvc.perform(get("/actuator/health"))
                 .andExpect(status().isOk());
