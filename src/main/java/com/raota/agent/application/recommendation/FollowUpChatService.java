@@ -1,11 +1,11 @@
 package com.raota.agent.application.recommendation;
 
 import com.raota.agent.application.recommendation.dto.AiFollowUpChatResult;
+import com.raota.agent.application.recommendation.query.FollowUpChatQuery;
 import com.raota.agent.application.ramenshop.search.RamenShopReader;
 import com.raota.ramenshop.domain.model.RamenShop;
 import com.raota.agent.domain.retrieval.document.RetrievalDocumentFilters;
 import com.raota.agent.domain.retrieval.document.RetrievalMetadataKeys;
-import com.raota.agent.presentation.recommendation.request.AiChatRequest;
 import com.raota.agent.presentation.recommendation.response.AiChatResponse;
 import java.util.List;
 import java.util.Locale;
@@ -44,7 +44,7 @@ public class FollowUpChatService {
         this.followUpChatTemplate = followUpChatTemplate;
     }
 
-    public AiChatResponse followUpChat(AiChatRequest request) {
+    public AiChatResponse followUpChat(FollowUpChatQuery request) {
         validateChatRequest(request);
 
         String contextType = normalizeContextType(request.contextType());
@@ -60,7 +60,7 @@ public class FollowUpChatService {
         return buildChatResponse(aiResult);
     }
 
-    private void validateChatRequest(AiChatRequest request) {
+    private void validateChatRequest(FollowUpChatQuery request) {
         if (request == null) {
             throw new IllegalArgumentException("추가 질문 요청은 필수입니다.");
         }
@@ -103,7 +103,7 @@ public class FollowUpChatService {
     private List<Document> collectChatDocuments(
             String contextType,
             List<RamenShop> shops,
-            List<AiChatRequest.ChatMessage> messages
+            List<FollowUpChatQuery.Message> messages
     ) {
         String query = buildChatQuery(contextType, shops, messages);
         FilterExpressionBuilder builder = new FilterExpressionBuilder();
@@ -137,7 +137,7 @@ public class FollowUpChatService {
     private String buildChatQuery(
             String contextType,
             List<RamenShop> shops,
-            List<AiChatRequest.ChatMessage> messages
+            List<FollowUpChatQuery.Message> messages
     ) {
         String shopNames = shops.stream()
                 .map(RamenShop::getName)
@@ -147,9 +147,9 @@ public class FollowUpChatService {
         return "%s %s %s".formatted(contextType, shopNames, latestQuestion);
     }
 
-    private String findLatestUserMessage(List<AiChatRequest.ChatMessage> messages) {
+    private String findLatestUserMessage(List<FollowUpChatQuery.Message> messages) {
         for (int i = messages.size() - 1; i >= 0; i--) {
-            AiChatRequest.ChatMessage message = messages.get(i);
+            FollowUpChatQuery.Message message = messages.get(i);
             if ("user".equals(normalizeRole(message.role()))) {
                 return message.content().trim();
             }
@@ -162,7 +162,7 @@ public class FollowUpChatService {
             String contextType,
             List<RamenShop> shops,
             List<Document> documents,
-            List<AiChatRequest.ChatMessage> messages
+            List<FollowUpChatQuery.Message> messages
     ) {
         return chatClient.prompt()
                 .user(user -> user.text(followUpChatTemplate)
@@ -239,7 +239,7 @@ public class FollowUpChatService {
         );
     }
 
-    private String buildMessageContext(List<AiChatRequest.ChatMessage> messages) {
+    private String buildMessageContext(List<FollowUpChatQuery.Message> messages) {
         int skipCount = Math.max(0, messages.size() - RECENT_MESSAGE_LIMIT);
 
         return messages.stream()

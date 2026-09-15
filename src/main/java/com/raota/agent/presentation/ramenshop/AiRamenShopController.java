@@ -1,6 +1,8 @@
 package com.raota.agent.presentation.ramenshop;
 
 import com.raota.account.infrastructure.auth.LoginMember;
+import com.raota.agent.application.ramenshop.command.AiRamenShopSearchCommand;
+import com.raota.agent.application.ramenshop.query.RamenShopComparisonQuery;
 import com.raota.agent.application.ramenshop.result.AiRamenShopSearchResult;
 import com.raota.agent.application.ramenshop.result.RamenShopComparisonResult;
 import com.raota.agent.application.ramenshop.service.AiRamenShopSearchService;
@@ -32,7 +34,9 @@ public class AiRamenShopController implements AiRamenShopApi {
             @RequestBody AiRamenShopSearchRequest request,
             @LoginMember(required = false) Long memberId) {
         String query = request == null ? null : request.query();
-        return ResponseEntity.ok(ApiResponse.success(toResponse(searchService.search(query, memberId))));
+        return ResponseEntity.ok(ApiResponse.success(
+                toResponse(searchService.search(new AiRamenShopSearchCommand(query, memberId)))
+        ));
     }
 
     @Override
@@ -43,7 +47,7 @@ public class AiRamenShopController implements AiRamenShopApi {
         Long shopBId = request == null ? null : request.shopBId();
         String focus = request == null ? null : request.focus();
         return ResponseEntity.ok(ApiResponse.success(toResponse(
-                comparisonService.compareShops(shopAId, shopBId, focus)
+                comparisonService.compareShops(new RamenShopComparisonQuery(shopAId, shopBId, focus))
         )));
     }
 

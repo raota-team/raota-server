@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.raota.agent.application.ramenshop.result.AiRamenShopSearchResult;
+import com.raota.agent.application.ramenshop.command.AiRamenShopSearchCommand;
 import com.raota.agent.application.ramenshop.service.AiRamenShopSearchService;
 import com.raota.agent.application.recommendation.RecommendationService;
 import com.raota.account.domain.member.model.MemberProfile;
@@ -96,7 +97,7 @@ class ApiAccessPolicyIntegrationTest extends BaseIntegrationTest {
     void 인증된_회원은_보호_경로의_보안_필터를_통과한다() throws Exception {
         MemberProfile member = saveMember(MemberRole.USER);
         String token = jwtTokenProvider.createAccessToken(member.getId());
-        when(aiRamenShopSearchService.search("돈코츠", member.getId()))
+        when(aiRamenShopSearchService.search(new AiRamenShopSearchCommand("돈코츠", member.getId())))
                 .thenReturn(new AiRamenShopSearchResult(List.of()));
 
         mockMvc.perform(post("/ramen-shops/ai-search")

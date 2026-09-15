@@ -2,6 +2,7 @@ package com.raota.agent.application.ramenshop.service;
 
 import com.raota.ramenshop.application.service.BookmarkService;
 import com.raota.ramenshop.application.port.FileUrlPort;
+import com.raota.agent.application.ramenshop.command.AiRamenShopSearchCommand;
 import com.raota.agent.application.ramenshop.port.RamenShopSearchDocumentPort;
 import com.raota.agent.application.ramenshop.query.ParsedAiRamenShopSearchQuery;
 import com.raota.agent.application.ramenshop.result.AiRamenShopSearchHit;
@@ -40,14 +41,15 @@ public class AiRamenShopSearchService {
         this.reranker = reranker;
     }
 
-    public AiRamenShopSearchResult search(String query, Long memberId) {
+    public AiRamenShopSearchResult search(AiRamenShopSearchCommand command) {
+        String query = command == null ? null : command.query();
         if (query == null || query.isBlank()) {
             throw new IllegalArgumentException("검색어는 필수입니다.");
         }
         ParsedAiRamenShopSearchQuery parsedQuery = queryParser.parse(query.trim());
         List<AiRamenShopSearchHit> searchResult = searchRelevantShopDocuments(parsedQuery);
 
-        return buildSearchResponse(searchResult, memberId);
+        return buildSearchResponse(searchResult, command.memberId());
     }
 
     private List<AiRamenShopSearchHit> searchRelevantShopDocuments(ParsedAiRamenShopSearchQuery query) {

@@ -6,10 +6,12 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.raota.agent.application.ramenshop.result.AiRamenShopSearchResult;
+import com.raota.agent.application.ramenshop.command.AiRamenShopSearchCommand;
 import com.raota.agent.application.ramenshop.service.AiRamenShopSearchService;
 import com.raota.agent.application.ramenshop.service.RamenShopComparisonService;
 import com.raota.agent.application.recommendation.FollowUpChatService;
 import com.raota.agent.application.recommendation.ReviewSummaryService;
+import com.raota.agent.application.recommendation.query.ReviewSummaryQuery;
 import com.raota.agent.presentation.recommendation.response.ReviewSummaryResponse;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -33,7 +35,7 @@ class DefaultRagEvaluationCaseExecutorTest {
 
     @Test
     void executesSearchAndExposesCandidateIdsAndEvidence() {
-        when(searchService.search("시오 국물", null)).thenReturn(new AiRamenShopSearchResult(List.of(
+        when(searchService.search(new AiRamenShopSearchCommand("시오 국물", null))).thenReturn(new AiRamenShopSearchResult(List.of(
                 new AiRamenShopSearchResult.ShopResult(7L, "라멘집", "시오", "서울", "담백한 국물", "", 92, false)
         )));
 
@@ -63,7 +65,7 @@ class DefaultRagEvaluationCaseExecutorTest {
 
     @Test
     void recognizesReviewSummaryFallbackResponse() {
-        when(reviewSummaryService.summarizeReviews(org.mockito.ArgumentMatchers.any())).thenReturn(
+        when(reviewSummaryService.summarizeReviews(org.mockito.ArgumentMatchers.any(ReviewSummaryQuery.class))).thenReturn(
                 new ReviewSummaryResponse(
                         new ReviewSummaryResponse.AiShopBasicInfo(7L, "라멘집", "시오", "서울", "", false),
                         0,

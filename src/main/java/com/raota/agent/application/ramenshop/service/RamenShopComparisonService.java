@@ -2,6 +2,7 @@ package com.raota.agent.application.ramenshop.service;
 
 import com.raota.agent.application.ramenshop.port.RamenShopComparisonDocumentPort;
 import com.raota.agent.application.ramenshop.port.RamenShopComparisonNarrativePort;
+import com.raota.agent.application.ramenshop.query.RamenShopComparisonQuery;
 import com.raota.agent.application.ramenshop.result.AiRamenShopComparisonResult;
 import com.raota.agent.application.ramenshop.result.RamenShopComparisonDocument;
 import com.raota.agent.application.ramenshop.result.RamenShopComparisonResult;
@@ -34,12 +35,15 @@ public class RamenShopComparisonService {
         this.comparisonSearchPolicy = comparisonSearchPolicy;
     }
 
-    public RamenShopComparisonResult compareShops(Long shopAId, Long shopBId, String focus) {
-        validateComparisonRequest(shopAId, shopBId);
+    public RamenShopComparisonResult compareShops(RamenShopComparisonQuery query) {
+        if (query == null) {
+            throw new IllegalArgumentException("매장 비교 요청은 필수입니다.");
+        }
+        validateComparisonRequest(query.shopAId(), query.shopBId());
 
-        RamenShop shopA = ramenShopReader.getRamenShop(shopAId);
-        RamenShop shopB = ramenShopReader.getRamenShop(shopBId);
-        String normalizedFocus = comparisonSearchPolicy.normalizeFocus(focus);
+        RamenShop shopA = ramenShopReader.getRamenShop(query.shopAId());
+        RamenShop shopB = ramenShopReader.getRamenShop(query.shopBId());
+        String normalizedFocus = comparisonSearchPolicy.normalizeFocus(query.focus());
 
         List<RamenShopComparisonDocument> shopADocuments = collectComparisonDocuments(shopA, normalizedFocus);
         List<RamenShopComparisonDocument> shopBDocuments = collectComparisonDocuments(shopB, normalizedFocus);

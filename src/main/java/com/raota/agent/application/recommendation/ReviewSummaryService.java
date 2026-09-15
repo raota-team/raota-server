@@ -1,12 +1,12 @@
 package com.raota.agent.application.recommendation;
 
 import com.raota.agent.application.recommendation.dto.AiReviewSummaryResult;
+import com.raota.agent.application.recommendation.query.ReviewSummaryQuery;
 import com.raota.agent.application.ramenshop.search.RamenShopReader;
 import com.raota.ramenshop.domain.model.RamenShop;
 import com.raota.agent.domain.retrieval.document.RetrievalDocumentFilters;
 import com.raota.agent.domain.retrieval.document.RetrievalMetadataKeys;
 import com.raota.global.file.FileUploader;
-import com.raota.agent.presentation.recommendation.request.ReviewSummaryRequest;
 import com.raota.agent.presentation.recommendation.response.ReviewSummaryResponse;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -44,7 +44,7 @@ public class ReviewSummaryService {
         this.reviewSummaryTemplate = reviewSummaryTemplate;
     }
 
-    public ReviewSummaryResponse summarizeReviews(ReviewSummaryRequest request) {
+    public ReviewSummaryResponse summarizeReviews(ReviewSummaryQuery request) {
         validateReviewSummaryRequest(request);
 
         RamenShop ramenShop = ramenShopReader.getRamenShop(request.shopId());
@@ -61,7 +61,7 @@ public class ReviewSummaryService {
         return buildReviewSummaryResponse(ramenShop, reviewDocuments, aiResult);
     }
 
-    private void validateReviewSummaryRequest(ReviewSummaryRequest request) {
+    private void validateReviewSummaryRequest(ReviewSummaryQuery request) {
         if (request == null) {
             throw new IllegalArgumentException("리뷰 요약 요청은 필수입니다.");
         }

@@ -2,14 +2,16 @@ package com.raota.agent.application.evaluation;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import com.raota.agent.application.ramenshop.command.AiRamenShopSearchCommand;
+import com.raota.agent.application.ramenshop.query.RamenShopComparisonQuery;
 import com.raota.agent.application.ramenshop.result.AiRamenShopSearchResult;
 import com.raota.agent.application.ramenshop.result.RamenShopComparisonResult;
 import com.raota.agent.application.ramenshop.service.AiRamenShopSearchService;
 import com.raota.agent.application.ramenshop.service.RamenShopComparisonService;
 import com.raota.agent.application.recommendation.FollowUpChatService;
 import com.raota.agent.application.recommendation.ReviewSummaryService;
-import com.raota.agent.presentation.recommendation.request.AiChatRequest;
-import com.raota.agent.presentation.recommendation.request.ReviewSummaryRequest;
+import com.raota.agent.application.recommendation.query.FollowUpChatQuery;
+import com.raota.agent.application.recommendation.query.ReviewSummaryQuery;
 import com.raota.agent.presentation.recommendation.response.AiChatResponse;
 import com.raota.agent.presentation.recommendation.response.ReviewSummaryResponse;
 import com.raota.agent.application.ramenshop.result.AiRamenShopSearchResult.ShopResult;
@@ -67,7 +69,7 @@ public class DefaultRagEvaluationCaseExecutor implements RagEvaluationCaseExecut
         JsonNode request = evaluationCase.request();
         String query = requiredText(request, "query");
         Long memberId = optionalLong(request, "memberId");
-        AiRamenShopSearchResult result = searchService.search(query, memberId);
+        AiRamenShopSearchResult result = searchService.search(new AiRamenShopSearchCommand(query, memberId));
         List<ShopResult> shops = result == null || result.shops() == null ? List.of() : result.shops();
         List<Long> ids = shops.stream().map(ShopResult::id).filter(java.util.Objects::nonNull).toList();
         List<RagEvaluationEvidence> evidence = shops.stream()
@@ -85,7 +87,7 @@ public class DefaultRagEvaluationCaseExecutor implements RagEvaluationCaseExecut
     private RagExecutionResult executeSummary(RagEvaluationCase evaluationCase, long startedAt) {
         JsonNode request = evaluationCase.request();
         ReviewSummaryResponse result = reviewSummaryService.summarizeReviews(
-                new ReviewSummaryRequest(requiredLong(request, "shopId"), optionalText(request, "focus"))
+                new ReviewSummaryQuery(requiredLong(request, "shopId"), optionalText(request, "focus"))
         );
         List<RagEvaluationEvidence> evidence = result == null || result.sampleReviews() == null
                 ? List.of()
@@ -103,15 +105,15 @@ public class DefaultRagEvaluationCaseExecutor implements RagEvaluationCaseExecut
 
     private RagExecutionResult executeChat(RagEvaluationCase evaluationCase, long startedAt) {
         JsonNode request = evaluationCase.request();
-        List<AiChatRequest.ChatMessage> messages = new ArrayList<>();
+        List<FollowUpChatQuery.Message> messages = new ArrayList<>();
         JsonNode messageNodes = request == null ? null : request.get("messages");
         if (messageNodes != null && messageNodes.isArray()) {
-            messageNodes.forEach(message -> messages.add(new AiChatRequest.ChatMessage(
+            messageNodes.forEach(message -> messages.add(new FollowUpChatQuery.Message(
                     optionalText(message, "role"),
                     requiredText(message, "content")
             )));
         }
-        AiChatResponse result = followUpChatService.followUpChat(new AiChatRequest(
+        AiChatResponse result = followUpChatService.followUpChat(new FollowUpChatQuery(
                 optionalText(request, "contextType"),
                 longList(request == null ? null : request.get("shopIds")),
                 messages
@@ -122,9 +124,11 @@ public class DefaultRagEvaluationCaseExecutor implements RagEvaluationCaseExecut
     private RagExecutionResult executeCompare(RagEvaluationCase evaluationCase, long startedAt) {
         JsonNode request = evaluationCase.request();
         RamenShopComparisonResult result = comparisonService.compareShops(
-                requiredLong(request, "shopAId"),
-                requiredLong(request, "shopBId"),
-                optionalText(request, "focus")
+                new RamenShopComparisonQuery(
+                        requiredLong(request, "shopAId"),
+                        requiredLong(request, "shopBId"),
+                        optionalText(request, "focus")
+                )
         );
         List<Long> ids = result == null
                 ? List.of()
