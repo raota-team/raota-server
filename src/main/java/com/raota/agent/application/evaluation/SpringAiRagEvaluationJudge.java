@@ -75,6 +75,7 @@ public class SpringAiRagEvaluationJudge implements RagEvaluationJudge {
         Map<String, Object> expected = new LinkedHashMap<>();
         expected.put("relevantShops", evaluationCase.relevantShops());
         expected.put("requiredFacts", evaluationCase.requiredFacts());
+        expected.put("allowedEvidence", evaluationCase.allowedEvidence());
         expected.put("forbiddenClaims", evaluationCase.forbiddenClaims());
         expected.put("expectsFallback", evaluationCase.expectsFallback());
         expected.put("primaryK", evaluationCase.primaryK());

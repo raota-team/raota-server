@@ -61,6 +61,7 @@ class RagEvaluationMetricCalculatorTest {
                 List.of(),
                 false,
                 List.of("시오라멘", "웨이팅"),
+                List.of(),
                 List.of("확정할 수 없는 가격"),
                 false,
                 false,
@@ -98,7 +99,7 @@ class RagEvaluationMetricCalculatorTest {
         RagEvaluationCase evaluationCase = new RagEvaluationCase(
                 "chat-1", RagEvaluationCaseType.CHAT, RagEvaluationSplit.DEV,
                 JsonMapper.builder().build().createObjectNode(), "AUTHENTICATED",
-                List.of(), false, List.of(), List.of(), false, false, 1, 6
+                List.of(), false, List.of(), List.of(), List.of(), false, false, 1, 6
         );
 
         Map<String, Double> metrics = RagEvaluationMetricCalculator.calculateGeneration(

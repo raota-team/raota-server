@@ -42,7 +42,7 @@ class DefaultRagEvaluationCaseExecutorTest {
         RagExecutionResult result = executor.execute(new RagEvaluationCase(
                 "search-1", RagEvaluationCaseType.SEARCH, RagEvaluationSplit.DEV,
                 objectMapper.createObjectNode().put("query", "시오 국물"), "ANONYMOUS",
-                List.of(new RagExpectedShop(7L, 3)), false, List.of(), List.of(), false, false, 1, 6
+                List.of(new RagExpectedShop(7L, 3)), false, List.of(), List.of(), List.of(), false, false, 1, 6
         ));
 
         assertThat(result.status()).isEqualTo(RagEvaluationCaseStatus.COMPLETED);
@@ -56,7 +56,7 @@ class DefaultRagEvaluationCaseExecutorTest {
         RagExecutionResult result = executor.execute(new RagEvaluationCase(
                 "search-contract", RagEvaluationCaseType.SEARCH, RagEvaluationSplit.DEV,
                 objectMapper.createObjectNode().put("query", "거리 가까운 곳"), "AUTHENTICATED",
-                List.of(), false, List.of(), List.of(), false, true, 1, 6
+                List.of(), false, List.of(), List.of(), List.of(), false, true, 1, 6
         ));
 
         assertThat(result.status()).isEqualTo(RagEvaluationCaseStatus.SKIPPED);
@@ -81,7 +81,7 @@ class DefaultRagEvaluationCaseExecutorTest {
         RagExecutionResult result = executor.execute(new RagEvaluationCase(
                 "summary-1", RagEvaluationCaseType.SUMMARY, RagEvaluationSplit.DEV,
                 objectMapper.createObjectNode().put("shopId", 7), "AUTHENTICATED",
-                List.of(), false, List.of("리뷰"), List.of(), true, false, 1, 6
+                List.of(), false, List.of("리뷰"), List.of(), List.of(), true, false, 1, 6
         ));
 
         assertThat(result.fallback()).isTrue();

@@ -13,6 +13,7 @@ public record RagEvaluationCase(
         List<RagExpectedShop> relevantShops,
         Boolean expectsEmpty,
         List<String> requiredFacts,
+        List<String> allowedEvidence,
         List<String> forbiddenClaims,
         Boolean expectsFallback,
         Boolean contractOnly,
@@ -31,6 +32,7 @@ public record RagEvaluationCase(
         authMode = authMode == null || authMode.isBlank() ? "ANONYMOUS" : authMode;
         relevantShops = relevantShops == null ? List.of() : List.copyOf(relevantShops);
         requiredFacts = requiredFacts == null ? List.of() : List.copyOf(requiredFacts);
+        allowedEvidence = allowedEvidence == null ? List.of() : List.copyOf(allowedEvidence);
         forbiddenClaims = forbiddenClaims == null ? List.of() : List.copyOf(forbiddenClaims);
         expectsEmpty = Boolean.TRUE.equals(expectsEmpty);
         expectsFallback = Boolean.TRUE.equals(expectsFallback);

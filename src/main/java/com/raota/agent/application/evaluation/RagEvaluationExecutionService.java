@@ -218,6 +218,7 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
         expected.put("relevantShops", evaluationCase.relevantShops());
         expected.put("expectsEmpty", evaluationCase.expectsEmpty());
         expected.put("requiredFacts", evaluationCase.requiredFacts());
+        expected.put("allowedEvidence", evaluationCase.allowedEvidence());
         expected.put("forbiddenClaims", evaluationCase.forbiddenClaims());
         expected.put("expectsFallback", evaluationCase.expectsFallback());
         expected.put("contractOnly", evaluationCase.contractOnly());
