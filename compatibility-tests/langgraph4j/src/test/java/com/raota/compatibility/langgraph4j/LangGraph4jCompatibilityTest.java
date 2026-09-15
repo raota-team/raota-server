@@ -18,6 +18,11 @@ import org.bsc.langgraph4j.state.AgentState;
 import org.bsc.langgraph4j.state.Channel;
 import org.bsc.langgraph4j.state.Channels;
 import org.junit.jupiter.api.Test;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.model.Generation;
+import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 class LangGraph4jCompatibilityTest {
@@ -61,6 +66,15 @@ class LangGraph4jCompatibilityTest {
     void springContextInjectsAWorkflowNode() {
         try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(BeanConfig.class)) {
             assertThat(context.getBean(WorkflowNode.class).name()).isEqualTo("validate");
+        }
+    }
+
+    @Test
+    void usesDeterministicFixedChatModelInsteadOfAnExternalLlm() {
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(BeanConfig.class)) {
+            ChatResponse response = context.getBean(ChatModel.class).call(new Prompt("평가"));
+
+            assertThat(response.getResult().getOutput().getText()).isEqualTo("{\"valid\":true}");
         }
     }
 
@@ -132,6 +146,16 @@ class LangGraph4jCompatibilityTest {
         @org.springframework.context.annotation.Bean
         WorkflowNode workflowNode() {
             return new WorkflowNode();
+        }
+
+        @org.springframework.context.annotation.Bean
+        ChatModel fixedChatModel() {
+            return new ChatModel() {
+                @Override
+                public ChatResponse call(Prompt prompt) {
+                    return new ChatResponse(List.of(new Generation(new AssistantMessage("{\"valid\":true}"))));
+                }
+            };
         }
     }
 }
