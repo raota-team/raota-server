@@ -4,6 +4,7 @@ import tools.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.ToDoubleFunction;
@@ -70,13 +71,14 @@ public final class RagEvaluationMetricCalculator {
             JsonNode response,
             boolean fallback
     ) {
-        String content = response == null || response.isNull() ? "" : response.toString().toLowerCase();
+        String content = response == null || response.isNull()
+                ? "" : response.toString().toLowerCase(Locale.ROOT);
         long requiredCount = evaluationCase.requiredFacts().size();
         long coveredCount = evaluationCase.requiredFacts().stream()
-                .filter(fact -> content.contains(fact.toLowerCase()))
+                .filter(fact -> content.contains(fact.toLowerCase(Locale.ROOT)))
                 .count();
         long forbiddenCount = evaluationCase.forbiddenClaims().stream()
-                .filter(claim -> content.contains(claim.toLowerCase()))
+                .filter(claim -> content.contains(claim.toLowerCase(Locale.ROOT)))
                 .count();
 
         Map<String, Double> metrics = new LinkedHashMap<>();
