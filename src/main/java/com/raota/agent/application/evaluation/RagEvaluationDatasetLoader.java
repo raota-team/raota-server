@@ -1,6 +1,6 @@
 package com.raota.agent.application.evaluation;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import lombok.RequiredArgsConstructor;

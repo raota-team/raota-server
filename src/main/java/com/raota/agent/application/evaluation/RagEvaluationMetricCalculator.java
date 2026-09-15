@@ -1,5 +1,6 @@
 package com.raota.agent.application.evaluation;
 
+import tools.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -60,6 +61,29 @@ public final class RagEvaluationMetricCalculator {
                         (left, right) -> left,
                         LinkedHashMap::new
                 ));
+    }
+
+    public static Map<String, Double> calculateGeneration(
+            RagEvaluationCase evaluationCase,
+            JsonNode response,
+            boolean fallback
+    ) {
+        String content = response == null || response.isNull() ? "" : response.toString().toLowerCase();
+        long requiredCount = evaluationCase.requiredFacts().size();
+        long coveredCount = evaluationCase.requiredFacts().stream()
+                .filter(fact -> content.contains(fact.toLowerCase()))
+                .count();
+        long forbiddenCount = evaluationCase.forbiddenClaims().stream()
+                .filter(claim -> content.contains(claim.toLowerCase()))
+                .count();
+
+        Map<String, Double> metrics = new LinkedHashMap<>();
+        metrics.put("schemaValid", response == null || response.isNull() ? 0.0 : 1.0);
+        metrics.put("requiredFactCoverage", requiredCount == 0 ? 1.0 : (double) coveredCount / requiredCount);
+        metrics.put("forbiddenClaimRate", evaluationCase.forbiddenClaims().isEmpty()
+                ? 0.0 : (double) forbiddenCount / evaluationCase.forbiddenClaims().size());
+        metrics.put("fallbackAccuracy", fallback == evaluationCase.expectsFallback() ? 1.0 : 0.0);
+        return metrics;
     }
 
     private static double hitRate(List<Long> returned, List<RagExpectedShop> expected, int k) {

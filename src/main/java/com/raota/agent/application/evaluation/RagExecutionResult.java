@@ -1,7 +1,7 @@
 package com.raota.agent.application.evaluation;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.NullNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.NullNode;
 import java.util.List;
 
 /** Result shared by the four RAG evaluation executors and the persistence layer. */
