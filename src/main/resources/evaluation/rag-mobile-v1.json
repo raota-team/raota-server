@@ -97,6 +97,7 @@
       "authMode": "AUTHENTICATED",
       "request": { "shopId": 1, "focus": "국물과 면" },
       "requiredFacts": ["장점", "단점", "추천 메뉴"],
+      "allowedEvidence": ["EXTERNAL_REVIEW", "RAMEN_SHOP_PROFILE"],
       "expectsFallback": false,
       "primaryK": 1,
       "diagnosticK": 6
@@ -108,6 +109,7 @@
       "authMode": "AUTHENTICATED",
       "request": { "shopId": 2, "focus": "차슈" },
       "requiredFacts": ["장점", "단점", "추천 메뉴"],
+      "allowedEvidence": ["EXTERNAL_REVIEW", "RAMEN_SHOP_PROFILE"],
       "expectsFallback": false,
       "primaryK": 1,
       "diagnosticK": 6
@@ -119,6 +121,7 @@
       "authMode": "AUTHENTICATED",
       "request": { "shopId": 3, "focus": "웨이팅과 분위기" },
       "requiredFacts": ["장점", "단점"],
+      "allowedEvidence": ["EXTERNAL_REVIEW", "RAMEN_SHOP_PROFILE"],
       "expectsFallback": false,
       "primaryK": 1,
       "diagnosticK": 6
@@ -130,6 +133,7 @@
       "authMode": "AUTHENTICATED",
       "request": { "shopId": 999999, "focus": "리뷰" },
       "requiredFacts": [],
+      "allowedEvidence": [],
       "expectsFallback": true,
       "primaryK": 1,
       "diagnosticK": 6
@@ -145,6 +149,7 @@
         "messages": [{ "role": "user", "content": "국물이 덜 짠 편인가요?" }]
       },
       "requiredFacts": ["국물"],
+      "allowedEvidence": ["EXTERNAL_REVIEW", "RAMEN_SHOP_PROFILE"],
       "expectsFallback": false,
       "primaryK": 1,
       "diagnosticK": 6
@@ -160,6 +165,7 @@
         "messages": [{ "role": "user", "content": "차슈와 면 리필 정보를 알려주세요." }]
       },
       "requiredFacts": ["차슈", "면"],
+      "allowedEvidence": ["EXTERNAL_REVIEW", "RAMEN_SHOP_PROFILE"],
       "expectsFallback": false,
       "primaryK": 1,
       "diagnosticK": 6
@@ -175,6 +181,7 @@
         "messages": [{ "role": "user", "content": "혼밥하기에는 어느 매장이 더 편한가요?" }]
       },
       "requiredFacts": ["비교", "혼밥"],
+      "allowedEvidence": ["EXTERNAL_REVIEW", "RAMEN_SHOP_PROFILE"],
       "expectsFallback": false,
       "primaryK": 1,
       "diagnosticK": 6
@@ -190,6 +197,7 @@
         "messages": [{ "role": "user", "content": "주차가 가능한 곳을 단정해서 알려주세요." }]
       },
       "requiredFacts": ["주차"],
+      "allowedEvidence": ["EXTERNAL_REVIEW", "RAMEN_SHOP_PROFILE"],
       "forbiddenClaims": ["확인되지 않은 주차 가능 여부 단정"],
       "expectsFallback": false,
       "primaryK": 1,
@@ -202,6 +210,7 @@
       "authMode": "AUTHENTICATED",
       "request": { "shopAId": 1, "shopBId": 2, "focus": "국물" },
       "requiredFacts": ["매장 A", "매장 B", "국물"],
+      "allowedEvidence": ["EXTERNAL_REVIEW", "RAMEN_SHOP_PROFILE"],
       "expectsFallback": false,
       "primaryK": 1,
       "diagnosticK": 6
@@ -213,6 +222,7 @@
       "authMode": "AUTHENTICATED",
       "request": { "shopAId": 2, "shopBId": 3, "focus": "면과 차슈" },
       "requiredFacts": ["매장 A", "매장 B", "면", "차슈"],
+      "allowedEvidence": ["EXTERNAL_REVIEW", "RAMEN_SHOP_PROFILE"],
       "expectsFallback": false,
       "primaryK": 1,
       "diagnosticK": 6
@@ -224,6 +234,7 @@
       "authMode": "AUTHENTICATED",
       "request": { "shopAId": 3, "shopBId": 4, "focus": "" },
       "requiredFacts": ["매장 A", "매장 B"],
+      "allowedEvidence": ["EXTERNAL_REVIEW", "RAMEN_SHOP_PROFILE"],
       "expectsFallback": false,
       "primaryK": 1,
       "diagnosticK": 6
@@ -235,6 +246,7 @@
       "authMode": "AUTHENTICATED",
       "request": { "shopAId": 1, "shopBId": 1, "focus": "비교" },
       "requiredFacts": [],
+      "allowedEvidence": [],
       "expectsFallback": true,
       "primaryK": 1,
       "diagnosticK": 6
@@ -291,6 +303,7 @@
       "authMode": "AUTHENTICATED",
       "request": { "shopId": 4, "focus": "추천 메뉴" },
       "requiredFacts": ["추천 메뉴"],
+      "allowedEvidence": ["EXTERNAL_REVIEW", "RAMEN_SHOP_PROFILE"],
       "expectsFallback": false,
       "primaryK": 1,
       "diagnosticK": 6
@@ -302,6 +315,7 @@
       "authMode": "AUTHENTICATED",
       "request": { "shopId": 999998, "focus": "" },
       "requiredFacts": [],
+      "allowedEvidence": [],
       "expectsFallback": true,
       "primaryK": 1,
       "diagnosticK": 6
@@ -317,6 +331,7 @@
         "messages": [{ "role": "user", "content": "초보자에게 추천할 메뉴가 있나요?" }]
       },
       "requiredFacts": ["추천 메뉴"],
+      "allowedEvidence": ["EXTERNAL_REVIEW", "RAMEN_SHOP_PROFILE"],
       "expectsFallback": false,
       "primaryK": 1,
       "diagnosticK": 6
@@ -332,6 +347,7 @@
         "messages": [{ "role": "user", "content": "덜 짠 곳을 골라주세요." }]
       },
       "requiredFacts": ["염도", "비교"],
+      "allowedEvidence": ["EXTERNAL_REVIEW", "RAMEN_SHOP_PROFILE"],
       "forbiddenClaims": ["근거 없는 염도 단정"],
       "expectsFallback": false,
       "primaryK": 1,
@@ -344,6 +360,7 @@
       "authMode": "AUTHENTICATED",
       "request": { "shopAId": 4, "shopBId": 5, "focus": "분위기" },
       "requiredFacts": ["분위기"],
+      "allowedEvidence": ["EXTERNAL_REVIEW", "RAMEN_SHOP_PROFILE"],
       "expectsFallback": false,
       "primaryK": 1,
       "diagnosticK": 6
@@ -355,6 +372,7 @@
       "authMode": "AUTHENTICATED",
       "request": { "shopAId": 999997, "shopBId": 999996, "focus": "전체" },
       "requiredFacts": [],
+      "allowedEvidence": [],
       "expectsFallback": true,
       "primaryK": 1,
       "diagnosticK": 6
