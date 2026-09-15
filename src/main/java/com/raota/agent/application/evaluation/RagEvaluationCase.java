@@ -11,11 +11,11 @@ public record RagEvaluationCase(
         JsonNode request,
         String authMode,
         List<RagExpectedShop> relevantShops,
-        boolean expectsEmpty,
+        Boolean expectsEmpty,
         List<String> requiredFacts,
         List<String> forbiddenClaims,
-        boolean expectsFallback,
-        boolean contractOnly,
+        Boolean expectsFallback,
+        Boolean contractOnly,
         Integer primaryK,
         Integer diagnosticK
 ) {
@@ -32,6 +32,9 @@ public record RagEvaluationCase(
         relevantShops = relevantShops == null ? List.of() : List.copyOf(relevantShops);
         requiredFacts = requiredFacts == null ? List.of() : List.copyOf(requiredFacts);
         forbiddenClaims = forbiddenClaims == null ? List.of() : List.copyOf(forbiddenClaims);
+        expectsEmpty = Boolean.TRUE.equals(expectsEmpty);
+        expectsFallback = Boolean.TRUE.equals(expectsFallback);
+        contractOnly = Boolean.TRUE.equals(contractOnly);
         primaryK = primaryK == null || primaryK < 1 ? 1 : primaryK;
         diagnosticK = diagnosticK == null || diagnosticK < primaryK ? Math.max(6, primaryK) : diagnosticK;
     }
