@@ -29,7 +29,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 
-class DiscoveryIntegrationTest extends BaseIntegrationTest {
+class HomeIntegrationTest extends BaseIntegrationTest {
 
     @LocalServerPort
     private int port;
@@ -63,8 +63,8 @@ class DiscoveryIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("Discovery 통계 API가 정상적인 데이터를 반환한다.")
-    void get_discovery_stats() {
+    @DisplayName("기존 경로의 홈 통계 API가 동일한 응답을 반환한다.")
+    void get_home_stats_through_legacy_path() {
         ramenShopRepository.save(sampleShop("가게1", "서울", "강남구"));
         memberRepository.save(MemberProfile.builder().nickname("유저1").build());
         
@@ -72,6 +72,7 @@ class DiscoveryIntegrationTest extends BaseIntegrationTest {
         .when()
                 .get("/api/v1/discovery/stats")
         .then()
+                .log().ifValidationFails()
                 .statusCode(HttpStatus.OK.value())
                 .body("success", is(true))
                 .body("data.totalShops", is(1))
