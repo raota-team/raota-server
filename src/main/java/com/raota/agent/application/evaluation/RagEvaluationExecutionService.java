@@ -69,6 +69,10 @@ public class RagEvaluationExecutionService {
                         : null;
 
                 persistCaseResult(runId, evaluationCase, executionResult, metrics, judgeResult);
+                if (isGenerated(evaluationCase) && executionResult.status() == RagEvaluationCaseStatus.COMPLETED
+                        && metrics.getOrDefault("schemaValid", 1.0) < 1.0) {
+                    throw new RagEvaluationSafetyException("생성 응답 스키마 검증에 실패했습니다: " + evaluationCase.caseId());
+                }
                 if (evaluationCase.type() == RagEvaluationCaseType.SEARCH) {
                     ensurePublishedShops(executionResult.returnedShopIds());
                 }

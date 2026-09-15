@@ -5,7 +5,6 @@ import com.raota.agent.application.evaluation.RagEvaluationCaseType;
 import com.raota.agent.application.evaluation.RagEvaluationRunService;
 import com.raota.agent.application.evaluation.RagEvaluationRunService.CaseView;
 import com.raota.agent.application.evaluation.RagEvaluationRunService.DatasetView;
-import com.raota.agent.application.evaluation.RagEvaluationRunService.ExportView;
 import com.raota.agent.application.evaluation.RagEvaluationRunService.ReviewCommand;
 import com.raota.agent.application.evaluation.RagEvaluationRunService.RunStart;
 import com.raota.agent.application.evaluation.RagEvaluationRunService.RunView;
@@ -14,8 +13,11 @@ import com.raota.account.infrastructure.auth.LoginMember;
 import com.raota.global.presentation.common.ApiResponse;
 import com.raota.global.presentation.common.PageResponse;
 import jakarta.validation.Valid;
+import java.nio.charset.StandardCharsets;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -33,6 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class RagEvaluationAdminController {
 
     private final RagEvaluationRunService runService;
+    private final tools.jackson.databind.ObjectMapper objectMapper;
 
     @GetMapping("/datasets")
     public ResponseEntity<ApiResponse<DatasetView>> datasets(
@@ -98,8 +101,13 @@ public class RagEvaluationAdminController {
     }
 
     @GetMapping("/runs/{runId}/export")
-    public ResponseEntity<ApiResponse<ExportView>> export(@PathVariable String runId) {
-        return ResponseEntity.ok(ApiResponse.success(runService.export(runId)));
+    public ResponseEntity<byte[]> export(@PathVariable String runId) {
+        byte[] payload = objectMapper.writeValueAsString(runService.export(runId))
+                .getBytes(StandardCharsets.UTF_8);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=rag-evaluation-" + runId + ".json")
+                .body(payload);
     }
 
     public record StartRequest(String datasetVersion, RagEvaluationSplit split) {
