@@ -51,7 +51,7 @@ class RagEvaluationMetricCalculatorTest {
     }
 
     @Test
-    void calculatesGenerationCoverageAndFallbackAccuracy() {
+    void calculatesGenerationCoverageAndFallbackAccuracy() throws Exception {
         RagEvaluationCase evaluationCase = new RagEvaluationCase(
                 "summary-1",
                 RagEvaluationCaseType.SUMMARY,
@@ -68,9 +68,22 @@ class RagEvaluationMetricCalculatorTest {
                 6
         );
 
+        var response = JsonMapper.builder().build().readTree("""
+                {
+                  "shopInfo": {"id": 1, "name": "라멘집", "type": "시오", "location": "서울", "imageUrl": "", "isBookmarked": false},
+                  "reviewCount": 2,
+                  "summary": {
+                    "pros": {"title": "장점", "body": "시오라멘은 깔끔합니다."},
+                    "cons": {"title": "단점", "body": "웨이팅이 있습니다."},
+                    "recommendedMenu": {"title": "추천 메뉴", "body": "시오라멘"}
+                  },
+                  "sampleReviews": []
+                }
+                """);
+
         Map<String, Double> metrics = RagEvaluationMetricCalculator.calculateGeneration(
                 evaluationCase,
-                JsonMapper.builder().build().createObjectNode().put("body", "시오라멘은 웨이팅이 있습니다."),
+                response,
                 false
         );
 
@@ -78,5 +91,22 @@ class RagEvaluationMetricCalculatorTest {
                 .containsEntry("requiredFactCoverage", 1.0)
                 .containsEntry("forbiddenClaimRate", 0.0)
                 .containsEntry("fallbackAccuracy", 1.0);
+    }
+
+    @Test
+    void rejectsGenerationResponseWithWrongShape() throws Exception {
+        RagEvaluationCase evaluationCase = new RagEvaluationCase(
+                "chat-1", RagEvaluationCaseType.CHAT, RagEvaluationSplit.DEV,
+                JsonMapper.builder().build().createObjectNode(), "AUTHENTICATED",
+                List.of(), false, List.of(), List.of(), false, false, 1, 6
+        );
+
+        Map<String, Double> metrics = RagEvaluationMetricCalculator.calculateGeneration(
+                evaluationCase,
+                JsonMapper.builder().build().readTree("{\"body\":\"답변\"}"),
+                false
+        );
+
+        assertThat(metrics).containsEntry("schemaValid", 0.0);
     }
 }

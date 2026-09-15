@@ -3,6 +3,8 @@ package com.raota.agent.application.evaluation;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 import java.util.Locale;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -36,7 +38,7 @@ public class SpringAiRagEvaluationJudge implements RagEvaluationJudge {
                     .user(user -> user.text(prompt)
                             .param("caseType", evaluationCase.type().name())
                             .param("request", toJson(evaluationCase.request()))
-                            .param("expected", toJson(evaluationCase.requiredFacts()))
+                            .param("expected", toJson(expectedForJudge(evaluationCase)))
                             .param("response", toJson(executionResult.response()))
                             .param("evidence", toJson(executionResult.evidence())))
                     .call()
@@ -67,5 +69,16 @@ public class SpringAiRagEvaluationJudge implements RagEvaluationJudge {
         } catch (JacksonException exception) {
             return "{}";
         }
+    }
+
+    private Map<String, Object> expectedForJudge(RagEvaluationCase evaluationCase) {
+        Map<String, Object> expected = new LinkedHashMap<>();
+        expected.put("relevantShops", evaluationCase.relevantShops());
+        expected.put("requiredFacts", evaluationCase.requiredFacts());
+        expected.put("forbiddenClaims", evaluationCase.forbiddenClaims());
+        expected.put("expectsFallback", evaluationCase.expectsFallback());
+        expected.put("primaryK", evaluationCase.primaryK());
+        expected.put("diagnosticK", evaluationCase.diagnosticK());
+        return expected;
     }
 }

@@ -78,12 +78,88 @@ public final class RagEvaluationMetricCalculator {
                 .count();
 
         Map<String, Double> metrics = new LinkedHashMap<>();
-        metrics.put("schemaValid", response == null || response.isNull() ? 0.0 : 1.0);
+        metrics.put("schemaValid", isSchemaValid(evaluationCase.type(), response) ? 1.0 : 0.0);
         metrics.put("requiredFactCoverage", requiredCount == 0 ? 1.0 : (double) coveredCount / requiredCount);
         metrics.put("forbiddenClaimRate", evaluationCase.forbiddenClaims().isEmpty()
                 ? 0.0 : (double) forbiddenCount / evaluationCase.forbiddenClaims().size());
         metrics.put("fallbackAccuracy", fallback == evaluationCase.expectsFallback() ? 1.0 : 0.0);
         return metrics;
+    }
+
+    private static boolean isSchemaValid(RagEvaluationCaseType type, JsonNode response) {
+        if (response == null || response.isNull() || !response.isObject() || type == null) {
+            return false;
+        }
+
+        return switch (type) {
+            case SUMMARY -> isSummarySchemaValid(response);
+            case CHAT -> isChatSchemaValid(response);
+            case COMPARE -> isCompareSchemaValid(response);
+            case SEARCH -> false;
+        };
+    }
+
+    private static boolean isSummarySchemaValid(JsonNode response) {
+        JsonNode shopInfo = response.get("shopInfo");
+        JsonNode summary = response.get("summary");
+        JsonNode reviewCount = response.get("reviewCount");
+        JsonNode sampleReviews = response.get("sampleReviews");
+        return hasObjectFields(shopInfo, "id", "name", "type", "location", "imageUrl", "isBookmarked")
+                && reviewCount != null && reviewCount.isNumber()
+                && hasObjectFields(summary, "pros", "cons", "recommendedMenu")
+                && hasSummaryDetail(summary.get("pros"))
+                && hasSummaryDetail(summary.get("cons"))
+                && hasSummaryDetail(summary.get("recommendedMenu"))
+                && sampleReviews != null && sampleReviews.isArray();
+    }
+
+    private static boolean hasSummaryDetail(JsonNode detail) {
+        return hasObjectFields(detail, "title", "body")
+                && hasTextField(detail, "title")
+                && hasTextField(detail, "body");
+    }
+
+    private static boolean isChatSchemaValid(JsonNode response) {
+        JsonNode message = response.get("message");
+        return hasObjectFields(message, "role", "content")
+                && hasTextField(message, "role")
+                && hasTextField(message, "content");
+    }
+
+    private static boolean isCompareSchemaValid(JsonNode response) {
+        JsonNode shopA = response.get("shopA");
+        JsonNode shopB = response.get("shopB");
+        JsonNode narratives = response.get("narratives");
+        if (!hasObjectFields(shopA, "id", "name") || !hasTextField(shopA, "name")
+                || !hasObjectFields(shopB, "id", "name") || !hasTextField(shopB, "name")
+                || narratives == null || !narratives.isArray()) {
+            return false;
+        }
+        for (JsonNode narrative : narratives) {
+            if (!hasObjectFields(narrative, "title", "body")
+                    || !hasTextField(narrative, "title")
+                    || !hasTextField(narrative, "body")) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean hasObjectFields(JsonNode node, String... fields) {
+        if (node == null || !node.isObject()) {
+            return false;
+        }
+        for (String field : fields) {
+            if (!node.has(field) || node.get(field) == null || node.get(field).isNull()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean hasTextField(JsonNode node, String field) {
+        JsonNode value = node == null ? null : node.get(field);
+        return value != null && value.isString() && !value.asText().isBlank();
     }
 
     private static double hitRate(List<Long> returned, List<RagExpectedShop> expected, int k) {
