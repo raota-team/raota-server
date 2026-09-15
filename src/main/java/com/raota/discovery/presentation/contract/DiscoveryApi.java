@@ -1,14 +1,11 @@
 package com.raota.discovery.presentation.contract;
 
 import com.raota.discovery.presentation.response.DiscoveryStatsResponse;
-import com.raota.agent.presentation.recommendation.response.TodayRecommendationResponse;
 import com.raota.global.presentation.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
-
-import java.util.List;
 
 @Tag(name = "탐색", description = "탐색(Discovery) 관련 API")
 public interface DiscoveryApi {
@@ -23,15 +20,4 @@ public interface DiscoveryApi {
     })
     ResponseEntity<ApiResponse<DiscoveryStatsResponse>> getDiscoveryStats();
 
-    @Operation(summary = "오늘의 라멘 추천 조회", description = "오늘 사용자에게 추천할 라멘 종류 데이터 1건을 조회합니다.")
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
-    })
-    ResponseEntity<ApiResponse<List<TodayRecommendationResponse>>> getTodayRecommendations();
-
-    @Operation(summary = "오늘의 라멘 추천 수동 생성", description = "날씨 조회, AI 분석, DB/Redis 저장 흐름을 즉시 실행합니다.")
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
-    })
-    ResponseEntity<ApiResponse<TodayRecommendationResponse>> generateTodayRecommendation();
 }
