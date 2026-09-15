@@ -1,8 +1,8 @@
 package com.raota.home.application;
 
-import com.raota.agent.application.retrieval.RetrievalStatisticsService;
+import com.raota.agent.application.retrieval.statistics.RetrievalStatisticsService;
 import com.raota.home.presentation.response.HomeStatsResponse;
-import com.raota.ramenlog.application.RamenLogStatisticsService;
+import com.raota.ramenlog.application.statistics.RamenLogStatisticsService;
 import com.raota.ramenshop.application.service.RamenShopStatisticsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

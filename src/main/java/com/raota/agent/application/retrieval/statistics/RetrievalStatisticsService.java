@@ -1,8 +1,7 @@
-package com.raota.agent.application.retrieval;
+package com.raota.agent.application.retrieval.statistics;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -25,7 +24,7 @@ public class RetrievalStatisticsService {
                     Long.class
             );
             return count == null ? 0 : count;
-        } catch (DataAccessException exception) {
+        } catch (RuntimeException exception) {
             log.warn("Vector 문서 수 조회에 실패하여 0으로 처리합니다.", exception);
             return 0;
         }

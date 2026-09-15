@@ -1,4 +1,4 @@
-package com.raota.ramenlog.application;
+package com.raota.ramenlog.application.statistics;
 
 import com.raota.ramenlog.domain.repository.RamenLogRepository;
 import lombok.RequiredArgsConstructor;
