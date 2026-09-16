@@ -1,13 +1,13 @@
 {
-  "version": "rag-mobile-v1",
+  "version": "rag-mobile-v1.1",
   "cases": [
     {
       "caseId": "search-dev-01",
       "type": "SEARCH",
       "split": "DEV",
       "authMode": "ANONYMOUS",
-      "request": { "query": "서울 쇼유 라멘 깔끔한 국물" },
-      "relevantShops": [{ "shopId": 1, "relevance": 3 }, { "shopId": 2, "relevance": 2 }],
+      "request": { "query": "문래 쇼유라멘 깔끔한 국물" },
+      "relevantShops": [{ "shopId": 268, "relevance": 3 }, { "shopId": 346, "relevance": 2 }],
       "expectsEmpty": false,
       "primaryK": 1,
       "diagnosticK": 6
@@ -18,7 +18,7 @@
       "split": "DEV",
       "authMode": "ANONYMOUS",
       "request": { "query": "망원 돈코츠 진하고 묵직한 라멘" },
-      "relevantShops": [{ "shopId": 2, "relevance": 3 }, { "shopId": 3, "relevance": 2 }],
+      "relevantShops": [{ "shopId": 254, "relevance": 3 }, { "shopId": 274, "relevance": 2 }],
       "expectsEmpty": false,
       "primaryK": 1,
       "diagnosticK": 6
@@ -29,7 +29,7 @@
       "split": "DEV",
       "authMode": "ANONYMOUS",
       "request": { "query": "합정 시오 라멘 유자 맑은 육수" },
-      "relevantShops": [{ "shopId": 3, "relevance": 3 }, { "shopId": 1, "relevance": 1 }],
+      "relevantShops": [{ "shopId": 279, "relevance": 3 }, { "shopId": 257, "relevance": 2 }],
       "expectsEmpty": false,
       "primaryK": 1,
       "diagnosticK": 6
@@ -39,8 +39,8 @@
       "type": "SEARCH",
       "split": "DEV",
       "authMode": "ANONYMOUS",
-      "request": { "query": "자가제면 꼬들한 면 라멘" },
-      "relevantShops": [{ "shopId": 1, "relevance": 3 }, { "shopId": 4, "relevance": 2 }],
+      "request": { "query": "망원 꼬들한 면 시오라멘" },
+      "relevantShops": [{ "shopId": 251, "relevance": 3 }, { "shopId": 257, "relevance": 2 }],
       "expectsEmpty": false,
       "primaryK": 1,
       "diagnosticK": 6
@@ -50,8 +50,8 @@
       "type": "SEARCH",
       "split": "DEV",
       "authMode": "ANONYMOUS",
-      "request": { "query": "차슈가 부드럽고 푸짐한 라멘집" },
-      "relevantShops": [{ "shopId": 2, "relevance": 3 }, { "shopId": 5, "relevance": 2 }],
+      "request": { "query": "부드러운 차슈와 푸짐한 라멘" },
+      "relevantShops": [{ "shopId": 254, "relevance": 3 }, { "shopId": 245, "relevance": 2 }],
       "expectsEmpty": false,
       "primaryK": 1,
       "diagnosticK": 6
@@ -61,8 +61,8 @@
       "type": "SEARCH",
       "split": "DEV",
       "authMode": "ANONYMOUS",
-      "request": { "query": "혼밥하기 좋고 웨이팅이 적은 라멘" },
-      "relevantShops": [{ "shopId": 4, "relevance": 3 }, { "shopId": 1, "relevance": 2 }],
+      "request": { "query": "혼밥하기 좋고 웨이팅이 짧은 라멘" },
+      "relevantShops": [{ "shopId": 279, "relevance": 3 }, { "shopId": 268, "relevance": 2 }],
       "expectsEmpty": false,
       "contractOnly": true,
       "primaryK": 1,
@@ -74,7 +74,7 @@
       "split": "DEV",
       "authMode": "ANONYMOUS",
       "request": { "query": "미소 라멘 깊은 감칠맛" },
-      "relevantShops": [{ "shopId": 5, "relevance": 3 }, { "shopId": 3, "relevance": 1 }],
+      "relevantShops": [{ "shopId": 254, "relevance": 3 }, { "shopId": 384, "relevance": 1 }],
       "expectsEmpty": false,
       "primaryK": 1,
       "diagnosticK": 6
@@ -84,8 +84,8 @@
       "type": "SEARCH",
       "split": "DEV",
       "authMode": "ANONYMOUS",
-      "request": { "query": "라멘과 무료 밥 리필" },
-      "relevantShops": [{ "shopId": 2, "relevance": 3 }],
+      "request": { "query": "이에케 라멘 밥과 마늘 곁들임" },
+      "relevantShops": [{ "shopId": 287, "relevance": 3 }],
       "expectsEmpty": false,
       "primaryK": 1,
       "diagnosticK": 6
@@ -95,7 +95,7 @@
       "type": "SUMMARY",
       "split": "DEV",
       "authMode": "AUTHENTICATED",
-      "request": { "shopId": 1, "focus": "국물과 면" },
+      "request": { "shopId": 254, "focus": "국물과 면" },
       "requiredFacts": ["장점", "단점", "추천 메뉴"],
       "allowedEvidence": ["EXTERNAL_REVIEW", "RAMEN_SHOP_PROFILE"],
       "expectsFallback": false,
@@ -107,7 +107,7 @@
       "type": "SUMMARY",
       "split": "DEV",
       "authMode": "AUTHENTICATED",
-      "request": { "shopId": 2, "focus": "차슈" },
+      "request": { "shopId": 251, "focus": "차슈" },
       "requiredFacts": ["장점", "단점", "추천 메뉴"],
       "allowedEvidence": ["EXTERNAL_REVIEW", "RAMEN_SHOP_PROFILE"],
       "expectsFallback": false,
@@ -119,7 +119,7 @@
       "type": "SUMMARY",
       "split": "DEV",
       "authMode": "AUTHENTICATED",
-      "request": { "shopId": 3, "focus": "웨이팅과 분위기" },
+      "request": { "shopId": 279, "focus": "웨이팅과 분위기" },
       "requiredFacts": ["장점", "단점"],
       "allowedEvidence": ["EXTERNAL_REVIEW", "RAMEN_SHOP_PROFILE"],
       "expectsFallback": false,
@@ -145,7 +145,7 @@
       "authMode": "AUTHENTICATED",
       "request": {
         "contextType": "summary",
-        "shopIds": [1],
+        "shopIds": [254],
         "messages": [{ "role": "user", "content": "국물이 덜 짠 편인가요?" }]
       },
       "requiredFacts": ["국물"],
@@ -161,7 +161,7 @@
       "authMode": "AUTHENTICATED",
       "request": {
         "contextType": "summary",
-        "shopIds": [2],
+        "shopIds": [251],
         "messages": [{ "role": "user", "content": "차슈와 면 리필 정보를 알려주세요." }]
       },
       "requiredFacts": ["차슈", "면"],
@@ -177,7 +177,7 @@
       "authMode": "AUTHENTICATED",
       "request": {
         "contextType": "compare",
-        "shopIds": [1, 2],
+        "shopIds": [254, 279],
         "messages": [{ "role": "user", "content": "혼밥하기에는 어느 매장이 더 편한가요?" }]
       },
       "requiredFacts": ["비교", "혼밥"],
@@ -193,7 +193,7 @@
       "authMode": "AUTHENTICATED",
       "request": {
         "contextType": "compare",
-        "shopIds": [3, 4],
+        "shopIds": [251, 257],
         "messages": [{ "role": "user", "content": "주차가 가능한 곳을 단정해서 알려주세요." }]
       },
       "requiredFacts": ["주차"],
@@ -208,7 +208,7 @@
       "type": "COMPARE",
       "split": "DEV",
       "authMode": "AUTHENTICATED",
-      "request": { "shopAId": 1, "shopBId": 2, "focus": "국물" },
+      "request": { "shopAId": 254, "shopBId": 251, "focus": "국물" },
       "requiredFacts": ["매장 A", "매장 B", "국물"],
       "allowedEvidence": ["EXTERNAL_REVIEW", "RAMEN_SHOP_PROFILE"],
       "expectsFallback": false,
@@ -220,7 +220,7 @@
       "type": "COMPARE",
       "split": "DEV",
       "authMode": "AUTHENTICATED",
-      "request": { "shopAId": 2, "shopBId": 3, "focus": "면과 차슈" },
+      "request": { "shopAId": 251, "shopBId": 279, "focus": "면과 차슈" },
       "requiredFacts": ["매장 A", "매장 B", "면", "차슈"],
       "allowedEvidence": ["EXTERNAL_REVIEW", "RAMEN_SHOP_PROFILE"],
       "expectsFallback": false,
@@ -232,7 +232,7 @@
       "type": "COMPARE",
       "split": "DEV",
       "authMode": "AUTHENTICATED",
-      "request": { "shopAId": 3, "shopBId": 4, "focus": "" },
+      "request": { "shopAId": 279, "shopBId": 287, "focus": "" },
       "requiredFacts": ["매장 A", "매장 B"],
       "allowedEvidence": ["EXTERNAL_REVIEW", "RAMEN_SHOP_PROFILE"],
       "expectsFallback": false,
@@ -244,7 +244,7 @@
       "type": "COMPARE",
       "split": "DEV",
       "authMode": "AUTHENTICATED",
-      "request": { "shopAId": 1, "shopBId": 1, "focus": "비교" },
+      "request": { "shopAId": 279, "shopBId": 279, "focus": "비교" },
       "requiredFacts": [],
       "allowedEvidence": [],
       "expectsFallback": true,
@@ -256,8 +256,8 @@
       "type": "SEARCH",
       "split": "HOLDOUT",
       "authMode": "ANONYMOUS",
-      "request": { "query": "닭백탕 크리미하고 부드러운 라멘" },
-      "relevantShops": [{ "shopId": 3, "relevance": 3 }, { "shopId": 2, "relevance": 2 }],
+      "request": { "query": "토리파이탄 닭백탕 크리미하고 부드러운 라멘" },
+      "relevantShops": [{ "shopId": 799, "relevance": 3 }, { "shopId": 800, "relevance": 2 }],
       "expectsEmpty": false,
       "primaryK": 1,
       "diagnosticK": 6
@@ -267,8 +267,8 @@
       "type": "SEARCH",
       "split": "HOLDOUT",
       "authMode": "ANONYMOUS",
-      "request": { "query": "데이트하기 좋은 아늑한 라멘집" },
-      "relevantShops": [{ "shopId": 4, "relevance": 3 }, { "shopId": 5, "relevance": 2 }],
+      "request": { "query": "조용하고 아늑해서 데이트하기 좋은 라멘집" },
+      "relevantShops": [{ "shopId": 257, "relevance": 3 }, { "shopId": 268, "relevance": 2 }],
       "expectsEmpty": false,
       "primaryK": 1,
       "diagnosticK": 6
@@ -290,7 +290,7 @@
       "split": "HOLDOUT",
       "authMode": "ANONYMOUS",
       "request": { "query": "역 근처 빠르고 든든한 한 끼 라멘" },
-      "relevantShops": [{ "shopId": 1, "relevance": 3 }, { "shopId": 4, "relevance": 2 }],
+      "relevantShops": [{ "shopId": 390, "relevance": 3 }, { "shopId": 268, "relevance": 2 }],
       "expectsEmpty": false,
       "contractOnly": true,
       "primaryK": 1,
@@ -301,7 +301,7 @@
       "type": "SUMMARY",
       "split": "HOLDOUT",
       "authMode": "AUTHENTICATED",
-      "request": { "shopId": 4, "focus": "추천 메뉴" },
+      "request": { "shopId": 257, "focus": "추천 메뉴" },
       "requiredFacts": ["추천 메뉴"],
       "allowedEvidence": ["EXTERNAL_REVIEW", "RAMEN_SHOP_PROFILE"],
       "expectsFallback": false,
@@ -327,7 +327,7 @@
       "authMode": "AUTHENTICATED",
       "request": {
         "contextType": "summary",
-        "shopIds": [4],
+        "shopIds": [257],
         "messages": [{ "role": "user", "content": "초보자에게 추천할 메뉴가 있나요?" }]
       },
       "requiredFacts": ["추천 메뉴"],
@@ -343,7 +343,7 @@
       "authMode": "AUTHENTICATED",
       "request": {
         "contextType": "compare",
-        "shopIds": [2, 5],
+        "shopIds": [251, 287],
         "messages": [{ "role": "user", "content": "덜 짠 곳을 골라주세요." }]
       },
       "requiredFacts": ["염도", "비교"],
@@ -358,7 +358,7 @@
       "type": "COMPARE",
       "split": "HOLDOUT",
       "authMode": "AUTHENTICATED",
-      "request": { "shopAId": 4, "shopBId": 5, "focus": "분위기" },
+      "request": { "shopAId": 257, "shopBId": 268, "focus": "분위기" },
       "requiredFacts": ["분위기"],
       "allowedEvidence": ["EXTERNAL_REVIEW", "RAMEN_SHOP_PROFILE"],
       "expectsFallback": false,

@@ -16,7 +16,7 @@ class RagEvaluationDatasetTest {
         try (InputStream stream = new ClassPathResource("evaluation/rag-mobile-v1.json").getInputStream()) {
             RagEvaluationDataset dataset = mapper.readValue(stream, RagEvaluationDataset.class);
 
-            assertThat(dataset.version()).isEqualTo("rag-mobile-v1");
+            assertThat(dataset.version()).isEqualTo("rag-mobile-v1.1");
             assertThat(dataset.cases()).hasSize(30);
             assertThat(dataset.casesFor(RagEvaluationSplit.DEV)).hasSize(20);
             assertThat(dataset.casesFor(RagEvaluationSplit.HOLDOUT)).hasSize(10);
