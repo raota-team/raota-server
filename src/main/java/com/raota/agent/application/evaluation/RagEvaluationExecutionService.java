@@ -30,6 +30,7 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
     private final RagEvaluationCaseResultJpaRepository caseRepository;
     private final RagEvaluationCaseExecutor caseExecutor;
     private final RagEvaluationJudge judge;
+    private final RagEvaluationDatasetReferenceValidator datasetReferenceValidator;
     private final RamenShopRepository ramenShopRepository;
     private final ObjectMapper objectMapper;
     private final TransactionTemplate transactionTemplate;
@@ -39,6 +40,7 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
             RagEvaluationCaseResultJpaRepository caseRepository,
             RagEvaluationCaseExecutor caseExecutor,
             RagEvaluationJudge judge,
+            RagEvaluationDatasetReferenceValidator datasetReferenceValidator,
             RamenShopRepository ramenShopRepository,
             ObjectMapper objectMapper,
             TransactionTemplate transactionTemplate
@@ -47,6 +49,7 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
         this.caseRepository = caseRepository;
         this.caseExecutor = caseExecutor;
         this.judge = judge;
+        this.datasetReferenceValidator = datasetReferenceValidator;
         this.ramenShopRepository = ramenShopRepository;
         this.objectMapper = objectMapper;
         this.transactionTemplate = transactionTemplate;
@@ -59,6 +62,7 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
             transactionTemplate.executeWithoutResult(status -> runRepository.findById(runId)
                     .orElseThrow(() -> new IllegalArgumentException("평가 실행을 찾을 수 없습니다: " + runId))
                     .markRunning());
+            datasetReferenceValidator.validate(dataset, split);
 
             List<Map<String, Double>> metricRows = new ArrayList<>();
             for (RagEvaluationCase evaluationCase : dataset.casesFor(split)) {
