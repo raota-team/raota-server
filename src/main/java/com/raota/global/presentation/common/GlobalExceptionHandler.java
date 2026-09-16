@@ -1,9 +1,11 @@
 package com.raota.global.presentation.common;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -18,9 +20,9 @@ import java.util.Arrays;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Void>> handleAccessDenied(
-            org.springframework.security.access.AccessDeniedException exception,
+            AccessDeniedException exception,
             HttpServletRequest request
     ) {
         log.warn("Access denied. method={}, uri={}, message={}",
@@ -56,9 +58,9 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(ApiResponse.fail(exception.getMessage()));
     }
 
-    @ExceptionHandler(jakarta.persistence.EntityNotFoundException.class)
+    @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleEntityNotFound(
-            jakarta.persistence.EntityNotFoundException exception,
+            EntityNotFoundException exception,
             HttpServletRequest request
     ) {
         log.warn("Entity not found. method={}, uri={}, query={}, message={}",
@@ -67,7 +69,7 @@ public class GlobalExceptionHandler {
                 request.getQueryString(),
                 exception.getMessage(),
                 exception);
-        return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND).body(ApiResponse.fail(exception.getMessage()));
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail(exception.getMessage()));
     }
 
     @ExceptionHandler(NoResourceFoundException.class)

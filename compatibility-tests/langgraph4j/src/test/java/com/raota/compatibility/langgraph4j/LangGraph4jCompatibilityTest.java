@@ -24,6 +24,8 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 class LangGraph4jCompatibilityTest {
 
@@ -141,14 +143,14 @@ class LangGraph4jCompatibilityTest {
         }
     }
 
-    @org.springframework.context.annotation.Configuration(proxyBeanMethods = false)
+    @Configuration(proxyBeanMethods = false)
     static class BeanConfig {
-        @org.springframework.context.annotation.Bean
+        @Bean
         WorkflowNode workflowNode() {
             return new WorkflowNode();
         }
 
-        @org.springframework.context.annotation.Bean
+        @Bean
         ChatModel fixedChatModel() {
             return new ChatModel() {
                 @Override
