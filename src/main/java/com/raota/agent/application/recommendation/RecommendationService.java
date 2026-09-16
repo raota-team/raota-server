@@ -1,12 +1,12 @@
 package com.raota.agent.application.recommendation;
 
 import com.raota.agent.domain.recommendation.model.DailyCuration;
+import com.raota.agent.application.recommendation.query.FollowUpChatQuery;
+import com.raota.agent.application.recommendation.query.ReviewSummaryQuery;
 import com.raota.global.file.FileUploader;
-import com.raota.agent.presentation.recommendation.response.TodayRecommendationResponse;
-import com.raota.agent.presentation.recommendation.request.AiChatRequest;
-import com.raota.agent.presentation.recommendation.request.ReviewSummaryRequest;
 import com.raota.agent.presentation.recommendation.response.AiChatResponse;
 import com.raota.agent.presentation.recommendation.response.ReviewSummaryResponse;
+import com.raota.agent.presentation.recommendation.response.TodayRecommendationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,12 +19,12 @@ public class RecommendationService {
     private final DailyCurationService dailyCurationService;
     private final FileUploader fileUploader;
 
-    public ReviewSummaryResponse summarizeReviews(ReviewSummaryRequest request) {
-        return reviewSummaryService.summarizeReviews(request);
+    public ReviewSummaryResponse summarizeReviews(ReviewSummaryQuery query) {
+        return reviewSummaryService.summarizeReviews(query);
     }
 
-    public AiChatResponse followUpChat(AiChatRequest request) {
-        return followUpChatService.followUpChat(request);
+    public AiChatResponse followUpChat(FollowUpChatQuery query) {
+        return followUpChatService.followUpChat(query);
     }
 
     public TodayRecommendationResponse getTodayRecommendation() {

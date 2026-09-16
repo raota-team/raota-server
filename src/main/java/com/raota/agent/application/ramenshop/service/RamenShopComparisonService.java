@@ -2,6 +2,7 @@ package com.raota.agent.application.ramenshop.service;
 
 import com.raota.agent.application.ramenshop.port.RamenShopComparisonDocumentPort;
 import com.raota.agent.application.ramenshop.port.RamenShopComparisonNarrativePort;
+import com.raota.agent.application.ramenshop.query.RamenShopComparisonQuery;
 import com.raota.agent.application.ramenshop.result.AiRamenShopComparisonResult;
 import com.raota.agent.application.ramenshop.result.RamenShopComparisonDocument;
 import com.raota.agent.application.ramenshop.result.RamenShopComparisonResult;
@@ -34,18 +35,33 @@ public class RamenShopComparisonService {
         this.comparisonSearchPolicy = comparisonSearchPolicy;
     }
 
-    public RamenShopComparisonResult compareShops(Long shopAId, Long shopBId, String focus) {
-        validateComparisonRequest(shopAId, shopBId);
+    public RamenShopComparisonResult compareShops(RamenShopComparisonQuery query) {
+        return compareShopsWithEvidence(query).response();
+    }
 
-        RamenShop shopA = ramenShopReader.getRamenShop(shopAId);
-        RamenShop shopB = ramenShopReader.getRamenShop(shopBId);
-        String normalizedFocus = comparisonSearchPolicy.normalizeFocus(focus);
+    /** Executes a comparison while preserving both shops' retrieved documents for review. */
+    public RamenShopComparisonExecution compareShopsWithEvidence(RamenShopComparisonQuery query) {
+        if (query == null) {
+            throw new IllegalArgumentException("매장 비교 요청은 필수입니다.");
+        }
+        validateComparisonRequest(query.shopAId(), query.shopBId());
+
+        RamenShop shopA = ramenShopReader.getRamenShop(query.shopAId());
+        RamenShop shopB = ramenShopReader.getRamenShop(query.shopBId());
+        String normalizedFocus = comparisonSearchPolicy.normalizeFocus(query.focus());
 
         List<RamenShopComparisonDocument> shopADocuments = collectComparisonDocuments(shopA, normalizedFocus);
         List<RamenShopComparisonDocument> shopBDocuments = collectComparisonDocuments(shopB, normalizedFocus);
+        List<RamenShopComparisonDocument> evidence = java.util.stream.Stream.concat(
+                shopADocuments == null ? java.util.stream.Stream.empty() : shopADocuments.stream(),
+                shopBDocuments == null ? java.util.stream.Stream.empty() : shopBDocuments.stream()
+        ).toList();
 
         if (hasInsufficientDocuments(shopADocuments, shopBDocuments)) {
-            return buildComparisonResult(shopA, shopB, normalizedFocus, null);
+            return new RamenShopComparisonExecution(
+                    buildComparisonResult(shopA, shopB, normalizedFocus, null),
+                    evidence
+            );
         }
 
         String contextA = buildComparisonContext(shopA, shopADocuments);
@@ -56,7 +72,10 @@ public class RamenShopComparisonService {
                 contextB
         );
 
-        return buildComparisonResult(shopA, shopB, normalizedFocus, aiResult);
+        return new RamenShopComparisonExecution(
+                buildComparisonResult(shopA, shopB, normalizedFocus, aiResult),
+                evidence
+        );
     }
 
     private void validateComparisonRequest(Long shopAId, Long shopBId) {
@@ -176,5 +195,14 @@ public class RamenShopComparisonService {
                 source == null ? "UNKNOWN" : source,
                 document.text()
         );
+    }
+
+    public record RamenShopComparisonExecution(
+            RamenShopComparisonResult response,
+            List<RamenShopComparisonDocument> evidence
+    ) {
+        public RamenShopComparisonExecution {
+            evidence = evidence == null ? List.of() : List.copyOf(evidence);
+        }
     }
 }

@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.raota.agent.application.ramenshop.result.AiRamenShopSearchResult;
+import com.raota.agent.application.ramenshop.command.AiRamenShopSearchCommand;
 import com.raota.agent.application.ramenshop.service.AiRamenShopSearchService;
 import com.raota.agent.application.recommendation.RecommendationService;
 import com.raota.account.domain.member.model.MemberProfile;
@@ -96,7 +97,7 @@ class ApiAccessPolicyIntegrationTest extends BaseIntegrationTest {
     void 인증된_회원은_보호_경로의_보안_필터를_통과한다() throws Exception {
         MemberProfile member = saveMember(MemberRole.USER);
         String token = jwtTokenProvider.createAccessToken(member.getId());
-        when(aiRamenShopSearchService.search("돈코츠", member.getId()))
+        when(aiRamenShopSearchService.search(new AiRamenShopSearchCommand("돈코츠", member.getId())))
                 .thenReturn(new AiRamenShopSearchResult(List.of()));
 
         mockMvc.perform(post("/ramen-shops/ai-search")
@@ -121,6 +122,21 @@ class ApiAccessPolicyIntegrationTest extends BaseIntegrationTest {
         mockMvc.perform(post("/api/v1/discovery/today-recommendations/generate")
                         .header(HttpHeaders.AUTHORIZATION, bearer(createAccessToken(MemberRole.ADMIN))))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void RAG_평가_관리_API는_ADMIN만_접근할_수_있다() throws Exception {
+        String path = "/admin/api/rag-evaluations/datasets";
+
+        mockMvc.perform(get(path))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get(path)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(createAccessToken(MemberRole.USER))))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get(path)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(createAccessToken(MemberRole.ADMIN))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.version").value("rag-mobile-v1"));
     }
 
     @Test

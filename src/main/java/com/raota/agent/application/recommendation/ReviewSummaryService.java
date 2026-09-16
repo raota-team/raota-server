@@ -1,12 +1,12 @@
 package com.raota.agent.application.recommendation;
 
 import com.raota.agent.application.recommendation.dto.AiReviewSummaryResult;
+import com.raota.agent.application.recommendation.query.ReviewSummaryQuery;
 import com.raota.agent.application.ramenshop.search.RamenShopReader;
 import com.raota.ramenshop.domain.model.RamenShop;
 import com.raota.agent.domain.retrieval.document.RetrievalDocumentFilters;
 import com.raota.agent.domain.retrieval.document.RetrievalMetadataKeys;
 import com.raota.global.file.FileUploader;
-import com.raota.agent.presentation.recommendation.request.ReviewSummaryRequest;
 import com.raota.agent.presentation.recommendation.response.ReviewSummaryResponse;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -44,7 +44,12 @@ public class ReviewSummaryService {
         this.reviewSummaryTemplate = reviewSummaryTemplate;
     }
 
-    public ReviewSummaryResponse summarizeReviews(ReviewSummaryRequest request) {
+    public ReviewSummaryResponse summarizeReviews(ReviewSummaryQuery request) {
+        return summarizeReviewsWithEvidence(request).response();
+    }
+
+    /** Executes the summary use case while preserving the retrieved documents for evaluation and review. */
+    public ReviewSummaryExecution summarizeReviewsWithEvidence(ReviewSummaryQuery request) {
         validateReviewSummaryRequest(request);
 
         RamenShop ramenShop = ramenShopReader.getRamenShop(request.shopId());
@@ -53,15 +58,18 @@ public class ReviewSummaryService {
         List<Document> reviewDocuments = collectReviewDocuments(ramenShop, focus);
 
         if (hasInsufficientReviewDocuments(reviewDocuments)) {
-            return buildFallbackResponse(ramenShop);
+            return new ReviewSummaryExecution(buildFallbackResponse(ramenShop), reviewDocuments);
         }
 
         AiReviewSummaryResult aiResult = generateReviewSummaryResult(focus, ramenShop, reviewDocuments);
 
-        return buildReviewSummaryResponse(ramenShop, reviewDocuments, aiResult);
+        return new ReviewSummaryExecution(
+                buildReviewSummaryResponse(ramenShop, reviewDocuments, aiResult),
+                reviewDocuments
+        );
     }
 
-    private void validateReviewSummaryRequest(ReviewSummaryRequest request) {
+    private void validateReviewSummaryRequest(ReviewSummaryQuery request) {
         if (request == null) {
             throw new IllegalArgumentException("리뷰 요약 요청은 필수입니다.");
         }
@@ -249,6 +257,12 @@ public class ReviewSummaryService {
                 createdAt == null ? "UNKNOWN" : createdAt,
                 document.getText()
         );
+    }
+
+    public record ReviewSummaryExecution(ReviewSummaryResponse response, List<Document> evidence) {
+        public ReviewSummaryExecution {
+            evidence = evidence == null ? List.of() : List.copyOf(evidence);
+        }
     }
 
 }
