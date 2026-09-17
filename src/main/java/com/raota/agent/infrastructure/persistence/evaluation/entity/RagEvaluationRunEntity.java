@@ -22,6 +22,8 @@ import org.hibernate.type.SqlTypes;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class RagEvaluationRunEntity {
 
+    public static final String ACTIVE_SLOT = "ACTIVE";
+
     @Id
     @Column(name = "run_id", length = 36, nullable = false)
     private String runId;
@@ -69,6 +71,12 @@ public class RagEvaluationRunEntity {
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
+    @Column(name = "heartbeat_at")
+    private LocalDateTime heartbeatAt;
+
+    @Column(name = "active_slot", length = 16)
+    private String activeSlot;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -94,6 +102,8 @@ public class RagEvaluationRunEntity {
         this.appContractVersion = appContractVersion;
         this.vectorIndexVersion = vectorIndexVersion;
         this.modelMetadata = modelMetadata;
+        this.activeSlot = ACTIVE_SLOT;
+        this.heartbeatAt = LocalDateTime.now();
     }
 
     public static RagEvaluationRunEntity queued(
