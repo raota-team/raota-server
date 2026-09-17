@@ -64,11 +64,7 @@ public class RagEvaluationRunService {
     }
 
     public DatasetView dataset(String requestedVersion) {
-        RagEvaluationDataset dataset = datasetLoader.loadDefault();
-        if (requestedVersion != null && !requestedVersion.isBlank()
-                && !dataset.version().equals(requestedVersion)) {
-            throw new IllegalArgumentException("지원하지 않는 평가셋 버전입니다: " + requestedVersion);
-        }
+        RagEvaluationDataset dataset = datasetLoader.load(requestedVersion);
         return new DatasetView(
                 dataset.version(),
                 dataset.cases().size(),
@@ -86,10 +82,7 @@ public class RagEvaluationRunService {
             throw new IllegalArgumentException("Idempotency-Key는 128자 이하여야 합니다.");
         }
 
-        RagEvaluationDataset dataset = datasetLoader.loadDefault();
-        if (datasetVersion != null && !dataset.version().equals(datasetVersion)) {
-            throw new IllegalArgumentException("지원하지 않는 평가셋 버전입니다: " + datasetVersion);
-        }
+        RagEvaluationDataset dataset = datasetLoader.load(datasetVersion);
         RagEvaluationSplit targetSplit = split == null ? RagEvaluationSplit.DEV : split;
 
         var existing = runRepository.findByIdempotencyKey(idempotencyKey);
@@ -208,6 +201,9 @@ public class RagEvaluationRunService {
         if (entity.getCaseType() == RagEvaluationCaseType.SEARCH) {
             throw new IllegalArgumentException("검색 사례는 사람 검수 대상이 아닙니다.");
         }
+        if (entity.getStatus() == RagEvaluationCaseStatus.EXPECTED_ERROR) {
+            throw new IllegalArgumentException("예상 오류 사례는 사람 검수 대상이 아닙니다.");
+        }
         Map<String, Object> review = new LinkedHashMap<>();
         review.put("finalScore", command.finalScore());
         review.put("approved", command.approved());
@@ -223,7 +219,7 @@ public class RagEvaluationRunService {
         if (run.getStatus() != RagEvaluationStatus.REVIEW_REQUIRED) {
             throw new IllegalStateException("검수 대기 상태인 실행만 확정할 수 있습니다.");
         }
-        RagEvaluationDataset dataset = datasetLoader.loadDefault();
+        RagEvaluationDataset dataset = datasetLoader.load(run.getDatasetVersion());
         boolean missingReview = dataset.casesFor(run.getSplit()).stream()
                 .filter(this::isGenerated)
                 .map(item -> caseRepository.findByRunIdAndCaseId(runId, item.caseId()).orElse(null))
@@ -245,7 +241,9 @@ public class RagEvaluationRunService {
     }
 
     private boolean isGenerated(RagEvaluationCase evaluationCase) {
-        return evaluationCase.type() != RagEvaluationCaseType.SEARCH && !evaluationCase.contractOnly();
+        return evaluationCase.type() != RagEvaluationCaseType.SEARCH
+                && !evaluationCase.contractOnly()
+                && evaluationCase.expectedError() == null;
     }
 
     private RagEvaluationRunEntity findRun(String runId) {

@@ -18,7 +18,8 @@ public record RagEvaluationCase(
         Boolean expectsFallback,
         Boolean contractOnly,
         Integer primaryK,
-        Integer diagnosticK
+        Integer diagnosticK,
+        RagExpectedError expectedError
 ) {
 
     /** Backward-compatible constructor for callers that predate the evidence label. */
@@ -51,7 +52,44 @@ public record RagEvaluationCase(
                 expectsFallback,
                 contractOnly,
                 primaryK,
-                diagnosticK
+                diagnosticK,
+                null
+        );
+    }
+
+    /** Backward-compatible constructor for callers using the full v1.1 shape. */
+    public RagEvaluationCase(
+            String caseId,
+            RagEvaluationCaseType type,
+            RagEvaluationSplit split,
+            JsonNode request,
+            String authMode,
+            List<RagExpectedShop> relevantShops,
+            Boolean expectsEmpty,
+            List<String> requiredFacts,
+            List<String> allowedEvidence,
+            List<String> forbiddenClaims,
+            Boolean expectsFallback,
+            Boolean contractOnly,
+            Integer primaryK,
+            Integer diagnosticK
+    ) {
+        this(
+                caseId,
+                type,
+                split,
+                request,
+                authMode,
+                relevantShops,
+                expectsEmpty,
+                requiredFacts,
+                allowedEvidence,
+                forbiddenClaims,
+                expectsFallback,
+                contractOnly,
+                primaryK,
+                diagnosticK,
+                null
         );
     }
 
@@ -73,5 +111,11 @@ public record RagEvaluationCase(
         contractOnly = Boolean.TRUE.equals(contractOnly);
         primaryK = primaryK == null || primaryK < 1 ? 1 : primaryK;
         diagnosticK = diagnosticK == null || diagnosticK < primaryK ? Math.max(6, primaryK) : diagnosticK;
+        if (expectedError != null && expectedError.code() == null) {
+            throw new IllegalArgumentException("예상 오류 코드는 필수입니다.");
+        }
+        if (expectedError != null) {
+            expectsFallback = false;
+        }
     }
 }

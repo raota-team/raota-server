@@ -27,7 +27,9 @@ public class RagEvaluationDatasetReferenceValidator {
 
         List<String> invalidReferences = new ArrayList<>();
         for (RagEvaluationCase evaluationCase : dataset.casesFor(split)) {
-            if (evaluationCase.contractOnly() || evaluationCase.expectsFallback()) {
+            if (evaluationCase.contractOnly()
+                    || evaluationCase.expectsFallback()
+                    || evaluationCase.expectedError() != null) {
                 continue;
             }
             for (Long shopId : referencedShopIds(evaluationCase)) {

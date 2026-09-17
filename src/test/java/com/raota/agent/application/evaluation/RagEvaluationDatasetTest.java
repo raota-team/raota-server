@@ -16,7 +16,7 @@ class RagEvaluationDatasetTest {
         try (InputStream stream = new ClassPathResource("evaluation/rag-mobile-v1.json").getInputStream()) {
             RagEvaluationDataset dataset = mapper.readValue(stream, RagEvaluationDataset.class);
 
-            assertThat(dataset.version()).isEqualTo("rag-mobile-v1.1");
+            assertThat(dataset.version()).isEqualTo("rag-mobile-v1.2");
             assertThat(dataset.cases()).hasSize(30);
             assertThat(dataset.casesFor(RagEvaluationSplit.DEV)).hasSize(20);
             assertThat(dataset.casesFor(RagEvaluationSplit.HOLDOUT)).hasSize(10);
@@ -32,6 +32,14 @@ class RagEvaluationDatasetTest {
                 assertThat(item.primaryK()).isEqualTo(1);
                 assertThat(item.diagnosticK()).isEqualTo(6);
             });
+            assertThat(dataset.cases()).filteredOn(item -> item.expectedError() != null)
+                    .extracting(RagEvaluationCase::caseId)
+                    .containsExactlyInAnyOrder(
+                            "summary-dev-04",
+                            "compare-dev-04",
+                            "summary-holdout-02",
+                            "compare-holdout-02"
+                    );
         }
     }
 }

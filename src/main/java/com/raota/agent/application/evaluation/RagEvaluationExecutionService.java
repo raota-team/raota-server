@@ -65,11 +65,16 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
             datasetReferenceValidator.validate(dataset, split);
 
             List<Map<String, Double>> metricRows = new ArrayList<>();
+            List<Map<String, Double>> expectedErrorMetricRows = new ArrayList<>();
             for (RagEvaluationCase evaluationCase : dataset.casesFor(split)) {
                 persistCaseStarted(runId, evaluationCase);
-                RagExecutionResult executionResult = executeWithTimeoutAndRetry(evaluationCase);
+                RagExecutionResult executionResult = classifyOutcome(
+                        evaluationCase,
+                        executeWithTimeoutAndRetry(evaluationCase)
+                );
                 Map<String, Double> metrics = calculateMetrics(evaluationCase, executionResult);
                 RagEvaluationJudgeResult judgeResult = isGenerated(evaluationCase)
+                        && executionResult.status() == RagEvaluationCaseStatus.COMPLETED
                         ? judge.suggest(evaluationCase, executionResult)
                         : null;
 
@@ -78,21 +83,31 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
                         && metrics.getOrDefault("schemaValid", 1.0) < 1.0) {
                     throw new RagEvaluationSafetyException("생성 응답 스키마 검증에 실패했습니다: " + evaluationCase.caseId());
                 }
-                if (evaluationCase.type() == RagEvaluationCaseType.SEARCH) {
+                if (evaluationCase.type() == RagEvaluationCaseType.SEARCH
+                        && executionResult.status() == RagEvaluationCaseStatus.COMPLETED) {
                     ensurePublishedShops(executionResult.returnedShopIds());
                 }
-                if (!evaluationCase.contractOnly()) {
+                if (!evaluationCase.contractOnly()
+                        && evaluationCase.expectedError() == null
+                        && executionResult.status() == RagEvaluationCaseStatus.COMPLETED) {
                     metricRows.add(metrics);
+                }
+                if (evaluationCase.expectedError() != null) {
+                    expectedErrorMetricRows.add(metrics);
                 }
             }
 
             Map<String, Object> aggregate = new LinkedHashMap<>();
             aggregate.put("caseCount", dataset.casesFor(split).size());
             aggregate.put("completedCaseCount", caseRepository.countByRunIdAndStatus(runId, RagEvaluationCaseStatus.COMPLETED));
+            aggregate.put("expectedErrorCaseCount", caseRepository.countByRunIdAndStatus(
+                    runId, RagEvaluationCaseStatus.EXPECTED_ERROR
+            ));
             aggregate.put("errorCaseCount", caseRepository.countByRunIdAndStatus(runId, RagEvaluationCaseStatus.ERROR));
             aggregate.put("skippedCaseCount", caseRepository.countByRunIdAndStatus(runId, RagEvaluationCaseStatus.SKIPPED));
             aggregate.put("averageLatencyMs", averageLatency(runId));
             aggregate.put("metrics", RagEvaluationMetricCalculator.average(metricRows));
+            aggregate.put("expectedErrorMetrics", RagEvaluationMetricCalculator.average(expectedErrorMetricRows));
             String aggregateJson = toJson(aggregate);
             transactionTemplate.executeWithoutResult(status -> runRepository.findById(runId)
                     .orElseThrow(() -> new IllegalArgumentException("평가 실행을 찾을 수 없습니다: " + runId))
@@ -183,6 +198,14 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
     }
 
     private Map<String, Double> calculateMetrics(RagEvaluationCase evaluationCase, RagExecutionResult result) {
+        if (evaluationCase.expectedError() != null) {
+            return RagEvaluationMetricCalculator.calculateExpectedError(
+                    result.status() == RagEvaluationCaseStatus.EXPECTED_ERROR
+            );
+        }
+        if (result.status() != RagEvaluationCaseStatus.COMPLETED) {
+            return Map.of();
+        }
         if (evaluationCase.type() == RagEvaluationCaseType.SEARCH) {
             return RagEvaluationMetricCalculator.calculateSearch(
                     result.returnedShopIds(),
@@ -201,7 +224,20 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
 
     private boolean isGenerated(RagEvaluationCase evaluationCase) {
         return evaluationCase.type() != RagEvaluationCaseType.SEARCH
-                && !evaluationCase.contractOnly();
+                && !evaluationCase.contractOnly()
+                && evaluationCase.expectedError() == null;
+    }
+
+    private RagExecutionResult classifyOutcome(
+            RagEvaluationCase evaluationCase,
+            RagExecutionResult result
+    ) {
+        if (evaluationCase.expectedError() == null || result.status() != RagEvaluationCaseStatus.ERROR) {
+            return result;
+        }
+        return evaluationCase.expectedError().matches(result)
+                ? result.asExpectedError()
+                : result;
     }
 
     private void ensurePublishedShops(List<Long> shopIds) {
@@ -226,6 +262,7 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
         expected.put("forbiddenClaims", evaluationCase.forbiddenClaims());
         expected.put("expectsFallback", evaluationCase.expectsFallback());
         expected.put("contractOnly", evaluationCase.contractOnly());
+        expected.put("expectedError", evaluationCase.expectedError());
         expected.put("primaryK", evaluationCase.primaryK());
         expected.put("diagnosticK", evaluationCase.diagnosticK());
         return expected;
@@ -234,6 +271,7 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
     private double averageLatency(String runId) {
         return caseRepository.findByRunIdOrderByIdAsc(runId).stream()
                 .filter(item -> item.getStatus() == RagEvaluationCaseStatus.COMPLETED
+                        || item.getStatus() == RagEvaluationCaseStatus.EXPECTED_ERROR
                         || item.getStatus() == RagEvaluationCaseStatus.ERROR)
                 .map(RagEvaluationCaseResultEntity::getLatencyMs)
                 .filter(java.util.Objects::nonNull)

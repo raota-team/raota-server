@@ -72,6 +72,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail(exception.getMessage()));
     }
 
+    @ExceptionHandler(AiResponseFormatException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAiResponseFormat(
+            AiResponseFormatException exception,
+            HttpServletRequest request
+    ) {
+        log.error("AI response could not be converted. method={}, uri={}",
+                request.getMethod(), request.getRequestURI(), exception);
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(ApiResponse.fail("AI 응답을 처리할 수 없습니다. 잠시 후 다시 시도해 주세요."));
+    }
+
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<Void> handleNoResourceFound(NoResourceFoundException exception) {
         return ResponseEntity.notFound().build();

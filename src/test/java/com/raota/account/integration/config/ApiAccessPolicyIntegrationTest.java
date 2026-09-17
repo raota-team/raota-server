@@ -136,7 +136,7 @@ class ApiAccessPolicyIntegrationTest extends BaseIntegrationTest {
         mockMvc.perform(get(path)
                         .header(HttpHeaders.AUTHORIZATION, bearer(createAccessToken(MemberRole.ADMIN))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.version").value("rag-mobile-v1.1"));
+                .andExpect(jsonPath("$.data.version").value("rag-mobile-v1.2"));
     }
 
     @Test
