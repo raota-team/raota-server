@@ -65,6 +65,7 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
             datasetReferenceValidator.validate(dataset, split);
 
             List<Map<String, Double>> metricRows = new ArrayList<>();
+            List<Map<String, Double>> expectedErrorMetricRows = new ArrayList<>();
             for (RagEvaluationCase evaluationCase : dataset.casesFor(split)) {
                 persistCaseStarted(runId, evaluationCase);
                 RagExecutionResult executionResult = classifyOutcome(
@@ -91,6 +92,9 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
                         && executionResult.status() == RagEvaluationCaseStatus.COMPLETED) {
                     metricRows.add(metrics);
                 }
+                if (evaluationCase.expectedError() != null) {
+                    expectedErrorMetricRows.add(metrics);
+                }
             }
 
             Map<String, Object> aggregate = new LinkedHashMap<>();
@@ -103,6 +107,7 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
             aggregate.put("skippedCaseCount", caseRepository.countByRunIdAndStatus(runId, RagEvaluationCaseStatus.SKIPPED));
             aggregate.put("averageLatencyMs", averageLatency(runId));
             aggregate.put("metrics", RagEvaluationMetricCalculator.average(metricRows));
+            aggregate.put("expectedErrorMetrics", RagEvaluationMetricCalculator.average(expectedErrorMetricRows));
             String aggregateJson = toJson(aggregate);
             transactionTemplate.executeWithoutResult(status -> runRepository.findById(runId)
                     .orElseThrow(() -> new IllegalArgumentException("평가 실행을 찾을 수 없습니다: " + runId))
