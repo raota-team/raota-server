@@ -29,7 +29,7 @@
 | 투표·인증샷 조회 | `GET /ramen-shops/{shopId}/votes`, `GET /ramen-shops/{shopId}/photos` | 공개 매장 활동이다. |
 | 홈 라멘집 | `GET /api/v1/shops/recent-verified` | 공개 홈 데이터다. |
 | 라멘로그 조회 | `GET /ramen-logs`, `GET /ramen-logs/{logId}`, `GET /users/{userId}/ramen-logs`, `GET /users/{userId}/ramen-logs/shops` | 공개 범위 정책을 application에서 적용한다. |
-| 홈 공개 조회 | `GET /api/v1/discovery/stats`, `GET /api/v1/discovery/popular-shops/today`, `GET /api/v1/discovery/today-recommendations` | 기존 클라이언트 호환 경로로 제공하는 공개 홈 데이터다. |
+| 홈 공개 조회 | `GET /api/v1/discovery/popular-shops/today`, `GET /api/v1/discovery/today-recommendations` | 기존 클라이언트 호환 경로로 제공하는 공개 홈 데이터다. |
 | 기본 상태 | `GET /`, `GET /favicon.ico` | 서비스 기본 응답이다. |
 | 로컬 가짜 업로드 | `PUT /files/mock-upload-endpoint` | 로컬 presigned URL 호환용이며 데이터를 저장하지 않는다. |
 

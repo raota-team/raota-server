@@ -20,8 +20,6 @@ public interface RamenShopRepository extends JpaRepository<RamenShop, Long> {
 
     List<RamenShop> findAllByIdBetweenOrderByIdAsc(Long fromId, Long toId);
 
-    long countByPublishedTrue();
-
     @Query(
             value = """
         select new com.raota.ramenshop.presentation.response.RamenShopResponse(
