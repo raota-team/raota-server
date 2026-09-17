@@ -62,7 +62,6 @@ public final class EndpointAccessPolicy {
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/api/v1/shops/recent-verified"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/ramen-logs"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/ramen-logs/{logId:[0-9]+}"),
-            rule(AccessLevel.PUBLIC, HttpMethod.GET, "/api/v1/discovery/stats"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/api/v1/discovery/popular-shops/today"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/api/v1/discovery/today-recommendations"),
             rule(AccessLevel.PUBLIC, HttpMethod.PUT, "/files/mock-upload-endpoint"),

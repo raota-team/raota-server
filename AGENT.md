@@ -48,7 +48,7 @@
 
 ### 아키텍처
 - Java 25, Spring Boot 4.1.0, Spring Modulith 2.1.0 기반 서버다.
-- 기능 모듈은 `account`, `agent`, `community`, `home`, `ramenlog`, `ramenshop`, `global` 7개다. 규칙은 `docs/architecture.md`를 따른다.
+- 기능 모듈은 `account`, `agent`, `community`, `ramenlog`, `ramenshop`, `global` 6개다. 규칙은 `docs/architecture.md`를 따른다.
 - 모바일 전용 `/api/v2`와 `tb_v2_*` 스키마는 아직 구현되지 않았다. 설계 기준은 Notion의 라오타 앱 API·DB 문서다.
 - 상태 변경과 조회 모두 JPA 기반으로 정리되어 있으며, 커뮤니티 조회도 JPA 쿼리 리포지토리로 동작한다.
 - Flyway 마이그레이션과 Redis 캐시/토큰 저장소를 사용한다.

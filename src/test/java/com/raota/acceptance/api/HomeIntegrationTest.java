@@ -1,7 +1,6 @@
 package com.raota.acceptance.api;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 
 import com.raota.community.domain.model.Post;
@@ -60,24 +59,6 @@ class HomeIntegrationTest extends BaseIntegrationTest {
         jpaPostRepository.deleteAll();
         ramenShopRepository.deleteAll();
         memberRepository.deleteAll();
-    }
-
-    @Test
-    @DisplayName("기존 경로의 홈 통계 API가 동일한 응답을 반환한다.")
-    void get_home_stats_through_legacy_path() {
-        ramenShopRepository.save(sampleShop("가게1", "서울", "강남구"));
-        memberRepository.save(MemberProfile.builder().nickname("유저1").build());
-        
-        given()
-        .when()
-                .get("/api/v1/discovery/stats")
-        .then()
-                .log().ifValidationFails()
-                .statusCode(HttpStatus.OK.value())
-                .body("success", is(true))
-                .body("data.totalShops", is(1))
-                .body("data.totalUsers", is(4000)) // 고정값 확인
-                .body("data.totalReviews", greaterThanOrEqualTo(0));
     }
 
     @Test

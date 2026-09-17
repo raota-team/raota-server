@@ -11,7 +11,6 @@ com.raota
 ├── account       # 인증, 회원, 관리자 회원 관리
 ├── agent         # AI 검색, 추천, RAG, 벡터 인덱싱, RAG 평가
 ├── community     # 게시글, 댓글, 좋아요
-├── home          # 홈 화면 조합 조회 (소유 모듈의 공개 query만 의존)
 ├── ramenlog      # 라멘 로그, 인증 사진
 ├── ramenshop     # 라멘 가게, 메뉴, 북마크, 신고
 └── global        # 기능에 종속되지 않는 공통 기술 코드
@@ -174,7 +173,7 @@ interface 하나와 구현체 하나뿐이고 교체 가능성이 실제로 없�
 
 `ModulithArchitectureTest`는 다음을 배포 전 강제한다.
 
-- 예상한 7개 모듈이 모두 감지되는지 확인한다.
+- 예상한 6개 모듈이 모두 감지되는지 확인한다.
 - `ApplicationModules.verify()`로 순환 의존성과 비공개 패키지 접근을 검사한다.
 - API 접근 정책 테스트로 등록된 모든 endpoint가 PUBLIC, AUTHENTICATED, ADMIN 중 하나에만 속하는지 검사한다.
 

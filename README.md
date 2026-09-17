@@ -69,7 +69,6 @@ src/main/java/com/raota
 ├── account     # 인증, 회원, 관리자 회원 관리
 ├── agent       # AI 검색·추천, RAG 인덱싱, RAG 평가
 ├── community   # 게시글, 댓글, 좋아요
-├── home        # 홈 화면 조합 조회
 ├── ramenlog    # 라멘 로그
 ├── ramenshop   # 라멘 가게, 메뉴, 북마크, 제보
 └── global      # 기능에 종속되지 않는 공통 기술 코드

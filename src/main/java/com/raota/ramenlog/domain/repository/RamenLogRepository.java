@@ -27,7 +27,6 @@ public interface RamenLogRepository extends JpaRepository<RamenLog, Long>, JpaSp
     void deleteAllByAuthorId(Long memberId);
 
     long countByAuthorIdAndRamenShopIdAndIsDeletedFalse(Long memberId, Long shopId);
-    long countByIsDeletedFalse();
 
     @Query(
             value = """
