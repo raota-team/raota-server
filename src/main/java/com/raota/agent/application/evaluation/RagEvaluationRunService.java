@@ -43,6 +43,8 @@ public class RagEvaluationRunService {
     private static final Duration RESERVATION_LOCK_TTL = Duration.ofSeconds(30);
     private static final Duration RESERVATION_LOCK_WAIT = Duration.ofSeconds(3);
     private static final Duration RESERVATION_LOCK_RETRY_INTERVAL = Duration.ofMillis(50);
+    private static final String ACTIVE_SLOT_CONSTRAINT = "uk_rag_evaluation_run_active_slot";
+    private static final String IDEMPOTENCY_KEY_CONSTRAINT = "uk_rag_evaluation_run_idempotency_key";
     private static final Collection<RagEvaluationStatus> ACTIVE_STATUSES = List.of(
             RagEvaluationStatus.QUEUED,
             RagEvaluationStatus.RUNNING
@@ -123,11 +125,29 @@ public class RagEvaluationRunService {
         try {
             return reserve(dataset, targetSplit, idempotencyKey);
         } catch (DataIntegrityViolationException exception) {
-            return findReplay(idempotencyKey, dataset, targetSplit)
-                    .orElseThrow(RagEvaluationAlreadyRunningException::new);
+            if (violates(exception, IDEMPOTENCY_KEY_CONSTRAINT)) {
+                return findReplay(idempotencyKey, dataset, targetSplit).orElseThrow(() -> exception);
+            }
+            if (violates(exception, ACTIVE_SLOT_CONSTRAINT)) {
+                throw new RagEvaluationAlreadyRunningException();
+            }
+            throw exception;
         } finally {
             lock.ifPresent(this::releaseReservationLock);
         }
+    }
+
+    private static boolean violates(Throwable exception, String constraintName) {
+        for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
+            String message = cause.getMessage();
+            if (message != null && message.contains(constraintName)) {
+                return true;
+            }
+            if (cause.getCause() == cause) {
+                return false;
+            }
+        }
+        return false;
     }
 
     private Optional<RunStart> findReplay(
