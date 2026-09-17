@@ -7,6 +7,7 @@ import com.raota.agent.infrastructure.persistence.evaluation.RagEvaluationRunJpa
 import com.raota.agent.infrastructure.persistence.evaluation.entity.RagEvaluationCaseResultEntity;
 import com.raota.ramenshop.domain.repository.RamenShopRepository;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -16,11 +17,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.transaction.support.TransactionTemplate;
 
+@Slf4j
 @Service
 public class RagEvaluationExecutionService implements RagEvaluationRunner {
     private static final Duration CASE_TIMEOUT = Duration.ofSeconds(60);
@@ -34,6 +40,7 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
     private final RamenShopRepository ramenShopRepository;
     private final ObjectMapper objectMapper;
     private final TransactionTemplate transactionTemplate;
+    private final Duration heartbeatInterval;
 
     public RagEvaluationExecutionService(
             RagEvaluationRunJpaRepository runRepository,
@@ -43,7 +50,8 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
             RagEvaluationDatasetReferenceValidator datasetReferenceValidator,
             RamenShopRepository ramenShopRepository,
             ObjectMapper objectMapper,
-            TransactionTemplate transactionTemplate
+            TransactionTemplate transactionTemplate,
+            @Value("${app.rag.evaluation.heartbeat-interval:PT30S}") Duration heartbeatInterval
     ) {
         this.runRepository = runRepository;
         this.caseRepository = caseRepository;
@@ -53,20 +61,31 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
         this.ramenShopRepository = ramenShopRepository;
         this.objectMapper = objectMapper;
         this.transactionTemplate = transactionTemplate;
+        if (heartbeatInterval == null || heartbeatInterval.isNegative() || heartbeatInterval.isZero()) {
+            throw new IllegalArgumentException("app.rag.evaluation.heartbeat-interval은 0보다 커야 합니다.");
+        }
+        this.heartbeatInterval = heartbeatInterval;
     }
 
     @Async("ragEvaluationTaskExecutor")
     @Override
     public void execute(String runId, RagEvaluationDataset dataset, RagEvaluationSplit split) {
+        if (updateRun(() -> runRepository.markRunning(runId, LocalDateTime.now())) == 0) {
+            log.warn("RAG evaluation run is no longer queued. runId={}", runId);
+            return;
+        }
+        AtomicBoolean inactive = new AtomicBoolean(false);
+        ScheduledExecutorService heartbeat = startHeartbeat(runId, inactive);
         try {
-            transactionTemplate.executeWithoutResult(status -> runRepository.findById(runId)
-                    .orElseThrow(() -> new IllegalArgumentException("평가 실행을 찾을 수 없습니다: " + runId))
-                    .markRunning());
             datasetReferenceValidator.validate(dataset, split);
 
             List<Map<String, Double>> metricRows = new ArrayList<>();
             List<Map<String, Double>> expectedErrorMetricRows = new ArrayList<>();
             for (RagEvaluationCase evaluationCase : dataset.casesFor(split)) {
+                if (inactive.get()) {
+                    log.warn("RAG evaluation run became inactive; stopping worker. runId={}", runId);
+                    return;
+                }
                 persistCaseStarted(runId, evaluationCase);
                 RagExecutionResult executionResult = classifyOutcome(
                         evaluationCase,
@@ -109,13 +128,38 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
             aggregate.put("metrics", RagEvaluationMetricCalculator.average(metricRows));
             aggregate.put("expectedErrorMetrics", RagEvaluationMetricCalculator.average(expectedErrorMetricRows));
             String aggregateJson = toJson(aggregate);
-            transactionTemplate.executeWithoutResult(status -> runRepository.findById(runId)
-                    .orElseThrow(() -> new IllegalArgumentException("평가 실행을 찾을 수 없습니다: " + runId))
-                    .markReviewRequired(aggregateJson));
+            if (updateRun(() -> runRepository.markReviewRequired(runId, aggregateJson, LocalDateTime.now())) == 0) {
+                log.warn("RAG evaluation run was not running at completion; result not applied. runId={}", runId);
+            }
         } catch (Exception exception) {
-            transactionTemplate.executeWithoutResult(status -> runRepository.findById(runId)
-                    .ifPresent(run -> run.markFailed(errorMessage(exception))));
+            if (updateRun(() -> runRepository.markFailed(runId, errorMessage(exception), LocalDateTime.now())) == 0) {
+                log.warn("RAG evaluation run was already finished when failure occurred. runId={}", runId, exception);
+            }
+        } finally {
+            heartbeat.shutdownNow();
         }
+    }
+
+    private ScheduledExecutorService startHeartbeat(String runId, AtomicBoolean inactive) {
+        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(
+                Thread.ofVirtual().name("rag-evaluation-heartbeat-", 0).factory()
+        );
+        long intervalMillis = heartbeatInterval.toMillis();
+        scheduler.scheduleWithFixedDelay(() -> {
+            try {
+                if (updateRun(() -> runRepository.touchHeartbeat(runId, LocalDateTime.now())) == 0) {
+                    inactive.set(true);
+                }
+            } catch (Exception exception) {
+                log.warn("Failed to update RAG evaluation heartbeat. runId={}", runId, exception);
+            }
+        }, intervalMillis, intervalMillis, TimeUnit.MILLISECONDS);
+        return scheduler;
+    }
+
+    private int updateRun(java.util.function.IntSupplier update) {
+        Integer updated = transactionTemplate.execute(status -> update.getAsInt());
+        return updated == null ? 0 : updated;
     }
 
     private void persistCaseStarted(String runId, RagEvaluationCase evaluationCase) {

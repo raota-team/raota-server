@@ -130,25 +130,8 @@ public class RagEvaluationRunEntity {
         );
     }
 
-    public void markRunning() {
-        this.status = RagEvaluationStatus.RUNNING;
-        this.startedAt = LocalDateTime.now();
-    }
-
-    public void markReviewRequired(String aggregateMetrics) {
-        this.status = RagEvaluationStatus.REVIEW_REQUIRED;
-        this.aggregateMetrics = aggregateMetrics;
-        this.completedAt = LocalDateTime.now();
-    }
-
     public void markCompleted() {
         this.status = RagEvaluationStatus.COMPLETED;
-        this.completedAt = LocalDateTime.now();
-    }
-
-    public void markFailed(String fatalError) {
-        this.status = RagEvaluationStatus.FAILED;
-        this.fatalError = fatalError;
         this.completedAt = LocalDateTime.now();
     }
 }
