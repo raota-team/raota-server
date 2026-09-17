@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -20,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.IntSupplier;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -157,7 +159,7 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
         return scheduler;
     }
 
-    private int updateRun(java.util.function.IntSupplier update) {
+    private int updateRun(IntSupplier update) {
         Integer updated = transactionTemplate.execute(status -> update.getAsInt());
         return updated == null ? 0 : updated;
     }
@@ -318,7 +320,7 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
                         || item.getStatus() == RagEvaluationCaseStatus.EXPECTED_ERROR
                         || item.getStatus() == RagEvaluationCaseStatus.ERROR)
                 .map(RagEvaluationCaseResultEntity::getLatencyMs)
-                .filter(java.util.Objects::nonNull)
+                .filter(Objects::nonNull)
                 .mapToLong(Long::longValue)
                 .average()
                 .orElse(0.0);

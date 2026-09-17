@@ -1,6 +1,7 @@
 package com.raota.agent.integration.evaluation;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.raota.agent.application.evaluation.RagEvaluationSplit;
 import com.raota.agent.application.evaluation.RagEvaluationStatus;
@@ -11,6 +12,7 @@ import com.raota.support.BaseIntegrationTest;
 import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.function.IntSupplier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,8 +20,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.support.TransactionTemplate;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class RagEvaluationRunStateTransitionIntegrationTest extends BaseIntegrationTest {
 
@@ -144,7 +144,7 @@ class RagEvaluationRunStateTransitionIntegrationTest extends BaseIntegrationTest
                 .executeUpdate());
     }
 
-    private int inTx(java.util.function.IntSupplier action) {
+    private int inTx(IntSupplier action) {
         return transactionTemplate.execute(status -> action.getAsInt());
     }
 
