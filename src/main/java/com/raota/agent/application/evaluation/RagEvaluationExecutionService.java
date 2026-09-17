@@ -72,13 +72,15 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
     @Async("ragEvaluationTaskExecutor")
     @Override
     public void execute(String runId, RagEvaluationDataset dataset, RagEvaluationSplit split) {
-        if (updateRun(() -> runRepository.markRunning(runId, LocalDateTime.now())) == 0) {
-            log.warn("RAG evaluation run is no longer queued. runId={}", runId);
-            return;
-        }
         AtomicBoolean inactive = new AtomicBoolean(false);
-        ScheduledExecutorService heartbeat = startHeartbeat(runId, inactive);
+        ScheduledExecutorService heartbeat = null;
         try {
+            // 시작 전환 실패도 아래 catch에서 FAILED로 처리해 활성 슬롯이 stale 복구까지 묶이지 않게 한다.
+            if (updateRun(() -> runRepository.markRunning(runId, LocalDateTime.now())) == 0) {
+                log.warn("RAG evaluation run is no longer queued. runId={}", runId);
+                return;
+            }
+            heartbeat = startHeartbeat(runId, inactive);
             datasetReferenceValidator.validate(dataset, split);
 
             List<Map<String, Double>> metricRows = new ArrayList<>();
@@ -138,7 +140,9 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
                 log.warn("RAG evaluation run was already finished when failure occurred. runId={}", runId, exception);
             }
         } finally {
-            heartbeat.shutdownNow();
+            if (heartbeat != null) {
+                heartbeat.shutdownNow();
+            }
         }
     }
 

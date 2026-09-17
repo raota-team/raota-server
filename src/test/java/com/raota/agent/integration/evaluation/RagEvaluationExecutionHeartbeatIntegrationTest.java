@@ -2,7 +2,9 @@ package com.raota.agent.integration.evaluation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -31,8 +33,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @TestPropertySource(properties = "app.rag.evaluation.heartbeat-interval=PT0.1S")
@@ -52,7 +56,7 @@ class RagEvaluationExecutionHeartbeatIntegrationTest extends BaseIntegrationTest
     @Autowired
     private RagEvaluationDatasetLoader datasetLoader;
 
-    @Autowired
+    @MockitoSpyBean
     private RagEvaluationRunJpaRepository runRepository;
 
     @Autowired
@@ -129,6 +133,22 @@ class RagEvaluationExecutionHeartbeatIntegrationTest extends BaseIntegrationTest
 
         verify(caseExecutor, never()).execute(any());
         assertThat(status(runId)).isEqualTo(RagEvaluationStatus.FAILED);
+    }
+
+    @Test
+    @DisplayName("시작 전환 중 DB 오류가 나면 실행을 FAILED로 바꿔 활성 슬롯을 즉시 반환한다")
+    void startTransitionFailureMarksRunFailed() {
+        String runId = saveQueuedRun();
+        doThrow(new DataAccessResourceFailureException("database unavailable"))
+                .when(runRepository).markRunning(anyString(), any(LocalDateTime.class));
+
+        runner.execute(runId, datasetLoader.loadDefault(), RagEvaluationSplit.DEV);
+
+        Awaitility.await().atMost(WAIT).until(() -> status(runId) == RagEvaluationStatus.FAILED);
+        RagEvaluationRunEntity run = run(runId);
+        assertThat(run.getActiveSlot()).isNull();
+        assertThat(run.getFatalError()).isEqualTo("database unavailable");
+        verify(caseExecutor, never()).execute(any());
     }
 
     private void verifyExecutorCalled() {
