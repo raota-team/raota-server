@@ -2,6 +2,7 @@ package com.raota.agent.application.ramenshop.search;
 
 import com.raota.ramenshop.domain.model.RamenShop;
 import com.raota.ramenshop.domain.repository.RamenShopRepository;
+import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import org.springframework.stereotype.Component;
 
@@ -16,7 +17,7 @@ public class RamenShopReader {
 
     public RamenShop getRamenShop(Long shopId) {
         return ramenShopRepository.findByIdAndPublishedTrue(shopId)
-                .orElseThrow(() -> new IllegalArgumentException("라멘샵을 찾을 수 없습니다. id=" + shopId));
+                .orElseThrow(() -> new EntityNotFoundException("라멘샵을 찾을 수 없습니다. id=" + shopId));
     }
 
     public List<RamenShop> getRamenShops(List<Long> shopIds) {
