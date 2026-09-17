@@ -9,9 +9,9 @@
 ```text
 com.raota
 ├── account       # 인증, 회원, 관리자 회원 관리
-├── agent         # AI 검색, 추천, RAG, 벡터 인덱싱
+├── agent         # AI 검색, 추천, RAG, 벡터 인덱싱, RAG 평가
 ├── community     # 게시글, 댓글, 좋아요
-├── discovery     # 홈/탐색 화면 조합 조회
+├── home          # 홈 화면 조합 조회 (소유 모듈의 공개 query만 의존)
 ├── ramenlog      # 라멘 로그, 인증 사진
 ├── ramenshop     # 라멘 가게, 메뉴, 북마크, 신고
 └── global        # 기능에 종속되지 않는 공통 기술 코드

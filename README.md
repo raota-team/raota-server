@@ -3,7 +3,7 @@
 > 라멘 맛집을 찾고, 기록하고, 공유하는 커뮤니티 플랫폼 **라오타**의 백엔드 서버입니다.
 
 ![Java](https://img.shields.io/badge/Java-25-007396?style=flat-square&logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.2-6DB33F?style=flat-square&logo=springboot&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1.0-6DB33F?style=flat-square&logo=springboot&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat-square&logo=mysql&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-cache%20%7C%20token-DC382D?style=flat-square&logo=redis&logoColor=white)
 ![Flyway](https://img.shields.io/badge/Flyway-migration-CC0200?style=flat-square&logo=flyway&logoColor=white)
@@ -35,9 +35,9 @@ Raota Server는 라멘 매장 정보, 방문 인증샷, 메뉴 투표, 북마크
 ### Back-end
 
 ![Java](https://img.shields.io/badge/Java-25-007396?style=for-the-badge&logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.2-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1.0-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
 ![Spring Security](https://img.shields.io/badge/Spring%20Security-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white)
-![Spring AI](https://img.shields.io/badge/Spring%20AI-2.0.0--M6-6DB33F?style=for-the-badge&logo=spring&logoColor=white)
+![Spring AI](https://img.shields.io/badge/Spring%20AI-2.0.0-6DB33F?style=for-the-badge&logo=spring&logoColor=white)
 ![JPA](https://img.shields.io/badge/JPA-Hibernate-59666C?style=for-the-badge&logo=hibernate&logoColor=white)
 
 ### Database & Infra
@@ -62,12 +62,17 @@ Raota Server는 라멘 매장 정보, 방문 인증샷, 메뉴 투표, 북마크
 
 ### 패키지 구조
 
+Spring Modulith 기반 기능 중심 모듈러 모놀리스입니다. 모듈별 계층 규칙은 [아키텍처 규칙](docs/architecture.md)을 따릅니다.
+
 ```text
 src/main/java/com/raota
-├── presentation  # REST API, Admin Controller, 공통 응답/예외 처리
-├── application   # 유스케이스 서비스와 트랜잭션 경계
-├── domain        # 도메인 모델, 정책, 저장소 인터페이스
-└── infrastructure# 인증, Redis, 파일 업로드, 캐시, 벡터 검색, 외부 연동
+├── account     # 인증, 회원, 관리자 회원 관리
+├── agent       # AI 검색·추천, RAG 인덱싱, RAG 평가
+├── community   # 게시글, 댓글, 좋아요
+├── home        # 홈 화면 조합 조회
+├── ramenlog    # 라멘 로그
+├── ramenshop   # 라멘 가게, 메뉴, 북마크, 제보
+└── global      # 기능에 종속되지 않는 공통 기술 코드
 ```
 
 ## 배포

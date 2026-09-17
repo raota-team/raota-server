@@ -3,7 +3,7 @@
 ## 목적
 이 문서는 라오타 서버 저장소에서 AI 에이전트를 사용할 때의 작업 원칙과 현재 구현 상태를 함께 관리하는 기준 문서다.
 
-기준 날짜: 2026-07-20
+기준 날짜: 2026-09-17
 
 ## AI 협업 원칙
 
@@ -47,19 +47,23 @@
 ## 현재 구현 상태
 
 ### 아키텍처
-- Java 25, Spring Boot 4.0.2 기반 서버다.
-- 도메인은 `auth`, `member`, `ramenShop`, `community`, `retrieval`, `global`, `admin`으로 나뉜다.
+- Java 25, Spring Boot 4.1.0, Spring Modulith 2.1.0 기반 서버다.
+- 기능 모듈은 `account`, `agent`, `community`, `home`, `ramenlog`, `ramenshop`, `global` 7개다. 규칙은 `docs/architecture.md`를 따른다.
+- 모바일 전용 `/api/v2`와 `tb_v2_*` 스키마는 아직 구현되지 않았다. 설계 기준은 Notion의 라오타 앱 API·DB 문서다.
 - 상태 변경과 조회 모두 JPA 기반으로 정리되어 있으며, 커뮤니티 조회도 JPA 쿼리 리포지토리로 동작한다.
 - Flyway 마이그레이션과 Redis 캐시/토큰 저장소를 사용한다.
 - 파일 업로드는 S3 호환 스토리지와 Cloudinary 라우팅 구성을 포함한다.
 
 ### 검색 / AI 인프라
-- Spring AI 2.0.0-M6와 OpenAI 임베딩 모델을 사용한다.
+- Spring AI 2.0.0과 OpenAI 임베딩 모델을 사용한다.
 - Oracle Vector Store를 별도 Oracle 데이터소스가 아니라 전용 `JdbcTemplate` 기반 수동 구성으로 연결한다.
 - 운영 설정에서는 `OracleVectorStoreAutoConfiguration`을 제외하고 수동 `VectorStore` bean을 사용한다.
 - `OracleVectorStoreSmokeTest`로 문서 저장/유사도 검색 스모크 테스트가 추가되어 있다.
-- 검색/RAG 적재용 도메인 계약은 `com.raota.domain.retrieval.document` 패키지에서 관리한다.
-- 현재 정의된 문서 타입은 `SHOP_PROFILE`, `SHOP_FACT`, `REVIEW_CHUNK`다.
+- 검색/RAG 적재용 도메인 계약은 `com.raota.agent.domain.retrieval.document` 패키지에서 관리한다.
+- 현재 정의된 문서 타입은 `SHOP_PROFILE`, `SHOP_FACT`, `REVIEW_CHUNK`, `EXTERNAL_REVIEW_CHUNK`다.
+- RAG 평가셋(`src/main/resources/evaluation`), 지표 계산, 관리자 평가 실행 API가 `agent.application.evaluation`에 있다. 실제 Oracle 기준선은 아직 실행하지 않았다.
+- RAG 평가 실행은 여러 서버에서도 한 건만 활성화된다. 예약 구간은 Redis 락(`global.redis.RedisLockClient`)으로 직렬화하고, 최종 보장은 `tb_rag_evaluation_run.active_slot` UNIQUE 제약이 맡는다. worker heartbeat가 10분 이상 멈춘 실행은 주기 복구 작업이 FAILED로 전환한다.
+- LangGraph4j는 제품 런타임에 추가하지 않았다. `compatibility-tests/langgraph4j`에서 1.9.0-beta7 호환성만 검증했다.
 - 현재 구현된 적재 뼈대는 라멘샵 프로필 문서 생성기와 샵 전체/단건 인덱싱 서비스다.
 
 ### 인증 및 보안
