@@ -90,6 +90,12 @@ public final class RagEvaluationMetricCalculator {
         return metrics;
     }
 
+    public static Map<String, Double> calculateExpectedError(boolean matched) {
+        Map<String, Double> metrics = new LinkedHashMap<>();
+        metrics.put("expectedErrorMatch", matched ? 1.0 : 0.0);
+        return metrics;
+    }
+
     private static boolean isSchemaValid(RagEvaluationCaseType type, JsonNode response) {
         if (response == null || response.isNull() || !response.isObject() || type == null) {
             return false;

@@ -44,4 +44,17 @@ class RagEvaluationDatasetReferenceValidatorTest {
 
         validator.validate(dataset, RagEvaluationSplit.DEV);
     }
+
+    @Test
+    void expectedError_사례의_없는_매장참조는_허용한다() {
+        RagEvaluationCase evaluationCase = new RagEvaluationCase(
+                "summary-not-found", RagEvaluationCaseType.SUMMARY, RagEvaluationSplit.DEV,
+                objectMapper.createObjectNode().put("shopId", 999999), "AUTHENTICATED",
+                List.of(), false, List.of(), List.of(), List.of(), false, false, 1, 6,
+                new RagExpectedError("RESOURCE_NOT_FOUND", 404, "라멘샵을 찾을 수 없습니다.")
+        );
+        RagEvaluationDataset dataset = new RagEvaluationDataset("rag-mobile-test", List.of(evaluationCase));
+
+        validator.validate(dataset, RagEvaluationSplit.DEV);
+    }
 }

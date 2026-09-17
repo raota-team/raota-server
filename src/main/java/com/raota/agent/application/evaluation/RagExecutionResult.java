@@ -49,4 +49,20 @@ public record RagExecutionResult(
                 throwable == null || throwable.getMessage() == null ? "평가 사례 실행에 실패했습니다." : throwable.getMessage()
         );
     }
+
+    public RagExecutionResult asExpectedError() {
+        if (status != RagEvaluationCaseStatus.ERROR) {
+            return this;
+        }
+        return new RagExecutionResult(
+                RagEvaluationCaseStatus.EXPECTED_ERROR,
+                response,
+                returnedShopIds,
+                evidence,
+                fallback,
+                latencyMs,
+                errorType,
+                errorMessage
+        );
+    }
 }

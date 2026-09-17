@@ -4,6 +4,7 @@ public enum RagEvaluationCaseStatus {
     PENDING,
     RUNNING,
     COMPLETED,
+    EXPECTED_ERROR,
     SKIPPED,
     ERROR
 }
