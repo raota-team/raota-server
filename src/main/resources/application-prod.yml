@@ -166,6 +166,10 @@ app:
         ramenShopList:
           ttl-seconds: ${APP_CACHE_RAMEN_SHOP_LIST_TTL_SECONDS:300}
           maximum-size: ${APP_CACHE_RAMEN_SHOP_LIST_MAX_SIZE:50}
+  rag:
+    evaluation:
+      vector-index-version: ${APP_RAG_EVALUATION_VECTOR_INDEX_VERSION:oracle-legacy-unversioned}
+      model-metadata: '{"chatModel":"${spring.ai.openai.chat.model}","embeddingModel":"${spring.ai.openai.embedding.model}","embeddingDimensions":"${spring.ai.openai.embedding.dimensions}"}'
   ai:
     vector-store:
       enabled: true
