@@ -9,6 +9,10 @@ import com.raota.agent.infrastructure.persistence.evaluation.RagEvaluationRunJpa
 import com.raota.agent.infrastructure.persistence.evaluation.entity.RagEvaluationCaseResultEntity;
 import com.raota.agent.infrastructure.persistence.evaluation.entity.RagEvaluationRunEntity;
 import com.raota.global.presentation.common.PageResponse;
+import com.raota.global.redis.RedisLockClient;
+import com.raota.global.redis.RedisLockClient.LockToken;
+import com.raota.global.redis.RedisLockUnavailableException;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -16,8 +20,11 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,15 +33,29 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
+@Slf4j
 @Service
 public class RagEvaluationRunService {
     private static final int DEFAULT_PAGE_SIZE = 20;
+    static final String RESERVATION_LOCK_KEY = "lock:rag-evaluation:active";
+    private static final Duration RESERVATION_LOCK_TTL = Duration.ofSeconds(30);
+    private static final Duration RESERVATION_LOCK_WAIT = Duration.ofSeconds(3);
+    private static final Duration RESERVATION_LOCK_RETRY_INTERVAL = Duration.ofMillis(50);
+    private static final String ACTIVE_SLOT_CONSTRAINT = "uk_rag_evaluation_run_active_slot";
+    private static final String IDEMPOTENCY_KEY_CONSTRAINT = "uk_rag_evaluation_run_idempotency_key";
+    private static final Collection<RagEvaluationStatus> ACTIVE_STATUSES = List.of(
+            RagEvaluationStatus.QUEUED,
+            RagEvaluationStatus.RUNNING
+    );
 
     private final RagEvaluationDatasetLoader datasetLoader;
     private final RagEvaluationRunJpaRepository runRepository;
     private final RagEvaluationCaseResultJpaRepository caseRepository;
     private final RagEvaluationRunner runner;
+    private final RedisLockClient lockClient;
+    private final TransactionTemplate transactionTemplate;
     private final ObjectMapper objectMapper;
     private final String serverCommit;
     private final String appContractVersion;
@@ -46,6 +67,8 @@ public class RagEvaluationRunService {
             RagEvaluationRunJpaRepository runRepository,
             RagEvaluationCaseResultJpaRepository caseRepository,
             RagEvaluationRunner runner,
+            RedisLockClient lockClient,
+            TransactionTemplate transactionTemplate,
             ObjectMapper objectMapper,
             @Value("${app.rag.evaluation.server-commit:unknown}") String serverCommit,
             @Value("${app.rag.evaluation.app-contract-version:v1}") String appContractVersion,
@@ -56,6 +79,8 @@ public class RagEvaluationRunService {
         this.runRepository = runRepository;
         this.caseRepository = caseRepository;
         this.runner = runner;
+        this.lockClient = lockClient;
+        this.transactionTemplate = transactionTemplate;
         this.objectMapper = objectMapper;
         this.serverCommit = serverCommit;
         this.appContractVersion = appContractVersion;
@@ -73,8 +98,14 @@ public class RagEvaluationRunService {
         );
     }
 
-    @Transactional
-    public synchronized RunStart start(String datasetVersion, RagEvaluationSplit split, String idempotencyKey) {
+    /**
+     * 평가 실행을 예약한다.
+     *
+     * <p>여러 서버에서 동시에 호출될 수 있다. Redis 락은 멱등키·활성 실행 확인과 QUEUED 저장이
+     * 커밋될 때까지만 유지하고, 활성 실행이 하나뿐이라는 최종 보장은 active_slot UNIQUE 제약이 맡는다.
+     * Redis에 접근할 수 없으면 DB 제약만으로 예약을 진행한다.</p>
+     */
+    public RunStart start(String datasetVersion, RagEvaluationSplit split, String idempotencyKey) {
         if (idempotencyKey == null || idempotencyKey.isBlank()) {
             throw new IllegalArgumentException("Idempotency-Key 헤더는 필수입니다.");
         }
@@ -85,46 +116,121 @@ public class RagEvaluationRunService {
         RagEvaluationDataset dataset = datasetLoader.load(datasetVersion);
         RagEvaluationSplit targetSplit = split == null ? RagEvaluationSplit.DEV : split;
 
-        var existing = runRepository.findByIdempotencyKey(idempotencyKey);
-        if (existing.isPresent()) {
-            RagEvaluationRunEntity run = existing.get();
-            if (run.getIdempotencyExpiresAt() == null || run.getIdempotencyExpiresAt().isAfter(LocalDateTime.now())) {
-                if (!run.getDatasetVersion().equals(dataset.version()) || run.getSplit() != targetSplit) {
-                    throw new IllegalArgumentException("같은 Idempotency-Key로 다른 평가 요청을 보낼 수 없습니다.");
-                }
-                return new RunStart(run.getRunId(), run.getStatus(), true);
+        Optional<RunStart> replay = findReplay(idempotencyKey, dataset, targetSplit);
+        if (replay.isPresent()) {
+            return replay.get();
+        }
+
+        Optional<LockToken> lock = acquireReservationLock();
+        try {
+            return reserve(dataset, targetSplit, idempotencyKey);
+        } catch (DataIntegrityViolationException exception) {
+            if (violates(exception, IDEMPOTENCY_KEY_CONSTRAINT)) {
+                return findReplay(idempotencyKey, dataset, targetSplit).orElseThrow(() -> exception);
             }
+            if (violates(exception, ACTIVE_SLOT_CONSTRAINT)) {
+                throw new RagEvaluationAlreadyRunningException();
+            }
+            throw exception;
+        } finally {
+            lock.ifPresent(this::releaseReservationLock);
+        }
+    }
+
+    private static boolean violates(Throwable exception, String constraintName) {
+        for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
+            String message = cause.getMessage();
+            if (message != null && message.contains(constraintName)) {
+                return true;
+            }
+            if (cause.getCause() == cause) {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    private Optional<RunStart> findReplay(
+            String idempotencyKey,
+            RagEvaluationDataset dataset,
+            RagEvaluationSplit targetSplit
+    ) {
+        return transactionTemplate.execute(status -> runRepository.findByIdempotencyKey(idempotencyKey)
+                .map(run -> replay(run, dataset, targetSplit)));
+    }
+
+    private RunStart replay(RagEvaluationRunEntity run, RagEvaluationDataset dataset, RagEvaluationSplit targetSplit) {
+        if (run.getIdempotencyExpiresAt() != null && !run.getIdempotencyExpiresAt().isAfter(LocalDateTime.now())) {
             throw new IllegalArgumentException("Idempotency-Key가 만료되었습니다. 새 키를 사용하세요.");
         }
-
-        Collection<RagEvaluationStatus> activeStatuses = List.of(
-                RagEvaluationStatus.QUEUED,
-                RagEvaluationStatus.RUNNING
-        );
-        if (runRepository.findFirstByStatusInOrderByCreatedAtDesc(activeStatuses).isPresent()) {
-            throw new IllegalStateException("이미 실행 중인 RAG 평가가 있습니다.");
+        if (!run.getDatasetVersion().equals(dataset.version()) || run.getSplit() != targetSplit) {
+            throw new IllegalArgumentException("같은 Idempotency-Key로 다른 평가 요청을 보낼 수 없습니다.");
         }
+        return new RunStart(run.getRunId(), run.getStatus(), true);
+    }
 
-        String runId = UUID.randomUUID().toString();
-        RagEvaluationRunEntity run = RagEvaluationRunEntity.queued(
-                runId,
-                dataset.version(),
-                targetSplit,
-                idempotencyKey,
-                LocalDateTime.now().plusHours(24),
-                serverCommit,
-                appContractVersion,
-                vectorIndexVersion,
-                modelMetadata
-        );
-        runRepository.saveAndFlush(run);
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                runner.execute(runId, dataset, targetSplit);
+    private RunStart reserve(RagEvaluationDataset dataset, RagEvaluationSplit targetSplit, String idempotencyKey) {
+        return transactionTemplate.execute(status -> {
+            var existing = runRepository.findByIdempotencyKey(idempotencyKey);
+            if (existing.isPresent()) {
+                return replay(existing.get(), dataset, targetSplit);
             }
+            if (runRepository.findFirstByStatusInOrderByCreatedAtDesc(ACTIVE_STATUSES).isPresent()) {
+                throw new RagEvaluationAlreadyRunningException();
+            }
+
+            String runId = UUID.randomUUID().toString();
+            runRepository.saveAndFlush(RagEvaluationRunEntity.queued(
+                    runId,
+                    dataset.version(),
+                    targetSplit,
+                    idempotencyKey,
+                    LocalDateTime.now().plusHours(24),
+                    serverCommit,
+                    appContractVersion,
+                    vectorIndexVersion,
+                    modelMetadata
+            ));
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    runner.execute(runId, dataset, targetSplit);
+                }
+            });
+            return new RunStart(runId, RagEvaluationStatus.QUEUED, false);
         });
-        return new RunStart(runId, RagEvaluationStatus.QUEUED, false);
+    }
+
+    private Optional<LockToken> acquireReservationLock() {
+        long deadline = System.nanoTime() + RESERVATION_LOCK_WAIT.toNanos();
+        try {
+            while (true) {
+                Optional<LockToken> lock = lockClient.tryAcquire(RESERVATION_LOCK_KEY, RESERVATION_LOCK_TTL);
+                if (lock.isPresent()) {
+                    return lock;
+                }
+                if (System.nanoTime() >= deadline) {
+                    throw new RagEvaluationAlreadyRunningException();
+                }
+                Thread.sleep(RESERVATION_LOCK_RETRY_INTERVAL);
+            }
+        } catch (RedisLockUnavailableException exception) {
+            log.warn("Redis lock unavailable; reserving RAG evaluation with database guard only.", exception);
+            return Optional.empty();
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new RagEvaluationAlreadyRunningException();
+        }
+    }
+
+    private void releaseReservationLock(LockToken lock) {
+        try {
+            if (!lockClient.release(lock)) {
+                log.warn("RAG evaluation reservation lock was already released or expired. key={}", lock.key());
+            }
+        } catch (RedisLockUnavailableException exception) {
+            log.warn("Failed to release RAG evaluation reservation lock; it will expire by TTL.", exception);
+        }
     }
 
     @Transactional(readOnly = true)

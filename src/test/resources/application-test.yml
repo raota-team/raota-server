@@ -58,6 +58,11 @@ spring:
             user-name-attribute: id
 
 app:
+  rag:
+    evaluation:
+      # 통합 테스트가 heartbeat 시각을 직접 조작하므로 주기 복구 작업은 끈다.
+      stale-recovery:
+        enabled: false
   auth:
     issuer: raota-test
     access-token-secret: test-raota-access-token-secret-key-1234567890

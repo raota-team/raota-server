@@ -22,6 +22,8 @@ import org.hibernate.type.SqlTypes;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class RagEvaluationRunEntity {
 
+    public static final String ACTIVE_SLOT = "ACTIVE";
+
     @Id
     @Column(name = "run_id", length = 36, nullable = false)
     private String runId;
@@ -69,6 +71,12 @@ public class RagEvaluationRunEntity {
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
+    @Column(name = "heartbeat_at")
+    private LocalDateTime heartbeatAt;
+
+    @Column(name = "active_slot", length = 16)
+    private String activeSlot;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -94,6 +102,8 @@ public class RagEvaluationRunEntity {
         this.appContractVersion = appContractVersion;
         this.vectorIndexVersion = vectorIndexVersion;
         this.modelMetadata = modelMetadata;
+        this.activeSlot = ACTIVE_SLOT;
+        this.heartbeatAt = LocalDateTime.now();
     }
 
     public static RagEvaluationRunEntity queued(
@@ -120,25 +130,8 @@ public class RagEvaluationRunEntity {
         );
     }
 
-    public void markRunning() {
-        this.status = RagEvaluationStatus.RUNNING;
-        this.startedAt = LocalDateTime.now();
-    }
-
-    public void markReviewRequired(String aggregateMetrics) {
-        this.status = RagEvaluationStatus.REVIEW_REQUIRED;
-        this.aggregateMetrics = aggregateMetrics;
-        this.completedAt = LocalDateTime.now();
-    }
-
     public void markCompleted() {
         this.status = RagEvaluationStatus.COMPLETED;
-        this.completedAt = LocalDateTime.now();
-    }
-
-    public void markFailed(String fatalError) {
-        this.status = RagEvaluationStatus.FAILED;
-        this.fatalError = fatalError;
         this.completedAt = LocalDateTime.now();
     }
 }
