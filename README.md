@@ -66,12 +66,14 @@ Spring Modulith 기반 기능 중심 모듈러 모놀리스입니다. 모듈별 
 
 ```text
 src/main/java/com/raota
-├── account     # 인증, 회원, 관리자 회원 관리
-├── agent       # AI 검색·추천, RAG 인덱싱, RAG 평가
-├── community   # 게시글, 댓글, 좋아요
-├── ramenlog    # 라멘 로그
-├── ramenshop   # 라멘 가게, 메뉴, 북마크, 제보
-└── global      # 기능에 종속되지 않는 공통 기술 코드
+├── web             # 기존 웹 서비스(v1)
+│   ├── account     # 인증, 회원, 관리자 회원 관리
+│   ├── community   # 게시글, 댓글, 좋아요
+│   ├── ramenlog    # 라멘 로그
+│   └── ramenshop   # 라멘 가게, 메뉴, 북마크, 제보
+├── mobile          # 모바일 앱 기준 v2 도메인
+├── agent           # AI 검색·추천, RAG 인덱싱, RAG 평가 (웹·앱 공용)
+└── global          # 기능에 종속되지 않는 공통 기술 코드
 ```
 
 ## 배포

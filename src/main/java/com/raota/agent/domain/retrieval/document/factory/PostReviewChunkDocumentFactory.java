@@ -1,8 +1,8 @@
 package com.raota.agent.domain.retrieval.document.factory;
 
-import com.raota.community.domain.model.Post;
-import com.raota.community.domain.model.PostCategory;
-import com.raota.ramenshop.domain.model.RamenShop;
+import com.raota.web.community.domain.model.Post;
+import com.raota.web.community.domain.model.PostCategory;
+import com.raota.web.ramenshop.domain.model.RamenShop;
 import com.raota.agent.domain.retrieval.document.RetrievalDocumentFactory;
 import com.raota.agent.domain.retrieval.document.RetrievalDocumentSource;
 import com.raota.agent.domain.retrieval.document.RetrievalDocumentType;

@@ -3,7 +3,7 @@ package com.raota.agent.application.recommendation;
 import com.raota.agent.application.recommendation.dto.AiReviewSummaryResult;
 import com.raota.agent.application.recommendation.query.ReviewSummaryQuery;
 import com.raota.agent.application.ramenshop.search.RamenShopReader;
-import com.raota.ramenshop.domain.model.RamenShop;
+import com.raota.web.ramenshop.domain.model.RamenShop;
 import com.raota.agent.domain.retrieval.document.RetrievalDocumentFilters;
 import com.raota.agent.domain.retrieval.document.RetrievalMetadataKeys;
 import com.raota.global.file.FileUploader;

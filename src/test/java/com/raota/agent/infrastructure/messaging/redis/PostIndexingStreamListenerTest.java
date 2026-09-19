@@ -3,7 +3,7 @@ package com.raota.agent.infrastructure.messaging.redis;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.raota.community.domain.event.PostIndexingEvent;
+import com.raota.web.community.domain.event.PostIndexingEvent;
 import com.raota.agent.infrastructure.messaging.redis.PostIndexingStreamListener;
 import com.raota.agent.application.retrieval.RetrievalIndexingService;
 import java.util.Collections;

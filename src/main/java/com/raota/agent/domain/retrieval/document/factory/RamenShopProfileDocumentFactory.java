@@ -1,11 +1,11 @@
 package com.raota.agent.domain.retrieval.document.factory;
 
-import com.raota.ramenshop.domain.model.Address;
-import com.raota.ramenshop.domain.model.BusinessHours;
-import com.raota.ramenshop.domain.model.EventMenu;
-import com.raota.ramenshop.domain.model.NormalMenu;
-import com.raota.ramenshop.domain.model.RamenShop;
-import com.raota.ramenshop.domain.model.ShopStats;
+import com.raota.web.ramenshop.domain.model.Address;
+import com.raota.web.ramenshop.domain.model.BusinessHours;
+import com.raota.web.ramenshop.domain.model.EventMenu;
+import com.raota.web.ramenshop.domain.model.NormalMenu;
+import com.raota.web.ramenshop.domain.model.RamenShop;
+import com.raota.web.ramenshop.domain.model.ShopStats;
 import com.raota.agent.domain.retrieval.document.RetrievalDocumentFactory;
 import com.raota.agent.domain.retrieval.document.RetrievalDocumentSource;
 import com.raota.agent.domain.retrieval.document.RetrievalDocumentType;

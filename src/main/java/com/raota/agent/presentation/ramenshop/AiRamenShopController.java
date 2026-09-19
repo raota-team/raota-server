@@ -1,6 +1,6 @@
 package com.raota.agent.presentation.ramenshop;
 
-import com.raota.account.infrastructure.auth.LoginMember;
+import com.raota.web.account.infrastructure.auth.LoginMember;
 import com.raota.agent.application.ramenshop.command.AiRamenShopSearchCommand;
 import com.raota.agent.application.ramenshop.query.RamenShopComparisonQuery;
 import com.raota.agent.application.ramenshop.result.AiRamenShopSearchResult;

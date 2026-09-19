@@ -9,7 +9,7 @@ import com.raota.agent.application.evaluation.RagEvaluationRunService.ReviewComm
 import com.raota.agent.application.evaluation.RagEvaluationRunService.RunStart;
 import com.raota.agent.application.evaluation.RagEvaluationRunService.RunView;
 import com.raota.agent.application.evaluation.RagEvaluationSplit;
-import com.raota.account.infrastructure.auth.LoginMember;
+import com.raota.web.account.infrastructure.auth.LoginMember;
 import com.raota.global.presentation.common.ApiResponse;
 import com.raota.global.presentation.common.PageResponse;
 import jakarta.validation.Valid;

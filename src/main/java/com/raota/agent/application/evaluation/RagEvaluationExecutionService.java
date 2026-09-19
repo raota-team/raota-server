@@ -5,7 +5,7 @@ import tools.jackson.databind.ObjectMapper;
 import com.raota.agent.infrastructure.persistence.evaluation.RagEvaluationCaseResultJpaRepository;
 import com.raota.agent.infrastructure.persistence.evaluation.RagEvaluationRunJpaRepository;
 import com.raota.agent.infrastructure.persistence.evaluation.entity.RagEvaluationCaseResultEntity;
-import com.raota.ramenshop.domain.repository.RamenShopRepository;
+import com.raota.web.ramenshop.domain.repository.RamenShopRepository;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
