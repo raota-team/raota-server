@@ -8,7 +8,7 @@ import com.raota.agent.application.ramenshop.result.RamenShopComparisonDocument;
 import com.raota.agent.application.ramenshop.result.RamenShopComparisonResult;
 import com.raota.agent.application.ramenshop.search.RamenShopComparisonSearchPolicy;
 import com.raota.agent.application.ramenshop.search.RamenShopReader;
-import com.raota.ramenshop.domain.model.RamenShop;
+import com.raota.web.ramenshop.domain.model.RamenShop;
 import com.raota.agent.domain.retrieval.document.RetrievalMetadataKeys;
 import java.util.List;
 import java.util.Objects;

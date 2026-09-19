@@ -1,7 +1,7 @@
 package com.raota.agent.application.ramenshop.service;
 
-import com.raota.ramenshop.application.service.BookmarkService;
-import com.raota.ramenshop.application.port.FileUrlPort;
+import com.raota.web.ramenshop.application.service.BookmarkService;
+import com.raota.web.ramenshop.application.port.FileUrlPort;
 import com.raota.agent.application.ramenshop.command.AiRamenShopSearchCommand;
 import com.raota.agent.application.ramenshop.port.RamenShopSearchDocumentPort;
 import com.raota.agent.application.ramenshop.query.ParsedAiRamenShopSearchQuery;
@@ -9,8 +9,8 @@ import com.raota.agent.application.ramenshop.result.AiRamenShopSearchHit;
 import com.raota.agent.application.ramenshop.result.AiRamenShopSearchResult;
 import com.raota.agent.application.ramenshop.search.AiRamenShopSearchQueryParser;
 import com.raota.agent.application.ramenshop.search.AiRamenShopSearchReranker;
-import com.raota.ramenshop.domain.model.RamenShop;
-import com.raota.ramenshop.domain.repository.RamenShopRepository;
+import com.raota.web.ramenshop.domain.model.RamenShop;
+import com.raota.web.ramenshop.domain.repository.RamenShopRepository;
 import java.util.List;
 import org.springframework.stereotype.Service;
 

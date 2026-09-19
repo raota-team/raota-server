@@ -1,7 +1,7 @@
 package com.raota.agent.application.ramenshop.search;
 
-import com.raota.ramenshop.domain.model.RamenShop;
-import com.raota.ramenshop.domain.repository.RamenShopRepository;
+import com.raota.web.ramenshop.domain.model.RamenShop;
+import com.raota.web.ramenshop.domain.repository.RamenShopRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import org.springframework.stereotype.Component;

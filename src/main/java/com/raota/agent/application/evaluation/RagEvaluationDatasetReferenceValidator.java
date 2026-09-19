@@ -1,6 +1,6 @@
 package com.raota.agent.application.evaluation;
 
-import com.raota.ramenshop.domain.repository.RamenShopRepository;
+import com.raota.web.ramenshop.domain.repository.RamenShopRepository;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Component;

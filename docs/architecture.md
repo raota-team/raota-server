@@ -4,17 +4,21 @@
 
 ## 모듈 구조
 
-최상위 패키지는 기술 계층이 아니라 기능 소유권을 나타낸다.
+최상위 패키지는 네 개다. `web`과 `mobile`은 모듈을 담는 묶음 패키지이고, 그 아래 도메인 패키지가 각각 모듈이다.
 
 ```text
 com.raota
-├── account       # 인증, 회원, 관리자 회원 관리
-├── agent         # AI 검색, 추천, RAG, 벡터 인덱싱, RAG 평가
-├── community     # 게시글, 댓글, 좋아요
-├── ramenlog      # 라멘 로그, 인증 사진
-├── ramenshop     # 라멘 가게, 메뉴, 북마크, 신고
-└── global        # 기능에 종속되지 않는 공통 기술 코드
+├── web             # 기존 웹 서비스(v1). v1 종료 시 통째로 제거
+│   ├── account     # 인증, 회원, 관리자 회원 관리
+│   ├── community   # 게시글, 댓글, 좋아요
+│   ├── ramenlog    # 라멘 로그, 인증 사진
+│   └── ramenshop   # 라멘 가게, 메뉴, 북마크, 신고
+├── mobile          # 모바일 앱 기준 v2 도메인(/api/v2, tb_v2_*)
+├── agent           # AI 검색, 추천, RAG, 벡터 인덱싱, RAG 평가 (웹·앱 공용)
+└── global          # 기능에 종속되지 않는 공통 기술 코드
 ```
+
+Modulith 모듈 식별자는 `web.account`, `web.community`처럼 묶음 패키지 이름을 포함한다.
 
 각 기능 모듈 내부에서는 필요한 계층만 사용한다.
 
@@ -39,8 +43,10 @@ com.raota.<module>
 
 ```java
 @org.springframework.modulith.ApplicationModule
-package com.raota.account;
+package com.raota.web.account;
 ```
+
+`web`과 `mobile` 자체에는 `@ApplicationModule`을 붙이지 않는다. 새 v2 도메인은 `com.raota.mobile.<domain>`에 모듈로 등록한다.
 
 `global`은 과도기 공통 기반이므로 OPEN 모듈로 등록한다.
 
@@ -63,6 +69,8 @@ infrastructure -> application/domain interface
 모듈 간에는 다음 규칙을 지킨다.
 
 - 모든 기능 모듈은 `global`을 사용할 수 있다.
+- `web`과 `mobile`은 서로 참조하지 않는다. v2 이관 코드가 v1 데이터를 읽을 때는 `web` 클래스가 아니라 v1 테이블을 직접 읽는다. `ModulithArchitectureTest`가 검사한다.
+- `agent`는 웹·앱 공용이다. 지금은 `web` 모듈의 공개 API를 사용하며, v2 연결(P05.03)과 Phase 6에서 `mobile` 공개 API로 옮긴다.
 - `global`은 어떤 기능 모듈도 참조하지 않는다.
 - 다른 기능 모듈은 상대 모듈이 `@NamedInterface`로 공개한 패키지만 참조한다.
 - 모듈 간 순환 의존성을 만들지 않는다.
@@ -74,7 +82,7 @@ infrastructure -> application/domain interface
 
 ```java
 @org.springframework.modulith.NamedInterface("member-application")
-package com.raota.account.application.member;
+package com.raota.web.account.application.member;
 ```
 
 `@NamedInterface`는 다른 모듈이 사용해야 하는 안정된 interface에만 둔다. JPA entity나 repository 전체 공개는 과도기 호환에 한정하고 query, result 또는 facade로 점진적으로 축소한다.

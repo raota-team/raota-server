@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.raota.ramenshop.domain.repository.RamenShopRepository;
+import com.raota.web.ramenshop.domain.repository.RamenShopRepository;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;

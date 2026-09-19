@@ -3,7 +3,7 @@ package com.raota.agent.application.recommendation;
 import com.raota.agent.application.recommendation.dto.AiFollowUpChatResult;
 import com.raota.agent.application.recommendation.query.FollowUpChatQuery;
 import com.raota.agent.application.ramenshop.search.RamenShopReader;
-import com.raota.ramenshop.domain.model.RamenShop;
+import com.raota.web.ramenshop.domain.model.RamenShop;
 import com.raota.agent.domain.retrieval.document.RetrievalDocumentFilters;
 import com.raota.agent.domain.retrieval.document.RetrievalMetadataKeys;
 import com.raota.agent.presentation.recommendation.response.AiChatResponse;

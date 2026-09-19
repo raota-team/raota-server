@@ -1,7 +1,7 @@
 package com.raota.agent.infrastructure.messaging.redis;
 
 
-import com.raota.community.domain.event.PostIndexingEvent;
+import com.raota.web.community.domain.event.PostIndexingEvent;
 import com.raota.agent.application.retrieval.RetrievalIndexingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -6,9 +6,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.raota.agent.application.retrieval.RetrievalIndexingService;
-import com.raota.community.domain.model.Post;
-import com.raota.community.domain.repository.PostRepository;
-import com.raota.ramenshop.domain.repository.RamenShopRepository;
+import com.raota.web.community.domain.model.Post;
+import com.raota.web.community.domain.repository.PostRepository;
+import com.raota.web.ramenshop.domain.repository.RamenShopRepository;
 import com.raota.agent.domain.retrieval.document.factory.PostReviewChunkDocumentFactory;
 import com.raota.agent.domain.retrieval.document.factory.RamenShopProfileDocumentFactory;
 import java.util.List;

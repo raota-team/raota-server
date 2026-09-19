@@ -1,6 +1,6 @@
 package com.raota.agent.application.ramenshop.search;
 
-import com.raota.ramenshop.domain.model.RamenShop;
+import com.raota.web.ramenshop.domain.model.RamenShop;
 import org.springframework.stereotype.Component;
 
 @Component
