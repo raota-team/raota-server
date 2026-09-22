@@ -41,3 +41,6 @@ out/
 
 # Local archives generated from personal account exports
 /archive/
+
+# macOS
+.DS_Store

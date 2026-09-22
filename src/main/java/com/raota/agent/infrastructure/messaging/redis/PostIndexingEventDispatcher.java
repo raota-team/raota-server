@@ -1,7 +1,7 @@
 package com.raota.agent.infrastructure.messaging.redis;
 
 import com.raota.web.community.domain.event.PostIndexingEvent;
-import com.raota.global.messaging.MessagePublisher;
+import com.raota.global.presentation.messaging.MessagePublisher;
 import com.raota.agent.infrastructure.messaging.MessagingTopics;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

@@ -1,6 +1,6 @@
 package com.raota.agent.infrastructure.messaging.redis;
 
-import com.raota.global.messaging.MessagePublisher;
+import com.raota.global.presentation.messaging.MessagePublisher;
 import java.util.Collections;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

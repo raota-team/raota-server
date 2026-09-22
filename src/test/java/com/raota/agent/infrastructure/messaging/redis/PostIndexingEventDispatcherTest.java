@@ -3,8 +3,7 @@ package com.raota.agent.infrastructure.messaging.redis;
 import static org.mockito.Mockito.verify;
 
 import com.raota.web.community.domain.event.PostIndexingEvent;
-import com.raota.agent.infrastructure.messaging.redis.PostIndexingEventDispatcher;
-import com.raota.global.messaging.MessagePublisher;
+import com.raota.global.presentation.messaging.MessagePublisher;
 import com.raota.agent.infrastructure.messaging.MessagingTopics;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
