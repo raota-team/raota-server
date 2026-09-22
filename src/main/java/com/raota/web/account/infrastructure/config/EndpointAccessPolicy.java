@@ -34,6 +34,9 @@ public final class EndpointAccessPolicy {
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/actuator/health/**"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/actuator/prometheus"),
 
+            // Mobile v2 endpoints (인가는 MobileSecurityConfig의 /api/v2 체인이 수행한다)
+            rule(AccessLevel.PUBLIC, HttpMethod.GET, "/api/v2/ping"),
+
             // Public application endpoints
             rule(AccessLevel.PUBLIC, HttpMethod.POST, "/auth/refresh"),
             rule(AccessLevel.PUBLIC, HttpMethod.POST, "/auth/logout"),

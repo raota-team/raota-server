@@ -12,8 +12,11 @@ import jakarta.servlet.DispatcherType;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -36,7 +39,11 @@ public class SecurityConfig {
     private final RestAccessDeniedHandler restAccessDeniedHandler;
     private final AuthProperties authProperties;
 
+    /**
+     * v1 보안 체인. 모든 경로를 받으므로 `/api/v2` 체인보다 뒤에 평가되어야 한다.
+     */
     @Bean
+    @Order(Ordered.LOWEST_PRECEDENCE)
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(Customizer.withDefaults())
@@ -66,6 +73,22 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    /**
+     * v1 JWT 필터가 보안 체인 밖에서도 실행되지 않도록 서블릿 자동 등록을 끈다.
+     *
+     * <p>{@code @Component}인 {@code OncePerRequestFilter}는 Spring Boot가 일반 서블릿 필터로도
+     * 등록한다. 그대로 두면 v1 토큰 검증이 `/api/v2` 요청에도 적용된다. 체인에는
+     * {@code addFilterBefore}로 여전히 등록되므로 v1 동작은 그대로다.</p>
+     */
+    @Bean
+    FilterRegistrationBean<JwtAuthenticationFilter> jwtAuthenticationFilterRegistration(
+            JwtAuthenticationFilter filter
+    ) {
+        FilterRegistrationBean<JwtAuthenticationFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
     }
 
     @Bean

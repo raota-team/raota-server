@@ -39,6 +39,7 @@ class ModulithArchitectureTest {
                 Set.of(
                         "global",
                         "agent",
+                        "mobile.common",
                         "web.account",
                         "web.community",
                         "web.ramenlog",
