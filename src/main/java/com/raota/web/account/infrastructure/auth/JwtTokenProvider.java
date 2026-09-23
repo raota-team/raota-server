@@ -1,6 +1,7 @@
 package com.raota.web.account.infrastructure.auth;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -42,6 +43,8 @@ public class JwtTokenProvider {
                     .parseSignedClaims(token)
                     .getPayload();
             return Long.valueOf(claims.getSubject());
+        } catch (ExpiredJwtException exception) {
+            throw new ExpiredJwtAuthenticationException(exception);
         } catch (RuntimeException exception) {
             throw new JwtAuthenticationException("유효하지 않은 액세스 토큰입니다.", exception);
         }
