@@ -44,6 +44,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RetrievalIndexingService {
 
     private static final int EXTERNAL_REVIEW_BATCH_SIZE = 64;
+
     private static final String EXTERNAL_REVIEW_UPSERT_SQL = """
             merge into SPRING_AI_VECTORS target
             using (select ? id, ? content, ? metadata, ? embedding from dual) source
@@ -51,6 +52,7 @@ public class RetrievalIndexingService {
             when matched then update set target.content = source.content, target.metadata = source.metadata, target.embedding = source.embedding
             when not matched then insert (target.id, target.content, target.metadata, target.embedding) values (source.id, source.content, source.metadata, source.embedding)
             """;
+
     private static final String SHOP_REVIEW_DOCUMENTS_SQL = """
             select
                 content,
@@ -64,25 +66,28 @@ public class RetrievalIndexingService {
             """;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+
     private final OracleJsonFactory oracleJsonFactory = new OracleJsonFactory();
 
     private final RamenShopRepository ramenShopRepository;
+
     private final RamenShopProfileDocumentFactory ramenShopProfileDocumentFactory;
+
     private final PostRepository postRepository;
+
     private final PostReviewChunkDocumentFactory postReviewChunkDocumentFactory;
+
     private final VectorStore vectorStore;
+
     private final EmbeddingModel embeddingModel;
+
     private final JdbcTemplate oracleVectorJdbcTemplate;
 
-    public RetrievalIndexingService(
-            RamenShopRepository ramenShopRepository,
-            RamenShopProfileDocumentFactory ramenShopProfileDocumentFactory,
-            PostRepository postRepository,
-            PostReviewChunkDocumentFactory postReviewChunkDocumentFactory,
-            VectorStore vectorStore,
+    public RetrievalIndexingService(RamenShopRepository ramenShopRepository,
+            RamenShopProfileDocumentFactory ramenShopProfileDocumentFactory, PostRepository postRepository,
+            PostReviewChunkDocumentFactory postReviewChunkDocumentFactory, VectorStore vectorStore,
             EmbeddingModel embeddingModel,
-            @Qualifier("oracleVectorJdbcTemplate") JdbcTemplate oracleVectorJdbcTemplate
-    ) {
+            @Qualifier("oracleVectorJdbcTemplate") JdbcTemplate oracleVectorJdbcTemplate) {
         this.ramenShopRepository = ramenShopRepository;
         this.ramenShopProfileDocumentFactory = ramenShopProfileDocumentFactory;
         this.postRepository = postRepository;
@@ -102,7 +107,7 @@ public class RetrievalIndexingService {
 
     public void indexShop(Long shopId) {
         RamenShop shop = ramenShopRepository.findById(shopId)
-                .orElseThrow(() -> new IllegalArgumentException("라멘샵을 찾을 수 없습니다. id=" + shopId));
+            .orElseThrow(() -> new IllegalArgumentException("라멘샵을 찾을 수 없습니다. id=" + shopId));
 
         addDocuments(ramenShopProfileDocumentFactory.create(shop));
     }
@@ -110,16 +115,10 @@ public class RetrievalIndexingService {
     public void deleteAllShops() {
         FilterExpressionBuilder builder = new FilterExpressionBuilder();
 
-        var filter = builder.and(
-                builder.eq(
-                        RetrievalMetadataKeys.DOCUMENT_TYPE,
-                        RetrievalDocumentType.SHOP_PROFILE.name()
-                ),
-                builder.eq(
-                        RetrievalMetadataKeys.SOURCE,
-                        RetrievalDocumentSource.RAMEN_SHOP.name()
-                )
-        ).build();
+        var filter = builder
+            .and(builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.SHOP_PROFILE.name()),
+                    builder.eq(RetrievalMetadataKeys.SOURCE, RetrievalDocumentSource.RAMEN_SHOP.name()))
+            .build();
 
         vectorStore.delete(filter);
     }
@@ -132,31 +131,19 @@ public class RetrievalIndexingService {
         FilterExpressionBuilder builder = new FilterExpressionBuilder();
 
         var filter = builder.and(
-                builder.and(
-                        builder.eq(
-                                RetrievalMetadataKeys.DOCUMENT_TYPE,
-                                RetrievalDocumentType.SHOP_PROFILE.name()
-                        ),
-                        builder.eq(
-                                RetrievalMetadataKeys.SOURCE,
-                                RetrievalDocumentSource.RAMEN_SHOP.name()
-                        )
-                ),
-                builder.eq(
-                        RetrievalMetadataKeys.SHOP_ID,
-                        String.valueOf(shopId)
-                )
-        ).build();
+                builder.and(builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.SHOP_PROFILE.name()),
+                        builder.eq(RetrievalMetadataKeys.SOURCE, RetrievalDocumentSource.RAMEN_SHOP.name())),
+                builder.eq(RetrievalMetadataKeys.SHOP_ID, String.valueOf(shopId)))
+            .build();
 
         vectorStore.delete(filter);
     }
 
     public void indexPost(Long postId) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다. id=" + postId));
+            .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다. id=" + postId));
 
-        RamenShop shop = post.getRamenShopId() == null
-                ? null
+        RamenShop shop = post.getRamenShopId() == null ? null
                 : ramenShopRepository.findById(post.getRamenShopId()).orElse(null);
 
         deletePost(postId);
@@ -173,39 +160,23 @@ public class RetrievalIndexingService {
         FilterExpressionBuilder builder = new FilterExpressionBuilder();
 
         var filter = builder.and(
-                builder.and(
-                        builder.eq(
-                                RetrievalMetadataKeys.DOCUMENT_TYPE,
-                                RetrievalDocumentType.REVIEW_CHUNK.name()
-                        ),
-                        builder.eq(
-                                RetrievalMetadataKeys.SOURCE,
-                                RetrievalDocumentSource.COMMUNITY_POST.name()
-                        )
-                ),
-                builder.eq(
-                        RetrievalMetadataKeys.SOURCE_ID,
-                        String.valueOf(postId)
-                )
-        ).build();
+                builder.and(builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.REVIEW_CHUNK.name()),
+                        builder.eq(RetrievalMetadataKeys.SOURCE, RetrievalDocumentSource.COMMUNITY_POST.name())),
+                builder.eq(RetrievalMetadataKeys.SOURCE_ID, String.valueOf(postId)))
+            .build();
 
         vectorStore.delete(filter);
     }
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public ExternalReviewIndexResult reindexCatchtableReviews(Path jsonlPath) {
-        ExternalReviewDocuments externalReviewDocuments = readExternalReviewDocuments(
-                jsonlPath,
-                RetrievalDocumentSource.CATCHTABLE
-        );
+        ExternalReviewDocuments externalReviewDocuments = readExternalReviewDocuments(jsonlPath,
+                RetrievalDocumentSource.CATCHTABLE);
 
         addExternalReviewDocuments(externalReviewDocuments.documents());
 
-        return new ExternalReviewIndexResult(
-                RetrievalDocumentSource.CATCHTABLE.name(),
-                externalReviewDocuments.documents().size(),
-                externalReviewDocuments.skippedCount()
-        );
+        return new ExternalReviewIndexResult(RetrievalDocumentSource.CATCHTABLE.name(),
+                externalReviewDocuments.documents().size(), externalReviewDocuments.skippedCount());
     }
 
     public void deleteExternalReviews(RetrievalDocumentSource source) {
@@ -215,26 +186,16 @@ public class RetrievalIndexingService {
 
         FilterExpressionBuilder builder = new FilterExpressionBuilder();
 
-        var filter = builder.and(
-                builder.eq(
-                        RetrievalMetadataKeys.DOCUMENT_TYPE,
-                        RetrievalDocumentType.EXTERNAL_REVIEW_CHUNK.name()
-                ),
-                builder.eq(
-                        RetrievalMetadataKeys.SOURCE,
-                        source.name()
-                )
-        ).build();
+        var filter = builder
+            .and(builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.EXTERNAL_REVIEW_CHUNK.name()),
+                    builder.eq(RetrievalMetadataKeys.SOURCE, source.name()))
+            .build();
 
         vectorStore.delete(filter);
     }
 
-    public List<RetrievalDocumentResult> searchShopReviewDocuments(
-            Long shopId,
-            String query,
-            int topK,
-            double similarityThreshold
-    ) {
+    public List<RetrievalDocumentResult> searchShopReviewDocuments(Long shopId, String query, int topK,
+            double similarityThreshold) {
         if (shopId == null) {
             throw new IllegalArgumentException("shopId가 필요합니다.");
         }
@@ -244,44 +205,31 @@ public class RetrievalIndexingService {
             return exactShopDocuments;
         }
 
-        List<Document> documents = vectorStore.similaritySearch(
-                SearchRequest.builder()
-                        .query(query == null || query.isBlank() ? "라멘 리뷰 맛 국물 면 메뉴 분위기" : query)
-                        .topK(topK)
-                        .similarityThreshold(similarityThreshold)
-                        .filterExpression(RetrievalDocumentFilters.externalReviewChunksForShop(shopId))
-                        .build()
-        );
+        List<Document> documents = vectorStore.similaritySearch(SearchRequest.builder()
+            .query(query == null || query.isBlank() ? "라멘 리뷰 맛 국물 면 메뉴 분위기" : query)
+            .topK(topK)
+            .similarityThreshold(similarityThreshold)
+            .filterExpression(RetrievalDocumentFilters.externalReviewChunksForShop(shopId))
+            .build());
 
         if (documents == null || documents.isEmpty()) {
             return List.of();
         }
 
         return documents.stream()
-                .filter(document -> hasShopId(document, shopId))
-                .map(document -> new RetrievalDocumentResult(
-                        document.getText(),
-                        document.getScore(),
-                        document.getMetadata()
-                ))
-                .toList();
+            .filter(document -> hasShopId(document, shopId))
+            .map(document -> new RetrievalDocumentResult(document.getText(), document.getScore(),
+                    document.getMetadata()))
+            .toList();
     }
 
     private List<RetrievalDocumentResult> findShopReviewDocumentsByMetadata(Long shopId, int topK) {
         int limit = Math.max(1, topK);
-        return oracleVectorJdbcTemplate.query(
-                SHOP_REVIEW_DOCUMENTS_SQL,
-                (resultSet, rowNum) -> new RetrievalDocumentResult(
-                        resultSet.getString("content"),
-                        null,
-                        readMetadataJson(resultSet.getString("metadata_json"))
-                ),
-                String.valueOf(shopId),
-                RetrievalDocumentType.EXTERNAL_REVIEW_CHUNK.name(),
-                RetrievalDocumentSource.CATCHTABLE.name(),
-                RetrievalDocumentSource.NAVER_REVIEW.name(),
-                limit
-        );
+        return oracleVectorJdbcTemplate.query(SHOP_REVIEW_DOCUMENTS_SQL,
+                (resultSet, rowNum) -> new RetrievalDocumentResult(resultSet.getString("content"), null,
+                        readMetadataJson(resultSet.getString("metadata_json"))),
+                String.valueOf(shopId), RetrievalDocumentType.EXTERNAL_REVIEW_CHUNK.name(),
+                RetrievalDocumentSource.CATCHTABLE.name(), RetrievalDocumentSource.NAVER_REVIEW.name(), limit);
     }
 
     private Map<String, Object> readMetadataJson(String metadataJson) {
@@ -291,7 +239,8 @@ public class RetrievalIndexingService {
         try {
             return objectMapper.readValue(metadataJson, new TypeReference<>() {
             });
-        } catch (JsonProcessingException e) {
+        }
+        catch (JsonProcessingException e) {
             return Map.of();
         }
     }
@@ -327,15 +276,14 @@ public class RetrievalIndexingService {
                 for (int start = 0; start < documents.size(); start += EXTERNAL_REVIEW_BATCH_SIZE) {
                     int end = Math.min(start + EXTERNAL_REVIEW_BATCH_SIZE, documents.size());
                     List<Document> batch = documents.subList(start, end);
-                    List<float[]> embeddings = embeddingModel.embed(batch.stream()
-                            .map(Document::getText)
-                            .toList());
+                    List<float[]> embeddings = embeddingModel.embed(batch.stream().map(Document::getText).toList());
 
                     for (int index = 0; index < batch.size(); index++) {
                         upsertExternalReviewDocument(statement, batch.get(index), embeddings.get(index));
                     }
                 }
-            } finally {
+            }
+            finally {
                 connection.setAutoCommit(originalAutoCommit);
             }
 
@@ -377,7 +325,8 @@ public class RetrievalIndexingService {
                 }
                 documents.add(document);
             }
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new IllegalArgumentException("JSONL 파일을 읽을 수 없습니다. path=" + jsonlPath, e);
         }
 
@@ -389,7 +338,8 @@ public class RetrievalIndexingService {
         try {
             rawMetadata = objectMapper.readValue(line, new TypeReference<>() {
             });
-        } catch (JsonProcessingException e) {
+        }
+        catch (JsonProcessingException e) {
             throw new IllegalArgumentException("외부 리뷰 JSONL 라인을 파싱할 수 없습니다.", e);
         }
 
@@ -432,17 +382,23 @@ public class RetrievalIndexingService {
         }
         if (value instanceof String stringValue) {
             generator.write(key, stringValue);
-        } else if (value instanceof Integer integerValue) {
+        }
+        else if (value instanceof Integer integerValue) {
             generator.write(key, integerValue);
-        } else if (value instanceof Long longValue) {
+        }
+        else if (value instanceof Long longValue) {
             generator.write(key, longValue);
-        } else if (value instanceof Float floatValue) {
+        }
+        else if (value instanceof Float floatValue) {
             generator.write(key, floatValue);
-        } else if (value instanceof Double doubleValue) {
+        }
+        else if (value instanceof Double doubleValue) {
             generator.write(key, doubleValue);
-        } else if (value instanceof Boolean booleanValue) {
+        }
+        else if (value instanceof Boolean booleanValue) {
             generator.write(key, booleanValue);
-        } else if (value instanceof List<?> listValue) {
+        }
+        else if (value instanceof List<?> listValue) {
             generator.writeStartArray(key);
             for (Object item : listValue) {
                 if (item != null) {
@@ -450,7 +406,8 @@ public class RetrievalIndexingService {
                 }
             }
             generator.writeEnd();
-        } else {
+        }
+        else {
             generator.write(key, value.toString());
         }
     }

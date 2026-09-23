@@ -8,10 +8,13 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 public class ShopStatDto {
+
     @Schema(example = "3021")
     private int view_count;
+
     @Schema(example = "1250")
     private int visit_count;
+
     @Schema(example = "342")
     private int bookmark_count;
 
@@ -19,14 +22,11 @@ public class ShopStatDto {
         if (stats == null) {
             return new ShopStatDto(0, 0, 0);
         }
-        return new ShopStatDto(
-                stats.viewCount(),
-                stats.visitCount(),
-                stats.bookmarkCount()
-        );
+        return new ShopStatDto(stats.viewCount(), stats.visitCount(), stats.bookmarkCount());
     }
 
     public ShopStatDto withViewCount(int viewCount) {
         return new ShopStatDto(viewCount, visit_count, bookmark_count);
     }
+
 }

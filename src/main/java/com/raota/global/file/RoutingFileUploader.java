@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 이미지 용도에 따라 다른 업로더(OCI vs Cloudinary)를 선택하여 위임하는 브로커 클래스.
+ *
  * @Primary 설정을 통해 시스템 전체에서 기본 FileUploader로 사용됨.
  */
 @Primary
@@ -17,14 +18,13 @@ import org.springframework.web.multipart.MultipartFile;
 public class RoutingFileUploader implements FileUploader {
 
     private final FileUploader ociUploader;
+
     private final FileUploader cloudinaryUploader;
 
     private static final String RAMEN_PROOF_DIR = "ramen-proof";
 
-    public RoutingFileUploader(
-            @Qualifier("imageBucketFileUploader") FileUploader ociUploader,
-            @Qualifier("cloudinaryFileUploader") FileUploader cloudinaryUploader
-    ) {
+    public RoutingFileUploader(@Qualifier("imageBucketFileUploader") FileUploader ociUploader,
+            @Qualifier("cloudinaryFileUploader") FileUploader cloudinaryUploader) {
         this.ociUploader = ociUploader;
         this.cloudinaryUploader = cloudinaryUploader;
     }
@@ -51,7 +51,8 @@ public class RoutingFileUploader implements FileUploader {
     public void delete(String filePath) {
         if (filePath != null && filePath.contains("cloudinary")) {
             cloudinaryUploader.delete(filePath);
-        } else {
+        }
+        else {
             ociUploader.delete(filePath);
         }
     }
@@ -63,4 +64,5 @@ public class RoutingFileUploader implements FileUploader {
         }
         return ociUploader;
     }
+
 }

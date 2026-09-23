@@ -21,6 +21,7 @@ import tools.jackson.databind.json.JsonMapper;
 class MobileFallbackExceptionResolverTest {
 
     private final JsonMapper objectMapper = JsonMapper.builder().build();
+
     private final MobileFallbackExceptionResolver resolver = new MobileFallbackExceptionResolver(objectMapper);
 
     @Test
@@ -32,14 +33,15 @@ class MobileFallbackExceptionResolverTest {
 
         JsonNode body = body(response);
         assertThat(response.getStatus()).isEqualTo(404);
-        assertThat(MediaType.parseMediaType(response.getContentType()).isCompatibleWith(MediaType.APPLICATION_JSON)).isTrue();
+        assertThat(MediaType.parseMediaType(response.getContentType()).isCompatibleWith(MediaType.APPLICATION_JSON))
+            .isTrue();
         assertThat(body.get("success").asBoolean()).isFalse();
         assertThat(body.get("error").get("code").asString()).isEqualTo("RESOURCE_NOT_FOUND");
         assertThat(body.get("error").get("message").asString()).isEqualTo("요청한 API를 찾을 수 없습니다.");
         assertThat(body.get("data").isNull()).isTrue();
         assertThat(body.get("error").get("fields").isEmpty()).isTrue();
         assertThat(body.get("meta").get("requestId").asString())
-                .isEqualTo(request.getAttribute(RequestIdFilter.ATTRIBUTE));
+            .isEqualTo(request.getAttribute(RequestIdFilter.ATTRIBUTE));
     }
 
     @Test
@@ -47,12 +49,12 @@ class MobileFallbackExceptionResolverTest {
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         assertThat(resolver.resolveException(request("/api/v2/missing"), response, null,
-                new HttpRequestMethodNotSupportedException("POST", List.of("GET")))).isNotNull();
+                new HttpRequestMethodNotSupportedException("POST", List.of("GET"))))
+            .isNotNull();
 
         assertThat(response.getStatus()).isEqualTo(405);
         assertThat(body(response).get("error").get("code").asString()).isEqualTo("METHOD_NOT_ALLOWED");
-        assertThat(body(response).get("error").get("message").asString())
-                .isEqualTo("지원하지 않는 HTTP 메서드입니다.");
+        assertThat(body(response).get("error").get("message").asString()).isEqualTo("지원하지 않는 HTTP 메서드입니다.");
         assertThat(response.getHeader(HttpHeaders.ALLOW)).contains("GET");
     }
 
@@ -62,12 +64,11 @@ class MobileFallbackExceptionResolverTest {
 
         assertThat(resolver.resolveException(request("/api/v2/missing"), response, null,
                 new HttpMediaTypeNotSupportedException(MediaType.TEXT_PLAIN, List.of(MediaType.APPLICATION_JSON))))
-                .isNotNull();
+            .isNotNull();
 
         assertThat(response.getStatus()).isEqualTo(400);
         assertThat(body(response).get("error").get("code").asString()).isEqualTo("VALIDATION_ERROR");
-        assertThat(body(response).get("error").get("message").asString())
-                .isEqualTo("지원하지 않는 Content-Type입니다.");
+        assertThat(body(response).get("error").get("message").asString()).isEqualTo("지원하지 않는 Content-Type입니다.");
     }
 
     @Test
@@ -94,7 +95,8 @@ class MobileFallbackExceptionResolverTest {
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         assertThat(resolver.resolveException(request("/api/v2/missing"), response, null,
-                new NoHandlerFoundException("GET", "/api/v2/missing", new HttpHeaders()))).isNotNull();
+                new NoHandlerFoundException("GET", "/api/v2/missing", new HttpHeaders())))
+            .isNotNull();
         assertThat(body(response).get("error").get("code").asString()).isEqualTo("RESOURCE_NOT_FOUND");
     }
 
@@ -110,7 +112,8 @@ class MobileFallbackExceptionResolverTest {
 
     @Test
     void v2_컨트롤러_메서드가_결정된_요청은_advice에_맡긴다() throws Exception {
-        HandlerMethod handler = new HandlerMethod(new ExampleHandler(), ExampleHandler.class.getDeclaredMethod("handle"));
+        HandlerMethod handler = new HandlerMethod(new ExampleHandler(),
+                ExampleHandler.class.getDeclaredMethod("handle"));
         assertDeclined(request("/api/v2/missing"), handler, noResource("/api/v2/missing"));
     }
 
@@ -143,7 +146,10 @@ class MobileFallbackExceptionResolverTest {
     }
 
     private static class ExampleHandler {
+
         public void handle() {
         }
+
     }
+
 }

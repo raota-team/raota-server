@@ -20,6 +20,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 class ApiAccessPolicyInventoryTest extends BaseIntegrationTest {
 
     private static final int EXPECTED_APPLICATION_ENDPOINT_COUNT = 88;
+
     private static final Pattern PATH_VARIABLE = Pattern.compile("\\{[^/]+}");
 
     @Autowired
@@ -34,8 +35,8 @@ class ApiAccessPolicyInventoryTest extends BaseIntegrationTest {
             Set<EndpointAccessPolicy.AccessLevel> accessLevels = matchingAccessLevels(endpoint);
 
             assertThat(accessLevels)
-                    .withFailMessage("접근 정책을 하나만 명시해야 합니다. endpoint=%s, matches=%s", endpoint, accessLevels)
-                    .hasSize(1);
+                .withFailMessage("접근 정책을 하나만 명시해야 합니다. endpoint=%s, matches=%s", endpoint, accessLevels)
+                .hasSize(1);
         });
     }
 
@@ -49,36 +50,36 @@ class ApiAccessPolicyInventoryTest extends BaseIntegrationTest {
         assertThat(matchingAccessLevels("GET", "/ramen-logs/moderation")).isEmpty();
 
         assertThat(matchingAccessLevels("GET", "/community/posts/1"))
-                .containsExactly(EndpointAccessPolicy.AccessLevel.PUBLIC);
+            .containsExactly(EndpointAccessPolicy.AccessLevel.PUBLIC);
         assertThat(matchingAccessLevels("GET", "/ramen-shops/1"))
-                .containsExactly(EndpointAccessPolicy.AccessLevel.PUBLIC);
+            .containsExactly(EndpointAccessPolicy.AccessLevel.PUBLIC);
         assertThat(matchingAccessLevels("GET", "/ramen-logs/1"))
-                .containsExactly(EndpointAccessPolicy.AccessLevel.PUBLIC);
+            .containsExactly(EndpointAccessPolicy.AccessLevel.PUBLIC);
     }
 
     @Test
     void Springdoc_YAML_명세도_공개한다() {
         assertThat(matchingAccessLevels("GET", "/v3/api-docs.yaml"))
-                .containsExactly(EndpointAccessPolicy.AccessLevel.PUBLIC);
+            .containsExactly(EndpointAccessPolicy.AccessLevel.PUBLIC);
     }
 
     @Test
     void 공개_GET_경로는_암묵적인_HEAD_요청도_허용한다() {
-        assertThat(matchingAccessLevels("HEAD", "/"))
-                .containsExactly(EndpointAccessPolicy.AccessLevel.PUBLIC);
+        assertThat(matchingAccessLevels("HEAD", "/")).containsExactly(EndpointAccessPolicy.AccessLevel.PUBLIC);
         assertThat(matchingAccessLevels("HEAD", "/community/posts/1"))
-                .containsExactly(EndpointAccessPolicy.AccessLevel.PUBLIC);
-        assertThat(matchingAccessLevels("HEAD", "/actuator/health"))
-                .contains(EndpointAccessPolicy.AccessLevel.PUBLIC);
+            .containsExactly(EndpointAccessPolicy.AccessLevel.PUBLIC);
+        assertThat(matchingAccessLevels("HEAD", "/actuator/health")).contains(EndpointAccessPolicy.AccessLevel.PUBLIC);
         assertThat(matchingAccessLevels("HEAD", "/security-policy-unclassified")).isEmpty();
     }
 
     private List<Endpoint> applicationEndpoints() {
-        return requestMappingHandlerMapping.getHandlerMethods().entrySet().stream()
-                .filter(entry -> isApplicationController(entry.getValue()))
-                .flatMap(entry -> endpoints(entry.getKey()).stream())
-                .sorted(Comparator.comparing(Endpoint::path).thenComparing(Endpoint::method))
-                .toList();
+        return requestMappingHandlerMapping.getHandlerMethods()
+            .entrySet()
+            .stream()
+            .filter(entry -> isApplicationController(entry.getValue()))
+            .flatMap(entry -> endpoints(entry.getKey()).stream())
+            .sorted(Comparator.comparing(Endpoint::path).thenComparing(Endpoint::method))
+            .toList();
     }
 
     private boolean isApplicationController(HandlerMethod handlerMethod) {
@@ -94,8 +95,8 @@ class ApiAccessPolicyInventoryTest extends BaseIntegrationTest {
         assertThat(paths).as("경로가 없는 매핑: %s", requestMappingInfo).isNotEmpty();
 
         return paths.stream()
-                .flatMap(path -> methods.stream().map(method -> new Endpoint(method.name(), path)))
-                .toList();
+            .flatMap(path -> methods.stream().map(method -> new Endpoint(method.name(), path)))
+            .toList();
     }
 
     private Set<EndpointAccessPolicy.AccessLevel> matchingAccessLevels(Endpoint endpoint) {
@@ -114,4 +115,5 @@ class ApiAccessPolicyInventoryTest extends BaseIntegrationTest {
             HttpMethod.valueOf(method);
         }
     }
+
 }

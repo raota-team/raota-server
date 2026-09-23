@@ -41,35 +41,31 @@ class AdminAccessPolicyIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
-                .apply(springSecurity())
-                .build();
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).apply(springSecurity()).build();
     }
 
     @Test
     void 익명은_관리자_API에_접근할_수_없다() throws Exception {
         mockMvc.perform(get(ADMIN_RESOURCE))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.status").value("FAIL"));
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.status").value("FAIL"));
     }
 
     @Test
     void USER는_관리자_API에_접근할_수_없다() throws Exception {
         String token = createAccessToken(MemberRole.USER);
 
-        mockMvc.perform(get(ADMIN_RESOURCE)
-                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.status").value("FAIL"));
+        mockMvc.perform(get(ADMIN_RESOURCE).header(HttpHeaders.AUTHORIZATION, bearer(token)))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.status").value("FAIL"));
     }
 
     @Test
     void ADMIN은_관리자_API에_접근할_수_있다() throws Exception {
         String token = createAccessToken(MemberRole.ADMIN);
 
-        mockMvc.perform(get(ADMIN_RESOURCE)
-                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
-                .andExpect(status().isOk());
+        mockMvc.perform(get(ADMIN_RESOURCE).header(HttpHeaders.AUTHORIZATION, bearer(token)))
+            .andExpect(status().isOk());
     }
 
     @Test
@@ -92,27 +88,20 @@ class AdminAccessPolicyIntegrationTest extends BaseIntegrationTest {
     }
 
     private MemberProfile saveMember(MemberRole role) {
-        return memberRepository.saveAndFlush(MemberProfile.builder()
-                .nickname("보안 정책 테스트 회원")
-                .role(role)
-                .build());
+        return memberRepository.saveAndFlush(MemberProfile.builder().nickname("보안 정책 테스트 회원").role(role).build());
     }
 
     private void updateRole(Long memberId, MemberRole role) {
-        jdbcTemplate.update(
-                "UPDATE tb_member_profile SET role = ? WHERE id = ?",
-                role.name(),
-                memberId
-        );
+        jdbcTemplate.update("UPDATE tb_member_profile SET role = ? WHERE id = ?", role.name(), memberId);
     }
 
     private void assertAdminStatus(String token, int expectedStatus) throws Exception {
-        mockMvc.perform(get(ADMIN_RESOURCE)
-                        .header(HttpHeaders.AUTHORIZATION, bearer(token)))
-                .andExpect(status().is(expectedStatus));
+        mockMvc.perform(get(ADMIN_RESOURCE).header(HttpHeaders.AUTHORIZATION, bearer(token)))
+            .andExpect(status().is(expectedStatus));
     }
 
     private String bearer(String token) {
         return "Bearer " + token;
     }
+
 }

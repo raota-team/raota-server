@@ -79,7 +79,10 @@ class RagEvaluationExecutionHeartbeatIntegrationTest extends BaseIntegrationTest
     @AfterEach
     void tearDown() {
         releaseFirstCase.countDown();
-        Awaitility.await().atMost(WAIT).until(() -> runRepository.findAll().stream()
+        Awaitility.await()
+            .atMost(WAIT)
+            .until(() -> runRepository.findAll()
+                .stream()
                 .noneMatch(run -> run.getStatus() == RagEvaluationStatus.RUNNING));
         clean();
     }
@@ -114,7 +117,10 @@ class RagEvaluationExecutionHeartbeatIntegrationTest extends BaseIntegrationTest
 
         releaseFirstCase.countDown();
 
-        Awaitility.await().atMost(WAIT).until(() -> caseRepository.findByRunIdOrderByIdAsc(runId).stream()
+        Awaitility.await()
+            .atMost(WAIT)
+            .until(() -> caseRepository.findByRunIdOrderByIdAsc(runId)
+                .stream()
                 .noneMatch(item -> item.getStatus().name().equals("RUNNING")));
         verify(caseExecutor, times(1)).execute(any());
         RagEvaluationRunEntity run = run(runId);
@@ -139,8 +145,8 @@ class RagEvaluationExecutionHeartbeatIntegrationTest extends BaseIntegrationTest
     @DisplayName("시작 전환 중 DB 오류가 나면 실행을 FAILED로 바꿔 활성 슬롯을 즉시 반환한다")
     void startTransitionFailureMarksRunFailed() {
         String runId = saveQueuedRun();
-        doThrow(new DataAccessResourceFailureException("database unavailable"))
-                .when(runRepository).markRunning(anyString(), any(LocalDateTime.class));
+        doThrow(new DataAccessResourceFailureException("database unavailable")).when(runRepository)
+            .markRunning(anyString(), any(LocalDateTime.class));
 
         runner.execute(runId, datasetLoader.loadDefault(), RagEvaluationSplit.DEV);
 
@@ -156,17 +162,11 @@ class RagEvaluationExecutionHeartbeatIntegrationTest extends BaseIntegrationTest
     }
 
     private String saveQueuedRun() {
-        return runRepository.saveAndFlush(RagEvaluationRunEntity.queued(
-                UUID.randomUUID().toString(),
-                datasetLoader.loadDefault().version(),
-                RagEvaluationSplit.DEV,
-                UUID.randomUUID().toString(),
-                LocalDateTime.now().plusHours(24),
-                "test",
-                "v1",
-                "test",
-                "{}"
-        )).getRunId();
+        return runRepository
+            .saveAndFlush(RagEvaluationRunEntity.queued(UUID.randomUUID().toString(),
+                    datasetLoader.loadDefault().version(), RagEvaluationSplit.DEV, UUID.randomUUID().toString(),
+                    LocalDateTime.now().plusHours(24), "test", "v1", "test", "{}"))
+            .getRunId();
     }
 
     private RagEvaluationRunEntity run(String runId) {
@@ -181,4 +181,5 @@ class RagEvaluationExecutionHeartbeatIntegrationTest extends BaseIntegrationTest
         caseRepository.deleteAllInBatch();
         runRepository.deleteAllInBatch();
     }
+
 }

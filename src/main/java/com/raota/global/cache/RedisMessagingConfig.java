@@ -14,13 +14,12 @@ public class RedisMessagingConfig {
     private final CacheProperties cacheProperties;
 
     @Bean
-    public RedisMessageListenerContainer redisMessageListenerContainer(
-            RedisConnectionFactory connectionFactory,
-            CacheInvalidationListener listener
-    ) {
+    public RedisMessageListenerContainer redisMessageListenerContainer(RedisConnectionFactory connectionFactory,
+            CacheInvalidationListener listener) {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
         container.addMessageListener(listener, new ChannelTopic(cacheProperties.invalidationTopic()));
         return container;
     }
+
 }

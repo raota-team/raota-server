@@ -21,8 +21,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
-
-
 import com.raota.support.BaseIntegrationTest;
 
 @Transactional
@@ -41,70 +39,67 @@ class MemberInfoAuthIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
-                .apply(springSecurity())
-                .build();
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).apply(springSecurity()).build();
         memberRepository.deleteAll();
     }
 
     @Test
     void myProfileRequiresAuthentication() throws Exception {
-        mockMvc.perform(get("/users/me/profile"))
-                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/users/me/profile")).andExpect(status().isUnauthorized());
     }
 
     @Test
     void myProfileReturnsAuthenticatedMember() throws Exception {
         MemberProfile member = memberRepository.save(MemberProfile.builder()
-                .nickname("테스터")
-                .imageUrl("https://example.com/profile.jpg")
-                .backgroundImageUrl(null)
-                .stats(MemberActivityStats.init())
-                .build());
+            .nickname("테스터")
+            .imageUrl("https://example.com/profile.jpg")
+            .backgroundImageUrl(null)
+            .stats(MemberActivityStats.init())
+            .build());
 
-        mockMvc.perform(get("/users/me/profile")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwtTokenProvider.createAccessToken(member.getId())))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.user_id").value(member.getId()))
-                .andExpect(jsonPath("$.data.nickname").value("테스터"));
+        mockMvc
+            .perform(get("/users/me/profile").header(HttpHeaders.AUTHORIZATION,
+                    "Bearer " + jwtTokenProvider.createAccessToken(member.getId())))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.user_id").value(member.getId()))
+            .andExpect(jsonPath("$.data.nickname").value("테스터"));
     }
 
     @Test
     void updateMyEmail() throws Exception {
-        MemberProfile member = memberRepository.save(MemberProfile.builder()
-                .nickname("테스터")
-                .email("old@example.com")
-                .build());
+        MemberProfile member = memberRepository
+            .save(MemberProfile.builder().nickname("테스터").email("old@example.com").build());
 
-        mockMvc.perform(patch("/users/me/email")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwtTokenProvider.createAccessToken(member.getId()))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "email": "new@example.com"
-                                }
-                                """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.email").value("new@example.com"));
+        mockMvc
+            .perform(patch("/users/me/email")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwtTokenProvider.createAccessToken(member.getId()))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "email": "new@example.com"
+                        }
+                        """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.email").value("new@example.com"));
 
         assertThat(memberRepository.findById(member.getId()).orElseThrow().getEmail()).isEqualTo("new@example.com");
     }
 
     @Test
     void updateMyEmailRejectsInvalidEmail() throws Exception {
-        MemberProfile member = memberRepository.save(MemberProfile.builder()
-                .nickname("테스터")
-                .email("old@example.com")
-                .build());
+        MemberProfile member = memberRepository
+            .save(MemberProfile.builder().nickname("테스터").email("old@example.com").build());
 
-        mockMvc.perform(patch("/users/me/email")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwtTokenProvider.createAccessToken(member.getId()))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "email": "invalid"
-                                }
-                                """))
-                .andExpect(status().isBadRequest());
+        mockMvc
+            .perform(patch("/users/me/email")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwtTokenProvider.createAccessToken(member.getId()))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "email": "invalid"
+                        }
+                        """))
+            .andExpect(status().isBadRequest());
     }
+
 }

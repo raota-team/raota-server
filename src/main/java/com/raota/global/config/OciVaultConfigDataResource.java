@@ -5,6 +5,7 @@ import org.springframework.boot.context.config.ConfigDataResource;
 public final class OciVaultConfigDataResource extends ConfigDataResource {
 
     private final String region;
+
     private final String vaultId;
 
     public OciVaultConfigDataResource(boolean optional, String region, String vaultId) {
@@ -20,4 +21,5 @@ public final class OciVaultConfigDataResource extends ConfigDataResource {
     public String vaultId() {
         return vaultId;
     }
+
 }

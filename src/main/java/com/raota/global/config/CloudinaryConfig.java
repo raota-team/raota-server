@@ -20,11 +20,8 @@ public class CloudinaryConfig {
 
     @Bean
     public Cloudinary cloudinary() {
-        return new Cloudinary(Map.of(
-                "cloud_name", cloudName,
-                "api_key", apiKey,
-                "api_secret", apiSecret,
-                "secure", true
-        ));
+        return new Cloudinary(
+                Map.of("cloud_name", cloudName, "api_key", apiKey, "api_secret", apiSecret, "secure", true));
     }
+
 }

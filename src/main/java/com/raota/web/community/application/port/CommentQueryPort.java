@@ -15,4 +15,5 @@ public interface CommentQueryPort {
     Page<CommentItemResult> findCommentsByAuthor(Long authorId, Pageable pageable);
 
     List<CommentItemResult> getReplies(Long parentId);
+
 }

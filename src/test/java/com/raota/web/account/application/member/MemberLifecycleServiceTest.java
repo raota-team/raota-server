@@ -27,12 +27,16 @@ class MemberLifecycleServiceTest {
 
     @Mock
     private MemberRepository memberRepository;
+
     @Mock
     private MemberProvisioningService memberProvisioningService;
+
     @Mock
     private AuthAccountService authAccountService;
+
     @Mock
     private SocialAccountRepository socialAccountRepository;
+
     @Mock
     private ApplicationEventPublisher applicationEventPublisher;
 
@@ -42,10 +46,7 @@ class MemberLifecycleServiceTest {
     @Test
     @DisplayName("회원 탈퇴 시 deleted_at을 기록하고 리프레시 토큰을 제거한다")
     void withdraw() {
-        MemberProfile member = MemberProfile.builder()
-                .id(1L)
-                .nickname("tester")
-                .build();
+        MemberProfile member = MemberProfile.builder().id(1L).nickname("tester").build();
         given(memberProvisioningService.getActiveRequired(1L)).willReturn(member);
 
         memberLifecycleService.withdraw(1L);
@@ -57,14 +58,10 @@ class MemberLifecycleServiceTest {
     @Test
     @DisplayName("30일이 지난 탈퇴 회원은 커뮤니티 데이터는 남기고 프로필을 익명화한다")
     void purgeExpiredMembers() {
-        MemberProfile expiredMember = MemberProfile.builder()
-                .id(10L)
-                .nickname("expired")
-                .build();
+        MemberProfile expiredMember = MemberProfile.builder().id(10L).nickname("expired").build();
         expiredMember.softDelete(LocalDateTime.now().minusDays(91));
 
-        given(memberRepository.findSoftDeletedMembersDueForPurge(any()))
-                .willReturn(List.of(expiredMember));
+        given(memberRepository.findSoftDeletedMembersDueForPurge(any())).willReturn(List.of(expiredMember));
 
         int purgedCount = memberLifecycleService.purgeExpiredMembers();
 
@@ -82,8 +79,7 @@ class MemberLifecycleServiceTest {
     @Test
     @DisplayName("정리 대상이 없으면 아무 것도 삭제하지 않는다")
     void purgeExpiredMembers_noTarget() {
-        given(memberRepository.findSoftDeletedMembersDueForPurge(any()))
-                .willReturn(List.of());
+        given(memberRepository.findSoftDeletedMembersDueForPurge(any())).willReturn(List.of());
 
         int purgedCount = memberLifecycleService.purgeExpiredMembers();
 
@@ -91,4 +87,5 @@ class MemberLifecycleServiceTest {
         verify(authAccountService, never()).logoutByMemberId(any());
         verify(memberRepository, never()).delete(any(MemberProfile.class));
     }
+
 }

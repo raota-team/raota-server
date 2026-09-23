@@ -30,14 +30,12 @@ public class RecommendationController implements RecommendationApi {
         if (request == null) {
             return ResponseEntity.ok(ApiResponse.success(recommendationService.followUpChat(null)));
         }
-        var messages = request.messages() == null
-                ? null
-                : request.messages().stream()
-                        .map(message -> message == null
-                                ? null
-                                : new FollowUpChatQuery.Message(message.role(), message.content()))
-                        .toList();
+        var messages = request.messages() == null ? null : request.messages()
+            .stream()
+            .map(message -> message == null ? null : new FollowUpChatQuery.Message(message.role(), message.content()))
+            .toList();
         FollowUpChatQuery query = new FollowUpChatQuery(request.contextType(), request.shopIds(), messages);
         return ResponseEntity.ok(ApiResponse.success(recommendationService.followUpChat(query)));
     }
+
 }

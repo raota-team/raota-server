@@ -35,7 +35,8 @@ class PostIndexingStreamListenerTest {
         String jsonPayload = "{\"postId\": 1}";
         PostIndexingEvent event = PostIndexingEvent.upsert(1L);
 
-        MapRecord<String, String, String> mockRecord = MapRecord.create("stream:key", Collections.singletonMap("payload", jsonPayload));
+        MapRecord<String, String, String> mockRecord = MapRecord.create("stream:key",
+                Collections.singletonMap("payload", jsonPayload));
 
         when(redisObjectMapper.readValue(jsonPayload, PostIndexingEvent.class)).thenReturn(event);
 
@@ -53,8 +54,8 @@ class PostIndexingStreamListenerTest {
         String jsonPayload = "{\"postId\": 1, \"action\": \"DELETE\"}";
         PostIndexingEvent event = PostIndexingEvent.delete(1L);
 
-        MapRecord<String, String, String> mockRecord =
-                MapRecord.create("stream:key", Collections.singletonMap("payload", jsonPayload));
+        MapRecord<String, String, String> mockRecord = MapRecord.create("stream:key",
+                Collections.singletonMap("payload", jsonPayload));
 
         when(redisObjectMapper.readValue(jsonPayload, PostIndexingEvent.class)).thenReturn(event);
 
@@ -64,4 +65,5 @@ class PostIndexingStreamListenerTest {
         // then
         verify(retrievalIndexingService).deletePost(1L);
     }
+
 }

@@ -23,12 +23,9 @@ class GlobalExceptionHandlerV1ScopeTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(new V1ExceptionController())
-                .setControllerAdvice(
-                        new GlobalExceptionHandler(),
-                        new MobileExceptionAdvice(),
-                        new MobileResponseMetaAdvice()
-                )
-                .build();
+            .setControllerAdvice(new GlobalExceptionHandler(), new MobileExceptionAdvice(),
+                    new MobileResponseMetaAdvice())
+            .build();
     }
 
     @Test
@@ -41,13 +38,9 @@ class GlobalExceptionHandlerV1ScopeTest {
         assertV1Failure(get("/v1-exception/unexpected"), 500);
     }
 
-    private void assertV1Failure(
-            org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder request,
-            int expectedStatus
-    ) throws Exception {
-        MvcResult result = mockMvc.perform(request)
-                .andExpect(status().is(expectedStatus))
-                .andReturn();
+    private void assertV1Failure(org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder request,
+            int expectedStatus) throws Exception {
+        MvcResult result = mockMvc.perform(request).andExpect(status().is(expectedStatus)).andReturn();
         String body = result.getResponse().getContentAsString();
 
         assertThat(JsonPath.<String>read(body, "$.status")).isEqualTo("FAIL");
@@ -67,5 +60,7 @@ class GlobalExceptionHandlerV1ScopeTest {
         void unexpected() {
             throw new RuntimeException("bad");
         }
+
     }
+
 }

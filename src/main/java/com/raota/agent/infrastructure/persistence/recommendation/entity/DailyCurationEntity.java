@@ -48,7 +48,8 @@ public class DailyCurationEntity {
     private LocalDateTime createdAt;
 
     @Builder
-    public DailyCurationEntity(Long id, Integer dateKey, RamenTypeEntity ramenType, String title, String reason, String customImageUrl, LocalDateTime createdAt) {
+    public DailyCurationEntity(Long id, Integer dateKey, RamenTypeEntity ramenType, String title, String reason,
+            String customImageUrl, LocalDateTime createdAt) {
         this.id = id;
         this.dateKey = dateKey;
         this.ramenType = ramenType;
@@ -60,25 +61,26 @@ public class DailyCurationEntity {
 
     public static DailyCurationEntity from(DailyCuration domain) {
         return DailyCurationEntity.builder()
-                .id(domain.getId())
-                .dateKey(domain.getDateKey())
-                .ramenType(RamenTypeEntity.from(domain.getRamenType()))
-                .title(domain.getTitle())
-                .reason(domain.getReason())
-                .customImageUrl(domain.getCustomImageUrl())
-                .createdAt(domain.getCreatedAt())
-                .build();
+            .id(domain.getId())
+            .dateKey(domain.getDateKey())
+            .ramenType(RamenTypeEntity.from(domain.getRamenType()))
+            .title(domain.getTitle())
+            .reason(domain.getReason())
+            .customImageUrl(domain.getCustomImageUrl())
+            .createdAt(domain.getCreatedAt())
+            .build();
     }
 
     public DailyCuration toDomain() {
         return DailyCuration.builder()
-                .id(this.id)
-                .dateKey(this.dateKey)
-                .ramenType(this.ramenType.toDomain())
-                .title(this.title)
-                .reason(this.reason)
-                .customImageUrl(this.customImageUrl)
-                .createdAt(this.createdAt)
-                .build();
+            .id(this.id)
+            .dateKey(this.dateKey)
+            .ramenType(this.ramenType.toDomain())
+            .title(this.title)
+            .reason(this.reason)
+            .customImageUrl(this.customImageUrl)
+            .createdAt(this.createdAt)
+            .build();
     }
+
 }

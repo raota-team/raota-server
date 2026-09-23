@@ -1,6 +1,5 @@
 package com.raota.web.ramenshop.domain.model;
 
-
 import com.raota.web.ramenshop.presentation.response.NormalMenuDto;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Embeddable;
@@ -23,19 +22,17 @@ public class NormalMenus {
         return new NormalMenus(new ArrayList<>());
     }
 
-    public List<NormalMenuDto> getNormalMenusInfo(){
+    public List<NormalMenuDto> getNormalMenusInfo() {
         return menus().stream().map(NormalMenuDto::from).toList();
     }
 
-    public void add(NormalMenu normalMenu){
+    public void add(NormalMenu normalMenu) {
         verifyMenuNameDuplicate(normalMenu.getName());
         menus().add(normalMenu);
     }
 
-    public Optional<NormalMenu> findMenuById(Long menuId){
-        return menus().stream()
-                .filter(menu -> menu.getId().equals(menuId))
-                .findFirst();
+    public Optional<NormalMenu> findMenuById(Long menuId) {
+        return menus().stream().filter(menu -> menu.getId().equals(menuId)).findFirst();
     }
 
     public List<NormalMenu> getValues() {
@@ -46,7 +43,7 @@ public class NormalMenus {
         menus().clear();
     }
 
-    private void verifyMenuNameDuplicate(String name){
+    private void verifyMenuNameDuplicate(String name) {
         if (menus().stream().anyMatch(menu -> menu.getName().equals(name))) {
             throw new IllegalArgumentException("이미 존재하는 메뉴 이름입니다: " + name);
         }
@@ -58,4 +55,5 @@ public class NormalMenus {
         }
         return values;
     }
+
 }

@@ -45,4 +45,5 @@ public class PostQueryService {
         int normalizedLimit = Math.clamp(limit, 1, 10);
         return postQueryPort.findRecentPopularPosts(normalizedLimit);
     }
+
 }

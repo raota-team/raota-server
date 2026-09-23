@@ -20,11 +20,8 @@ class MemberRolePersistenceTest extends BaseIntegrationTest {
     void role을_생략한_회원_row는_USER로_저장된다() {
         jdbcTemplate.update("INSERT INTO tb_member_profile (nickname) VALUES (?)", "기본 역할 회원");
 
-        String role = jdbcTemplate.queryForObject(
-                "SELECT role FROM tb_member_profile WHERE nickname = ?",
-                String.class,
-                "기본 역할 회원"
-        );
+        String role = jdbcTemplate.queryForObject("SELECT role FROM tb_member_profile WHERE nickname = ?", String.class,
+                "기본 역할 회원");
 
         assertThat(role).isEqualTo("USER");
     }
@@ -33,11 +30,10 @@ class MemberRolePersistenceTest extends BaseIntegrationTest {
     void USER와_ADMIN_외의_역할은_DB에_저장할_수_없다() {
         jdbcTemplate.update("INSERT INTO tb_member_profile (nickname) VALUES (?)", "잘못된 역할 회원");
 
-        assertThatThrownBy(() -> jdbcTemplate.update(
-                "UPDATE tb_member_profile SET role = ? WHERE nickname = ?",
-                "OWNER",
-                "잘못된 역할 회원"
-        )).isInstanceOf(DataAccessException.class)
-                .hasMessageContaining("chk_member_profile_role");
+        assertThatThrownBy(() -> jdbcTemplate.update("UPDATE tb_member_profile SET role = ? WHERE nickname = ?",
+                "OWNER", "잘못된 역할 회원"))
+            .isInstanceOf(DataAccessException.class)
+            .hasMessageContaining("chk_member_profile_role");
     }
+
 }

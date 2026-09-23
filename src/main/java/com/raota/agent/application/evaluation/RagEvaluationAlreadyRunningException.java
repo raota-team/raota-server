@@ -10,4 +10,5 @@ public class RagEvaluationAlreadyRunningException extends RuntimeException {
     public RagEvaluationAlreadyRunningException() {
         super("이미 실행 중인 RAG 평가가 있습니다.");
     }
+
 }

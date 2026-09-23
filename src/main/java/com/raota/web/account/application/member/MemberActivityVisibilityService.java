@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberActivityVisibilityService {
 
     private final MemberRepository memberRepository;
+
     private final CacheInvalidationPublisher cacheInvalidationPublisher;
 
     public ActivityVisibilityResponse get(Long memberId) {
@@ -30,12 +31,7 @@ public class MemberActivityVisibilityService {
         MemberProfile member = requireMember(memberId);
         boolean logsVisibilityChanged = member.getActivityVisibility() == null
                 || member.getActivityVisibility().isLogsPublic() != request.logs();
-        member.updateActivityVisibility(
-                request.logs(),
-                request.visits(),
-                request.posts(),
-                request.comments()
-        );
+        member.updateActivityVisibility(request.logs(), request.visits(), request.posts(), request.comments());
         if (logsVisibilityChanged) {
             cacheInvalidationPublisher.publishAll("ramenShopList");
         }
@@ -77,13 +73,13 @@ public class MemberActivityVisibilityService {
 
     private MemberProfile requireMember(Long memberId) {
         return memberRepository.findByIdAndDeletedAtIsNull(memberId)
-                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
+            .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
     }
 
     private enum Category {
-        LOGS,
-        VISITS,
-        POSTS,
-        COMMENTS
+
+        LOGS, VISITS, POSTS, COMMENTS
+
     }
+
 }

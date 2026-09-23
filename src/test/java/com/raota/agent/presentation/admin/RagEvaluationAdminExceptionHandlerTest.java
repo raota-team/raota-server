@@ -26,17 +26,17 @@ class RagEvaluationAdminExceptionHandlerTest {
         RagEvaluationRunService runService = mock(RagEvaluationRunService.class);
         given(runService.start(any(), any(), anyString())).willThrow(new RagEvaluationAlreadyRunningException());
         MockMvc mockMvc = MockMvcBuilders
-                .standaloneSetup(new RagEvaluationAdminController(runService, JsonMapper.builder().build()))
-                .setControllerAdvice(new GlobalExceptionHandler(), new RagEvaluationAdminExceptionHandler())
-                .build();
+            .standaloneSetup(new RagEvaluationAdminController(runService, JsonMapper.builder().build()))
+            .setControllerAdvice(new GlobalExceptionHandler(), new RagEvaluationAdminExceptionHandler())
+            .build();
 
-        mockMvc.perform(post("/admin/api/rag-evaluations/runs")
-                        .header("Idempotency-Key", "key-1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"split\":\"DEV\"}"))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.status").value("FAIL"))
-                .andExpect(jsonPath("$.message").value(
-                        "EVALUATION_ALREADY_RUNNING: 이미 실행 중인 RAG 평가가 있습니다."));
+        mockMvc
+            .perform(post("/admin/api/rag-evaluations/runs").header("Idempotency-Key", "key-1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"split\":\"DEV\"}"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.status").value("FAIL"))
+            .andExpect(jsonPath("$.message").value("EVALUATION_ALREADY_RUNNING: 이미 실행 중인 RAG 평가가 있습니다."));
     }
+
 }

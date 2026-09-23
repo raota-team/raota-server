@@ -19,27 +19,23 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional
 public class PostService {
+
     private final PostRepository postRepository;
+
     private final MemberRepository memberRepository;
+
     private final ApplicationEventPublisher eventPublisher;
 
     public Long createPost(CreatePostCommand command) {
-        Post post = Post.create(
-                PostCategory.valueOf(command.category()),
-                command.title(),
-                command.content(),
-                command.contentFormat(),
-                command.thumbnailUrl(),
-                command.authorId(),
-                command.ramenShopId()
-        );
+        Post post = Post.create(PostCategory.valueOf(command.category()), command.title(), command.content(),
+                command.contentFormat(), command.thumbnailUrl(), command.authorId(), command.ramenShopId());
 
         Post savedPost = postRepository.save(post);
 
         Long postId = savedPost.getId();
 
         MemberProfile author = memberRepository.findById(command.authorId())
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+            .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         author.increasePostCount();
 
         if (savedPost.getCategory() == PostCategory.REVIEW) {
@@ -50,15 +46,9 @@ public class PostService {
     }
 
     public void updatePost(UpdatePostCommand command) {
-        PostRepository.PostUpdateResult result = postRepository.update(
-                command.postId(),
-                command.authorId(),
-                PostCategory.valueOf(command.category()),
-                command.title(),
-                command.content(),
-                command.thumbnailUrl(),
-                command.ramenShopId()
-        );
+        PostRepository.PostUpdateResult result = postRepository.update(command.postId(), command.authorId(),
+                PostCategory.valueOf(command.category()), command.title(), command.content(), command.thumbnailUrl(),
+                command.ramenShopId());
 
         if (result.beforeCategory() == PostCategory.REVIEW || result.afterCategory() == PostCategory.REVIEW) {
             eventPublisher.publishEvent(PostIndexingEvent.upsert(result.postId()));
@@ -73,11 +63,12 @@ public class PostService {
         }
 
         MemberProfile author = memberRepository.findById(authorId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+            .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         author.decreasePostCount();
     }
 
     public void increaseViewCount(Long postId) {
         postRepository.increaseViewCount(postId);
     }
+
 }

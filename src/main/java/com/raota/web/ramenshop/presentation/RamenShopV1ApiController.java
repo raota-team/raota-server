@@ -25,13 +25,11 @@ public class RamenShopV1ApiController {
     private final RamenShopInfoService ramenShopInfoService;
 
     @Operation(summary = "최근 사진 인증된 라멘집 조회", description = "최근에 사진 리뷰가 작성된 라멘집 목록을 반환합니다.")
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
-    })
+    @ApiResponses({ @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공") })
     @GetMapping("/recent-verified")
     public ResponseEntity<ApiResponse<List<RecentVerifiedShopResponse>>> getRecentVerifiedShops(
-            @Parameter(description = "가져올 개수", example = "4")
-            @RequestParam(defaultValue = "4") int limit) {
+            @Parameter(description = "가져올 개수", example = "4") @RequestParam(defaultValue = "4") int limit) {
         return ResponseEntity.ok(ApiResponse.success(ramenShopInfoService.getRecentVerifiedShops(limit)));
     }
+
 }

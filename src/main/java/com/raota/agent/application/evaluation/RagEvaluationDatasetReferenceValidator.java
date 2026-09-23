@@ -8,8 +8,8 @@ import tools.jackson.databind.JsonNode;
 
 /**
  * Prevents a stale evaluation label from silently turning every search metric into zero.
- * Fallback and contract-only cases are deliberately excluded because they may contain
- * an intentionally missing or unsupported shop reference.
+ * Fallback and contract-only cases are deliberately excluded because they may contain an
+ * intentionally missing or unsupported shop reference.
  */
 @Component
 public class RagEvaluationDatasetReferenceValidator {
@@ -27,8 +27,7 @@ public class RagEvaluationDatasetReferenceValidator {
 
         List<String> invalidReferences = new ArrayList<>();
         for (RagEvaluationCase evaluationCase : dataset.casesFor(split)) {
-            if (evaluationCase.contractOnly()
-                    || evaluationCase.expectsFallback()
+            if (evaluationCase.contractOnly() || evaluationCase.expectsFallback()
                     || evaluationCase.expectedError() != null) {
                 continue;
             }
@@ -41,22 +40,17 @@ public class RagEvaluationDatasetReferenceValidator {
 
         if (!invalidReferences.isEmpty()) {
             throw new RagEvaluationSafetyException(
-                    "평가셋 " + dataset.version() + " " + split
-                            + "의 매장 참조가 운영 카탈로그와 일치하지 않습니다: " + invalidReferences
-            );
+                    "평가셋 " + dataset.version() + " " + split + "의 매장 참조가 운영 카탈로그와 일치하지 않습니다: " + invalidReferences);
         }
     }
 
     private List<Long> referencedShopIds(RagEvaluationCase evaluationCase) {
         List<Long> shopIds = new ArrayList<>();
         switch (evaluationCase.type()) {
-            case SEARCH -> evaluationCase.relevantShops().stream()
-                    .map(RagExpectedShop::shopId)
-                    .forEach(shopIds::add);
+            case SEARCH -> evaluationCase.relevantShops().stream().map(RagExpectedShop::shopId).forEach(shopIds::add);
             case SUMMARY -> addField(shopIds, evaluationCase.request(), "shopId");
             case CHAT -> {
-                JsonNode values = evaluationCase.request() == null
-                        ? null : evaluationCase.request().get("shopIds");
+                JsonNode values = evaluationCase.request() == null ? null : evaluationCase.request().get("shopIds");
                 if (values != null && values.isArray()) {
                     values.forEach(value -> shopIds.add(toLong(value)));
                 }
@@ -83,8 +77,10 @@ public class RagEvaluationDatasetReferenceValidator {
         }
         try {
             return Long.valueOf(value.asText());
-        } catch (NumberFormatException exception) {
+        }
+        catch (NumberFormatException exception) {
             return null;
         }
     }
+
 }

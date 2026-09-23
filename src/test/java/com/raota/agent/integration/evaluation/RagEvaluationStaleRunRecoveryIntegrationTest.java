@@ -81,18 +81,16 @@ class RagEvaluationStaleRunRecoveryIntegrationTest extends BaseIntegrationTest {
         String runId = runRepository.saveAndFlush(queued()).getRunId();
         transactionTemplate.execute(status -> runRepository.markRunning(runId, heartbeatAt));
         transactionTemplate.execute(status -> entityManager
-                .createNativeQuery("UPDATE tb_rag_evaluation_run SET heartbeat_at = ?1 WHERE run_id = ?2")
-                .setParameter(1, heartbeatAt)
-                .setParameter(2, runId)
-                .executeUpdate());
+            .createNativeQuery("UPDATE tb_rag_evaluation_run SET heartbeat_at = ?1 WHERE run_id = ?2")
+            .setParameter(1, heartbeatAt)
+            .setParameter(2, runId)
+            .executeUpdate());
         return runId;
     }
 
     private static RagEvaluationRunEntity queued() {
-        return RagEvaluationRunEntity.queued(
-                UUID.randomUUID().toString(), "rag-mobile-v1.1", RagEvaluationSplit.DEV,
-                UUID.randomUUID().toString(), LocalDateTime.now().plusHours(24),
-                "test", "v1", "test", "{}"
-        );
+        return RagEvaluationRunEntity.queued(UUID.randomUUID().toString(), "rag-mobile-v1.1", RagEvaluationSplit.DEV,
+                UUID.randomUUID().toString(), LocalDateTime.now().plusHours(24), "test", "v1", "test", "{}");
     }
+
 }

@@ -8,12 +8,14 @@ import java.util.Base64;
 import java.util.Optional;
 
 /**
- * 정렬값과 ID로 다음 페이지의 시작 지점을 나타낸다. 형식은 {@code base64url(sortValue|id)}이며 패딩을 쓰지 않는다.
- * 커서는 조회 범위만 좁히며 접근 권한을 부여하지 않는다.
+ * 정렬값과 ID로 다음 페이지의 시작 지점을 나타낸다. 형식은 {@code base64url(sortValue|id)}이며 패딩을 쓰지 않는다. 커서는 조회
+ * 범위만 좁히며 접근 권한을 부여하지 않는다.
  *
- * <p>예: {@code ORDER BY created_at DESC, id DESC}로 정렬하고
+ * <p>
+ * 예: {@code ORDER BY created_at DESC, id DESC}로 정렬하고
  * {@code WHERE created_at < :sort OR (created_at = :sort AND id < :id)}와
- * {@code LIMIT :size + 1}로 조회한다.</p>
+ * {@code LIMIT :size + 1}로 조회한다.
+ * </p>
  */
 public record Cursor(String sortValue, long id) {
 
@@ -51,7 +53,8 @@ public record Cursor(String sortValue, long id) {
         String decoded;
         try {
             decoded = new String(Base64.getUrlDecoder().decode(raw), StandardCharsets.UTF_8);
-        } catch (IllegalArgumentException exception) {
+        }
+        catch (IllegalArgumentException exception) {
             throw invalidCursor();
         }
 
@@ -61,9 +64,10 @@ public record Cursor(String sortValue, long id) {
         }
 
         try {
-            return Optional.of(new Cursor(decoded.substring(0, delimiter),
-                    Long.parseLong(decoded.substring(delimiter + 1))));
-        } catch (NumberFormatException exception) {
+            return Optional
+                .of(new Cursor(decoded.substring(0, delimiter), Long.parseLong(decoded.substring(delimiter + 1))));
+        }
+        catch (NumberFormatException exception) {
             throw invalidCursor();
         }
     }

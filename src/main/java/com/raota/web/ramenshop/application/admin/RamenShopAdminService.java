@@ -20,28 +20,25 @@ import org.springframework.transaction.annotation.Transactional;
 public class RamenShopAdminService {
 
     private final RamenShopRepository ramenShopRepository;
+
     private final FileUploader fileUploader;
+
     private final CacheInvalidationPublisher cacheInvalidationPublisher;
 
     @Transactional(readOnly = true)
     public List<RamenShopAdminSummaryResponse> getShopSummaries() {
-        return ramenShopRepository.findAll(Sort.by(Sort.Direction.ASC, "name")).stream()
-                .map(shop -> new RamenShopAdminSummaryResponse(
-                        shop.getId(),
-                        shop.getName(),
-                        shop.getAddress() == null ? "" : Stream.of(
-                                        shop.getAddress().city(),
-                                        shop.getAddress().district(),
-                                        shop.getAddress().street(),
-                                        shop.getAddress().detail()
-                                )
+        return ramenShopRepository.findAll(Sort.by(Sort.Direction.ASC, "name"))
+            .stream()
+            .map(shop -> new RamenShopAdminSummaryResponse(shop.getId(), shop.getName(),
+                    shop.getAddress() == null ? ""
+                            : Stream
+                                .of(shop.getAddress().city(), shop.getAddress().district(), shop.getAddress().street(),
+                                        shop.getAddress().detail())
                                 .filter(value -> value != null && !value.isBlank())
                                 .reduce((left, right) -> left + " " + right)
                                 .orElse(""),
-                        fileUploader.getAccessibleUrl(shop.getImageUrl()),
-                        shop.isPublished()
-                ))
-                .toList();
+                    fileUploader.getAccessibleUrl(shop.getImageUrl()), shop.isPublished()))
+            .toList();
     }
 
     @Transactional(readOnly = true)
@@ -49,29 +46,31 @@ public class RamenShopAdminService {
         RamenShop ramenShop = getShop(shopId);
         RamenShopAdminForm form = RamenShopAdminForm.from(ramenShop);
         form.setCurrentImageUrl(fileUploader.getAccessibleUrl(ramenShop.getImageUrl()));
-        form.getNormalMenus().forEach(menu -> menu.setCurrentImageUrl(fileUploader.getAccessibleUrl(menu.getImageUrl())));
-        form.getEventMenus().forEach(menu -> menu.setCurrentImageUrl(fileUploader.getAccessibleUrl(menu.getImageUrl())));
+        form.getNormalMenus()
+            .forEach(menu -> menu.setCurrentImageUrl(fileUploader.getAccessibleUrl(menu.getImageUrl())));
+        form.getEventMenus()
+            .forEach(menu -> menu.setCurrentImageUrl(fileUploader.getAccessibleUrl(menu.getImageUrl())));
         return form;
     }
 
     @Transactional
     public Long createShop(RamenShopAdminForm form) {
         RamenShop ramenShop = RamenShop.builder()
-                .name(form.getName().trim())
-                .branchName(blankToNull(form.getBranchName()))
-                .naverMapId(blankToNull(form.getNaverMapId()))
-                .address(form.toAddress())
-                .businessHours(form.toBusinessHours())
-                .tags(form.toTags())
-                .instagramUrl(blankToNull(form.getInstagramUrl()))
-                .catchTableUrl(blankToNull(form.getCatchTableUrl()))
-                .description(blankToNull(form.getDescription()))
-                .detailedDescription(blankToNull(form.getDetailedDescription()))
-                .imageUrl(blankToNull(form.getImageUrl()))
-                .published(form.isPublishedValue())
-                .normalMenus(NormalMenus.init())
-                .eventMenus(EventMenus.init())
-                .build();
+            .name(form.getName().trim())
+            .branchName(blankToNull(form.getBranchName()))
+            .naverMapId(blankToNull(form.getNaverMapId()))
+            .address(form.toAddress())
+            .businessHours(form.toBusinessHours())
+            .tags(form.toTags())
+            .instagramUrl(blankToNull(form.getInstagramUrl()))
+            .catchTableUrl(blankToNull(form.getCatchTableUrl()))
+            .description(blankToNull(form.getDescription()))
+            .detailedDescription(blankToNull(form.getDetailedDescription()))
+            .imageUrl(blankToNull(form.getImageUrl()))
+            .published(form.isPublishedValue())
+            .normalMenus(NormalMenus.init())
+            .eventMenus(EventMenus.init())
+            .build();
 
         ramenShop.replaceNormalMenus(form.toNormalMenus());
         ramenShop.replaceEventMenus(form.toEventMenus());
@@ -86,24 +85,13 @@ public class RamenShopAdminService {
     public void updateShop(Long shopId, RamenShopAdminForm form) {
         RamenShop ramenShop = getShop(shopId);
         String nextImageUrl = blankToNull(form.getImageUrl());
-        if (nextImageUrl != null
-                && ramenShop.getImageUrl() != null
-                && !ramenShop.getImageUrl().equals(nextImageUrl)) {
+        if (nextImageUrl != null && ramenShop.getImageUrl() != null && !ramenShop.getImageUrl().equals(nextImageUrl)) {
             fileUploader.delete(ramenShop.getImageUrl());
         }
-        ramenShop.updateBasicInfo(
-                form.getName().trim(),
-                blankToNull(form.getBranchName()),
-                blankToNull(form.getNaverMapId()),
-                form.toAddress(),
-                form.toBusinessHours(),
-                form.toTags(),
-                blankToNull(form.getInstagramUrl()),
-                blankToNull(form.getCatchTableUrl()),
-                blankToNull(form.getDescription()),
-                blankToNull(form.getDetailedDescription()),
-                nextImageUrl
-        );
+        ramenShop.updateBasicInfo(form.getName().trim(), blankToNull(form.getBranchName()),
+                blankToNull(form.getNaverMapId()), form.toAddress(), form.toBusinessHours(), form.toTags(),
+                blankToNull(form.getInstagramUrl()), blankToNull(form.getCatchTableUrl()),
+                blankToNull(form.getDescription()), blankToNull(form.getDetailedDescription()), nextImageUrl);
         ramenShop.replaceNormalMenus(form.toNormalMenus());
         ramenShop.replaceEventMenus(form.toEventMenus());
         ramenShop.updatePublished(form.isPublishedValue());
@@ -146,8 +134,7 @@ public class RamenShopAdminService {
     }
 
     private RamenShop getShop(Long shopId) {
-        return ramenShopRepository.findById(shopId)
-                .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
+        return ramenShopRepository.findById(shopId).orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
     }
 
     private String blankToNull(String value) {
@@ -157,4 +144,5 @@ public class RamenShopAdminService {
         String trimmed = value.trim();
         return trimmed.isBlank() ? null : trimmed;
     }
+
 }

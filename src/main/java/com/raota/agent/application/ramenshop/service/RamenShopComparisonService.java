@@ -19,16 +19,17 @@ import org.springframework.stereotype.Service;
 public class RamenShopComparisonService {
 
     private final RamenShopReader ramenShopReader;
+
     private final RamenShopComparisonDocumentPort comparisonDocumentPort;
+
     private final RamenShopComparisonNarrativePort comparisonNarrativePort;
+
     private final RamenShopComparisonSearchPolicy comparisonSearchPolicy;
 
-    public RamenShopComparisonService(
-            RamenShopReader ramenShopReader,
+    public RamenShopComparisonService(RamenShopReader ramenShopReader,
             RamenShopComparisonDocumentPort comparisonDocumentPort,
             RamenShopComparisonNarrativePort comparisonNarrativePort,
-            RamenShopComparisonSearchPolicy comparisonSearchPolicy
-    ) {
+            RamenShopComparisonSearchPolicy comparisonSearchPolicy) {
         this.ramenShopReader = ramenShopReader;
         this.comparisonDocumentPort = comparisonDocumentPort;
         this.comparisonNarrativePort = comparisonNarrativePort;
@@ -39,7 +40,9 @@ public class RamenShopComparisonService {
         return compareShopsWithEvidence(query).response();
     }
 
-    /** Executes a comparison while preserving both shops' retrieved documents for review. */
+    /**
+     * Executes a comparison while preserving both shops' retrieved documents for review.
+     */
     public RamenShopComparisonExecution compareShopsWithEvidence(RamenShopComparisonQuery query) {
         if (query == null) {
             throw new IllegalArgumentException("매장 비교 요청은 필수입니다.");
@@ -52,30 +55,23 @@ public class RamenShopComparisonService {
 
         List<RamenShopComparisonDocument> shopADocuments = collectComparisonDocuments(shopA, normalizedFocus);
         List<RamenShopComparisonDocument> shopBDocuments = collectComparisonDocuments(shopB, normalizedFocus);
-        List<RamenShopComparisonDocument> evidence = java.util.stream.Stream.concat(
-                shopADocuments == null ? java.util.stream.Stream.empty() : shopADocuments.stream(),
-                shopBDocuments == null ? java.util.stream.Stream.empty() : shopBDocuments.stream()
-        ).toList();
+        List<RamenShopComparisonDocument> evidence = java.util.stream.Stream
+            .concat(shopADocuments == null ? java.util.stream.Stream.empty() : shopADocuments.stream(),
+                    shopBDocuments == null ? java.util.stream.Stream.empty() : shopBDocuments.stream())
+            .toList();
 
         if (hasInsufficientDocuments(shopADocuments, shopBDocuments)) {
-            return new RamenShopComparisonExecution(
-                    buildComparisonResult(shopA, shopB, normalizedFocus, null),
-                    evidence
-            );
+            return new RamenShopComparisonExecution(buildComparisonResult(shopA, shopB, normalizedFocus, null),
+                    evidence);
         }
 
         String contextA = buildComparisonContext(shopA, shopADocuments);
         String contextB = buildComparisonContext(shopB, shopBDocuments);
-        AiRamenShopComparisonResult aiResult = comparisonNarrativePort.generateComparisonNarratives(
-                normalizedFocus,
-                contextA,
-                contextB
-        );
+        AiRamenShopComparisonResult aiResult = comparisonNarrativePort.generateComparisonNarratives(normalizedFocus,
+                contextA, contextB);
 
-        return new RamenShopComparisonExecution(
-                buildComparisonResult(shopA, shopB, normalizedFocus, aiResult),
-                evidence
-        );
+        return new RamenShopComparisonExecution(buildComparisonResult(shopA, shopB, normalizedFocus, aiResult),
+                evidence);
     }
 
     private void validateComparisonRequest(Long shopAId, Long shopBId) {
@@ -90,26 +86,16 @@ public class RamenShopComparisonService {
         }
     }
 
-    private RamenShopComparisonResult buildComparisonResult(
-            RamenShop shopA,
-            RamenShop shopB,
-            String focus,
-            AiRamenShopComparisonResult aiResult
-    ) {
-        return new RamenShopComparisonResult(
-                new RamenShopComparisonResult.ShopSummary(shopA.getId(), shopA.getName()),
-                new RamenShopComparisonResult.ShopSummary(shopB.getId(), shopB.getName()),
-                focus,
-                toNarratives(aiResult)
-        );
+    private RamenShopComparisonResult buildComparisonResult(RamenShop shopA, RamenShop shopB, String focus,
+            AiRamenShopComparisonResult aiResult) {
+        return new RamenShopComparisonResult(new RamenShopComparisonResult.ShopSummary(shopA.getId(), shopA.getName()),
+                new RamenShopComparisonResult.ShopSummary(shopB.getId(), shopB.getName()), focus,
+                toNarratives(aiResult));
     }
 
-    private boolean hasInsufficientDocuments(
-            List<RamenShopComparisonDocument> shopADocuments,
-            List<RamenShopComparisonDocument> shopBDocuments
-    ) {
-        return shopADocuments == null || shopADocuments.isEmpty()
-                || shopBDocuments == null || shopBDocuments.isEmpty();
+    private boolean hasInsufficientDocuments(List<RamenShopComparisonDocument> shopADocuments,
+            List<RamenShopComparisonDocument> shopBDocuments) {
+        return shopADocuments == null || shopADocuments.isEmpty() || shopBDocuments == null || shopBDocuments.isEmpty();
     }
 
     private List<RamenShopComparisonResult.ComparisonNarrative> toNarratives(AiRamenShopComparisonResult aiResult) {
@@ -117,15 +103,14 @@ public class RamenShopComparisonService {
             return fallbackNarratives();
         }
 
-        List<RamenShopComparisonResult.ComparisonNarrative> narratives = aiResult.narratives().stream()
-                .filter(Objects::nonNull)
-                .filter(narrative -> ramenShopReader.hasText(narrative.title())
-                        && ramenShopReader.hasText(narrative.body()))
-                .map(narrative -> new RamenShopComparisonResult.ComparisonNarrative(
-                        narrative.title().trim(),
-                        narrative.body().trim()
-                ))
-                .toList();
+        List<RamenShopComparisonResult.ComparisonNarrative> narratives = aiResult.narratives()
+            .stream()
+            .filter(Objects::nonNull)
+            .filter(narrative -> ramenShopReader.hasText(narrative.title())
+                    && ramenShopReader.hasText(narrative.body()))
+            .map(narrative -> new RamenShopComparisonResult.ComparisonNarrative(narrative.title().trim(),
+                    narrative.body().trim()))
+            .toList();
 
         if (narratives.isEmpty()) {
             return fallbackNarratives();
@@ -135,41 +120,31 @@ public class RamenShopComparisonService {
     }
 
     private List<RamenShopComparisonResult.ComparisonNarrative> fallbackNarratives() {
-        return List.of(new RamenShopComparisonResult.ComparisonNarrative(
-                "비교 정보 부족",
-                "두 매장을 객관적으로 비교할 수 있는 검색 문서가 충분하지 않습니다. 리뷰나 매장 프로필 데이터가 쌓인 뒤 다시 비교해 주세요."
-        ));
+        return List.of(new RamenShopComparisonResult.ComparisonNarrative("비교 정보 부족",
+                "두 매장을 객관적으로 비교할 수 있는 검색 문서가 충분하지 않습니다. 리뷰나 매장 프로필 데이터가 쌓인 뒤 다시 비교해 주세요."));
     }
 
     private List<RamenShopComparisonDocument> collectComparisonDocuments(RamenShop shop, String focus) {
         String query = comparisonSearchPolicy.buildQuery(shop, focus);
 
-        return comparisonDocumentPort.searchComparisonDocuments(
-                shop.getId(),
-                query,
-                comparisonSearchPolicy.documentLimit(),
-                comparisonSearchPolicy.similarityThreshold()
-        );
+        return comparisonDocumentPort.searchComparisonDocuments(shop.getId(), query,
+                comparisonSearchPolicy.documentLimit(), comparisonSearchPolicy.similarityThreshold());
     }
 
     private String buildComparisonContext(RamenShop shop, List<RamenShopComparisonDocument> documents) {
         String documentContext = buildDocumentContext(documents);
 
         return """
-            매장명: %s
-            주소: %s
-            태그: %s
-            설명: %s
+                매장명: %s
+                주소: %s
+                태그: %s
+                설명: %s
 
-            [검색된 문서]
-            %s
-            """.formatted(
-                shop.getName(),
-                ramenShopReader.addressTextOrDefault(shop),
-                ramenShopReader.tagsTextOrDefault(shop),
-                ramenShopReader.descriptionTextOrDefault(shop),
-                documentContext
-        );
+                [검색된 문서]
+                %s
+                """.formatted(shop.getName(), ramenShopReader.addressTextOrDefault(shop),
+                ramenShopReader.tagsTextOrDefault(shop), ramenShopReader.descriptionTextOrDefault(shop),
+                documentContext);
     }
 
     private String buildDocumentContext(List<RamenShopComparisonDocument> documents) {
@@ -177,9 +152,7 @@ public class RamenShopComparisonService {
             return "검색된 리뷰/프로필 문서가 부족합니다.";
         }
 
-        return documents.stream()
-                .map(this::formatDocument)
-                .collect(Collectors.joining("\n"));
+        return documents.stream().map(this::formatDocument).collect(Collectors.joining("\n"));
     }
 
     private String formatDocument(RamenShopComparisonDocument document) {
@@ -187,22 +160,18 @@ public class RamenShopComparisonService {
         Object source = document.metadata().get(RetrievalMetadataKeys.SOURCE);
 
         return """
-            - 문서유형: %s
-              출처: %s
-              내용: %s
-            """.formatted(
-                documentType == null ? "UNKNOWN" : documentType,
-                source == null ? "UNKNOWN" : source,
-                document.text()
-        );
+                - 문서유형: %s
+                  출처: %s
+                  내용: %s
+                """.formatted(documentType == null ? "UNKNOWN" : documentType, source == null ? "UNKNOWN" : source,
+                document.text());
     }
 
-    public record RamenShopComparisonExecution(
-            RamenShopComparisonResult response,
-            List<RamenShopComparisonDocument> evidence
-    ) {
+    public record RamenShopComparisonExecution(RamenShopComparisonResult response,
+            List<RamenShopComparisonDocument> evidence) {
         public RamenShopComparisonExecution {
             evidence = evidence == null ? List.of() : List.copyOf(evidence);
         }
     }
+
 }

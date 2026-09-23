@@ -26,30 +26,21 @@ public class CommunityV1ApiController {
     private final PostQueryService postQueryService;
 
     @Operation(summary = "라멘 꿀팁 조회", description = "커뮤니티의 '꿀팁' 카테고리 게시글 목록을 요약 형태로 반환합니다.")
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
-    })
+    @ApiResponses({ @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공") })
     @GetMapping("/posts")
     public ResponseEntity<ApiResponse<List<HomePostResult>>> getHomePosts(
-            @Parameter(description = "카테고리 (기본: tip)")
-            @RequestParam(defaultValue = "tip") String category,
-            @Parameter(description = "가져올 개수", example = "3")
-            @RequestParam(defaultValue = "3") int limit) {
+            @Parameter(description = "카테고리 (기본: tip)") @RequestParam(defaultValue = "tip") String category,
+            @Parameter(description = "가져올 개수", example = "3") @RequestParam(defaultValue = "3") int limit) {
         // Note: Sort is latest by default in findHomePosts
         return ResponseEntity.ok(ApiResponse.success(postQueryService.findHomePosts(category, limit)));
     }
 
-    @Operation(
-            summary = "최근 인기글 조회",
-            description = "좋아요가 3개 이상인 게시글 중 작성일이 가장 최근인 게시글을 반환합니다."
-    )
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
-    })
+    @Operation(summary = "최근 인기글 조회", description = "좋아요가 3개 이상인 게시글 중 작성일이 가장 최근인 게시글을 반환합니다.")
+    @ApiResponses({ @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공") })
     @GetMapping("/posts/popular")
     public ResponseEntity<ApiResponse<List<PopularPostResult>>> getRecentPopularPosts(
-            @Parameter(description = "가져올 개수", example = "3")
-            @RequestParam(defaultValue = "3") int limit) {
+            @Parameter(description = "가져올 개수", example = "3") @RequestParam(defaultValue = "3") int limit) {
         return ResponseEntity.ok(ApiResponse.success(postQueryService.findRecentPopularPosts(limit)));
     }
+
 }

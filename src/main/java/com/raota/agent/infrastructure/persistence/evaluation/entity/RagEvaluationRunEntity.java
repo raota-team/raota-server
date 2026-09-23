@@ -81,17 +81,9 @@ public class RagEvaluationRunEntity {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    private RagEvaluationRunEntity(
-            String runId,
-            String datasetVersion,
-            RagEvaluationSplit split,
-            String idempotencyKey,
-            LocalDateTime idempotencyExpiresAt,
-            String serverCommit,
-            String appContractVersion,
-            String vectorIndexVersion,
-            String modelMetadata
-    ) {
+    private RagEvaluationRunEntity(String runId, String datasetVersion, RagEvaluationSplit split, String idempotencyKey,
+            LocalDateTime idempotencyExpiresAt, String serverCommit, String appContractVersion,
+            String vectorIndexVersion, String modelMetadata) {
         this.runId = runId;
         this.datasetVersion = datasetVersion;
         this.split = split;
@@ -106,32 +98,16 @@ public class RagEvaluationRunEntity {
         this.heartbeatAt = LocalDateTime.now();
     }
 
-    public static RagEvaluationRunEntity queued(
-            String runId,
-            String datasetVersion,
-            RagEvaluationSplit split,
-            String idempotencyKey,
-            LocalDateTime idempotencyExpiresAt,
-            String serverCommit,
-            String appContractVersion,
-            String vectorIndexVersion,
-            String modelMetadata
-    ) {
-        return new RagEvaluationRunEntity(
-                runId,
-                datasetVersion,
-                split,
-                idempotencyKey,
-                idempotencyExpiresAt,
-                serverCommit,
-                appContractVersion,
-                vectorIndexVersion,
-                modelMetadata
-        );
+    public static RagEvaluationRunEntity queued(String runId, String datasetVersion, RagEvaluationSplit split,
+            String idempotencyKey, LocalDateTime idempotencyExpiresAt, String serverCommit, String appContractVersion,
+            String vectorIndexVersion, String modelMetadata) {
+        return new RagEvaluationRunEntity(runId, datasetVersion, split, idempotencyKey, idempotencyExpiresAt,
+                serverCommit, appContractVersion, vectorIndexVersion, modelMetadata);
     }
 
     public void markCompleted() {
         this.status = RagEvaluationStatus.COMPLETED;
         this.completedAt = LocalDateTime.now();
     }
+
 }

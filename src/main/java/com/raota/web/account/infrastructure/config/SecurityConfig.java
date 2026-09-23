@@ -29,41 +29,48 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+
     private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
+
     private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
+
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
+
     private final RestAccessDeniedHandler restAccessDeniedHandler;
+
     private final AuthProperties authProperties;
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .cors(Customizer.withDefaults())
-                .csrf(AbstractHttpConfigurer::disable)
-                .formLogin(AbstractHttpConfigurer::disable)
-                .httpBasic(AbstractHttpConfigurer::disable)
-                .logout(AbstractHttpConfigurer::disable)
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint(restAuthenticationEntryPoint)
-                        .accessDeniedHandler(restAccessDeniedHandler))
-                .oauth2Login(oauth2 -> oauth2
-                        .authorizationEndpoint(authorization -> authorization
-                                .baseUri("/oauth2/authorization")
-                                .authorizationRequestRepository(httpCookieOAuth2AuthorizationRequestRepository)) // 쿠키 저장소 등록
-                        .redirectionEndpoint(redirection -> redirection
-                                .baseUri("/login/oauth2/code/*"))
-                        .successHandler(oAuth2AuthenticationSuccessHandler)
-                        .failureHandler(oAuth2AuthenticationFailureHandler))
-                .authorizeHttpRequests(auth -> auth
-                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-                        .requestMatchers(EndpointAccessPolicy.matchersFor(AccessLevel.PUBLIC)).permitAll()
-                        .requestMatchers(EndpointAccessPolicy.matchersFor(AccessLevel.ADMIN)).hasRole("ADMIN")
-                        .requestMatchers(EndpointAccessPolicy.matchersFor(AccessLevel.AUTHENTICATED)).authenticated()
-                        .anyRequest().authenticated())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        http.cors(Customizer.withDefaults())
+            .csrf(AbstractHttpConfigurer::disable)
+            .formLogin(AbstractHttpConfigurer::disable)
+            .httpBasic(AbstractHttpConfigurer::disable)
+            .logout(AbstractHttpConfigurer::disable)
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(exception -> exception.authenticationEntryPoint(restAuthenticationEntryPoint)
+                .accessDeniedHandler(restAccessDeniedHandler))
+            .oauth2Login(oauth2 -> oauth2
+                .authorizationEndpoint(authorization -> authorization.baseUri("/oauth2/authorization")
+                    .authorizationRequestRepository(httpCookieOAuth2AuthorizationRequestRepository)) // 쿠키
+                                                                                                     // 저장소
+                                                                                                     // 등록
+                .redirectionEndpoint(redirection -> redirection.baseUri("/login/oauth2/code/*"))
+                .successHandler(oAuth2AuthenticationSuccessHandler)
+                .failureHandler(oAuth2AuthenticationFailureHandler))
+            .authorizeHttpRequests(auth -> auth.dispatcherTypeMatchers(DispatcherType.ERROR)
+                .permitAll()
+                .requestMatchers(EndpointAccessPolicy.matchersFor(AccessLevel.PUBLIC))
+                .permitAll()
+                .requestMatchers(EndpointAccessPolicy.matchersFor(AccessLevel.ADMIN))
+                .hasRole("ADMIN")
+                .requestMatchers(EndpointAccessPolicy.matchersFor(AccessLevel.AUTHENTICATED))
+                .authenticated()
+                .anyRequest()
+                .authenticated())
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -71,14 +78,8 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        List<String> allowedOriginPatterns = new ArrayList<>(List.of(
-                "https://*.raota.net",
-                "https://raota.net",
-                "http://localhost:*",
-                "https://localhost:*",
-                "http://127.0.0.1:*",
-                "https://127.0.0.1:*"
-        ));
+        List<String> allowedOriginPatterns = new ArrayList<>(List.of("https://*.raota.net", "https://raota.net",
+                "http://localhost:*", "https://localhost:*", "http://127.0.0.1:*", "https://127.0.0.1:*"));
         allowedOriginPatterns.addAll(authProperties.cors().allowedOrigins());
         configuration.setAllowedOriginPatterns(allowedOriginPatterns.stream().distinct().toList());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
@@ -91,4 +92,5 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
 }

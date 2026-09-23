@@ -6,7 +6,11 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class ProofPictureUploadRequest {
+
     private String imageUrl;
+
     private String description;
+
     private String menuName;
+
 }

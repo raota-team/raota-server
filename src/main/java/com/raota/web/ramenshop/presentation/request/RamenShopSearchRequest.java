@@ -11,11 +11,16 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RamenShopSearchRequest {
+
     private String city;
+
     private String district;
+
     private String keyword;
+
     private String tag;
 
     @Schema(description = "정렬 기준", example = "NAME")
     private RamenShopSortType sort;
+
 }

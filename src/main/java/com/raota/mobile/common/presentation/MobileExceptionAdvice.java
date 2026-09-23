@@ -37,6 +37,7 @@ import tools.jackson.databind.exc.MismatchedInputException;
 public class MobileExceptionAdvice {
 
     private static final String VALIDATION_MESSAGE = "입력값을 확인해 주세요.";
+
     private static final String INVALID_FORMAT = "형식이 올바르지 않습니다.";
 
     @ExceptionHandler(MobileException.class)
@@ -50,73 +51,56 @@ public class MobileExceptionAdvice {
 
     @ExceptionHandler(BindException.class)
     public ResponseEntity<MobileApiResponse<Void>> handleBindException(BindException exception) {
-        List<MobileFieldError> fields = exception.getFieldErrors().stream()
-                .map(MobileExceptionAdvice::toFieldError)
-                .toList();
+        List<MobileFieldError> fields = exception.getFieldErrors()
+            .stream()
+            .map(MobileExceptionAdvice::toFieldError)
+            .toList();
         // 필드 형식이 없는 전역 ObjectError는 v2의 필드 오류 배열에서 제외한다.
         return respond(MobileErrorCode.VALIDATION_ERROR, VALIDATION_MESSAGE, fields);
     }
 
     @ExceptionHandler(HandlerMethodValidationException.class)
-    public ResponseEntity<MobileApiResponse<Void>> handleMethodValidation(
-            HandlerMethodValidationException exception
-    ) {
-        List<MobileFieldError> fields = exception.getParameterValidationResults().stream()
-                .flatMap(result -> result.getResolvableErrors().stream().map(error ->
-                        new MobileFieldError(
-                                result.getMethodParameter().getParameterName(),
-                                constraintCode(error, result.getMethodParameter()),
-                                error.getDefaultMessage()
-                        )))
-                .toList();
+    public ResponseEntity<MobileApiResponse<Void>> handleMethodValidation(HandlerMethodValidationException exception) {
+        List<MobileFieldError> fields = exception.getParameterValidationResults()
+            .stream()
+            .flatMap(result -> result.getResolvableErrors()
+                .stream()
+                .map(error -> new MobileFieldError(result.getMethodParameter().getParameterName(),
+                        constraintCode(error, result.getMethodParameter()), error.getDefaultMessage())))
+            .toList();
         return respond(MobileErrorCode.VALIDATION_ERROR, VALIDATION_MESSAGE, fields);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<MobileApiResponse<Void>> handleUnreadableMessage(
-            HttpMessageNotReadableException exception
-    ) {
-        List<MobileFieldError> fields = jacksonPath(exception).map(path -> List.of(
-                new MobileFieldError(path, "INVALID_FORMAT", INVALID_FORMAT)
-        )).orElseGet(List::of);
+    public ResponseEntity<MobileApiResponse<Void>> handleUnreadableMessage(HttpMessageNotReadableException exception) {
+        List<MobileFieldError> fields = jacksonPath(exception)
+            .map(path -> List.of(new MobileFieldError(path, "INVALID_FORMAT", INVALID_FORMAT)))
+            .orElseGet(List::of);
         return respond(MobileErrorCode.VALIDATION_ERROR, "요청 본문을 읽을 수 없습니다.", fields);
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<MobileApiResponse<Void>> handleTypeMismatch(
-            MethodArgumentTypeMismatchException exception
-    ) {
-        return respond(
-                MobileErrorCode.VALIDATION_ERROR,
-                VALIDATION_MESSAGE,
-                List.of(new MobileFieldError(exception.getName(), "INVALID_FORMAT", INVALID_FORMAT))
-        );
+    public ResponseEntity<MobileApiResponse<Void>> handleTypeMismatch(MethodArgumentTypeMismatchException exception) {
+        return respond(MobileErrorCode.VALIDATION_ERROR, VALIDATION_MESSAGE,
+                List.of(new MobileFieldError(exception.getName(), "INVALID_FORMAT", INVALID_FORMAT)));
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<MobileApiResponse<Void>> handleMissingParameter(
-            MissingServletRequestParameterException exception
-    ) {
-        return respond(
-                MobileErrorCode.VALIDATION_ERROR,
-                VALIDATION_MESSAGE,
-                List.of(new MobileFieldError(exception.getParameterName(), "REQUIRED", "필수 값입니다."))
-        );
+            MissingServletRequestParameterException exception) {
+        return respond(MobileErrorCode.VALIDATION_ERROR, VALIDATION_MESSAGE,
+                List.of(new MobileFieldError(exception.getParameterName(), "REQUIRED", "필수 값입니다.")));
     }
 
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ResponseEntity<MobileApiResponse<Void>> handleMissingHeader(MissingRequestHeaderException exception) {
-        return respond(
-                MobileErrorCode.VALIDATION_ERROR,
-                VALIDATION_MESSAGE,
-                List.of(new MobileFieldError(exception.getHeaderName(), "REQUIRED", "필수 값입니다."))
-        );
+        return respond(MobileErrorCode.VALIDATION_ERROR, VALIDATION_MESSAGE,
+                List.of(new MobileFieldError(exception.getHeaderName(), "REQUIRED", "필수 값입니다.")));
     }
 
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     public ResponseEntity<MobileApiResponse<Void>> handleUnsupportedMediaType(
-            HttpMediaTypeNotSupportedException exception
-    ) {
+            HttpMediaTypeNotSupportedException exception) {
         return respond(MobileErrorCode.VALIDATION_ERROR, "지원하지 않는 Content-Type입니다.", List.of());
     }
 
@@ -142,13 +126,10 @@ public class MobileExceptionAdvice {
         return respond(MobileErrorCode.INTERNAL_ERROR, "서버 내부 오류가 발생했습니다.", List.of());
     }
 
-    private ResponseEntity<MobileApiResponse<Void>> respond(
-            MobileErrorCode code,
-            String message,
-            List<MobileFieldError> fields
-    ) {
+    private ResponseEntity<MobileApiResponse<Void>> respond(MobileErrorCode code, String message,
+            List<MobileFieldError> fields) {
         return ResponseEntity.status(code.httpStatus())
-                .body(MobileApiResponse.failure(MobileError.of(code, message, fields)));
+            .body(MobileApiResponse.failure(MobileError.of(code, message, fields)));
     }
 
     private static MobileFieldError toFieldError(FieldError error) {
@@ -196,4 +177,5 @@ public class MobileExceptionAdvice {
         }
         return path.toString();
     }
+
 }

@@ -20,53 +20,48 @@ public interface RamenShopRepository extends JpaRepository<RamenShop, Long> {
 
     List<RamenShop> findAllByIdBetweenOrderByIdAsc(Long fromId, Long toId);
 
-    @Query(
-            value = """
-        select new com.raota.web.ramenshop.presentation.response.RamenShopResponse(
-            s.id,
-            s.name,
-            s.description,
-            concat(s.address.city, concat(' ', s.address.district)),
-            s.tags,
-            s.imageUrl,
-            s.stats.visitCount,
-            s.stats.viewCount
-        )
-        from RamenShop s
-        where s.published = true
-          and (:city is null or :city = '' or s.address.city = :city)
-          and (:district is null or :district = '' or s.address.district = :district)
-          and (:keyword is null or :keyword = '' or s.name like concat('%', :keyword, '%'))
-          and (
-              :tag is null or :tag = '' or exists (
-                  select 1
-                  from NormalMenu m
-                  where m.ramenShop = s
-                    and m.name like concat('%', :tag, '%')
+    @Query(value = """
+            select new com.raota.web.ramenshop.presentation.response.RamenShopResponse(
+                s.id,
+                s.name,
+                s.description,
+                concat(s.address.city, concat(' ', s.address.district)),
+                s.tags,
+                s.imageUrl,
+                s.stats.visitCount,
+                s.stats.viewCount
+            )
+            from RamenShop s
+            where s.published = true
+              and (:city is null or :city = '' or s.address.city = :city)
+              and (:district is null or :district = '' or s.address.district = :district)
+              and (:keyword is null or :keyword = '' or s.name like concat('%', :keyword, '%'))
+              and (
+                  :tag is null or :tag = '' or exists (
+                      select 1
+                      from NormalMenu m
+                      where m.ramenShop = s
+                        and m.name like concat('%', :tag, '%')
+                  )
               )
-          )
-        """,
-            countQuery = """
-        select count(s)
-        from RamenShop s
-        where s.published = true
-          and (:city is null or :city = '' or s.address.city = :city)
-          and (:district is null or :district = '' or s.address.district = :district)
-          and (:keyword is null or :keyword = '' or s.name like concat('%', :keyword, '%'))
-          and (
-              :tag is null or :tag = '' or exists (
-                  select 1
-                  from NormalMenu m
-                  where m.ramenShop = s
-                    and m.name like concat('%', :tag, '%')
+            """, countQuery = """
+            select count(s)
+            from RamenShop s
+            where s.published = true
+              and (:city is null or :city = '' or s.address.city = :city)
+              and (:district is null or :district = '' or s.address.district = :district)
+              and (:keyword is null or :keyword = '' or s.name like concat('%', :keyword, '%'))
+              and (
+                  :tag is null or :tag = '' or exists (
+                      select 1
+                      from NormalMenu m
+                      where m.ramenShop = s
+                        and m.name like concat('%', :tag, '%')
+                  )
               )
-          )
-        """
-    )
-    Page<RamenShopResponse> searchStores(@Param("city") String city,
-                                         @Param("district") String district,
-                                         @Param("keyword") String keyword,
-                                         @Param("tag") String tag, Pageable pageable);
+            """)
+    Page<RamenShopResponse> searchStores(@Param("city") String city, @Param("district") String district,
+            @Param("keyword") String keyword, @Param("tag") String tag, Pageable pageable);
 
     @Query("""
             select new com.raota.web.ramenshop.application.result.TodayPopularRamenShopResponse(
@@ -78,4 +73,5 @@ public interface RamenShopRepository extends JpaRepository<RamenShop, Long> {
               and s.published = true
             """)
     List<TodayPopularRamenShopResponse> findPopularTodayShops(@Param("shopIds") Collection<Long> shopIds);
+
 }

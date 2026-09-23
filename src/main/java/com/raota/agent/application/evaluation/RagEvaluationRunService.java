@@ -38,43 +38,52 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Slf4j
 @Service
 public class RagEvaluationRunService {
+
     private static final int DEFAULT_PAGE_SIZE = 20;
     static final String RESERVATION_LOCK_KEY = "lock:rag-evaluation:active";
+
     private static final Duration RESERVATION_LOCK_TTL = Duration.ofSeconds(30);
+
     private static final Duration RESERVATION_LOCK_WAIT = Duration.ofSeconds(3);
+
     private static final Duration RESERVATION_LOCK_RETRY_INTERVAL = Duration.ofMillis(50);
+
     private static final String ACTIVE_SLOT_CONSTRAINT = "uk_rag_evaluation_run_active_slot";
+
     private static final String IDEMPOTENCY_KEY_CONSTRAINT = "uk_rag_evaluation_run_idempotency_key";
-    private static final Collection<RagEvaluationStatus> ACTIVE_STATUSES = List.of(
-            RagEvaluationStatus.QUEUED,
-            RagEvaluationStatus.RUNNING
-    );
+
+    private static final Collection<RagEvaluationStatus> ACTIVE_STATUSES = List.of(RagEvaluationStatus.QUEUED,
+            RagEvaluationStatus.RUNNING);
 
     private final RagEvaluationDatasetLoader datasetLoader;
+
     private final RagEvaluationRunJpaRepository runRepository;
+
     private final RagEvaluationCaseResultJpaRepository caseRepository;
+
     private final RagEvaluationRunner runner;
+
     private final RedisLockClient lockClient;
+
     private final TransactionTemplate transactionTemplate;
+
     private final ObjectMapper objectMapper;
+
     private final String serverCommit;
+
     private final String appContractVersion;
+
     private final String vectorIndexVersion;
+
     private final String modelMetadata;
 
-    public RagEvaluationRunService(
-            RagEvaluationDatasetLoader datasetLoader,
-            RagEvaluationRunJpaRepository runRepository,
-            RagEvaluationCaseResultJpaRepository caseRepository,
-            RagEvaluationRunner runner,
-            RedisLockClient lockClient,
-            TransactionTemplate transactionTemplate,
-            ObjectMapper objectMapper,
-            @Value("${app.rag.evaluation.server-commit:unknown}") String serverCommit,
+    public RagEvaluationRunService(RagEvaluationDatasetLoader datasetLoader,
+            RagEvaluationRunJpaRepository runRepository, RagEvaluationCaseResultJpaRepository caseRepository,
+            RagEvaluationRunner runner, RedisLockClient lockClient, TransactionTemplate transactionTemplate,
+            ObjectMapper objectMapper, @Value("${app.rag.evaluation.server-commit:unknown}") String serverCommit,
             @Value("${app.rag.evaluation.app-contract-version:v1}") String appContractVersion,
             @Value("${app.rag.evaluation.vector-index-version:unknown}") String vectorIndexVersion,
-            @Value("${app.rag.evaluation.model-metadata:{}}") String modelMetadata
-    ) {
+            @Value("${app.rag.evaluation.model-metadata:{}}") String modelMetadata) {
         this.datasetLoader = datasetLoader;
         this.runRepository = runRepository;
         this.caseRepository = caseRepository;
@@ -90,20 +99,17 @@ public class RagEvaluationRunService {
 
     public DatasetView dataset(String requestedVersion) {
         RagEvaluationDataset dataset = datasetLoader.load(requestedVersion);
-        return new DatasetView(
-                dataset.version(),
-                dataset.cases().size(),
-                dataset.countsByType(),
-                List.of(RagEvaluationSplit.DEV, RagEvaluationSplit.HOLDOUT)
-        );
+        return new DatasetView(dataset.version(), dataset.cases().size(), dataset.countsByType(),
+                List.of(RagEvaluationSplit.DEV, RagEvaluationSplit.HOLDOUT));
     }
 
     /**
      * 평가 실행을 예약한다.
      *
-     * <p>여러 서버에서 동시에 호출될 수 있다. Redis 락은 멱등키·활성 실행 확인과 QUEUED 저장이
-     * 커밋될 때까지만 유지하고, 활성 실행이 하나뿐이라는 최종 보장은 active_slot UNIQUE 제약이 맡는다.
-     * Redis에 접근할 수 없으면 DB 제약만으로 예약을 진행한다.</p>
+     * <p>
+     * 여러 서버에서 동시에 호출될 수 있다. Redis 락은 멱등키·활성 실행 확인과 QUEUED 저장이 커밋될 때까지만 유지하고, 활성 실행이
+     * 하나뿐이라는 최종 보장은 active_slot UNIQUE 제약이 맡는다. Redis에 접근할 수 없으면 DB 제약만으로 예약을 진행한다.
+     * </p>
      */
     public RunStart start(String datasetVersion, RagEvaluationSplit split, String idempotencyKey) {
         if (idempotencyKey == null || idempotencyKey.isBlank()) {
@@ -124,7 +130,8 @@ public class RagEvaluationRunService {
         Optional<LockToken> lock = acquireReservationLock();
         try {
             return reserve(dataset, targetSplit, idempotencyKey);
-        } catch (DataIntegrityViolationException exception) {
+        }
+        catch (DataIntegrityViolationException exception) {
             if (violates(exception, IDEMPOTENCY_KEY_CONSTRAINT)) {
                 return findReplay(idempotencyKey, dataset, targetSplit).orElseThrow(() -> exception);
             }
@@ -132,7 +139,8 @@ public class RagEvaluationRunService {
                 throw new RagEvaluationAlreadyRunningException();
             }
             throw exception;
-        } finally {
+        }
+        finally {
             lock.ifPresent(this::releaseReservationLock);
         }
     }
@@ -150,13 +158,10 @@ public class RagEvaluationRunService {
         return false;
     }
 
-    private Optional<RunStart> findReplay(
-            String idempotencyKey,
-            RagEvaluationDataset dataset,
-            RagEvaluationSplit targetSplit
-    ) {
+    private Optional<RunStart> findReplay(String idempotencyKey, RagEvaluationDataset dataset,
+            RagEvaluationSplit targetSplit) {
         return transactionTemplate.execute(status -> runRepository.findByIdempotencyKey(idempotencyKey)
-                .map(run -> replay(run, dataset, targetSplit)));
+            .map(run -> replay(run, dataset, targetSplit)));
     }
 
     private RunStart replay(RagEvaluationRunEntity run, RagEvaluationDataset dataset, RagEvaluationSplit targetSplit) {
@@ -180,17 +185,9 @@ public class RagEvaluationRunService {
             }
 
             String runId = UUID.randomUUID().toString();
-            runRepository.saveAndFlush(RagEvaluationRunEntity.queued(
-                    runId,
-                    dataset.version(),
-                    targetSplit,
-                    idempotencyKey,
-                    LocalDateTime.now().plusHours(24),
-                    serverCommit,
-                    appContractVersion,
-                    vectorIndexVersion,
-                    modelMetadata
-            ));
+            runRepository.saveAndFlush(RagEvaluationRunEntity.queued(runId, dataset.version(), targetSplit,
+                    idempotencyKey, LocalDateTime.now().plusHours(24), serverCommit, appContractVersion,
+                    vectorIndexVersion, modelMetadata));
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
@@ -214,10 +211,12 @@ public class RagEvaluationRunService {
                 }
                 Thread.sleep(RESERVATION_LOCK_RETRY_INTERVAL);
             }
-        } catch (RedisLockUnavailableException exception) {
+        }
+        catch (RedisLockUnavailableException exception) {
             log.warn("Redis lock unavailable; reserving RAG evaluation with database guard only.", exception);
             return Optional.empty();
-        } catch (InterruptedException exception) {
+        }
+        catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             throw new RagEvaluationAlreadyRunningException();
         }
@@ -228,7 +227,8 @@ public class RagEvaluationRunService {
             if (!lockClient.release(lock)) {
                 log.warn("RAG evaluation reservation lock was already released or expired. key={}", lock.key());
             }
-        } catch (RedisLockUnavailableException exception) {
+        }
+        catch (RedisLockUnavailableException exception) {
             log.warn("Failed to release RAG evaluation reservation lock; it will expire by TTL.", exception);
         }
     }
@@ -247,19 +247,14 @@ public class RagEvaluationRunService {
         int safeSize = size <= 0 ? DEFAULT_PAGE_SIZE : Math.min(size, 100);
         List<RagEvaluationRunEntity> rows;
         if (cursor == null || cursor.isBlank()) {
-            rows = runRepository.findAll(PageRequest.of(
-                    0,
-                    safeSize + 1,
-                    Sort.by(Sort.Direction.DESC, "createdAt")
-                            .and(Sort.by(Sort.Direction.DESC, "runId"))
-            )).getContent();
-        } else {
+            rows = runRepository
+                .findAll(PageRequest.of(0, safeSize + 1,
+                        Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by(Sort.Direction.DESC, "runId"))))
+                .getContent();
+        }
+        else {
             CursorValue value = decodeCursor(cursor);
-            rows = runRepository.findAfterCursor(
-                    value.createdAt(),
-                    value.runId(),
-                    PageRequest.of(0, safeSize + 1)
-            );
+            rows = runRepository.findAfterCursor(value.createdAt(), value.runId(), PageRequest.of(0, safeSize + 1));
         }
         boolean hasNext = rows.size() > safeSize;
         List<RunView> items = rows.stream().limit(safeSize).map(this::toRunView).toList();
@@ -273,22 +268,23 @@ public class RagEvaluationRunService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<CaseView> cases(String runId, int page, int size, RagEvaluationCaseType type, RagEvaluationCaseStatus status) {
+    public PageResponse<CaseView> cases(String runId, int page, int size, RagEvaluationCaseType type,
+            RagEvaluationCaseStatus status) {
         findRun(runId);
-        List<CaseView> filtered = caseRepository.findByRunIdOrderByIdAsc(runId).stream()
-                .filter(item -> type == null || item.getCaseType() == type)
-                .filter(item -> status == null || item.getStatus() == status)
-                .map(this::toCaseView)
-                .toList();
+        List<CaseView> filtered = caseRepository.findByRunIdOrderByIdAsc(runId)
+            .stream()
+            .filter(item -> type == null || item.getCaseType() == type)
+            .filter(item -> status == null || item.getStatus() == status)
+            .map(this::toCaseView)
+            .toList();
         int safePage = Math.max(0, page);
         int safeSize = size <= 0 ? DEFAULT_PAGE_SIZE : Math.min(size, 100);
         int from = Math.min(filtered.size(), safePage * safeSize);
         int to = Math.min(filtered.size(), from + safeSize);
         List<CaseView> items = filtered.subList(from, to);
         int totalPages = filtered.isEmpty() ? 0 : (int) Math.ceil((double) filtered.size() / safeSize);
-        PageResponse.PageMeta meta = new PageResponse.PageMeta(
-                safePage, safeSize, filtered.size(), totalPages, to < filtered.size(), safePage > 0
-        );
+        PageResponse.PageMeta meta = new PageResponse.PageMeta(safePage, safeSize, filtered.size(), totalPages,
+                to < filtered.size(), safePage > 0);
         return new PageResponse<>(items, meta);
     }
 
@@ -303,7 +299,7 @@ public class RagEvaluationRunService {
             throw new IllegalArgumentException("최종 점수는 0~2 사이이고 승인 여부는 필수입니다.");
         }
         RagEvaluationCaseResultEntity entity = caseRepository.findByRunIdAndCaseId(runId, caseId)
-                .orElseThrow(() -> new IllegalArgumentException("평가 사례를 찾을 수 없습니다: " + caseId));
+            .orElseThrow(() -> new IllegalArgumentException("평가 사례를 찾을 수 없습니다: " + caseId));
         if (entity.getCaseType() == RagEvaluationCaseType.SEARCH) {
             throw new IllegalArgumentException("검색 사례는 사람 검수 대상이 아닙니다.");
         }
@@ -326,10 +322,11 @@ public class RagEvaluationRunService {
             throw new IllegalStateException("검수 대기 상태인 실행만 확정할 수 있습니다.");
         }
         RagEvaluationDataset dataset = datasetLoader.load(run.getDatasetVersion());
-        boolean missingReview = dataset.casesFor(run.getSplit()).stream()
-                .filter(this::isGenerated)
-                .map(item -> caseRepository.findByRunIdAndCaseId(runId, item.caseId()).orElse(null))
-                .anyMatch(item -> item == null || item.getFinalReviewJson() == null || item.getFinalReviewJson().isBlank());
+        boolean missingReview = dataset.casesFor(run.getSplit())
+            .stream()
+            .filter(this::isGenerated)
+            .map(item -> caseRepository.findByRunIdAndCaseId(runId, item.caseId()).orElse(null))
+            .anyMatch(item -> item == null || item.getFinalReviewJson() == null || item.getFinalReviewJson().isBlank());
         if (missingReview) {
             throw new IllegalStateException("생성 사례의 사람 검수가 모두 끝나야 기준선을 확정할 수 있습니다.");
         }
@@ -340,40 +337,33 @@ public class RagEvaluationRunService {
     @Transactional(readOnly = true)
     public ExportView export(String runId) {
         RagEvaluationRunEntity run = findRun(runId);
-        return new ExportView(
-                toRunView(run),
-                caseRepository.findByRunIdOrderByIdAsc(runId).stream().map(this::toCaseView).toList()
-        );
+        return new ExportView(toRunView(run),
+                caseRepository.findByRunIdOrderByIdAsc(runId).stream().map(this::toCaseView).toList());
     }
 
     private boolean isGenerated(RagEvaluationCase evaluationCase) {
-        return evaluationCase.type() != RagEvaluationCaseType.SEARCH
-                && !evaluationCase.contractOnly()
+        return evaluationCase.type() != RagEvaluationCaseType.SEARCH && !evaluationCase.contractOnly()
                 && evaluationCase.expectedError() == null;
     }
 
     private RagEvaluationRunEntity findRun(String runId) {
         return runRepository.findById(runId)
-                .orElseThrow(() -> new IllegalArgumentException("평가 실행을 찾을 수 없습니다: " + runId));
+            .orElseThrow(() -> new IllegalArgumentException("평가 실행을 찾을 수 없습니다: " + runId));
     }
 
     private RunView toRunView(RagEvaluationRunEntity run) {
-        return new RunView(
-                run.getRunId(), run.getDatasetVersion(), run.getSplit(), run.getStatus(),
+        return new RunView(run.getRunId(), run.getDatasetVersion(), run.getSplit(), run.getStatus(),
                 parseJson(run.getAggregateMetrics()), run.getServerCommit(), run.getAppContractVersion(),
-                run.getVectorIndexVersion(), parseJson(run.getModelMetadata()), run.getFatalError(),
-                run.getCreatedAt(), run.getStartedAt(), run.getCompletedAt()
-        );
+                run.getVectorIndexVersion(), parseJson(run.getModelMetadata()), run.getFatalError(), run.getCreatedAt(),
+                run.getStartedAt(), run.getCompletedAt());
     }
 
     private CaseView toCaseView(RagEvaluationCaseResultEntity item) {
-        return new CaseView(
-                item.getRunId(), item.getCaseId(), item.getCaseType(), item.getStatus(),
+        return new CaseView(item.getRunId(), item.getCaseId(), item.getCaseType(), item.getStatus(),
                 parseJson(item.getRequestJson()), parseJson(item.getExpectedJson()), parseJson(item.getResponseJson()),
-                parseJson(item.getEvidenceJson()), parseJson(item.getMetricsJson()), parseJson(item.getAutoJudgementJson()),
-                parseJson(item.getFinalReviewJson()), item.getLatencyMs(), item.getErrorType(), item.getErrorMessage(),
-                item.getReviewerMemberId(), item.getReviewedAt()
-        );
+                parseJson(item.getEvidenceJson()), parseJson(item.getMetricsJson()),
+                parseJson(item.getAutoJudgementJson()), parseJson(item.getFinalReviewJson()), item.getLatencyMs(),
+                item.getErrorType(), item.getErrorMessage(), item.getReviewerMemberId(), item.getReviewedAt());
     }
 
     private JsonNode parseJson(String value) {
@@ -382,7 +372,8 @@ public class RagEvaluationRunService {
         }
         try {
             return objectMapper.readTree(value);
-        } catch (JacksonException exception) {
+        }
+        catch (JacksonException exception) {
             return objectMapper.getNodeFactory().textNode(value);
         }
     }
@@ -393,7 +384,8 @@ public class RagEvaluationRunService {
         }
         try {
             return objectMapper.writeValueAsString(value);
-        } catch (JacksonException exception) {
+        }
+        catch (JacksonException exception) {
             throw new IllegalArgumentException("JSON 변환에 실패했습니다.", exception);
         }
     }
@@ -413,17 +405,15 @@ public class RagEvaluationRunService {
             if (separator <= 0 || separator == raw.length() - 1) {
                 throw new IllegalArgumentException("잘못된 cursor입니다.");
             }
-            return new CursorValue(
-                    LocalDateTime.parse(raw.substring(0, separator)),
-                    raw.substring(separator + 1)
-            );
-        } catch (IllegalArgumentException exception) {
+            return new CursorValue(LocalDateTime.parse(raw.substring(0, separator)), raw.substring(separator + 1));
+        }
+        catch (IllegalArgumentException exception) {
             throw new IllegalArgumentException("잘못된 cursor입니다.", exception);
         }
     }
 
     public record DatasetView(String version, int totalCases, Map<RagEvaluationCaseType, Long> countsByType,
-                              List<RagEvaluationSplit> availableSplits) {
+            List<RagEvaluationSplit> availableSplits) {
     }
 
     public record RunStart(String runId, RagEvaluationStatus status, boolean idempotentReplay) {
@@ -436,15 +426,15 @@ public class RagEvaluationRunService {
     }
 
     public record RunView(String runId, String datasetVersion, RagEvaluationSplit split, RagEvaluationStatus status,
-                          JsonNode aggregateMetrics, String serverCommit, String appContractVersion,
-                          String vectorIndexVersion, JsonNode modelMetadata, String fatalError,
-                          LocalDateTime createdAt, LocalDateTime startedAt, LocalDateTime completedAt) {
+            JsonNode aggregateMetrics, String serverCommit, String appContractVersion, String vectorIndexVersion,
+            JsonNode modelMetadata, String fatalError, LocalDateTime createdAt, LocalDateTime startedAt,
+            LocalDateTime completedAt) {
     }
 
     public record CaseView(String runId, String caseId, RagEvaluationCaseType caseType, RagEvaluationCaseStatus status,
-                           JsonNode request, JsonNode expected, JsonNode response, JsonNode evidence, JsonNode metrics,
-                           JsonNode autoJudgement, JsonNode finalReview, Long latencyMs, String errorType,
-                           String errorMessage, Long reviewerMemberId, LocalDateTime reviewedAt) {
+            JsonNode request, JsonNode expected, JsonNode response, JsonNode evidence, JsonNode metrics,
+            JsonNode autoJudgement, JsonNode finalReview, Long latencyMs, String errorType, String errorMessage,
+            Long reviewerMemberId, LocalDateTime reviewedAt) {
     }
 
     public record ReviewCommand(Integer finalScore, Boolean approved, String verdict, String opinion) {
@@ -452,4 +442,5 @@ public class RagEvaluationRunService {
 
     public record ExportView(RunView run, List<CaseView> cases) {
     }
+
 }

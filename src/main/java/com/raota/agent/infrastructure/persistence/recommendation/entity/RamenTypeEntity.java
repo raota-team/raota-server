@@ -41,19 +41,15 @@ public class RamenTypeEntity {
 
     public static RamenTypeEntity from(RamenType domain) {
         return RamenTypeEntity.builder()
-                .id(domain.getId())
-                .name(domain.getName())
-                .subTitle(domain.getSubTitle())
-                .imageUrl(domain.getImageUrl())
-                .build();
+            .id(domain.getId())
+            .name(domain.getName())
+            .subTitle(domain.getSubTitle())
+            .imageUrl(domain.getImageUrl())
+            .build();
     }
 
     public RamenType toDomain() {
-        return RamenType.builder()
-                .id(this.id)
-                .name(this.name)
-                .subTitle(this.subTitle)
-                .imageUrl(this.imageUrl)
-                .build();
+        return RamenType.builder().id(this.id).name(this.name).subTitle(this.subTitle).imageUrl(this.imageUrl).build();
     }
+
 }

@@ -25,4 +25,5 @@ public class PopularRamenShopController implements PopularRamenShopApi {
             @RequestParam(defaultValue = "5") int limit) {
         return ResponseEntity.ok(ApiResponse.success(ramenShopViewRankingService.getTodayPopularShops(limit)));
     }
+
 }

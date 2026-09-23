@@ -15,21 +15,24 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional
 public class CommentService {
+
     private final CommentRepository commentRepository;
+
     private final PostRepository postRepository;
+
     private final MemberRepository memberRepository;
 
     public Long createComment(CreateCommentCommand command) {
-        postRepository.findById(command.postId())
-                .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다."));
+        postRepository.findById(command.postId()).orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다."));
 
         commentRepository.validateReplyTarget(command.parentCommentId());
 
-        Comment comment = Comment.create(command.postId(), command.authorId(), command.parentCommentId(), command.content());
+        Comment comment = Comment.create(command.postId(), command.authorId(), command.parentCommentId(),
+                command.content());
         Comment savedComment = commentRepository.save(comment);
 
         MemberProfile author = memberRepository.findById(command.authorId())
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+            .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         author.increaseCommentCount();
 
         return savedComment.getId();
@@ -43,7 +46,8 @@ public class CommentService {
         commentRepository.softDelete(commentId, authorId);
 
         MemberProfile author = memberRepository.findById(authorId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+            .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         author.decreaseCommentCount();
     }
+
 }

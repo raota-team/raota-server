@@ -10,7 +10,9 @@ import lombok.Setter;
 public class ApiResponse<T> {
 
     private ApiStatus status;
+
     private String message;
+
     private T data;
 
     private ApiResponse(ApiStatus status, String message, T data) {
@@ -37,4 +39,5 @@ public class ApiResponse<T> {
     public static <T> ApiResponse<T> fail(String message) {
         return new ApiResponse<>(ApiStatus.FAIL, message, null);
     }
+
 }

@@ -31,13 +31,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class MemberCommunityActivityController {
 
     private final PostQueryService postQueryService;
+
     private final CommentQueryService commentQueryService;
+
     private final MemberActivityVisibilityService memberActivityVisibilityService;
 
     @Operation(summary = "내 글 목록 조회", description = "로그인 사용자의 글 목록을 페이징으로 조회합니다. 기본 페이지 크기는 5입니다.")
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
-    })
+    @ApiResponses({ @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공") })
     @GetMapping("/me/posts")
     public ResponseEntity<ApiResponse<PageResponse<PostCardResult>>> getMyPosts(
             @Parameter(hidden = true) @LoginMember Long memberId,
@@ -47,9 +47,7 @@ public class MemberCommunityActivityController {
     }
 
     @Operation(summary = "내 댓글 목록 조회", description = "댓글 내용과 댓글이 속한 글의 제목/작성일시를 페이징으로 조회합니다. 기본 페이지 크기는 5입니다.")
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
-    })
+    @ApiResponses({ @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공") })
     @GetMapping("/me/comments")
     public ResponseEntity<ApiResponse<PageResponse<CommentItemResult>>> getMyComments(
             @Parameter(hidden = true) @LoginMember Long memberId,
@@ -59,12 +57,9 @@ public class MemberCommunityActivityController {
     }
 
     @Operation(summary = "사용자 글 목록 조회", description = "특정 사용자의 글 목록을 페이징으로 조회합니다. 기본 페이지 크기는 5입니다.")
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
-    })
+    @ApiResponses({ @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공") })
     @GetMapping("/{userId}/posts")
-    public ResponseEntity<ApiResponse<PageResponse<PostCardResult>>> getUserPostsById(
-            @PathVariable Long userId,
+    public ResponseEntity<ApiResponse<PageResponse<PostCardResult>>> getUserPostsById(@PathVariable Long userId,
             @Parameter(hidden = true) @LoginMember(required = false) Long viewerId,
             @ParameterObject @PageableDefault(size = 5, direction = Sort.Direction.DESC) Pageable pageable) {
         memberActivityVisibilityService.requirePostsVisible(userId, viewerId);
@@ -73,16 +68,14 @@ public class MemberCommunityActivityController {
     }
 
     @Operation(summary = "사용자 댓글 목록 조회", description = "특정 사용자의 댓글 목록을 페이징으로 조회합니다. 기본 페이지 크기는 5입니다.")
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
-    })
+    @ApiResponses({ @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공") })
     @GetMapping("/{userId}/comments")
-    public ResponseEntity<ApiResponse<PageResponse<CommentItemResult>>> getUserCommentsById(
-            @PathVariable Long userId,
+    public ResponseEntity<ApiResponse<PageResponse<CommentItemResult>>> getUserCommentsById(@PathVariable Long userId,
             @Parameter(hidden = true) @LoginMember(required = false) Long viewerId,
             @ParameterObject @PageableDefault(size = 5, direction = Sort.Direction.DESC) Pageable pageable) {
         memberActivityVisibilityService.requireCommentsVisible(userId, viewerId);
         Page<CommentItemResult> response = commentQueryService.findCommentsByAuthor(userId, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(response)));
     }
+
 }

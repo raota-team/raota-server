@@ -26,13 +26,13 @@ public abstract class BaseIntegrationTest {
     private CacheManager cacheManager;
 
     protected static final MySQLContainer<?> MYSQL_CONTAINER;
+
     protected static final RedisContainer REDIS_CONTAINER;
 
     static {
-        MYSQL_CONTAINER = new MySQLContainer<>("mysql:8.0")
-                .withDatabaseName("raota")
-                .withUsername("root")
-                .withPassword("password");
+        MYSQL_CONTAINER = new MySQLContainer<>("mysql:8.0").withDatabaseName("raota")
+            .withUsername("root")
+            .withPassword("password");
         MYSQL_CONTAINER.start();
 
         REDIS_CONTAINER = new RedisContainer(DockerImageName.parse("redis:7.2-alpine"));
@@ -40,9 +40,9 @@ public abstract class BaseIntegrationTest {
 
         // Ensure Flyway runs before Hibernate validation
         Flyway flyway = Flyway.configure()
-                .dataSource(MYSQL_CONTAINER.getJdbcUrl(), MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword())
-                .locations("classpath:db/migration")
-                .load();
+            .dataSource(MYSQL_CONTAINER.getJdbcUrl(), MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword())
+            .locations("classpath:db/migration")
+            .load();
         flyway.migrate();
     }
 
@@ -57,9 +57,7 @@ public abstract class BaseIntegrationTest {
 
     @AfterEach
     void clearCaches() {
-        cacheManager.getCacheNames().stream()
-                .map(cacheManager::getCache)
-                .forEach(this::clear);
+        cacheManager.getCacheNames().stream().map(cacheManager::getCache).forEach(this::clear);
     }
 
     private void clear(Cache cache) {
@@ -67,4 +65,5 @@ public abstract class BaseIntegrationTest {
             cache.clear();
         }
     }
+
 }

@@ -28,44 +28,38 @@ import org.springframework.web.bind.annotation.RestController;
 public class CommunityCommentController implements CommunityCommentApi {
 
     private final CommentService commentService;
+
     private final CommentQueryService commentQueryService;
 
     @Override
     @PostMapping("/posts/{postId}/comments")
-    public ResponseEntity<ApiResponse<CommentItemResult>> createComment(
-            @PathVariable Long postId,
-            @RequestBody CommunityCommentCreateRequest request,
-            @LoginMember Long memberId) {
+    public ResponseEntity<ApiResponse<CommentItemResult>> createComment(@PathVariable Long postId,
+            @RequestBody CommunityCommentCreateRequest request, @LoginMember Long memberId) {
         Long commentId = commentService.createComment(request.toCommand(postId, memberId));
         return ResponseEntity.ok(ApiResponse.success(commentQueryService.getComment(commentId)));
     }
 
     @Override
     @GetMapping("/posts/{postId}/comments")
-    public ResponseEntity<ApiResponse<PageResponse<CommentThreadResult>>> getComments(
-            @PathVariable Long postId,
+    public ResponseEntity<ApiResponse<PageResponse<CommentThreadResult>>> getComments(@PathVariable Long postId,
             Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(
-                commentQueryService.getCommentThreads(postId, pageable)
-        )));
+        return ResponseEntity
+            .ok(ApiResponse.success(PageResponse.from(commentQueryService.getCommentThreads(postId, pageable))));
     }
 
     @Override
     @PutMapping("/comments/{commentId}")
-    public ResponseEntity<ApiResponse<CommentItemResult>> updateComment(
-            @PathVariable Long commentId,
-            @RequestBody CommunityCommentUpdateRequest request,
-            @LoginMember Long memberId) {
+    public ResponseEntity<ApiResponse<CommentItemResult>> updateComment(@PathVariable Long commentId,
+            @RequestBody CommunityCommentUpdateRequest request, @LoginMember Long memberId) {
         commentService.updateComment(request.toCommand(commentId, memberId));
         return ResponseEntity.ok(ApiResponse.success(commentQueryService.getComment(commentId)));
     }
 
     @Override
     @DeleteMapping("/comments/{commentId}")
-    public ResponseEntity<ApiResponse<Void>> deleteComment(
-            @PathVariable Long commentId,
-            @LoginMember Long memberId) {
+    public ResponseEntity<ApiResponse<Void>> deleteComment(@PathVariable Long commentId, @LoginMember Long memberId) {
         commentService.deleteComment(commentId, memberId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
+
 }

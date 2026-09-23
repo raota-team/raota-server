@@ -53,12 +53,14 @@ public class RamenShopReport {
     @Column(name = "reported_at", nullable = false)
     private LocalDateTime reportedAt;
 
-    public static RamenShopReport create(RamenShop shop, MemberProfile member, RamenShopReportType type, String content) {
+    public static RamenShopReport create(RamenShop shop, MemberProfile member, RamenShopReportType type,
+            String content) {
         return RamenShopReport.builder()
-                .ramenShop(shop)
-                .memberProfile(member)
-                .reportType(type)
-                .content(content)
-                .build();
+            .ramenShop(shop)
+            .memberProfile(member)
+            .reportType(type)
+            .content(content)
+            .build();
     }
+
 }

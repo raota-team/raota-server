@@ -12,12 +12,7 @@ public interface RamenLogQueryPort {
     record Preview(Long ramenShopId, String imageUrl, long ramenLogCount) {
     }
 
-    record RecentVerifiedShop(
-            Long id,
-            String name,
-            String location,
-            String imageUrl,
-            long photoCount
-    ) {
+    record RecentVerifiedShop(Long id, String name, String location, String imageUrl, long photoCount) {
     }
+
 }

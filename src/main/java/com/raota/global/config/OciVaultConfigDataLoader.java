@@ -18,36 +18,14 @@ public class OciVaultConfigDataLoader implements ConfigDataLoader<OciVaultConfig
 
     private static final String PROPERTY_SOURCE_NAME = "ociVaultSecrets";
 
-    private static final List<String> SECRET_NAMES = List.of(
-            "SPRING_DATASOURCE_URL",
-            "SPRING_DATASOURCE_USERNAME",
-            "SPRING_DATASOURCE_PASSWORD",
-            "SPRING_DATA_REDIS_HOST",
-            "SPRING_DATA_REDIS_PORT",
-            "OCI_STORAGE_NAMESPACE",
-            "OCI_STORAGE_BUCKET",
-            "OCI_STORAGE_REGION",
-            "OCI_STORAGE_ACCESS_KEY",
-            "OCI_STORAGE_SECRET_KEY",
-            "GOOGLE_CLIENT_ID",
-            "GOOGLE_CLIENT_SECRET",
-            "KAKAO_CLIENT_ID",
-            "KAKAO_CLIENT_SECRET",
-            "APP_AUTH_ACCESS_TOKEN_SECRET",
-            "APP_AUTH_OAUTH2_REDIRECT_URI",
-            "APP_AUTH_OAUTH2_FAILURE_REDIRECT_URI",
-            "APP_AUTH_ALLOWED_ORIGINS",
-            "DISCORD_WEBHOOK_URL",
-            "CLOUDINARY_CLOUD_NAME",
-            "CLOUDINARY_API_KEY",
-            "CLOUDINARY_API_SECRET",
-            "GROQ_API_KEY",
-            "OPENAI_API_KEY",
-            "AI_ORACLE_DATASOURCE_URL",
-            "AI_ORACLE_DATASOURCE_USERNAME",
-            "AI_ORACLE_DATASOURCE_PASSWORD",
-            "KMA_SERVICE_KEY"
-    );
+    private static final List<String> SECRET_NAMES = List.of("SPRING_DATASOURCE_URL", "SPRING_DATASOURCE_USERNAME",
+            "SPRING_DATASOURCE_PASSWORD", "SPRING_DATA_REDIS_HOST", "SPRING_DATA_REDIS_PORT", "OCI_STORAGE_NAMESPACE",
+            "OCI_STORAGE_BUCKET", "OCI_STORAGE_REGION", "OCI_STORAGE_ACCESS_KEY", "OCI_STORAGE_SECRET_KEY",
+            "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "KAKAO_CLIENT_ID", "KAKAO_CLIENT_SECRET",
+            "APP_AUTH_ACCESS_TOKEN_SECRET", "APP_AUTH_OAUTH2_REDIRECT_URI", "APP_AUTH_OAUTH2_FAILURE_REDIRECT_URI",
+            "APP_AUTH_ALLOWED_ORIGINS", "DISCORD_WEBHOOK_URL", "CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY",
+            "CLOUDINARY_API_SECRET", "GROQ_API_KEY", "OPENAI_API_KEY", "AI_ORACLE_DATASOURCE_URL",
+            "AI_ORACLE_DATASOURCE_USERNAME", "AI_ORACLE_DATASOURCE_PASSWORD", "KMA_SERVICE_KEY");
 
     @Override
     public ConfigData load(ConfigDataLoaderContext context, OciVaultConfigDataResource resource) {
@@ -56,8 +34,9 @@ public class OciVaultConfigDataLoader implements ConfigDataLoader<OciVaultConfig
     }
 
     private Map<String, Object> loadSecrets(String region, String vaultId) {
-        InstancePrincipalsAuthenticationDetailsProvider provider =
-                InstancePrincipalsAuthenticationDetailsProvider.builder().build();
+        InstancePrincipalsAuthenticationDetailsProvider provider = InstancePrincipalsAuthenticationDetailsProvider
+            .builder()
+            .build();
 
         try (SecretsClient secretsClient = new SecretsClient(provider)) {
             secretsClient.setRegion(region);
@@ -66,22 +45,25 @@ public class OciVaultConfigDataLoader implements ConfigDataLoader<OciVaultConfig
             for (String secretName : SECRET_NAMES) {
                 try {
                     resolvedSecrets.put(secretName, fetchSecretValue(secretsClient, vaultId, secretName));
-                } catch (Exception e) {
-                    System.err.println("[OCI-VAULT] Warning: Failed to fetch secret: " + secretName + " - " + e.getMessage());
+                }
+                catch (Exception e) {
+                    System.err
+                        .println("[OCI-VAULT] Warning: Failed to fetch secret: " + secretName + " - " + e.getMessage());
                 }
             }
             return resolvedSecrets;
-        } catch (Exception exception) {
+        }
+        catch (Exception exception) {
             throw new IllegalStateException("Failed to initialize SecretsClient for OCI Vault", exception);
         }
     }
 
     private String fetchSecretValue(SecretsClient secretsClient, String vaultId, String secretName) {
         var response = secretsClient.getSecretBundleByName(GetSecretBundleByNameRequest.builder()
-                .vaultId(vaultId)
-                .secretName(secretName)
-                .stage(GetSecretBundleByNameRequest.Stage.Current)
-                .build());
+            .vaultId(vaultId)
+            .secretName(secretName)
+            .stage(GetSecretBundleByNameRequest.Stage.Current)
+            .build());
 
         var content = response.getSecretBundle().getSecretBundleContent();
         if (!(content instanceof Base64SecretBundleContentDetails base64Content)) {
@@ -90,4 +72,5 @@ public class OciVaultConfigDataLoader implements ConfigDataLoader<OciVaultConfig
 
         return new String(Base64.getDecoder().decode(base64Content.getContent()), StandardCharsets.UTF_8);
     }
+
 }

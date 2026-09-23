@@ -17,29 +17,19 @@ import tools.jackson.databind.ObjectMapper;
 @RequiredArgsConstructor
 public class RestSecurityErrorWriter {
 
-    private static final RequestMatcher V2_REQUEST_MATCHER =
-            PathPatternRequestMatcher.pathPattern("/api/v2/**");
+    private static final RequestMatcher V2_REQUEST_MATCHER = PathPatternRequestMatcher.pathPattern("/api/v2/**");
 
     private final ObjectMapper objectMapper;
 
-    public void write(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            int status,
-            String v2Code,
-            String message
-    ) throws IOException {
+    public void write(HttpServletRequest request, HttpServletResponse response, int status, String v2Code,
+            String message) throws IOException {
         response.setStatus(status);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
         Object body = isV2Request(request)
-                ? new MobileSecurityErrorBody(
-                        false,
-                        null,
-                        new MobileSecurityError(v2Code, message, List.of()),
-                        new MobileSecurityMeta(RequestIdFilter.currentRequestId(request))
-                )
+                ? new MobileSecurityErrorBody(false, null, new MobileSecurityError(v2Code, message, List.of()),
+                        new MobileSecurityMeta(RequestIdFilter.currentRequestId(request)))
                 : new SecurityErrorBody("FAIL", message, false);
         objectMapper.writeValue(response.getWriter(), body);
     }
@@ -51,12 +41,8 @@ public class RestSecurityErrorWriter {
     private record SecurityErrorBody(String status, String message, boolean success) {
     }
 
-    private record MobileSecurityErrorBody(
-            boolean success,
-            Object data,
-            MobileSecurityError error,
-            MobileSecurityMeta meta
-    ) {
+    private record MobileSecurityErrorBody(boolean success, Object data, MobileSecurityError error,
+            MobileSecurityMeta meta) {
     }
 
     private record MobileSecurityError(String code, String message, List<String> fields) {
@@ -64,4 +50,5 @@ public class RestSecurityErrorWriter {
 
     private record MobileSecurityMeta(String requestId) {
     }
+
 }

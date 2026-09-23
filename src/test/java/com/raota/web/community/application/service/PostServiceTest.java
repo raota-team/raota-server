@@ -26,10 +26,17 @@ import org.springframework.context.ApplicationEventPublisher;
 @ExtendWith(MockitoExtension.class)
 class PostServiceTest {
 
-    @Mock private PostRepository postRepository;
-    @Mock private MemberRepository memberRepository;
-    @Mock private ApplicationEventPublisher eventPublisher;
-    @InjectMocks private PostService postService;
+    @Mock
+    private PostRepository postRepository;
+
+    @Mock
+    private MemberRepository memberRepository;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
+    @InjectMocks
+    private PostService postService;
 
     @Test
     @DisplayName("리뷰 게시글 작성 시 인덱싱 이벤트가 발행된다.")
@@ -38,9 +45,7 @@ class PostServiceTest {
         Long authorId = 1L;
         Long savedPostId = 100L;
 
-        CreatePostCommand command = new CreatePostCommand(
-                "REVIEW", null, "제목", null, "PLAIN", "내용", authorId
-        );
+        CreatePostCommand command = new CreatePostCommand("REVIEW", null, "제목", null, "PLAIN", "내용", authorId);
 
         MemberProfile author = mock(MemberProfile.class);
         when(memberRepository.findById(authorId)).thenReturn(Optional.of(author));
@@ -48,7 +53,7 @@ class PostServiceTest {
         Post savedPost = mock(Post.class);
         when(savedPost.getId()).thenReturn(savedPostId);
         when(savedPost.getCategory()).thenReturn(PostCategory.REVIEW);
-        
+
         when(postRepository.save(any(Post.class))).thenReturn(savedPost);
 
         // when
@@ -57,7 +62,7 @@ class PostServiceTest {
         // then
         ArgumentCaptor<PostIndexingEvent> eventCaptor = ArgumentCaptor.forClass(PostIndexingEvent.class);
         verify(eventPublisher).publishEvent(eventCaptor.capture());
-        
+
         PostIndexingEvent publishedEvent = eventCaptor.getValue();
         assertThat(publishedEvent.postId()).isEqualTo(savedPostId);
         assertThat(publishedEvent.action()).isEqualTo(PostIndexingAction.UPSERT);
@@ -69,9 +74,7 @@ class PostServiceTest {
         // given
         Long authorId = 1L;
 
-        CreatePostCommand command = new CreatePostCommand(
-                "FREE", null, "제목", null, "PLAIN", "내용", authorId
-        );
+        CreatePostCommand command = new CreatePostCommand("FREE", null, "제목", null, "PLAIN", "내용", authorId);
 
         MemberProfile author = mock(MemberProfile.class);
         when(memberRepository.findById(authorId)).thenReturn(Optional.of(author));
@@ -79,7 +82,7 @@ class PostServiceTest {
         Post savedPost = mock(Post.class);
         when(savedPost.getId()).thenReturn(100L);
         when(savedPost.getCategory()).thenReturn(PostCategory.FREE);
-        
+
         when(postRepository.save(any(Post.class))).thenReturn(savedPost);
 
         // when
@@ -97,23 +100,13 @@ class PostServiceTest {
         Long authorId = 1L;
         Long otherId = 2L;
 
-        UpdatePostCommand command = new UpdatePostCommand(
-                postId, "FREE", null, "제목", null, "PLAIN", "내용", otherId
-        );
-        when(postRepository.update(
-                postId,
-                otherId,
-                PostCategory.FREE,
-                "제목",
-                "내용",
-                null,
-                null
-        )).thenThrow(new IllegalStateException("수정 권한이 없습니다."));
+        UpdatePostCommand command = new UpdatePostCommand(postId, "FREE", null, "제목", null, "PLAIN", "내용", otherId);
+        when(postRepository.update(postId, otherId, PostCategory.FREE, "제목", "내용", null, null))
+            .thenThrow(new IllegalStateException("수정 권한이 없습니다."));
 
         // when & then
-        assertThatThrownBy(() -> postService.updatePost(command))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("수정 권한이 없습니다.");
+        assertThatThrownBy(() -> postService.updatePost(command)).isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("수정 권한이 없습니다.");
     }
 
     @Test
@@ -123,18 +116,10 @@ class PostServiceTest {
         Long postId = 1L;
         Long authorId = 1L;
 
-        UpdatePostCommand command = new UpdatePostCommand(
-                postId, "REVIEW", null, "수정 제목", null, "PLAIN", "수정 내용", authorId
-        );
-        when(postRepository.update(
-                postId,
-                authorId,
-                PostCategory.REVIEW,
-                "수정 제목",
-                "수정 내용",
-                null,
-                null
-        )).thenReturn(new PostRepository.PostUpdateResult(postId, PostCategory.REVIEW, PostCategory.REVIEW));
+        UpdatePostCommand command = new UpdatePostCommand(postId, "REVIEW", null, "수정 제목", null, "PLAIN", "수정 내용",
+                authorId);
+        when(postRepository.update(postId, authorId, PostCategory.REVIEW, "수정 제목", "수정 내용", null, null))
+            .thenReturn(new PostRepository.PostUpdateResult(postId, PostCategory.REVIEW, PostCategory.REVIEW));
 
         // when
         postService.updatePost(command);
@@ -189,4 +174,5 @@ class PostServiceTest {
         assertThat(publishedEvent.postId()).isEqualTo(postId);
         assertThat(publishedEvent.action()).isEqualTo(PostIndexingAction.DELETE);
     }
+
 }

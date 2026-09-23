@@ -31,13 +31,8 @@ class RetrievalIndexingServiceTest {
         PostReviewChunkDocumentFactory postFactory = mock(PostReviewChunkDocumentFactory.class);
         VectorStore vectorStore = mock(VectorStore.class);
 
-        RetrievalIndexingService service = createService(
-                ramenShopRepository,
-                shopFactory,
-                postRepository,
-                postFactory,
-                vectorStore
-        );
+        RetrievalIndexingService service = createService(ramenShopRepository, shopFactory, postRepository, postFactory,
+                vectorStore);
 
         Post post = mock(Post.class);
         Document document = new Document("리뷰 내용", Map.of());
@@ -59,13 +54,8 @@ class RetrievalIndexingServiceTest {
         PostReviewChunkDocumentFactory postFactory = mock(PostReviewChunkDocumentFactory.class);
         VectorStore vectorStore = mock(VectorStore.class);
 
-        RetrievalIndexingService service = createService(
-                ramenShopRepository,
-                shopFactory,
-                postRepository,
-                postFactory,
-                vectorStore
-        );
+        RetrievalIndexingService service = createService(ramenShopRepository, shopFactory, postRepository, postFactory,
+                vectorStore);
 
         service.deletePost(1L);
 
@@ -80,34 +70,19 @@ class RetrievalIndexingServiceTest {
         PostReviewChunkDocumentFactory postFactory = mock(PostReviewChunkDocumentFactory.class);
         VectorStore vectorStore = mock(VectorStore.class);
 
-        RetrievalIndexingService service = createService(
-                ramenShopRepository,
-                shopFactory,
-                postRepository,
-                postFactory,
-                vectorStore
-        );
+        RetrievalIndexingService service = createService(ramenShopRepository, shopFactory, postRepository, postFactory,
+                vectorStore);
 
         service.deletePost(null);
 
         verifyNoInteractions(vectorStore);
     }
 
-    private RetrievalIndexingService createService(
-            RamenShopRepository ramenShopRepository,
-            RamenShopProfileDocumentFactory shopFactory,
-            PostRepository postRepository,
-            PostReviewChunkDocumentFactory postFactory,
-            VectorStore vectorStore
-    ) {
-        return new RetrievalIndexingService(
-                ramenShopRepository,
-                shopFactory,
-                postRepository,
-                postFactory,
-                vectorStore,
-                mock(EmbeddingModel.class),
-                mock(JdbcTemplate.class)
-        );
+    private RetrievalIndexingService createService(RamenShopRepository ramenShopRepository,
+            RamenShopProfileDocumentFactory shopFactory, PostRepository postRepository,
+            PostReviewChunkDocumentFactory postFactory, VectorStore vectorStore) {
+        return new RetrievalIndexingService(ramenShopRepository, shopFactory, postRepository, postFactory, vectorStore,
+                mock(EmbeddingModel.class), mock(JdbcTemplate.class));
     }
+
 }

@@ -30,34 +30,24 @@ public class RamenProofPictureController implements RamenProofPictureApi {
 
     @Override
     @PostMapping
-    public ResponseEntity<ApiResponse<ProofPictureInfoResponse>> addProofPicture(
-            @PathVariable Long shopId,
-            @RequestBody ProofPictureUploadRequest request,
-            @LoginMember Long memberId
-    ) {
-        ProofPictureInfoResponse response = proofPictureService.addProofPicture(
-                shopId, 
-                request.getImageUrl(),
-                request.getDescription(),
-                request.getMenuName(),
-                memberId
-        );
+    public ResponseEntity<ApiResponse<ProofPictureInfoResponse>> addProofPicture(@PathVariable Long shopId,
+            @RequestBody ProofPictureUploadRequest request, @LoginMember Long memberId) {
+        ProofPictureInfoResponse response = proofPictureService.addProofPicture(shopId, request.getImageUrl(),
+                request.getDescription(), request.getMenuName(), memberId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @Override
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<RamenShopProofPictureResponse>>> getProofPicture(
-            @PathVariable Long shopId,
-            @PageableDefault(size = 6, direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(proofPictureService.findProofPicture(shopId,pageable))));
+            @PathVariable Long shopId, @PageableDefault(size = 6, direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity
+            .ok(ApiResponse.success(PageResponse.from(proofPictureService.findProofPicture(shopId, pageable))));
     }
 
     @DeleteMapping("/{photoId}")
-    public ResponseEntity<?> deleteProofPicture(
-            @PathVariable Long photoId,
-            @LoginMember Long memberId){
-        proofPictureService.deletePicture(photoId,memberId);
+    public ResponseEntity<?> deleteProofPicture(@PathVariable Long photoId, @LoginMember Long memberId) {
+        proofPictureService.deletePicture(photoId, memberId);
         return ResponseEntity.noContent().build();
     }
 

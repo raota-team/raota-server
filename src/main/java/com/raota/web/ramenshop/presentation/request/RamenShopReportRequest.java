@@ -14,4 +14,5 @@ public class RamenShopReportRequest {
 
     @Schema(description = "상세 내용", example = "영업시간이 오후 9시까지로 변경되었습니다.")
     private String content;
+
 }

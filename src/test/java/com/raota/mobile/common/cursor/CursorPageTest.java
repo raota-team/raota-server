@@ -50,10 +50,11 @@ class CursorPageTest {
     @Test
     void 크기가_0이면_프로그래밍_오류다() {
         assertThatThrownBy(() -> CursorPage.of(List.of(1), 0, CursorPageTest::cursorOf))
-                .isInstanceOf(IllegalArgumentException.class);
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     private static Cursor cursorOf(int item) {
         return Cursor.of(item, item);
     }
+
 }

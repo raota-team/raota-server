@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 public class MemberPurgedRamenLogCleanupListener {
 
     private final RamenLogLikeRepository ramenLogLikeRepository;
+
     private final RamenLogRepository ramenLogRepository;
 
     @EventListener
@@ -21,4 +22,5 @@ public class MemberPurgedRamenLogCleanupListener {
         ramenLogLikeRepository.deleteAllByRamenLogAuthorId(memberId);
         ramenLogRepository.deleteAllByAuthorId(memberId);
     }
+
 }

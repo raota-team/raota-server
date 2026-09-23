@@ -6,9 +6,12 @@ import java.util.function.Function;
 /**
  * 목록 조회에서 {@code size + 1}개를 가져와 다음 페이지 유무와 커서를 계산한다.
  *
- * <p>컨트롤러에서는 {@code @RequestParam(required = false) String cursor,
- * @RequestParam(defaultValue = "20") @Min(1) @Max(CursorPage.MAX_SIZE) int size}를 받고,
- * 서비스에서 반환한 페이지를 {@code MobileApiResponse.success(page)}로 감싼다.</p>
+ * <p>
+ * 컨트롤러에서는
+ * {@code @RequestParam(required = false) String cursor, @RequestParam(defaultValue =
+ * "20") @Min(1) @Max(CursorPage.MAX_SIZE) int size}를 받고, 서비스에서 반환한 페이지를
+ * {@code MobileApiResponse.success(page)}로 감싼다.
+ * </p>
  *
  * @param items 현재 페이지의 항목
  * @param nextCursor 다음 페이지 요청에 쓸 커서. 마지막 페이지에서는 {@code null}
@@ -18,6 +21,7 @@ import java.util.function.Function;
 public record CursorPage<T>(List<T> items, String nextCursor, boolean hasNext) {
 
     public static final int DEFAULT_SIZE = 20;
+
     public static final int MAX_SIZE = 50;
 
     public CursorPage {

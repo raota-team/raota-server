@@ -49,4 +49,5 @@ public class Bookmark {
     public void changeStatus(boolean isDeleted) {
         this.isDeleted = isDeleted;
     }
+
 }

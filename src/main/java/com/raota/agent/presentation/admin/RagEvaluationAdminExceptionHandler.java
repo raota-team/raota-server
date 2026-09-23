@@ -16,6 +16,7 @@ public class RagEvaluationAdminExceptionHandler {
     @ExceptionHandler(RagEvaluationAlreadyRunningException.class)
     public ResponseEntity<ApiResponse<Void>> handleAlreadyRunning(RagEvaluationAlreadyRunningException exception) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.fail(RagEvaluationAlreadyRunningException.CODE + ": " + exception.getMessage()));
+            .body(ApiResponse.fail(RagEvaluationAlreadyRunningException.CODE + ": " + exception.getMessage()));
     }
+
 }

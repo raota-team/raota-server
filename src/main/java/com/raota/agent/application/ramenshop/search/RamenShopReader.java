@@ -17,13 +17,11 @@ public class RamenShopReader {
 
     public RamenShop getRamenShop(Long shopId) {
         return ramenShopRepository.findByIdAndPublishedTrue(shopId)
-                .orElseThrow(() -> new EntityNotFoundException("라멘샵을 찾을 수 없습니다. id=" + shopId));
+            .orElseThrow(() -> new EntityNotFoundException("라멘샵을 찾을 수 없습니다. id=" + shopId));
     }
 
     public List<RamenShop> getRamenShops(List<Long> shopIds) {
-        return shopIds.stream()
-                .map(this::getRamenShop)
-                .toList();
+        return shopIds.stream().map(this::getRamenShop).toList();
     }
 
     public String normalizeText(String value) {
@@ -75,15 +73,12 @@ public class RamenShopReader {
 
     public String buildShopInfoContext(RamenShop shop) {
         return """
-            매장명: %s
-            주소: %s
-            태그: %s
-            설명: %s
-            """.formatted(
-                shop.getName(),
-                addressTextOrDefault(shop),
-                tagsTextOrDefault(shop),
-                descriptionTextOrDefault(shop)
-        );
+                매장명: %s
+                주소: %s
+                태그: %s
+                설명: %s
+                """.formatted(shop.getName(), addressTextOrDefault(shop), tagsTextOrDefault(shop),
+                descriptionTextOrDefault(shop));
     }
+
 }

@@ -41,4 +41,5 @@ public class MemberActivityVisibility {
         this.postsPublic = posts;
         this.commentsPublic = comments;
     }
+
 }

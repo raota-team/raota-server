@@ -1,4 +1,5 @@
 package com.raota.acceptance.presentation.api.auth;
+
 import com.raota.web.account.infrastructure.auth.JwtTokenProvider;
 
 import com.raota.web.account.domain.auth.model.RefreshToken;
@@ -15,8 +16,6 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
-
 
 import com.raota.support.BaseIntegrationTest;
 
@@ -45,23 +44,22 @@ class AuthControllerIntegrationTest extends BaseIntegrationTest {
     @DisplayName("유효한 Refresh Token으로 Access Token을 갱신한다.")
     void refresh_token_success() {
         // given
-        MemberProfile member = memberRepository.save(MemberProfile.builder()
-                .nickname("testuser")
-                .build());
+        MemberProfile member = memberRepository.save(MemberProfile.builder().nickname("testuser").build());
 
         String refreshTokenValue = "valid-refresh-token";
         refreshTokenRepository.save(RefreshToken.builder()
-                .memberId(member.getId())
-                .token(refreshTokenValue)
-                .expiryDate(Instant.now().plusSeconds(3600))
-                .build());
+            .memberId(member.getId())
+            .token(refreshTokenValue)
+            .expiryDate(Instant.now().plusSeconds(3600))
+            .build());
 
         // when
         RestAssured.given()
-                .cookie("raota_refresh_token", refreshTokenValue)
-                .when()
-                .post("/auth/refresh")
-                .then()
-                .statusCode(HttpStatus.OK.value());
+            .cookie("raota_refresh_token", refreshTokenValue)
+            .when()
+            .post("/auth/refresh")
+            .then()
+            .statusCode(HttpStatus.OK.value());
     }
+
 }

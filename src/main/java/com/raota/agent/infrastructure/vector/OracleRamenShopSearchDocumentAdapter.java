@@ -34,42 +34,30 @@ public class OracleRamenShopSearchDocumentAdapter implements RamenShopSearchDocu
         }
 
         return documents.stream()
-                .map(document -> new RamenShopSearchDocument(
-                        document.getText(),
-                        document.getMetadata(),
-                        document.getScore()
-                ))
-                .toList();
+            .map(document -> new RamenShopSearchDocument(document.getText(), document.getMetadata(),
+                    document.getScore()))
+            .toList();
     }
 
-    private List<Document> search(
-            String query,
-            int topK,
-            double similarityThreshold,
-            Filter.Expression filter
-    ) {
-        List<Document> documents = vectorStore.similaritySearch(
-                SearchRequest.builder()
-                        .query(query)
-                        .topK(topK)
-                        .similarityThreshold(similarityThreshold)
-                        .filterExpression(filter)
-                        .build()
-        );
+    private List<Document> search(String query, int topK, double similarityThreshold, Filter.Expression filter) {
+        List<Document> documents = vectorStore.similaritySearch(SearchRequest.builder()
+            .query(query)
+            .topK(topK)
+            .similarityThreshold(similarityThreshold)
+            .filterExpression(filter)
+            .build());
         return documents == null ? List.of() : documents;
     }
 
     private Filter.Expression buildShopProfileFilter(FilterExpressionBuilder builder) {
-        return builder.eq(
-                RetrievalMetadataKeys.DOCUMENT_TYPE,
-                RetrievalDocumentType.SHOP_PROFILE.name()
-        ).build();
+        return builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.SHOP_PROFILE.name()).build();
     }
 
     private Filter.Expression buildReviewFilter(FilterExpressionBuilder builder) {
-        return builder.or(
-                builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.REVIEW_CHUNK.name()),
-                builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.EXTERNAL_REVIEW_CHUNK.name())
-        ).build();
+        return builder
+            .or(builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.REVIEW_CHUNK.name()),
+                    builder.eq(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.EXTERNAL_REVIEW_CHUNK.name()))
+            .build();
     }
+
 }

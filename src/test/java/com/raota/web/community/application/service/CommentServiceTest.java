@@ -20,10 +20,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class CommentServiceTest {
 
-    @Mock private CommentRepository commentRepository;
-    @Mock private PostRepository postRepository;
-    @Mock private MemberRepository memberRepository;
-    @InjectMocks private CommentService commentService;
+    @Mock
+    private CommentRepository commentRepository;
+
+    @Mock
+    private PostRepository postRepository;
+
+    @Mock
+    private MemberRepository memberRepository;
+
+    @InjectMocks
+    private CommentService commentService;
 
     @Test
     @DisplayName("답글에 다시 답글을 달려고 하면 예외가 발생한다.")
@@ -33,17 +40,16 @@ class CommentServiceTest {
         Long parentId = 10L;
         Long memberId = 1L;
 
-        when(postRepository.findById(postId)).thenReturn(Optional.of(mock(com.raota.web.community.domain.model.Post.class)));
-        doThrow(new IllegalArgumentException("답글에는 답글을 달 수 없습니다. (최대 Depth 1)"))
-                .when(commentRepository)
-                .validateReplyTarget(parentId);
+        when(postRepository.findById(postId))
+            .thenReturn(Optional.of(mock(com.raota.web.community.domain.model.Post.class)));
+        doThrow(new IllegalArgumentException("답글에는 답글을 달 수 없습니다. (최대 Depth 1)")).when(commentRepository)
+            .validateReplyTarget(parentId);
 
         CreateCommentCommand command = new CreateCommentCommand(postId, memberId, parentId, "답글의 답글");
 
         // when & then
-        assertThatThrownBy(() -> commentService.createComment(command))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("답글에는 답글을 달 수 없습니다.");
+        assertThatThrownBy(() -> commentService.createComment(command)).isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("답글에는 답글을 달 수 없습니다.");
     }
 
     @Test
@@ -63,4 +69,5 @@ class CommentServiceTest {
         verify(commentRepository).softDelete(commentId, authorId);
         verify(author).decreaseCommentCount();
     }
+
 }

@@ -18,4 +18,5 @@ public class RagEvaluationAsyncConfig {
         executor.initialize();
         return executor;
     }
+
 }

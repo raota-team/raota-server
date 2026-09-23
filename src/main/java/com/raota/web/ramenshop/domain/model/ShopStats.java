@@ -4,11 +4,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 
 @Embeddable
-public record ShopStats(
-        @Column(name = "view_count", nullable = false) int viewCount,
-        @Column(name = "visit_count") int visitCount,
-        @Column(name = "bookmark_count") int bookmarkCount
-) {
+public record ShopStats(@Column(name = "view_count", nullable = false) int viewCount,
+        @Column(name = "visit_count") int visitCount, @Column(name = "bookmark_count") int bookmarkCount) {
     public static ShopStats init() {
         return new ShopStats(0, 0, 0);
     }

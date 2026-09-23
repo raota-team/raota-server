@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CommunityCreatePostRequest {
+
     @Schema(description = "글 카테고리")
     private String category;
 
@@ -22,21 +23,14 @@ public class CommunityCreatePostRequest {
     @Schema(description = "썸네일 이미지 URL(썸네일 파일을 올리지 않는 경우)", nullable = true)
     private String thumbnailUrl;
 
-    @Schema(description = "본문 포맷", allowableValues = {"MARKDOWN", "PLAIN", "TIPTAP_JSON"})
+    @Schema(description = "본문 포맷", allowableValues = { "MARKDOWN", "PLAIN", "TIPTAP_JSON" })
     private String contentFormat;
 
     @Schema(description = "본문(마크다운/일반 텍스트/TipTap JSON 문자열). 이미지 URL은 본문에 포함")
     private String content;
 
     public CreatePostCommand toCommand(Long authorId) {
-        return new CreatePostCommand(
-                category,
-                ramenShopId,
-                title,
-                thumbnailUrl,
-                contentFormat,
-                content,
-                authorId
-        );
+        return new CreatePostCommand(category, ramenShopId, title, thumbnailUrl, contentFormat, content, authorId);
     }
+
 }

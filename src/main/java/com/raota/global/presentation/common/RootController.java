@@ -16,4 +16,5 @@ public class RootController {
     public ResponseEntity<Void> favicon() {
         return ResponseEntity.noContent().build();
     }
+
 }

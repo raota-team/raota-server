@@ -16,11 +16,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class AiRamenShopSearchReranker {
 
-    public List<AiRamenShopSearchHit> rerank(
-            List<RamenShopSearchDocument> documents,
-            ParsedAiRamenShopSearchQuery query,
-            int limit
-    ) {
+    public List<AiRamenShopSearchHit> rerank(List<RamenShopSearchDocument> documents,
+            ParsedAiRamenShopSearchQuery query, int limit) {
         if (documents == null || documents.isEmpty()) {
             return List.of();
         }
@@ -32,14 +29,15 @@ public class AiRamenShopSearchReranker {
                 continue;
             }
             evidenceByShop.computeIfAbsent(shopId, ShopSearchEvidence::new)
-                    .add(document, calculateBoost(document, query));
+                .add(document, calculateBoost(document, query));
         }
 
-        return evidenceByShop.values().stream()
-                .map(ShopSearchEvidence::toHit)
-                .sorted(Comparator.comparingDouble(AiRamenShopSearchHit::finalScore).reversed())
-                .limit(limit)
-                .toList();
+        return evidenceByShop.values()
+            .stream()
+            .map(ShopSearchEvidence::toHit)
+            .sorted(Comparator.comparingDouble(AiRamenShopSearchHit::finalScore).reversed())
+            .limit(limit)
+            .toList();
     }
 
     private double calculateBoost(RamenShopSearchDocument document, ParsedAiRamenShopSearchQuery query) {
@@ -73,14 +71,16 @@ public class AiRamenShopSearchReranker {
         return boost;
     }
 
-    private double calculateFoodTypeBoost(List<String> menuNames, List<String> tags, String text, List<String> foodTypes) {
+    private double calculateFoodTypeBoost(List<String> menuNames, List<String> tags, String text,
+            List<String> foodTypes) {
         if (foodTypes == null || foodTypes.isEmpty()) {
             return 0;
         }
 
         List<String> requestedAliases = RamenFoodKeywordDictionary.aliasesFor(foodTypes);
         List<String> conflictAliases = RamenFoodKeywordDictionary.conflictAliasesFor(foodTypes);
-        boolean requestedStructuredMatch = containsAny(menuNames, requestedAliases) || containsAny(tags, requestedAliases);
+        boolean requestedStructuredMatch = containsAny(menuNames, requestedAliases)
+                || containsAny(tags, requestedAliases);
         boolean requestedTextMatch = containsAny(text, requestedAliases);
         boolean conflictStructuredMatch = containsAny(menuNames, conflictAliases) || containsAny(tags, conflictAliases);
         boolean conflictTextMatch = containsAny(text, conflictAliases);
@@ -105,28 +105,22 @@ public class AiRamenShopSearchReranker {
     }
 
     private boolean containsAny(List<String> values, String keyword) {
-        return values.stream()
-                .map(value -> value.toLowerCase(Locale.ROOT))
-                .anyMatch(value -> value.contains(keyword));
+        return values.stream().map(value -> value.toLowerCase(Locale.ROOT)).anyMatch(value -> value.contains(keyword));
     }
 
     private boolean containsAny(List<String> values, List<String> keywords) {
         return values.stream()
-                .map(value -> value.toLowerCase(Locale.ROOT))
-                .anyMatch(value -> containsAny(value, keywords));
+            .map(value -> value.toLowerCase(Locale.ROOT))
+            .anyMatch(value -> containsAny(value, keywords));
     }
 
     private boolean containsAny(String value, List<String> keywords) {
-        return keywords.stream()
-                .map(keyword -> keyword.toLowerCase(Locale.ROOT))
-                .anyMatch(value::contains);
+        return keywords.stream().map(keyword -> keyword.toLowerCase(Locale.ROOT)).anyMatch(value::contains);
     }
 
     private List<String> metadataValues(Object value) {
         if (value instanceof List<?> values) {
-            return values.stream()
-                    .map(String::valueOf)
-                    .toList();
+            return values.stream().map(String::valueOf).toList();
         }
         if (value == null) {
             return List.of();
@@ -148,14 +142,19 @@ public class AiRamenShopSearchReranker {
 
     private boolean isProfileDocument(RamenShopSearchDocument document) {
         return RetrievalDocumentType.SHOP_PROFILE.name()
-                .equals(String.valueOf(document.metadata().get(RetrievalMetadataKeys.DOCUMENT_TYPE)));
+            .equals(String.valueOf(document.metadata().get(RetrievalMetadataKeys.DOCUMENT_TYPE)));
     }
 
     private class ShopSearchEvidence {
+
         private final Long shopId;
+
         private double bestProfileScore;
+
         private double bestReviewScore;
+
         private double bestBoost;
+
         private int reviewHitCount;
 
         private ShopSearchEvidence(Long shopId) {
@@ -165,7 +164,8 @@ public class AiRamenShopSearchReranker {
         private void add(RamenShopSearchDocument document, double boost) {
             if (isProfileDocument(document)) {
                 bestProfileScore = Math.max(bestProfileScore, document.score());
-            } else {
+            }
+            else {
                 bestReviewScore = Math.max(bestReviewScore, document.score());
                 reviewHitCount++;
             }
@@ -173,12 +173,12 @@ public class AiRamenShopSearchReranker {
         }
 
         private AiRamenShopSearchHit toHit() {
-            double finalScore = bestProfileScore * 0.45
-                    + bestReviewScore * 0.35
-                    + Math.log(reviewHitCount + 1) * 0.08
+            double finalScore = bestProfileScore * 0.45 + bestReviewScore * 0.35 + Math.log(reviewHitCount + 1) * 0.08
                     + bestBoost;
 
             return new AiRamenShopSearchHit(shopId, finalScore);
         }
+
     }
+
 }

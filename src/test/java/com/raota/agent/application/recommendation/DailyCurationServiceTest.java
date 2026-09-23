@@ -56,24 +56,25 @@ class DailyCurationServiceTest {
     private DailyCurationService dailyCurationService;
 
     private RamenType mockRamenType;
+
     private DailyCuration mockCuration;
 
     @BeforeEach
     void setUp() {
         mockRamenType = RamenType.builder()
-                .id(1L)
-                .name("돈코츠 라멘")
-                .subTitle("진한 돼지사골 육수")
-                .imageUrl("tonkotsu.jpg")
-                .build();
+            .id(1L)
+            .name("돈코츠 라멘")
+            .subTitle("진한 돼지사골 육수")
+            .imageUrl("tonkotsu.jpg")
+            .build();
 
         mockCuration = DailyCuration.builder()
-                .id(1L)
-                .dateKey(20260624)
-                .ramenType(mockRamenType)
-                .title("비 오는 날의 진한 한 그릇")
-                .reason("비 오는 날엔 돈코츠죠.")
-                .build();
+            .id(1L)
+            .dateKey(20260624)
+            .ramenType(mockRamenType)
+            .title("비 오는 날의 진한 한 그릇")
+            .reason("비 오는 날엔 돈코츠죠.")
+            .build();
     }
 
     @Test
@@ -117,14 +118,14 @@ class DailyCurationServiceTest {
         // given
         given(dailyCurationRepository.findByDateKey(anyInt())).willReturn(Optional.empty());
         given(weatherClient.getWeatherOutlook()).willReturn("비가 옵니다.");
-        
+
         AiRamenRecommendationResponse aiResponse = AiRamenRecommendationResponse.builder()
-                .ramenTypeName("돈코츠라멘")
-                .title("추천")
-                .reason("이유")
-                .build();
+            .ramenTypeName("돈코츠라멘")
+            .title("추천")
+            .reason("이유")
+            .build();
         given(aiService.getRecommendation(anyString())).willReturn(aiResponse);
-        
+
         given(ramenTypeRepository.findAll()).willReturn(List.of(mockRamenType));
         given(dailyCurationRepository.save(any())).willReturn(mockCuration);
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
@@ -139,4 +140,5 @@ class DailyCurationServiceTest {
         verify(dailyCurationRepository).save(any());
         verify(valueOperations).set(anyString(), eq("json-string"));
     }
+
 }

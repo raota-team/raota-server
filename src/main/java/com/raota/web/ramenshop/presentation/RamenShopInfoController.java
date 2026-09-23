@@ -31,29 +31,28 @@ import org.springframework.web.bind.annotation.RestController;
 public class RamenShopInfoController implements RamenShopInfoApi {
 
     private final RamenShopInfoService ramenShopInfoService;
+
     private final BookmarkService bookmarkService;
+
     private final RamenShopReportService reportService;
 
     @Override
     @GetMapping("/{shopId}")
-    public ResponseEntity<ApiResponse<RamenShopBasicInfoResponse>> getShopDetailInfo(
-            @PathVariable Long shopId,
+    public ResponseEntity<ApiResponse<RamenShopBasicInfoResponse>> getShopDetailInfo(@PathVariable Long shopId,
             @LoginMember(required = false) Long memberId) {
-        RamenShopBasicInfoResponse response = ramenShopInfoService.getShopDetailInfo(shopId,memberId);
+        RamenShopBasicInfoResponse response = ramenShopInfoService.getShopDetailInfo(shopId, memberId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @Override
     @GetMapping("/{shopId}/menus")
-    public ResponseEntity<ApiResponse<RamenShopMenuOptionsResponse>> getShopMenuOptions(
-            @PathVariable Long shopId) {
+    public ResponseEntity<ApiResponse<RamenShopMenuOptionsResponse>> getShopMenuOptions(@PathVariable Long shopId) {
         return ResponseEntity.ok(ApiResponse.success(ramenShopInfoService.getShopMenuOptions(shopId)));
     }
 
     @Override
     @PostMapping("/{shopId}/views")
-    public ResponseEntity<ApiResponse<Void>> increaseShopViewCount(
-            @PathVariable Long shopId) {
+    public ResponseEntity<ApiResponse<Void>> increaseShopViewCount(@PathVariable Long shopId) {
         ramenShopInfoService.increaseViewCount(shopId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -61,8 +60,7 @@ public class RamenShopInfoController implements RamenShopInfoApi {
     @GetMapping
     @Override
     public ResponseEntity<ApiResponse<PageResponse<RamenShopResponse>>> getShopList(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "12") int size,
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "12") int size,
             RamenShopSearchRequest request) {
         Pageable pageable = PageRequest.of(page, size);
         Page<RamenShopResponse> response = ramenShopInfoService.getRamenShopList(request.getCity(),
@@ -72,18 +70,14 @@ public class RamenShopInfoController implements RamenShopInfoApi {
 
     @Override
     @PostMapping("/{shopId}/bookmark")
-    public ResponseEntity<ApiResponse<Boolean>> toggleBookmark(
-            @PathVariable Long shopId,
-            @LoginMember Long memberId) {
+    public ResponseEntity<ApiResponse<Boolean>> toggleBookmark(@PathVariable Long shopId, @LoginMember Long memberId) {
         boolean result = bookmarkService.toggleBookmark(memberId, shopId);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
     @Override
     @PostMapping("/{shopId}/reports")
-    public ResponseEntity<ApiResponse<Void>> reportShop(
-            @PathVariable Long shopId,
-            @LoginMember Long memberId,
+    public ResponseEntity<ApiResponse<Void>> reportShop(@PathVariable Long shopId, @LoginMember Long memberId,
             @RequestBody RamenShopReportRequest request) {
         reportService.reportShop(shopId, memberId, request);
         return ResponseEntity.ok(ApiResponse.success(null));

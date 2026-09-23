@@ -15,17 +15,14 @@ public class OciVaultConfigDataLocationResolver implements ConfigDataLocationRes
     }
 
     @Override
-    public List<OciVaultConfigDataResource> resolve(
-            ConfigDataLocationResolverContext context,
-            ConfigDataLocation location
-    ) {
+    public List<OciVaultConfigDataResource> resolve(ConfigDataLocationResolverContext context,
+            ConfigDataLocation location) {
         String value = location.getNonPrefixedValue(PREFIX);
         int delimiterIndex = value.indexOf('/');
 
         if (delimiterIndex <= 0 || delimiterIndex == value.length() - 1) {
             throw new IllegalArgumentException(
-                    "OCI Vault config import must use the format oci-vault:<region>/<vault-id>"
-            );
+                    "OCI Vault config import must use the format oci-vault:<region>/<vault-id>");
         }
 
         String region = value.substring(0, delimiterIndex);
@@ -33,4 +30,5 @@ public class OciVaultConfigDataLocationResolver implements ConfigDataLocationRes
 
         return List.of(new OciVaultConfigDataResource(location.isOptional(), region, vaultId));
     }
+
 }

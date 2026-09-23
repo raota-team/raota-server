@@ -9,6 +9,9 @@ import lombok.Data;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class DiscordMessage {
+
     private String content;
+
     private List<DiscordEmbed> embeds;
+
 }

@@ -6,16 +6,24 @@ import lombok.Getter;
 
 @Getter
 public class DailyCuration {
+
     private final Long id;
+
     private final Integer dateKey;
+
     private final RamenType ramenType;
+
     private final String title;
+
     private final String reason;
+
     private final String customImageUrl;
+
     private final LocalDateTime createdAt;
 
     @Builder
-    public DailyCuration(Long id, Integer dateKey, RamenType ramenType, String title, String reason, String customImageUrl, LocalDateTime createdAt) {
+    public DailyCuration(Long id, Integer dateKey, RamenType ramenType, String title, String reason,
+            String customImageUrl, LocalDateTime createdAt) {
         this.id = id;
         this.dateKey = dateKey;
         this.ramenType = ramenType;
@@ -28,4 +36,5 @@ public class DailyCuration {
     public String getEffectiveImageUrl() {
         return (customImageUrl != null && !customImageUrl.isBlank()) ? customImageUrl : ramenType.getImageUrl();
     }
+
 }

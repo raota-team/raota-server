@@ -13,7 +13,9 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @EnableScheduling
 @EnableAsync
 public class RaotaApplication {
+
     static void main(String[] args) {
         SpringApplication.run(RaotaApplication.class, args);
     }
+
 }

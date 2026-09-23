@@ -7,7 +7,9 @@ import org.springframework.stereotype.Component;
 public class RamenShopComparisonSearchPolicy {
 
     private static final String DEFAULT_FOCUS = "기본 비교";
+
     private static final int DOCUMENT_LIMIT = 8;
+
     private static final double SIMILARITY_THRESHOLD = 0.3;
 
     public String normalizeFocus(String focus) {
@@ -32,4 +34,5 @@ public class RamenShopComparisonSearchPolicy {
     public double similarityThreshold() {
         return SIMILARITY_THRESHOLD;
     }
+
 }

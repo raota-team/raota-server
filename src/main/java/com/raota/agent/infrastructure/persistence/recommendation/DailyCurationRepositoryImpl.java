@@ -15,14 +15,12 @@ public class DailyCurationRepositoryImpl implements DailyCurationRepository {
 
     @Override
     public Optional<DailyCuration> findByDateKey(Integer dateKey) {
-        return jpaDailyCurationRepository.findByDateKey(dateKey)
-                .map(DailyCurationEntity::toDomain);
+        return jpaDailyCurationRepository.findByDateKey(dateKey).map(DailyCurationEntity::toDomain);
     }
 
     @Override
     public Optional<DailyCuration> findLatest() {
-        return jpaDailyCurationRepository.findTopByOrderByDateKeyDesc()
-                .map(DailyCurationEntity::toDomain);
+        return jpaDailyCurationRepository.findTopByOrderByDateKeyDesc().map(DailyCurationEntity::toDomain);
     }
 
     @Override
@@ -30,4 +28,5 @@ public class DailyCurationRepositoryImpl implements DailyCurationRepository {
         DailyCurationEntity entity = DailyCurationEntity.from(curation);
         return jpaDailyCurationRepository.save(entity).toDomain();
     }
+
 }

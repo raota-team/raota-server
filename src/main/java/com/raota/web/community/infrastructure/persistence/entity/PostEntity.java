@@ -86,32 +86,23 @@ public class PostEntity {
     }
 
     public Post toDomain() {
-        return Post.of(
-                id,
-                category,
-                title,
-                content,
-                contentFormat,
-                thumbnailUrl,
-                author.getId(),
-                ramenShop != null ? ramenShop.getId() : null,
-                viewCount,
-                createdAt
-        );
+        return Post.of(id, category, title, content, contentFormat, thumbnailUrl, author.getId(),
+                ramenShop != null ? ramenShop.getId() : null, viewCount, createdAt);
     }
 
     public static PostEntity fromDomain(Post post, MemberProfile author, RamenShop ramenShop) {
         return PostEntity.builder()
-                .id(post.getId())
-                .category(post.getCategory())
-                .title(post.getTitle())
-                .content(post.getContent())
-                .contentFormat(post.getContentFormat())
-                .thumbnailUrl(post.getThumbnailUrl())
-                .author(author)
-                .ramenShop(ramenShop)
-                .viewCount(post.getViewCount())
-                .createdAt(post.getCreatedAt())
-                .build();
+            .id(post.getId())
+            .category(post.getCategory())
+            .title(post.getTitle())
+            .content(post.getContent())
+            .contentFormat(post.getContentFormat())
+            .thumbnailUrl(post.getThumbnailUrl())
+            .author(author)
+            .ramenShop(ramenShop)
+            .viewCount(post.getViewCount())
+            .createdAt(post.getCreatedAt())
+            .build();
     }
+
 }

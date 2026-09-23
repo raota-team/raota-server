@@ -4,93 +4,27 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.NullNode;
 import java.util.List;
 
-public record RagEvaluationCase(
-        String caseId,
-        RagEvaluationCaseType type,
-        RagEvaluationSplit split,
-        JsonNode request,
-        String authMode,
-        List<RagExpectedShop> relevantShops,
-        Boolean expectsEmpty,
-        List<String> requiredFacts,
-        List<String> allowedEvidence,
-        List<String> forbiddenClaims,
-        Boolean expectsFallback,
-        Boolean contractOnly,
-        Integer primaryK,
-        Integer diagnosticK,
-        RagExpectedError expectedError
-) {
+public record RagEvaluationCase(String caseId, RagEvaluationCaseType type, RagEvaluationSplit split, JsonNode request,
+        String authMode, List<RagExpectedShop> relevantShops, Boolean expectsEmpty, List<String> requiredFacts,
+        List<String> allowedEvidence, List<String> forbiddenClaims, Boolean expectsFallback, Boolean contractOnly,
+        Integer primaryK, Integer diagnosticK, RagExpectedError expectedError) {
 
     /** Backward-compatible constructor for callers that predate the evidence label. */
-    public RagEvaluationCase(
-            String caseId,
-            RagEvaluationCaseType type,
-            RagEvaluationSplit split,
-            JsonNode request,
-            String authMode,
-            List<RagExpectedShop> relevantShops,
-            Boolean expectsEmpty,
-            List<String> requiredFacts,
-            List<String> forbiddenClaims,
-            Boolean expectsFallback,
-            Boolean contractOnly,
-            Integer primaryK,
-            Integer diagnosticK
-    ) {
-        this(
-                caseId,
-                type,
-                split,
-                request,
-                authMode,
-                relevantShops,
-                expectsEmpty,
-                requiredFacts,
-                List.of(),
-                forbiddenClaims,
-                expectsFallback,
-                contractOnly,
-                primaryK,
-                diagnosticK,
-                null
-        );
+    public RagEvaluationCase(String caseId, RagEvaluationCaseType type, RagEvaluationSplit split, JsonNode request,
+            String authMode, List<RagExpectedShop> relevantShops, Boolean expectsEmpty, List<String> requiredFacts,
+            List<String> forbiddenClaims, Boolean expectsFallback, Boolean contractOnly, Integer primaryK,
+            Integer diagnosticK) {
+        this(caseId, type, split, request, authMode, relevantShops, expectsEmpty, requiredFacts, List.of(),
+                forbiddenClaims, expectsFallback, contractOnly, primaryK, diagnosticK, null);
     }
 
     /** Backward-compatible constructor for callers using the full v1.1 shape. */
-    public RagEvaluationCase(
-            String caseId,
-            RagEvaluationCaseType type,
-            RagEvaluationSplit split,
-            JsonNode request,
-            String authMode,
-            List<RagExpectedShop> relevantShops,
-            Boolean expectsEmpty,
-            List<String> requiredFacts,
-            List<String> allowedEvidence,
-            List<String> forbiddenClaims,
-            Boolean expectsFallback,
-            Boolean contractOnly,
-            Integer primaryK,
-            Integer diagnosticK
-    ) {
-        this(
-                caseId,
-                type,
-                split,
-                request,
-                authMode,
-                relevantShops,
-                expectsEmpty,
-                requiredFacts,
-                allowedEvidence,
-                forbiddenClaims,
-                expectsFallback,
-                contractOnly,
-                primaryK,
-                diagnosticK,
-                null
-        );
+    public RagEvaluationCase(String caseId, RagEvaluationCaseType type, RagEvaluationSplit split, JsonNode request,
+            String authMode, List<RagExpectedShop> relevantShops, Boolean expectsEmpty, List<String> requiredFacts,
+            List<String> allowedEvidence, List<String> forbiddenClaims, Boolean expectsFallback, Boolean contractOnly,
+            Integer primaryK, Integer diagnosticK) {
+        this(caseId, type, split, request, authMode, relevantShops, expectsEmpty, requiredFacts, allowedEvidence,
+                forbiddenClaims, expectsFallback, contractOnly, primaryK, diagnosticK, null);
     }
 
     public RagEvaluationCase {

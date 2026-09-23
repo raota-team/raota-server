@@ -10,12 +10,8 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(
-        prefix = "app.auth.refresh-token",
-        name = "store-type",
-        havingValue = "jpa",
-        matchIfMissing = true
-)
+@ConditionalOnProperty(prefix = "app.auth.refresh-token", name = "store-type", havingValue = "jpa",
+        matchIfMissing = true)
 public class JpaRefreshTokenStore implements RefreshTokenStore {
 
     private final RefreshTokenRepository refreshTokenRepository;
@@ -33,14 +29,8 @@ public class JpaRefreshTokenStore implements RefreshTokenStore {
     @Override
     public void save(Long memberId, String token, Instant expiresAt) {
         refreshTokenRepository.findByMemberId(memberId)
-                .ifPresentOrElse(
-                        refreshToken -> refreshToken.rotate(token, expiresAt),
-                        () -> refreshTokenRepository.save(RefreshToken.builder()
-                                .memberId(memberId)
-                                .token(token)
-                                .expiryDate(expiresAt)
-                                .build())
-                );
+            .ifPresentOrElse(refreshToken -> refreshToken.rotate(token, expiresAt), () -> refreshTokenRepository
+                .save(RefreshToken.builder().memberId(memberId).token(token).expiryDate(expiresAt).build()));
     }
 
     @Override
@@ -49,10 +39,7 @@ public class JpaRefreshTokenStore implements RefreshTokenStore {
     }
 
     private StoredRefreshToken toStoredToken(RefreshToken refreshToken) {
-        return new StoredRefreshToken(
-                refreshToken.getMemberId(),
-                refreshToken.getToken(),
-                refreshToken.getExpiresAt()
-        );
+        return new StoredRefreshToken(refreshToken.getMemberId(), refreshToken.getToken(), refreshToken.getExpiresAt());
     }
+
 }

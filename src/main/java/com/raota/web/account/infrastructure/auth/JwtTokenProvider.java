@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 public class JwtTokenProvider {
 
     private final AuthProperties authProperties;
+
     private final SecretKey signingKey;
 
     public JwtTokenProvider(AuthProperties authProperties) {
@@ -26,26 +27,24 @@ public class JwtTokenProvider {
         Instant now = Instant.now();
         Instant expiresAt = now.plusSeconds(authProperties.accessTokenExpirySeconds());
         return Jwts.builder()
-                .issuer(authProperties.issuer())
-                .subject(String.valueOf(memberId))
-                .issuedAt(Date.from(now))
-                .expiration(Date.from(expiresAt))
-                .claim("memberId", memberId)
-                .signWith(signingKey)
-                .compact();
+            .issuer(authProperties.issuer())
+            .subject(String.valueOf(memberId))
+            .issuedAt(Date.from(now))
+            .expiration(Date.from(expiresAt))
+            .claim("memberId", memberId)
+            .signWith(signingKey)
+            .compact();
     }
 
     public Long getMemberId(String token) {
         try {
-            Claims claims = Jwts.parser()
-                    .verifyWith(signingKey)
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
+            Claims claims = Jwts.parser().verifyWith(signingKey).build().parseSignedClaims(token).getPayload();
             return Long.valueOf(claims.getSubject());
-        } catch (ExpiredJwtException exception) {
+        }
+        catch (ExpiredJwtException exception) {
             throw new ExpiredJwtAuthenticationException(exception);
-        } catch (RuntimeException exception) {
+        }
+        catch (RuntimeException exception) {
             throw new JwtAuthenticationException("유효하지 않은 액세스 토큰입니다.", exception);
         }
     }
@@ -62,9 +61,11 @@ public class JwtTokenProvider {
         byte[] keyBytes;
         try {
             keyBytes = Decoders.BASE64.decode(secret);
-        } catch (RuntimeException exception) {
+        }
+        catch (RuntimeException exception) {
             keyBytes = secret.getBytes(StandardCharsets.UTF_8);
         }
         return Keys.hmacShaKeyFor(keyBytes);
     }
+
 }

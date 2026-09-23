@@ -43,13 +43,8 @@ public class PostReviewChunkDocumentFactory implements RetrievalDocumentFactory<
         List<Document> splitDocuments = tokenTextSplitter.split(document);
 
         return IntStream.range(0, splitDocuments.size())
-                .mapToObj(index -> withChunkMetadata(
-                        splitDocuments.get(index),
-                        post.getId(),
-                        index,
-                        splitDocuments.size()
-                ))
-                .toList();
+            .mapToObj(index -> withChunkMetadata(splitDocuments.get(index), post.getId(), index, splitDocuments.size()))
+            .toList();
     }
 
     private int normalizedLength(String content) {
@@ -60,8 +55,7 @@ public class PostReviewChunkDocumentFactory implements RetrievalDocumentFactory<
         Map<String, Object> metadata = new HashMap<>(document.getMetadata());
         metadata.put(RetrievalMetadataKeys.CHUNK_INDEX, chunkIndex);
         metadata.put(RetrievalMetadataKeys.CHUNK_TOTAL, chunkTotal);
-        metadata.put(RetrievalMetadataKeys.CHUNK_ID,
-                "post:%s:chunk:%d".formatted(postId, chunkIndex));
+        metadata.put(RetrievalMetadataKeys.CHUNK_ID, "post:%s:chunk:%d".formatted(postId, chunkIndex));
 
         return new Document(document.getText(), metadata);
     }
@@ -75,7 +69,8 @@ public class PostReviewChunkDocumentFactory implements RetrievalDocumentFactory<
         if (shop != null) {
             metadata.put(RetrievalMetadataKeys.SHOP_ID, String.valueOf(shop.getId()));
             metadata.put(RetrievalMetadataKeys.SHOP_NAME, shop.getName());
-            metadata.put(RetrievalMetadataKeys.REGION, shop.getAddress() != null ? shop.getAddress().simpleAddress() : "위치 정보 없음");
+            metadata.put(RetrievalMetadataKeys.REGION,
+                    shop.getAddress() != null ? shop.getAddress().simpleAddress() : "위치 정보 없음");
         }
 
         if (post.getCreatedAt() != null) {
@@ -102,4 +97,5 @@ public class PostReviewChunkDocumentFactory implements RetrievalDocumentFactory<
         }
         return value;
     }
+
 }

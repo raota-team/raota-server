@@ -52,6 +52,7 @@ class CommunityIntegrationTest extends BaseIntegrationTest {
     private JwtTokenProvider jwtTokenProvider;
 
     private String accessToken;
+
     private MemberProfile savedMember;
 
     @BeforeEach
@@ -62,29 +63,25 @@ class CommunityIntegrationTest extends BaseIntegrationTest {
         ramenShopRepository.deleteAll();
         memberRepository.deleteAll();
 
-        savedMember = memberRepository.save(MemberProfile.builder()
-                .nickname("커뮤니티테스터")
-                .build());
+        savedMember = memberRepository.save(MemberProfile.builder().nickname("커뮤니티테스터").build());
         accessToken = jwtTokenProvider.createAccessToken(savedMember.getId());
     }
 
     @Test
     @DisplayName("로그인한 사용자는 리뷰 게시판에 글을 작성할 수 있다.")
     void create_post_success() {
-        CommunityCreatePostRequest request = new CommunityCreatePostRequest(
-                "REVIEW", null, "테스트 제목", null, "PLAIN", "테스트 내용입니다."
-        );
+        CommunityCreatePostRequest request = new CommunityCreatePostRequest("REVIEW", null, "테스트 제목", null, "PLAIN",
+                "테스트 내용입니다.");
 
-        given()
-                .header("Authorization", "Bearer " + accessToken)
-                .contentType(ContentType.JSON)
-                .body(request)
-        .when()
-                .post("/community/posts")
-        .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("data.title", is("테스트 제목"))
-                .body("data.authorName", is("커뮤니티테스터"));
+        given().header("Authorization", "Bearer " + accessToken)
+            .contentType(ContentType.JSON)
+            .body(request)
+            .when()
+            .post("/community/posts")
+            .then()
+            .statusCode(HttpStatus.OK.value())
+            .body("data.title", is("테스트 제목"))
+            .body("data.authorName", is("커뮤니티테스터"));
     }
 
     @Test
@@ -93,80 +90,59 @@ class CommunityIntegrationTest extends BaseIntegrationTest {
         saveSamplePost("제목 1", "내용 1");
         saveSamplePost("제목 2", "내용 2");
 
-        given()
-                .param("category", "REVIEW")
-                .param("page", 0)
-                .param("size", 10)
-        .when()
-                .get("/community/posts")
-        .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("data.items.size()", is(2))
-                .body("data.items[0].viewCount", is(0));
+        given().param("category", "REVIEW")
+            .param("page", 0)
+            .param("size", 10)
+            .when()
+            .get("/community/posts")
+            .then()
+            .statusCode(HttpStatus.OK.value())
+            .body("data.items.size()", is(2))
+            .body("data.items[0].viewCount", is(0));
     }
 
     @Test
     @DisplayName("POPULAR 카테고리는 좋아요 3개 이상인 게시글만 최신순으로 조회한다.")
     void get_popular_posts_with_paging() {
-        Post olderPopularPost = saveSamplePost(
-                "이전 인기글",
-                "내용",
-                PostCategory.FREE,
-                LocalDateTime.now().minusDays(30)
-        );
-        Post recentPopularPost = saveSamplePost(
-                "최근 인기글",
-                "내용",
-                PostCategory.QUESTION,
-                LocalDateTime.now().minusDays(1)
-        );
-        Post notPopularPost = saveSamplePost(
-                "좋아요 부족",
-                "내용",
-                PostCategory.TIP,
-                LocalDateTime.now()
-        );
+        Post olderPopularPost = saveSamplePost("이전 인기글", "내용", PostCategory.FREE, LocalDateTime.now().minusDays(30));
+        Post recentPopularPost = saveSamplePost("최근 인기글", "내용", PostCategory.QUESTION,
+                LocalDateTime.now().minusDays(1));
+        Post notPopularPost = saveSamplePost("좋아요 부족", "내용", PostCategory.TIP, LocalDateTime.now());
         addLikes(olderPopularPost.getId(), 3);
         addLikes(recentPopularPost.getId(), 3);
         addLikes(notPopularPost.getId(), 2);
 
-        given()
-                .param("category", "POPULAR")
-                .param("page", 0)
-                .param("size", 10)
-        .when()
-                .get("/community/posts")
-        .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("data.items.size()", is(2))
-                .body("data.items[0].title", is("최근 인기글"))
-                .body("data.items[0].category", is("QUESTION"))
-                .body("data.items[1].title", is("이전 인기글"));
+        given().param("category", "POPULAR")
+            .param("page", 0)
+            .param("size", 10)
+            .when()
+            .get("/community/posts")
+            .then()
+            .statusCode(HttpStatus.OK.value())
+            .body("data.items.size()", is(2))
+            .body("data.items[0].title", is("최근 인기글"))
+            .body("data.items[0].category", is("QUESTION"))
+            .body("data.items[1].title", is("이전 인기글"));
     }
 
     @Test
     @DisplayName("최근 인기글 API는 좋아요 3개 이상인 게시글 중 최신 3개를 반환한다.")
     void get_recent_popular_posts() {
         for (int index = 1; index <= 4; index++) {
-            Post post = saveSamplePost(
-                    "인기글 " + index,
-                    "내용",
-                    PostCategory.FREE,
-                    LocalDateTime.now().minusDays(4L - index)
-            );
+            Post post = saveSamplePost("인기글 " + index, "내용", PostCategory.FREE,
+                    LocalDateTime.now().minusDays(4L - index));
             addLikes(post.getId(), 3);
         }
 
-        given()
-        .when()
-                .get("/api/v1/community/posts/popular")
-        .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("data.size()", is(3))
-                .body("data[0].title", is("인기글 4"))
-                .body("data[0].category", is("FREE"))
-                .body("data[0].categoryName", is("자유게시판"))
-                .body("data[2].title", is("인기글 2"));
+        given().when()
+            .get("/api/v1/community/posts/popular")
+            .then()
+            .statusCode(HttpStatus.OK.value())
+            .body("data.size()", is(3))
+            .body("data[0].title", is("인기글 4"))
+            .body("data[0].category", is("FREE"))
+            .body("data[0].categoryName", is("자유게시판"))
+            .body("data[2].title", is("인기글 2"));
     }
 
     @Test
@@ -174,32 +150,22 @@ class CommunityIntegrationTest extends BaseIntegrationTest {
     void get_post_detail_increases_view_count() {
         Post post = saveSamplePost("조회수 글", "내용");
 
-        given()
-        .when()
-                .post("/community/posts/{postId}/views", post.getId())
-        .then()
-                .statusCode(HttpStatus.OK.value());
+        given().when().post("/community/posts/{postId}/views", post.getId()).then().statusCode(HttpStatus.OK.value());
 
-        given()
-        .when()
-                .get("/community/posts/{postId}", post.getId())
-        .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("data.title", is("조회수 글"))
-                .body("data.viewCount", is(1));
+        given().when()
+            .get("/community/posts/{postId}", post.getId())
+            .then()
+            .statusCode(HttpStatus.OK.value())
+            .body("data.title", is("조회수 글"))
+            .body("data.viewCount", is(1));
 
-        given()
-        .when()
-                .post("/community/posts/{postId}/views", post.getId())
-        .then()
-                .statusCode(HttpStatus.OK.value());
+        given().when().post("/community/posts/{postId}/views", post.getId()).then().statusCode(HttpStatus.OK.value());
 
-        given()
-        .when()
-                .get("/community/posts/{postId}", post.getId())
-        .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("data.viewCount", is(2));
+        given().when()
+            .get("/community/posts/{postId}", post.getId())
+            .then()
+            .statusCode(HttpStatus.OK.value())
+            .body("data.viewCount", is(2));
     }
 
     @Test
@@ -210,19 +176,18 @@ class CommunityIntegrationTest extends BaseIntegrationTest {
         saveSamplePost("하쿠 후기", "내용 1", targetShop.getId());
         saveSamplePost("소라 후기", "내용 2", otherShop.getId());
 
-        given()
-                .param("category", "REVIEW")
-                .param("ramenShopId", targetShop.getId())
-                .param("page", 0)
-                .param("size", 10)
-        .when()
-                .get("/community/posts")
-        .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("data.items.size()", is(1))
-                .body("data.items[0].ramenShopId", is(targetShop.getId().intValue()))
-                .body("data.items[0].title", is("하쿠 후기"))
-                .body("data.items[0].storeName", is("멘야 하쿠"));
+        given().param("category", "REVIEW")
+            .param("ramenShopId", targetShop.getId())
+            .param("page", 0)
+            .param("size", 10)
+            .when()
+            .get("/community/posts")
+            .then()
+            .statusCode(HttpStatus.OK.value())
+            .body("data.items.size()", is(1))
+            .body("data.items[0].ramenShopId", is(targetShop.getId().intValue()))
+            .body("data.items[0].title", is("하쿠 후기"))
+            .body("data.items[0].storeName", is("멘야 하쿠"));
     }
 
     @Test
@@ -231,16 +196,15 @@ class CommunityIntegrationTest extends BaseIntegrationTest {
         Post post = saveSamplePost("댓글용 글", "내용");
         CommunityCommentCreateRequest request = new CommunityCommentCreateRequest("댓글 내용입니다.", null);
 
-        given()
-                .header("Authorization", "Bearer " + accessToken)
-                .contentType(ContentType.JSON)
-                .body(request)
-        .when()
-                .post("/community/posts/{postId}/comments", post.getId())
-        .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("data.content", is("댓글 내용입니다."))
-                .body("data.authorNickname", is("커뮤니티테스터"));
+        given().header("Authorization", "Bearer " + accessToken)
+            .contentType(ContentType.JSON)
+            .body(request)
+            .when()
+            .post("/community/posts/{postId}/comments", post.getId())
+            .then()
+            .statusCode(HttpStatus.OK.value())
+            .body("data.content", is("댓글 내용입니다."))
+            .body("data.authorNickname", is("커뮤니티테스터"));
     }
 
     private Post saveSamplePost(String title, String content) {
@@ -248,20 +212,13 @@ class CommunityIntegrationTest extends BaseIntegrationTest {
     }
 
     private Post saveSamplePost(String title, String content, Long ramenShopId) {
-        return jpaPostRepository.save(Post.of(
-                null, PostCategory.REVIEW, title, content, "PLAIN", null, savedMember.getId(), ramenShopId, 0, LocalDateTime.now()
-        ));
+        return jpaPostRepository.save(Post.of(null, PostCategory.REVIEW, title, content, "PLAIN", null,
+                savedMember.getId(), ramenShopId, 0, LocalDateTime.now()));
     }
 
-    private Post saveSamplePost(
-            String title,
-            String content,
-            PostCategory category,
-            LocalDateTime createdAt
-    ) {
-        return jpaPostRepository.save(Post.of(
-                null, category, title, content, "PLAIN", null, savedMember.getId(), null, 0, createdAt
-        ));
+    private Post saveSamplePost(String title, String content, PostCategory category, LocalDateTime createdAt) {
+        return jpaPostRepository
+            .save(Post.of(null, category, title, content, "PLAIN", null, savedMember.getId(), null, 0, createdAt));
     }
 
     private void addLikes(Long postId, int count) {
@@ -272,10 +229,11 @@ class CommunityIntegrationTest extends BaseIntegrationTest {
 
     private RamenShop sampleShop(String name) {
         return RamenShop.builder()
-                .name(name)
-                .address(Address.of("서울", "마포구", "월드컵로", "1층"))
-                .description("라멘집 설명")
-                .imageUrl("https://example.com/shop.jpg")
-                .build();
+            .name(name)
+            .address(Address.of("서울", "마포구", "월드컵로", "1층"))
+            .description("라멘집 설명")
+            .imageUrl("https://example.com/shop.jpg")
+            .build();
     }
+
 }

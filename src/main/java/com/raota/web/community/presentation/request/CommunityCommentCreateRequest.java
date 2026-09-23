@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CommunityCommentCreateRequest {
+
     @Schema(description = "댓글 내용")
     private String content;
 
@@ -19,4 +20,5 @@ public class CommunityCommentCreateRequest {
     public CreateCommentCommand toCommand(Long postId, Long authorId) {
         return new CreateCommentCommand(postId, authorId, parentCommentId, content);
     }
+
 }

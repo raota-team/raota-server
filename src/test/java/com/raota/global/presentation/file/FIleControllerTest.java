@@ -1,4 +1,5 @@
 package com.raota.global.presentation.file;
+
 import com.raota.global.file.FileUploader;
 import com.raota.global.presentation.file.FIleController;
 import com.raota.global.presentation.file.response.PresignedUrlResponse;
@@ -19,6 +20,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 class FIleControllerTest {
 
     private FileUploader fileUploader;
+
     private MockMvc mockMvc;
 
     @BeforeEach
@@ -30,16 +32,18 @@ class FIleControllerTest {
     @Test
     void getUploadTicketSupportsBackgroundImages() throws Exception {
         given(fileUploader.getPresignedUrl(eq("backgrounds"), eq("jpg"), eq("image/jpeg")))
-                .willReturn(PresignedUrlResponse.of("https://upload.example.com/background", "https://images.example.com/background.jpg"));
+            .willReturn(PresignedUrlResponse.of("https://upload.example.com/background",
+                    "https://images.example.com/background.jpg"));
 
-        mockMvc.perform(get("/files/upload-ticket")
-                        .param("type", "BACKGROUND")
-                        .param("extension", "jpg")
-                        .param("contentType", "image/jpeg"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.upload_url").value("https://upload.example.com/background"))
-                .andExpect(jsonPath("$.img_url").value("https://images.example.com/background.jpg"));
+        mockMvc
+            .perform(get("/files/upload-ticket").param("type", "BACKGROUND")
+                .param("extension", "jpg")
+                .param("contentType", "image/jpeg"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.upload_url").value("https://upload.example.com/background"))
+            .andExpect(jsonPath("$.img_url").value("https://images.example.com/background.jpg"));
 
         verify(fileUploader).getPresignedUrl("backgrounds", "jpg", "image/jpeg");
     }
+
 }
