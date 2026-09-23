@@ -41,9 +41,8 @@ public class MobileExceptionAdvice {
 
     @ExceptionHandler(MobileException.class)
     public ResponseEntity<MobileApiResponse<Void>> handleMobileException(MobileException exception) {
-        if (exception.code().httpStatus().is4xxClientError()) {
-            log.debug("Mobile request rejected: code={}", exception.code());
-        } else {
+        // 의도적으로 던진 5xx(예: 추천 불가)만 서버 로그에 남긴다. 4xx는 클라이언트 오류라 기록하지 않는다.
+        if (exception.code().httpStatus().is5xxServerError()) {
             log.error("Mobile exception: code={}", exception.code(), exception);
         }
         return respond(exception.code(), exception.getMessage(), List.of());
@@ -51,7 +50,6 @@ public class MobileExceptionAdvice {
 
     @ExceptionHandler(BindException.class)
     public ResponseEntity<MobileApiResponse<Void>> handleBindException(BindException exception) {
-        log.debug("Mobile request validation failed");
         List<MobileFieldError> fields = exception.getFieldErrors().stream()
                 .map(MobileExceptionAdvice::toFieldError)
                 .toList();
@@ -63,7 +61,6 @@ public class MobileExceptionAdvice {
     public ResponseEntity<MobileApiResponse<Void>> handleMethodValidation(
             HandlerMethodValidationException exception
     ) {
-        log.debug("Mobile method validation failed");
         List<MobileFieldError> fields = exception.getParameterValidationResults().stream()
                 .flatMap(result -> result.getResolvableErrors().stream().map(error ->
                         new MobileFieldError(
@@ -79,7 +76,6 @@ public class MobileExceptionAdvice {
     public ResponseEntity<MobileApiResponse<Void>> handleUnreadableMessage(
             HttpMessageNotReadableException exception
     ) {
-        log.debug("Mobile request body could not be read");
         List<MobileFieldError> fields = jacksonPath(exception).map(path -> List.of(
                 new MobileFieldError(path, "INVALID_FORMAT", INVALID_FORMAT)
         )).orElseGet(List::of);
@@ -90,7 +86,6 @@ public class MobileExceptionAdvice {
     public ResponseEntity<MobileApiResponse<Void>> handleTypeMismatch(
             MethodArgumentTypeMismatchException exception
     ) {
-        log.debug("Mobile request parameter has an invalid format: field={}", exception.getName());
         return respond(
                 MobileErrorCode.VALIDATION_ERROR,
                 VALIDATION_MESSAGE,
@@ -102,7 +97,6 @@ public class MobileExceptionAdvice {
     public ResponseEntity<MobileApiResponse<Void>> handleMissingParameter(
             MissingServletRequestParameterException exception
     ) {
-        log.debug("Mobile request is missing a parameter: field={}", exception.getParameterName());
         return respond(
                 MobileErrorCode.VALIDATION_ERROR,
                 VALIDATION_MESSAGE,
@@ -112,7 +106,6 @@ public class MobileExceptionAdvice {
 
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ResponseEntity<MobileApiResponse<Void>> handleMissingHeader(MissingRequestHeaderException exception) {
-        log.debug("Mobile request is missing a header: field={}", exception.getHeaderName());
         return respond(
                 MobileErrorCode.VALIDATION_ERROR,
                 VALIDATION_MESSAGE,
@@ -124,26 +117,22 @@ public class MobileExceptionAdvice {
     public ResponseEntity<MobileApiResponse<Void>> handleUnsupportedMediaType(
             HttpMediaTypeNotSupportedException exception
     ) {
-        log.debug("Mobile request uses an unsupported Content-Type");
         return respond(MobileErrorCode.VALIDATION_ERROR, "지원하지 않는 Content-Type입니다.", List.of());
     }
 
     @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
     public ResponseEntity<Void> handleNotAcceptable(HttpMediaTypeNotAcceptableException exception) {
-        log.debug("Mobile response cannot satisfy the requested Accept header");
         // 클라이언트가 JSON을 거부했으므로 JSON 실패 본문을 쓰지 않고 상태만 반환한다.
         return ResponseEntity.status(406).build();
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<MobileApiResponse<Void>> handleAccessDenied(AccessDeniedException exception) {
-        log.debug("Mobile access denied");
         return respond(MobileErrorCode.FORBIDDEN, "접근 권한이 없습니다.", List.of());
     }
 
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<MobileApiResponse<Void>> handleAuthentication(AuthenticationException exception) {
-        log.debug("Mobile authentication is required");
         return respond(MobileErrorCode.UNAUTHORIZED, "인증이 필요합니다.", List.of());
     }
 
