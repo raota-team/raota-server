@@ -8,6 +8,8 @@ MySQL 8 + Flyway, Redis, Spring Security(OAuth2 + JWT), Spring AI(Oracle Vector 
 ## 명령
 
 ```bash
+./gradlew format                               # Spring Java Format 자동 적용 (커밋 전)
+./gradlew checkFormat                          # 포맷 검사 (CI·CD에서 실행)
 ./gradlew compileJava compileTestJava          # 빠른 컴파일 확인
 ./gradlew test --tests 'com.raota.system.ModulithArchitectureTest'
 ./gradlew test --tests '<FQCN>'                # 변경 범위 테스트
@@ -16,6 +18,7 @@ MySQL 8 + Flyway, Redis, Spring Security(OAuth2 + JWT), Spring AI(Oracle Vector 
 
 - 테스트는 `test` 프로필로 실행되며 통합 테스트(`BaseIntegrationTest`)가 Testcontainers로 MySQL 8 · Redis를 띄운다. **Docker가 실행 중이어야 한다.**
 - 패키지 이동, `@NamedInterface` 변경, 새 모듈 추가 뒤에는 전체 테스트를 실행한다.
+- CI(`.github/workflows/ci.yml`)가 `checkFormat`과 전체 테스트를 GitHub 호스팅 러너에서 실행한다. `main` push는 CD가 이 검증을 통과한 뒤에만 배포한다.
 
 ## 아키텍처
 

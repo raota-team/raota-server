@@ -10,7 +10,14 @@ on:
   workflow_dispatch:
 
 jobs:
+  # 포맷 검사와 전체 테스트를 통과해야 이미지를 빌드하고 배포한다.
+  verify:
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
   build-and-dispatch:
+    needs: verify
     runs-on: [self-hosted, linux, arm64]
 
     environment:
@@ -32,7 +39,7 @@ jobs:
           distribution: temurin
           java-version: "25"
 
-      - name: Build jar (without tests)
+      - name: Build jar (tests run in verify job)
         run: ./gradlew clean bootJar -x test
 
       - name: Docker login to OCIR
