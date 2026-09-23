@@ -35,10 +35,7 @@ class MemberActivityVisibilityServiceTest {
         MemberProfile member = member(1L);
         given(memberRepository.findByIdAndDeletedAtIsNull(1L)).willReturn(Optional.of(member));
 
-        var result = service.update(
-                1L,
-                new ActivityVisibilityUpdateRequest(false, true, false, true)
-        );
+        var result = service.update(1L, new ActivityVisibilityUpdateRequest(false, true, false, true));
 
         assertThat(result.logs()).isFalse();
         assertThat(result.visits()).isTrue();
@@ -53,9 +50,8 @@ class MemberActivityVisibilityServiceTest {
         member.updateActivityVisibility(false, true, true, true);
         given(memberRepository.findByIdAndDeletedAtIsNull(1L)).willReturn(Optional.of(member));
 
-        assertThatThrownBy(() -> service.requireLogsVisible(1L, 2L))
-                .isInstanceOf(AccessDeniedException.class)
-                .hasMessage("비공개 활동입니다.");
+        assertThatThrownBy(() -> service.requireLogsVisible(1L, 2L)).isInstanceOf(AccessDeniedException.class)
+            .hasMessage("비공개 활동입니다.");
     }
 
     @Test
@@ -70,9 +66,7 @@ class MemberActivityVisibilityServiceTest {
     }
 
     private MemberProfile member(Long id) {
-        return MemberProfile.builder()
-                .id(id)
-                .nickname("공개설정테스터")
-                .build();
+        return MemberProfile.builder().id(id).nickname("공개설정테스터").build();
     }
+
 }

@@ -15,7 +15,9 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 /**
  * v2 응답({@link MobileApiResponse})이 직렬화되기 직전에 {@code meta.requestId}를 채운다.
  *
- * <p>v2 controller와 예외 처리기에만 적용되도록 {@code com.raota.mobile} 패키지로 범위를 제한한다.</p>
+ * <p>
+ * v2 controller와 예외 처리기에만 적용되도록 {@code com.raota.mobile} 패키지로 범위를 제한한다.
+ * </p>
  */
 @RestControllerAdvice(basePackages = "com.raota.mobile")
 public class MobileResponseMetaAdvice implements ResponseBodyAdvice<Object> {
@@ -27,18 +29,14 @@ public class MobileResponseMetaAdvice implements ResponseBodyAdvice<Object> {
     }
 
     @Override
-    public Object beforeBodyWrite(
-            Object body,
-            MethodParameter returnType,
-            MediaType selectedContentType,
-            Class<? extends HttpMessageConverter<?>> selectedConverterType,
-            ServerHttpRequest request,
-            ServerHttpResponse response
-    ) {
+    public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType,
+            Class<? extends HttpMessageConverter<?>> selectedConverterType, ServerHttpRequest request,
+            ServerHttpResponse response) {
         if (!(body instanceof MobileApiResponse<?> mobileResponse)) {
             return body;
         }
         HttpServletRequest servletRequest = ((ServletServerHttpRequest) request).getServletRequest();
         return mobileResponse.withRequestId(RequestIdFilter.currentRequestId(servletRequest));
     }
+
 }

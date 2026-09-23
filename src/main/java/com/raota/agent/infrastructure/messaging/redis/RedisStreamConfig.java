@@ -24,8 +24,11 @@ import org.springframework.data.redis.stream.Subscription;
 public class RedisStreamConfig {
 
     private final RedisConnectionFactory redisConnectionFactory;
+
     private final PostIndexingStreamListener postIndexingStreamListener;
+
     private final RedisStreamErrorHandler redisStreamErrorHandler;
+
     private final StringRedisTemplate stringRedisTemplate;
 
     private static final String CONSUMER_GROUP = "raota-retrieval-group";
@@ -38,27 +41,26 @@ public class RedisStreamConfig {
 
     @Bean(destroyMethod = "stop")
     public StreamMessageListenerContainer<String, MapRecord<String, String, String>> postIndexingStreamListenerContainer() {
-        StreamMessageListenerContainer.StreamMessageListenerContainerOptions<String, MapRecord<String, String, String>> options =
-                StreamMessageListenerContainer.StreamMessageListenerContainerOptions.builder()
-                        .pollTimeout(Duration.ofSeconds(pollTimeoutSeconds))
-                        .errorHandler(redisStreamErrorHandler)
-                        .build();
+        StreamMessageListenerContainer.StreamMessageListenerContainerOptions<String, MapRecord<String, String, String>> options = StreamMessageListenerContainer.StreamMessageListenerContainerOptions
+            .builder()
+            .pollTimeout(Duration.ofSeconds(pollTimeoutSeconds))
+            .errorHandler(redisStreamErrorHandler)
+            .build();
 
         return StreamMessageListenerContainer.create(redisConnectionFactory, options);
     }
 
     @Bean
     public Subscription postIndexingSubscription(
-            StreamMessageListenerContainer<String, MapRecord<String, String, String>> postIndexingStreamListenerContainer
-    ) {
+            StreamMessageListenerContainer<String, MapRecord<String, String, String>> postIndexingStreamListenerContainer) {
         initConsumerGroup(MessagingTopics.POST_INDEXING, CONSUMER_GROUP);
         Subscription subscription = postIndexingStreamListenerContainer.receive(
                 Consumer.from(CONSUMER_GROUP, consumerName),
                 StreamOffset.create(MessagingTopics.POST_INDEXING, ReadOffset.lastConsumed()),
-                postIndexingStreamListener
-        );
+                postIndexingStreamListener);
 
-        log.info("Redis Stream listener started. streamKey={}, consumerGroup={}, consumerName={}, pollTimeoutSeconds={}",
+        log.info(
+                "Redis Stream listener started. streamKey={}, consumerGroup={}, consumerName={}, pollTimeoutSeconds={}",
                 MessagingTopics.POST_INDEXING, CONSUMER_GROUP, consumerName, pollTimeoutSeconds);
         postIndexingStreamListenerContainer.start();
         return subscription;
@@ -74,10 +76,12 @@ public class RedisStreamConfig {
 
             stringRedisTemplate.opsForStream().createGroup(streamKey, groupName);
             log.info("Consumer Group 초기화 완료: {}", groupName);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             if (isBusyGroupException(e)) {
                 log.info("Consumer Group이 이미 존재합니다: {}", groupName);
-            } else {
+            }
+            else {
                 log.error("Redis Stream Consumer Group 초기화 중 에러 발생", e);
             }
         }
@@ -94,4 +98,5 @@ public class RedisStreamConfig {
         }
         return false;
     }
+
 }

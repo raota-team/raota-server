@@ -10,7 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional
 public class PostLikeService {
+
     private final PostLikeRepository postLikeRepository;
+
     private final PostRepository postRepository;
 
     /**
@@ -18,9 +20,9 @@ public class PostLikeService {
      * @return 현재 좋아요 상태 (true: 좋아요함, false: 취소함)
      */
     public boolean toggleLike(Long postId, Long memberId) {
-        postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다."));
+        postRepository.findById(postId).orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다."));
 
         return postLikeRepository.toggle(postId, memberId);
     }
+
 }

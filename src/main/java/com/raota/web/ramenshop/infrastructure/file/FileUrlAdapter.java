@@ -17,4 +17,5 @@ public class FileUrlAdapter implements FileUrlPort {
     public String getAccessibleUrl(String filePath) {
         return fileUploader.getAccessibleUrl(filePath);
     }
+
 }

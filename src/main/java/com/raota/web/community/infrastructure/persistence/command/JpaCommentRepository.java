@@ -13,23 +13,28 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 interface JpaCommentEntityRepository extends JpaRepository<CommentEntity, Long> {
+
     List<CommentEntity> findAllByPostId(Long postId);
+
 }
 
 @Repository
 @RequiredArgsConstructor
 public class JpaCommentRepository implements CommentRepository {
+
     private final JpaCommentEntityRepository jpaRepository;
+
     private final JpaPostEntityRepository postJpaRepository;
+
     private final MemberRepository memberRepository;
 
     @Override
     public Comment save(Comment comment) {
         PostEntity post = postJpaRepository.findById(comment.getPostId())
-                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
+            .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
         MemberProfile author = memberRepository.findById(comment.getAuthorId())
-                .orElseThrow(() -> new IllegalArgumentException("작성자를 찾을 수 없습니다."));
-        
+            .orElseThrow(() -> new IllegalArgumentException("작성자를 찾을 수 없습니다."));
+
         CommentEntity parent = null;
         if (comment.getParentId() != null) {
             parent = jpaRepository.findById(comment.getParentId()).orElse(null);
@@ -81,9 +86,7 @@ public class JpaCommentRepository implements CommentRepository {
 
     @Override
     public List<Comment> findAllByPostId(Long postId) {
-        return jpaRepository.findAllByPostId(postId).stream()
-                .map(CommentEntity::toDomain)
-                .toList();
+        return jpaRepository.findAllByPostId(postId).stream().map(CommentEntity::toDomain).toList();
     }
 
     @Override
@@ -100,7 +103,7 @@ public class JpaCommentRepository implements CommentRepository {
     }
 
     private CommentEntity findCommentEntity(Long id, String message) {
-        return jpaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(message));
+        return jpaRepository.findById(id).orElseThrow(() -> new IllegalArgumentException(message));
     }
+
 }

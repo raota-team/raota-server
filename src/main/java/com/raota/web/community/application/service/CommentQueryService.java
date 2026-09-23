@@ -19,15 +19,15 @@ public class CommentQueryService {
     private final CommentQueryPort commentQueryPort;
 
     public CommentItemResult getComment(Long commentId) {
-        return commentQueryPort.getComment(commentId)
-                .orElseThrow(() -> new IllegalStateException("댓글을 찾을 수 없습니다."));
+        return commentQueryPort.getComment(commentId).orElseThrow(() -> new IllegalStateException("댓글을 찾을 수 없습니다."));
     }
 
     public Page<CommentThreadResult> getCommentThreads(Long postId, Pageable pageable) {
         Page<CommentItemResult> parents = commentQueryPort.getParentComments(postId, pageable);
-        List<CommentThreadResult> threads = parents.getContent().stream()
-                .map(parent -> CommentThreadResult.of(parent, commentQueryPort.getReplies(parent.commentId())))
-                .toList();
+        List<CommentThreadResult> threads = parents.getContent()
+            .stream()
+            .map(parent -> CommentThreadResult.of(parent, commentQueryPort.getReplies(parent.commentId())))
+            .toList();
 
         return new PageImpl<>(threads, pageable, parents.getTotalElements());
     }
@@ -35,4 +35,5 @@ public class CommentQueryService {
     public Page<CommentItemResult> findCommentsByAuthor(Long authorId, Pageable pageable) {
         return commentQueryPort.findCommentsByAuthor(authorId, pageable);
     }
+
 }

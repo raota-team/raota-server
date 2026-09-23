@@ -28,34 +28,28 @@ class MobileResponseMetaAdviceTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(new MobileResponseController())
-                .setControllerAdvice(new MobileResponseMetaAdvice(), new MobileResponseExceptionHandler())
-                .addFilters(new RequestIdFilter())
-                .build();
+            .setControllerAdvice(new MobileResponseMetaAdvice(), new MobileResponseExceptionHandler())
+            .addFilters(new RequestIdFilter())
+            .build();
     }
 
     @Test
     void 성공_응답의_meta_requestId를_응답_헤더와_같은_값으로_채운다() throws Exception {
-        MvcResult result = mockMvc.perform(get("/mobile-response"))
-                .andExpect(status().isOk())
-                .andReturn();
+        MvcResult result = mockMvc.perform(get("/mobile-response")).andExpect(status().isOk()).andReturn();
 
         assertThat(requestIdIn(result)).isEqualTo(headerOf(result));
     }
 
     @Test
     void ResponseEntity로_감싼_응답도_채운다() throws Exception {
-        MvcResult result = mockMvc.perform(get("/mobile-response/entity"))
-                .andExpect(status().isCreated())
-                .andReturn();
+        MvcResult result = mockMvc.perform(get("/mobile-response/entity")).andExpect(status().isCreated()).andReturn();
 
         assertThat(requestIdIn(result)).isEqualTo(headerOf(result));
     }
 
     @Test
     void 예외_처리기가_돌려준_실패_응답도_채운다() throws Exception {
-        MvcResult result = mockMvc.perform(get("/mobile-response/fail"))
-                .andExpect(status().isNotFound())
-                .andReturn();
+        MvcResult result = mockMvc.perform(get("/mobile-response/fail")).andExpect(status().isNotFound()).andReturn();
 
         assertThat(requestIdIn(result)).isEqualTo(headerOf(result));
         assertThat(JsonPath.<Boolean>read(result.getResponse().getContentAsString(), "$.success")).isFalse();
@@ -63,9 +57,7 @@ class MobileResponseMetaAdviceTest {
 
     @Test
     void 본문_없는_204는_헤더만_남기고_그대로_둔다() throws Exception {
-        MvcResult result = mockMvc.perform(get("/mobile-response/none"))
-                .andExpect(status().isNoContent())
-                .andReturn();
+        MvcResult result = mockMvc.perform(get("/mobile-response/none")).andExpect(status().isNoContent()).andReturn();
 
         assertThat(headerOf(result)).isNotBlank();
         assertThat(result.getResponse().getContentAsString()).isEmpty();
@@ -73,9 +65,7 @@ class MobileResponseMetaAdviceTest {
 
     @Test
     void v2_응답_형식이_아닌_본문은_건드리지_않는다() throws Exception {
-        MvcResult result = mockMvc.perform(get("/mobile-response/plain"))
-                .andExpect(status().isOk())
-                .andReturn();
+        MvcResult result = mockMvc.perform(get("/mobile-response/plain")).andExpect(status().isOk()).andReturn();
 
         assertThat(result.getResponse().getContentAsString()).isEqualTo("plain");
     }
@@ -115,6 +105,7 @@ class MobileResponseMetaAdviceTest {
         String plain() {
             return "plain";
         }
+
     }
 
     @RestControllerAdvice
@@ -123,8 +114,10 @@ class MobileResponseMetaAdviceTest {
         @ExceptionHandler(IllegalStateException.class)
         ResponseEntity<MobileApiResponse<Void>> handle(IllegalStateException exception) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(MobileApiResponse.failure(
-                            MobileError.of(MobileErrorCode.RESOURCE_NOT_FOUND, exception.getMessage())));
+                .body(MobileApiResponse
+                    .failure(MobileError.of(MobileErrorCode.RESOURCE_NOT_FOUND, exception.getMessage())));
         }
+
     }
+
 }

@@ -5,6 +5,9 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface JpaDailyCurationRepository extends JpaRepository<DailyCurationEntity, Long> {
+
     Optional<DailyCurationEntity> findByDateKey(Integer dateKey);
+
     Optional<DailyCurationEntity> findTopByOrderByDateKeyDesc();
+
 }

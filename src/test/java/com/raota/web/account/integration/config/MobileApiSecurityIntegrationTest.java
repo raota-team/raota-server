@@ -44,23 +44,23 @@ class MobileApiSecurityIntegrationTest extends BaseIntegrationTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
-                .addFilters(requestIdFilter)
-                .apply(springSecurity())
-                .build();
+            .addFilters(requestIdFilter)
+            .apply(springSecurity())
+            .build();
     }
 
     @Test
     void v2_경로에_잘못된_bearer_토큰을_보내면_401_v2_응답을_반환한다() throws Exception {
-        MvcResult result = mockMvc.perform(get("/api/v2/unclassified-probe")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer invalid"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(header().string(HttpHeaders.WWW_AUTHENTICATE, "Bearer"))
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"))
-                .andExpect(jsonPath("$.error.fields").isEmpty())
-                .andExpect(jsonPath("$.status").doesNotExist())
-                .andReturn();
+        MvcResult result = mockMvc
+            .perform(get("/api/v2/unclassified-probe").header(HttpHeaders.AUTHORIZATION, "Bearer invalid"))
+            .andExpect(status().isUnauthorized())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+            .andExpect(header().string(HttpHeaders.WWW_AUTHENTICATE, "Bearer"))
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"))
+            .andExpect(jsonPath("$.error.fields").isEmpty())
+            .andExpect(jsonPath("$.status").doesNotExist())
+            .andReturn();
 
         JsonNode body = objectMapper.readTree(result.getResponse().getContentAsByteArray());
         assertThat(body.get("data").isNull()).isTrue();
@@ -70,12 +70,12 @@ class MobileApiSecurityIntegrationTest extends BaseIntegrationTest {
     @Test
     void 만료된_v2_액세스_토큰은_TOKEN_EXPIRED를_반환한다() throws Exception {
         String expiredToken = expiredTokenProvider().createAccessToken(1L);
-        MvcResult result = mockMvc.perform(get("/api/v2/unclassified-probe")
-                        .header(HttpHeaders.AUTHORIZATION, bearer(expiredToken)))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error.code").value("TOKEN_EXPIRED"))
-                .andExpect(jsonPath("$.error.message").value("액세스 토큰이 만료되었습니다."))
-                .andReturn();
+        MvcResult result = mockMvc
+            .perform(get("/api/v2/unclassified-probe").header(HttpHeaders.AUTHORIZATION, bearer(expiredToken)))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.error.code").value("TOKEN_EXPIRED"))
+            .andExpect(jsonPath("$.error.message").value("액세스 토큰이 만료되었습니다."))
+            .andReturn();
 
         JsonNode body = objectMapper.readTree(result.getResponse().getContentAsByteArray());
         assertRequestIdMatchesHeader(result.getResponse(), body);
@@ -84,10 +84,10 @@ class MobileApiSecurityIntegrationTest extends BaseIntegrationTest {
     @Test
     void 분류되지_않은_v2_경로는_v2_401_응답을_반환한다() throws Exception {
         MvcResult result = mockMvc.perform(get("/api/v2/unclassified-probe"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"))
-                .andExpect(jsonPath("$.data").value(org.hamcrest.Matchers.nullValue()))
-                .andReturn();
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"))
+            .andExpect(jsonPath("$.data").value(org.hamcrest.Matchers.nullValue()))
+            .andReturn();
 
         JsonNode body = objectMapper.readTree(result.getResponse().getContentAsByteArray());
         assertRequestIdMatchesHeader(result.getResponse(), body);
@@ -97,33 +97,26 @@ class MobileApiSecurityIntegrationTest extends BaseIntegrationTest {
     void v1_만료된_액세스_토큰은_기존_401_응답을_유지한다() throws Exception {
         String expiredToken = expiredTokenProvider().createAccessToken(1L);
 
-        mockMvc.perform(get("/")
-                        .header(HttpHeaders.AUTHORIZATION, bearer(expiredToken)))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.status").value("FAIL"))
-                .andExpect(jsonPath("$.message").value("유효하지 않은 액세스 토큰입니다."))
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error").doesNotExist());
+        mockMvc.perform(get("/").header(HttpHeaders.AUTHORIZATION, bearer(expiredToken)))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.status").value("FAIL"))
+            .andExpect(jsonPath("$.message").value("유효하지 않은 액세스 토큰입니다."))
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.error").doesNotExist());
     }
 
     private JwtTokenProvider expiredTokenProvider() {
-        return new JwtTokenProvider(new AuthProperties(
-                authProperties.issuer(),
-                authProperties.accessTokenSecret(),
-                -60,
-                authProperties.refreshTokenExpirySeconds(),
-                authProperties.oauth2(),
-                authProperties.cookie(),
-                authProperties.cors()
-        ));
+        return new JwtTokenProvider(new AuthProperties(authProperties.issuer(), authProperties.accessTokenSecret(), -60,
+                authProperties.refreshTokenExpirySeconds(), authProperties.oauth2(), authProperties.cookie(),
+                authProperties.cors()));
     }
 
     private void assertRequestIdMatchesHeader(MockHttpServletResponse response, JsonNode body) {
-        assertThat(body.get("meta").get("requestId").asString())
-                .isEqualTo(response.getHeader(RequestIdFilter.HEADER));
+        assertThat(body.get("meta").get("requestId").asString()).isEqualTo(response.getHeader(RequestIdFilter.HEADER));
     }
 
     private String bearer(String token) {
         return "Bearer " + token;
     }
+
 }

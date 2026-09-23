@@ -33,16 +33,10 @@ public class RamenShopProfileDocumentFactory implements RetrievalDocumentFactory
                 영업 정보는 %s이다.
                 방문 수는 %d회이고 북마크 수는 %d회이다.
                 %s
-                """.formatted(
-                formatShopName(shop),
-                region,
-                joinOrFallback(menuNames, "대표 메뉴 정보 없음"),
-                joinOrFallback(tags, "태그 정보 없음"),
-                formatBusinessHours(shop.getBusinessHours()),
-                visitCount(shop.getStats()),
-                bookmarkCount(shop.getStats()),
-                defaultText(descriptionText(shop), "가게 설명 정보는 아직 없다.")
-        );
+                """.formatted(formatShopName(shop), region, joinOrFallback(menuNames, "대표 메뉴 정보 없음"),
+                joinOrFallback(tags, "태그 정보 없음"), formatBusinessHours(shop.getBusinessHours()),
+                visitCount(shop.getStats()), bookmarkCount(shop.getStats()),
+                defaultText(descriptionText(shop), "가게 설명 정보는 아직 없다."));
 
         Map<String, Object> metadata = new HashMap<>();
         metadata.put(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.SHOP_PROFILE.name());
@@ -124,4 +118,5 @@ public class RamenShopProfileDocumentFactory implements RetrievalDocumentFactory
         }
         return shop.getDescription();
     }
+
 }

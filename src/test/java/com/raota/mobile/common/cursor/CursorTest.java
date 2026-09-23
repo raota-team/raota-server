@@ -93,16 +93,14 @@ class CursorTest {
     }
 
     private static String encodedPayload(String payload) {
-        return Base64.getUrlEncoder().withoutPadding()
-                .encodeToString(payload.getBytes(StandardCharsets.UTF_8));
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(payload.getBytes(StandardCharsets.UTF_8));
     }
 
     private static void assertInvalid(ThrowingCallable action) {
-        assertThatExceptionOfType(MobileException.class)
-                .isThrownBy(action)
-                .satisfies(exception -> {
-                    assertThat(exception.code()).isEqualTo(MobileErrorCode.VALIDATION_ERROR);
-                    assertThat(exception.getMessage()).isEqualTo("커서가 올바르지 않습니다.");
-                });
+        assertThatExceptionOfType(MobileException.class).isThrownBy(action).satisfies(exception -> {
+            assertThat(exception.code()).isEqualTo(MobileErrorCode.VALIDATION_ERROR);
+            assertThat(exception.getMessage()).isEqualTo("커서가 올바르지 않습니다.");
+        });
     }
+
 }

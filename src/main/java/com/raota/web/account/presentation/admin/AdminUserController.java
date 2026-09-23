@@ -26,21 +26,11 @@ public class AdminUserController {
     public ResponseEntity<ApiResponse<PageResponse<AdminUserListItemResponse>>> users(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Boolean registrationCompleted,
-            @RequestParam(required = false) Boolean deleted,
-            @RequestParam(required = false) AuthProvider provider,
-            @RequestParam(required = false) Boolean emailPresent,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "30") int size
-    ) {
-        Page<AdminUserListItemResponse> users = adminUserService.getUsers(
-                keyword,
-                registrationCompleted,
-                deleted,
-                provider,
-                emailPresent,
-                page,
-                size
-        );
+            @RequestParam(required = false) Boolean deleted, @RequestParam(required = false) AuthProvider provider,
+            @RequestParam(required = false) Boolean emailPresent, @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size) {
+        Page<AdminUserListItemResponse> users = adminUserService.getUsers(keyword, registrationCompleted, deleted,
+                provider, emailPresent, page, size);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(users)));
     }
 
@@ -48,4 +38,5 @@ public class AdminUserController {
     public ResponseEntity<ApiResponse<AdminUserDetailResponse>> userDetail(@PathVariable Long memberId) {
         return ResponseEntity.ok(ApiResponse.success(adminUserService.getUser(memberId)));
     }
+
 }

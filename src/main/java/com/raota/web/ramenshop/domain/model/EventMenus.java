@@ -21,11 +21,11 @@ public class EventMenus {
         return new EventMenus(new ArrayList<>());
     }
 
-    public List<EventMenuDto> getEventMenusInfo(){
+    public List<EventMenuDto> getEventMenusInfo() {
         return menus().stream().map(EventMenuDto::from).toList();
     }
 
-    public void add(EventMenu eventMenu){
+    public void add(EventMenu eventMenu) {
         verifyMenuNameDuplicate(eventMenu.getName());
         menus().add(eventMenu);
     }
@@ -38,7 +38,7 @@ public class EventMenus {
         menus().clear();
     }
 
-    private void verifyMenuNameDuplicate(String name){
+    private void verifyMenuNameDuplicate(String name) {
         if (menus().stream().anyMatch(menu -> menu.getName().equals(name))) {
             throw new IllegalArgumentException("이미 존재하는 메뉴 이름입니다: " + name);
         }
@@ -50,4 +50,5 @@ public class EventMenus {
         }
         return values;
     }
+
 }

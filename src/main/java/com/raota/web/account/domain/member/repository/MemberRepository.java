@@ -16,6 +16,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
+
     Optional<MemberProfile> findByIdAndDeletedAtIsNull(Long id);
 
     boolean existsByIdAndDeletedAtIsNull(Long id);
@@ -24,40 +25,40 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
     Optional<MemberRole> findActiveMemberRole(@Param("id") Long id);
 
     @Query("""
-    select m
-    from MemberProfile m
-    where m.deletedAt is not null
-      and m.deletedAt <= :cutoff
-""")
+                select m
+                from MemberProfile m
+                where m.deletedAt is not null
+                  and m.deletedAt <= :cutoff
+            """)
     List<MemberProfile> findSoftDeletedMembersDueForPurge(@Param("cutoff") LocalDateTime cutoff);
 
     @Query("""
-    select new com.raota.web.account.presentation.member.response.MyProfileResponse(
-        m.id,
-        m.nickname,
-        m.email,
-        m.imageUrl,
-        m.backgroundImageUrl,
-        m.bio,
-        new com.raota.web.account.presentation.member.response.UserStatsDto(
-            (select count(distinct p.ramenShop.id) from RamenLog p where p.author.id = m.id and p.isDeleted = false),
-            (select count(p) from RamenLog p where p.author.id = m.id and p.isDeleted = false),
-            (select count(l) from RamenLog l where l.author.id = m.id and l.isDeleted = false),
-            (select count(b) from Bookmark b where b.memberProfile.id = m.id and b.isDeleted = false),
-            (select count(p) from PostEntity p where p.author.id = m.id and p.isDeleted = false),
-            (select count(c) from CommentEntity c where c.member.id = m.id and c.isDeleted = false and c.post.isDeleted = false)
-        ),
-        new com.raota.web.account.presentation.member.response.ActivityVisibilityResponse(
-            m.activityVisibility.logsPublic,
-            m.activityVisibility.visitsPublic,
-            m.activityVisibility.postsPublic,
-            m.activityVisibility.commentsPublic
-        )
-    )
-    from MemberProfile m
-    where m.id = :id
-      and m.deletedAt is null
-""")
+                select new com.raota.web.account.presentation.member.response.MyProfileResponse(
+                    m.id,
+                    m.nickname,
+                    m.email,
+                    m.imageUrl,
+                    m.backgroundImageUrl,
+                    m.bio,
+                    new com.raota.web.account.presentation.member.response.UserStatsDto(
+                        (select count(distinct p.ramenShop.id) from RamenLog p where p.author.id = m.id and p.isDeleted = false),
+                        (select count(p) from RamenLog p where p.author.id = m.id and p.isDeleted = false),
+                        (select count(l) from RamenLog l where l.author.id = m.id and l.isDeleted = false),
+                        (select count(b) from Bookmark b where b.memberProfile.id = m.id and b.isDeleted = false),
+                        (select count(p) from PostEntity p where p.author.id = m.id and p.isDeleted = false),
+                        (select count(c) from CommentEntity c where c.member.id = m.id and c.isDeleted = false and c.post.isDeleted = false)
+                    ),
+                    new com.raota.web.account.presentation.member.response.ActivityVisibilityResponse(
+                        m.activityVisibility.logsPublic,
+                        m.activityVisibility.visitsPublic,
+                        m.activityVisibility.postsPublic,
+                        m.activityVisibility.commentsPublic
+                    )
+                )
+                from MemberProfile m
+                where m.id = :id
+                  and m.deletedAt is null
+            """)
     MyProfileResponse findMemberDetailInfo(@Param("id") Long id);
 
     @Query(value = """
@@ -77,35 +78,27 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
                    or (:emailPresent = true and m.email is not null and m.email <> '')
                    or (:emailPresent = false and (m.email is null or m.email = '')))
             order by m.created_at desc, m.id desc
-            """,
-            countQuery = """
-                    select count(distinct m.id)
-                    from tb_member_profile m
-                    left join tb_social_account sa on sa.member_id = m.id
-                    where (:keywordBlank = true
-                           or lower(m.nickname) like :keyword
-                           or lower(coalesce(m.email, '')) like :keyword
-                           or (:keywordMemberId is not null and m.id = :keywordMemberId))
-                      and (:registrationCompleted is null or m.is_registration_completed = :registrationCompleted)
-                      and (:deleted is null
-                           or (:deleted = true and m.deleted_at is not null)
-                           or (:deleted = false and m.deleted_at is null))
-                      and (:provider is null or sa.provider = :provider)
-                      and (:emailPresent is null
-                           or (:emailPresent = true and m.email is not null and m.email <> '')
-                           or (:emailPresent = false and (m.email is null or m.email = '')))
-                    """,
-            nativeQuery = true)
-    Page<MemberProfile> findAdminUsers(
-            @Param("keywordBlank") boolean keywordBlank,
-            @Param("keyword") String keyword,
+            """, countQuery = """
+            select count(distinct m.id)
+            from tb_member_profile m
+            left join tb_social_account sa on sa.member_id = m.id
+            where (:keywordBlank = true
+                   or lower(m.nickname) like :keyword
+                   or lower(coalesce(m.email, '')) like :keyword
+                   or (:keywordMemberId is not null and m.id = :keywordMemberId))
+              and (:registrationCompleted is null or m.is_registration_completed = :registrationCompleted)
+              and (:deleted is null
+                   or (:deleted = true and m.deleted_at is not null)
+                   or (:deleted = false and m.deleted_at is null))
+              and (:provider is null or sa.provider = :provider)
+              and (:emailPresent is null
+                   or (:emailPresent = true and m.email is not null and m.email <> '')
+                   or (:emailPresent = false and (m.email is null or m.email = '')))
+            """, nativeQuery = true)
+    Page<MemberProfile> findAdminUsers(@Param("keywordBlank") boolean keywordBlank, @Param("keyword") String keyword,
             @Param("keywordMemberId") Long keywordMemberId,
-            @Param("registrationCompleted") Boolean registrationCompleted,
-            @Param("deleted") Boolean deleted,
-            @Param("provider") String provider,
-            @Param("emailPresent") Boolean emailPresent,
-            Pageable pageable
-    );
+            @Param("registrationCompleted") Boolean registrationCompleted, @Param("deleted") Boolean deleted,
+            @Param("provider") String provider, @Param("emailPresent") Boolean emailPresent, Pageable pageable);
 
     @Query(value = """
             select new com.raota.web.account.presentation.member.response.VisitSummaryResponse(
@@ -122,18 +115,14 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
             group by r.id, r.name, r.imageUrl, r.address.city, r.address.district
             having count(p.id) > 0
             order by count(p.id) desc
-            """,
-            countQuery = """
-                    select count(distinct r.id)
-                    from MemberProfile m
-                    join RamenLog p on p.author = m
-                    join p.ramenShop r
-                    where m.id = :memberId and m.deletedAt is null and p.isDeleted = false
-                    """)
-    Page<VisitSummaryResponse> findMyVisitRestaurant(
-            @Param("memberId") Long memberId,
-            Pageable pageable
-    );
+            """, countQuery = """
+            select count(distinct r.id)
+            from MemberProfile m
+            join RamenLog p on p.author = m
+            join p.ramenShop r
+            where m.id = :memberId and m.deletedAt is null and p.isDeleted = false
+            """)
+    Page<VisitSummaryResponse> findMyVisitRestaurant(@Param("memberId") Long memberId, Pageable pageable);
 
     @Query(value = """
             select new com.raota.web.account.presentation.member.response.BookmarkSummaryResponse(
@@ -148,36 +137,35 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
             join b.ramenShop r
             where m.id = :memberId and m.deletedAt is null and b.isDeleted = false
             order by b.markingAt desc
-            """,
-            countQuery = """
-                    select count(b)
-                    from MemberProfile m
-                    join Bookmark b on b.memberProfile = m
-                    where m.id = :memberId and m.deletedAt is null and b.isDeleted = false
-                    """)
+            """, countQuery = """
+            select count(b)
+            from MemberProfile m
+            join Bookmark b on b.memberProfile = m
+            where m.id = :memberId and m.deletedAt is null and b.isDeleted = false
+            """)
     Page<BookmarkSummaryResponse> findMyBookmarks(@Param("memberId") Long memberId, Pageable pageable);
 
     @Query(value = """
-    select new com.raota.web.account.presentation.member.response.PhotoSummaryResponse(
-        p.id,
-        p.imageUrl,
-        p.menuName,
-        p.note,
-        p.ramenShop.id,
-        p.ramenShop.name,
-        p.createdAt
-    )
-    from RamenLog p
-    where p.author.id = :memberId
-      and p.author.deletedAt is null
-      and p.isDeleted = false
-""",
-            countQuery = """
-    select count(p)
-    from RamenLog p
-    where p.author.id = :memberId
-      and p.author.deletedAt is null
-      and p.isDeleted = false
-""")
+                select new com.raota.web.account.presentation.member.response.PhotoSummaryResponse(
+                    p.id,
+                    p.imageUrl,
+                    p.menuName,
+                    p.note,
+                    p.ramenShop.id,
+                    p.ramenShop.name,
+                    p.createdAt
+                )
+                from RamenLog p
+                where p.author.id = :memberId
+                  and p.author.deletedAt is null
+                  and p.isDeleted = false
+            """, countQuery = """
+                select count(p)
+                from RamenLog p
+                where p.author.id = :memberId
+                  and p.author.deletedAt is null
+                  and p.isDeleted = false
+            """)
     Page<PhotoSummaryResponse> findMyPhotos(@Param("memberId") Long memberId, Pageable pageable);
+
 }

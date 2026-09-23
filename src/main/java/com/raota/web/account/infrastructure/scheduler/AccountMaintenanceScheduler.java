@@ -20,4 +20,5 @@ public class AccountMaintenanceScheduler {
             log.info("Finished purging {} withdrawn members", purgedCount);
         }
     }
+
 }

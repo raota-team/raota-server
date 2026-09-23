@@ -67,6 +67,7 @@ public class RamenShopAdminForm {
     private String parkingInfo;
 
     private String imageUrl;
+
     private String currentImageUrl;
 
     private String tags;
@@ -110,32 +111,25 @@ public class RamenShopAdminForm {
         form.setPublished(ramenShop.isPublished());
         form.setTags(String.join(", ", ramenShop.getTags() == null ? List.of() : ramenShop.getTags()));
         form.setNormalMenus(new ArrayList<>(
-                (ramenShop.getNormalMenus() == null ? List.<NormalMenu>of() : ramenShop.getNormalMenus().getValues()).stream()
-                        .map(NormalMenuForm::from)
-                        .toList()
-        ));
+                (ramenShop.getNormalMenus() == null ? List.<NormalMenu>of() : ramenShop.getNormalMenus().getValues())
+                    .stream()
+                    .map(NormalMenuForm::from)
+                    .toList()));
         form.setEventMenus(new ArrayList<>(
-                (ramenShop.getEventMenus() == null ? List.<EventMenu>of() : ramenShop.getEventMenus().getValues()).stream()
-                        .map(EventMenuForm::from)
-                        .toList()
-        ));
+                (ramenShop.getEventMenus() == null ? List.<EventMenu>of() : ramenShop.getEventMenus().getValues())
+                    .stream()
+                    .map(EventMenuForm::from)
+                    .toList()));
         return form;
     }
 
     public Address toAddress() {
-        return Address.of(
-                required(city),
-                nullable(district),
-                required(street),
-                nullable(detail),
-                latitude,
-                longitude
-        );
+        return Address.of(required(city), nullable(district), required(street), nullable(detail), latitude, longitude);
     }
 
     public BusinessHours toBusinessHours() {
-        if (nullable(closedDays) == null && openTime == null && closeTime == null
-                && breakStart == null && breakEnd == null && nullable(parkingInfo) == null) {
+        if (nullable(closedDays) == null && openTime == null && closeTime == null && breakStart == null
+                && breakEnd == null && nullable(parkingInfo) == null) {
             return null;
         }
         return BusinessHours.of(nullable(closedDays), openTime, closeTime, breakStart, breakEnd, nullable(parkingInfo));
@@ -145,25 +139,22 @@ public class RamenShopAdminForm {
         if (tags == null || tags.isBlank()) {
             return List.of();
         }
-        return List.of(tags.split(",")).stream()
-                .map(String::trim)
-                .filter(value -> !value.isBlank())
-                .distinct()
-                .toList();
+        return List.of(tags.split(","))
+            .stream()
+            .map(String::trim)
+            .filter(value -> !value.isBlank())
+            .distinct()
+            .toList();
     }
 
     public List<NormalMenu> toNormalMenus() {
-        return normalMenus == null ? List.of() : normalMenus.stream()
-                .filter(menu -> !menu.isEmpty())
-                .map(NormalMenuForm::toEntity)
-                .toList();
+        return normalMenus == null ? List.of()
+                : normalMenus.stream().filter(menu -> !menu.isEmpty()).map(NormalMenuForm::toEntity).toList();
     }
 
     public List<EventMenu> toEventMenus() {
-        return eventMenus == null ? List.of() : eventMenus.stream()
-                .filter(menu -> !menu.isEmpty())
-                .map(EventMenuForm::toEntity)
-                .toList();
+        return eventMenus == null ? List.of()
+                : eventMenus.stream().filter(menu -> !menu.isEmpty()).map(EventMenuForm::toEntity).toList();
     }
 
     public boolean isPublishedValue() {
@@ -189,10 +180,15 @@ public class RamenShopAdminForm {
     @Getter
     @Setter
     public static class NormalMenuForm {
+
         private String name;
+
         private Integer price;
+
         private boolean signature;
+
         private String imageUrl;
+
         private String currentImageUrl;
 
         public static NormalMenuForm from(NormalMenu menu) {
@@ -214,20 +210,25 @@ public class RamenShopAdminForm {
                 throw new IllegalArgumentException("일반 메뉴는 이름과 가격을 모두 입력해야 합니다.");
             }
             return NormalMenu.builder()
-                    .name(nullable(name))
-                    .price(price)
-                    .isSignature(signature)
-                    .imageUrl(nullable(imageUrl))
-                    .build();
+                .name(nullable(name))
+                .price(price)
+                .isSignature(signature)
+                .imageUrl(nullable(imageUrl))
+                .build();
         }
+
     }
 
     @Getter
     @Setter
     public static class EventMenuForm {
+
         private String name;
+
         private String description;
+
         private Integer price;
+
         private String badgeText;
 
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
@@ -237,6 +238,7 @@ public class RamenShopAdminForm {
         private LocalDate endDate;
 
         private String imageUrl;
+
         private String currentImageUrl;
 
         public static EventMenuForm from(EventMenu menu) {
@@ -253,12 +255,8 @@ public class RamenShopAdminForm {
         }
 
         public boolean isEmpty() {
-            return nullable(name) == null
-                    && nullable(description) == null
-                    && price == null
-                    && nullable(badgeText) == null
-                    && startDate == null
-                    && endDate == null
+            return nullable(name) == null && nullable(description) == null && price == null
+                    && nullable(badgeText) == null && startDate == null && endDate == null
                     && nullable(imageUrl) == null;
         }
 
@@ -270,14 +268,16 @@ public class RamenShopAdminForm {
                 throw new IllegalArgumentException("이벤트 메뉴 종료일은 시작일보다 빠를 수 없습니다.");
             }
             return EventMenu.builder()
-                    .name(nullable(name))
-                    .description(nullable(description))
-                    .price(price)
-                    .badgeText(nullable(badgeText))
-                    .startDate(startDate)
-                    .endDate(endDate)
-                    .imageUrl(nullable(imageUrl))
-                    .build();
+                .name(nullable(name))
+                .description(nullable(description))
+                .price(price)
+                .badgeText(nullable(badgeText))
+                .startDate(startDate)
+                .endDate(endDate)
+                .imageUrl(nullable(imageUrl))
+                .build();
         }
+
     }
+
 }

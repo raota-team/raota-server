@@ -29,18 +29,18 @@ import org.springframework.stereotype.Service;
 public class DefaultRagEvaluationCaseExecutor implements RagEvaluationCaseExecutor {
 
     private final AiRamenShopSearchService searchService;
+
     private final ReviewSummaryService reviewSummaryService;
+
     private final FollowUpChatService followUpChatService;
+
     private final RamenShopComparisonService comparisonService;
+
     private final ObjectMapper objectMapper;
 
-    public DefaultRagEvaluationCaseExecutor(
-            AiRamenShopSearchService searchService,
-            ReviewSummaryService reviewSummaryService,
-            FollowUpChatService followUpChatService,
-            RamenShopComparisonService comparisonService,
-            ObjectMapper objectMapper
-    ) {
+    public DefaultRagEvaluationCaseExecutor(AiRamenShopSearchService searchService,
+            ReviewSummaryService reviewSummaryService, FollowUpChatService followUpChatService,
+            RamenShopComparisonService comparisonService, ObjectMapper objectMapper) {
         this.searchService = searchService;
         this.reviewSummaryService = reviewSummaryService;
         this.followUpChatService = followUpChatService;
@@ -65,7 +65,8 @@ public class DefaultRagEvaluationCaseExecutor implements RagEvaluationCaseExecut
                 case CHAT -> executeChat(evaluationCase, startedAt);
                 case COMPARE -> executeCompare(evaluationCase, startedAt);
             };
-        } catch (Exception exception) {
+        }
+        catch (Exception exception) {
             return RagExecutionResult.error(elapsedMs(startedAt), exception);
         }
     }
@@ -78,22 +79,19 @@ public class DefaultRagEvaluationCaseExecutor implements RagEvaluationCaseExecut
         List<ShopResult> shops = result == null || result.shops() == null ? List.of() : result.shops();
         List<Long> ids = shops.stream().map(ShopResult::id).filter(java.util.Objects::nonNull).toList();
         List<RagEvaluationEvidence> evidence = shops.stream()
-                .map(shop -> new RagEvaluationEvidence(
-                        shop.id() == null ? "" : shop.id().toString(),
-                        "RAMEN_SHOP",
-                        "ramen-shop-search",
-                        "%s %s %s".formatted(nullToEmpty(shop.name()), nullToEmpty(shop.type()), nullToEmpty(shop.description())),
-                        java.util.Map.of("matchScore", shop.matchScore() == null ? 0 : shop.matchScore())
-                ))
-                .toList();
+            .map(shop -> new RagEvaluationEvidence(shop.id() == null ? "" : shop.id().toString(), "RAMEN_SHOP",
+                    "ramen-shop-search",
+                    "%s %s %s".formatted(nullToEmpty(shop.name()), nullToEmpty(shop.type()),
+                            nullToEmpty(shop.description())),
+                    java.util.Map.of("matchScore", shop.matchScore() == null ? 0 : shop.matchScore())))
+            .toList();
         return success(result, ids, evidence, isFallback(evaluationCase, result), elapsedMs(startedAt));
     }
 
     private RagExecutionResult executeSummary(RagEvaluationCase evaluationCase, long startedAt) {
         JsonNode request = evaluationCase.request();
         ReviewSummaryService.ReviewSummaryExecution execution = reviewSummaryService.summarizeReviewsWithEvidence(
-                new ReviewSummaryQuery(requiredLong(request, "shopId"), optionalText(request, "focus"))
-        );
+                new ReviewSummaryQuery(requiredLong(request, "shopId"), optionalText(request, "focus")));
         ReviewSummaryResponse result = execution.response();
         List<RagEvaluationEvidence> evidence = toReviewEvidence(execution.evidence());
         return success(result, List.of(), evidence, isFallback(evaluationCase, result), elapsedMs(startedAt));
@@ -104,16 +102,12 @@ public class DefaultRagEvaluationCaseExecutor implements RagEvaluationCaseExecut
         List<FollowUpChatQuery.Message> messages = new ArrayList<>();
         JsonNode messageNodes = request == null ? null : request.get("messages");
         if (messageNodes != null && messageNodes.isArray()) {
-            messageNodes.forEach(message -> messages.add(new FollowUpChatQuery.Message(
-                    optionalText(message, "role"),
-                    requiredText(message, "content")
-            )));
+            messageNodes.forEach(message -> messages
+                .add(new FollowUpChatQuery.Message(optionalText(message, "role"), requiredText(message, "content"))));
         }
-        FollowUpChatService.FollowUpChatExecution execution = followUpChatService.followUpChatWithEvidence(new FollowUpChatQuery(
-                optionalText(request, "contextType"),
-                longList(request == null ? null : request.get("shopIds")),
-                messages
-        ));
+        FollowUpChatService.FollowUpChatExecution execution = followUpChatService
+            .followUpChatWithEvidence(new FollowUpChatQuery(optionalText(request, "contextType"),
+                    longList(request == null ? null : request.get("shopIds")), messages));
         AiChatResponse result = execution.response();
         List<RagEvaluationEvidence> evidence = toVectorEvidence(execution.evidence());
         return success(result, List.of(), evidence, isFallback(evaluationCase, result), elapsedMs(startedAt));
@@ -121,41 +115,24 @@ public class DefaultRagEvaluationCaseExecutor implements RagEvaluationCaseExecut
 
     private RagExecutionResult executeCompare(RagEvaluationCase evaluationCase, long startedAt) {
         JsonNode request = evaluationCase.request();
-        RamenShopComparisonService.RamenShopComparisonExecution execution = comparisonService.compareShopsWithEvidence(
-                new RamenShopComparisonQuery(
-                        requiredLong(request, "shopAId"),
-                        requiredLong(request, "shopBId"),
-                        optionalText(request, "focus")
-                )
-        );
+        RamenShopComparisonService.RamenShopComparisonExecution execution = comparisonService
+            .compareShopsWithEvidence(new RamenShopComparisonQuery(requiredLong(request, "shopAId"),
+                    requiredLong(request, "shopBId"), optionalText(request, "focus")));
         RamenShopComparisonResult result = execution.response();
-        List<Long> ids = result == null
-                ? List.of()
+        List<Long> ids = result == null ? List.of()
                 : java.util.stream.Stream.of(result.shopA(), result.shopB())
-                        .filter(java.util.Objects::nonNull)
-                        .map(RamenShopComparisonResult.ShopSummary::id)
-                        .filter(java.util.Objects::nonNull)
-                        .toList();
-        return success(result, ids, toComparisonEvidence(execution.evidence()), isFallback(evaluationCase, result), elapsedMs(startedAt));
+                    .filter(java.util.Objects::nonNull)
+                    .map(RamenShopComparisonResult.ShopSummary::id)
+                    .filter(java.util.Objects::nonNull)
+                    .toList();
+        return success(result, ids, toComparisonEvidence(execution.evidence()), isFallback(evaluationCase, result),
+                elapsedMs(startedAt));
     }
 
-    private RagExecutionResult success(
-            Object response,
-            List<Long> returnedShopIds,
-            List<RagEvaluationEvidence> evidence,
-            boolean fallback,
-            long latencyMs
-    ) {
-        return new RagExecutionResult(
-                RagEvaluationCaseStatus.COMPLETED,
-                objectMapper.valueToTree(response),
-                returnedShopIds,
-                evidence,
-                fallback,
-                latencyMs,
-                "",
-                ""
-        );
+    private RagExecutionResult success(Object response, List<Long> returnedShopIds,
+            List<RagEvaluationEvidence> evidence, boolean fallback, long latencyMs) {
+        return new RagExecutionResult(RagEvaluationCaseStatus.COMPLETED, objectMapper.valueToTree(response),
+                returnedShopIds, evidence, fallback, latencyMs, "", "");
     }
 
     private boolean isFallback(RagEvaluationCase evaluationCase, Object response) {
@@ -164,11 +141,8 @@ public class DefaultRagEvaluationCaseExecutor implements RagEvaluationCaseExecut
         }
         JsonNode json = objectMapper.valueToTree(response);
         String serialized = json.toString().toLowerCase(Locale.ROOT);
-        return serialized.contains("정보 부족")
-                || serialized.contains("데이터 부족")
-                || serialized.contains("답변하기 어렵")
-                || serialized.contains("확인 가능한 리뷰")
-                || (evaluationCase.expectsFallback() && serialized.contains("부족"));
+        return serialized.contains("정보 부족") || serialized.contains("데이터 부족") || serialized.contains("답변하기 어렵")
+                || serialized.contains("확인 가능한 리뷰") || (evaluationCase.expectsFallback() && serialized.contains("부족"));
     }
 
     private String requiredText(JsonNode node, String field) {
@@ -189,7 +163,8 @@ public class DefaultRagEvaluationCaseExecutor implements RagEvaluationCaseExecut
 
     private Long optionalLong(JsonNode node, String field) {
         JsonNode value = node == null ? null : node.get(field);
-        return value == null || value.isNull() ? null : value.isNumber() ? value.longValue() : Long.valueOf(value.asText());
+        return value == null || value.isNull() ? null
+                : value.isNumber() ? value.longValue() : Long.valueOf(value.asText());
     }
 
     private List<Long> longList(JsonNode node) {
@@ -219,14 +194,11 @@ public class DefaultRagEvaluationCaseExecutor implements RagEvaluationCaseExecut
             return List.of();
         }
         return documents.stream()
-                .map(document -> new RagEvaluationEvidence(
-                        metadataText(document, RetrievalMetadataKeys.SOURCE_ID),
-                        "EXTERNAL_REVIEW",
-                        metadataText(document, RetrievalMetadataKeys.SOURCE),
-                        document == null ? "" : document.getText(),
-                        safeMetadata(document == null ? null : document.getMetadata())
-                ))
-                .toList();
+            .map(document -> new RagEvaluationEvidence(metadataText(document, RetrievalMetadataKeys.SOURCE_ID),
+                    "EXTERNAL_REVIEW", metadataText(document, RetrievalMetadataKeys.SOURCE),
+                    document == null ? "" : document.getText(),
+                    safeMetadata(document == null ? null : document.getMetadata())))
+            .toList();
     }
 
     private List<RagEvaluationEvidence> toVectorEvidence(List<Document> documents) {
@@ -234,14 +206,11 @@ public class DefaultRagEvaluationCaseExecutor implements RagEvaluationCaseExecut
             return List.of();
         }
         return documents.stream()
-                .map(document -> new RagEvaluationEvidence(
-                        metadataText(document, RetrievalMetadataKeys.SOURCE_ID),
-                        metadataText(document, RetrievalMetadataKeys.DOCUMENT_TYPE),
-                        metadataText(document, RetrievalMetadataKeys.SOURCE),
-                        document == null ? "" : document.getText(),
-                        safeMetadata(document == null ? null : document.getMetadata())
-                ))
-                .toList();
+            .map(document -> new RagEvaluationEvidence(metadataText(document, RetrievalMetadataKeys.SOURCE_ID),
+                    metadataText(document, RetrievalMetadataKeys.DOCUMENT_TYPE),
+                    metadataText(document, RetrievalMetadataKeys.SOURCE), document == null ? "" : document.getText(),
+                    safeMetadata(document == null ? null : document.getMetadata())))
+            .toList();
     }
 
     private List<RagEvaluationEvidence> toComparisonEvidence(List<RamenShopComparisonDocument> documents) {
@@ -249,14 +218,13 @@ public class DefaultRagEvaluationCaseExecutor implements RagEvaluationCaseExecut
             return List.of();
         }
         return documents.stream()
-                .map(document -> new RagEvaluationEvidence(
-                        metadataText(document == null ? null : document.metadata(), RetrievalMetadataKeys.SHOP_ID),
-                        metadataText(document == null ? null : document.metadata(), RetrievalMetadataKeys.DOCUMENT_TYPE),
-                        metadataText(document == null ? null : document.metadata(), RetrievalMetadataKeys.SOURCE),
-                        document == null ? "" : document.text(),
-                        safeMetadata(document == null ? null : document.metadata())
-                ))
-                .toList();
+            .map(document -> new RagEvaluationEvidence(
+                    metadataText(document == null ? null : document.metadata(), RetrievalMetadataKeys.SHOP_ID),
+                    metadataText(document == null ? null : document.metadata(), RetrievalMetadataKeys.DOCUMENT_TYPE),
+                    metadataText(document == null ? null : document.metadata(), RetrievalMetadataKeys.SOURCE),
+                    document == null ? "" : document.text(),
+                    safeMetadata(document == null ? null : document.metadata())))
+            .toList();
     }
 
     private String metadataText(Document document, String key) {
@@ -280,4 +248,5 @@ public class DefaultRagEvaluationCaseExecutor implements RagEvaluationCaseExecut
         });
         return safe;
     }
+
 }

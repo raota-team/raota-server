@@ -15,20 +15,17 @@ public class RedisConfig {
 
     @Bean
     public ObjectMapper redisObjectMapper() {
-        return JsonMapper.builder()
-                .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
-                .build();
+        return JsonMapper.builder().disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS).build();
     }
 
     @Bean(name = "cacheRedisTemplate")
-    public RedisTemplate<String, Object> cacheRedisTemplate(
-            RedisConnectionFactory connectionFactory,
-            ObjectMapper redisObjectMapper
-    ) {
+    public RedisTemplate<String, Object> cacheRedisTemplate(RedisConnectionFactory connectionFactory,
+            ObjectMapper redisObjectMapper) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
         template.setKeySerializer(new StringRedisSerializer());
         template.setValueSerializer(new GenericJacksonJsonRedisSerializer(redisObjectMapper));
         return template;
     }
+
 }

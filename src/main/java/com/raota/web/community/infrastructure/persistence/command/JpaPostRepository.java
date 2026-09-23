@@ -13,23 +13,27 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-interface JpaPostEntityRepository extends JpaRepository<PostEntity, Long> {}
+interface JpaPostEntityRepository extends JpaRepository<PostEntity, Long> {
+
+}
 
 @Repository
 @RequiredArgsConstructor
 public class JpaPostRepository implements PostRepository {
+
     private final JpaPostEntityRepository jpaRepository;
+
     private final MemberRepository memberRepository;
+
     private final RamenShopRepository ramenShopRepository;
 
     @Override
     public Post save(Post post) {
         MemberProfile author = memberRepository.findById(post.getAuthorId())
-                .orElseThrow(() -> new IllegalArgumentException("작성자를 찾을 수 없습니다."));
-        
-        RamenShop ramenShop = post.getRamenShopId() != null 
-                ? ramenShopRepository.findById(post.getRamenShopId()).orElse(null) 
-                : null;
+            .orElseThrow(() -> new IllegalArgumentException("작성자를 찾을 수 없습니다."));
+
+        RamenShop ramenShop = post.getRamenShopId() != null
+                ? ramenShopRepository.findById(post.getRamenShopId()).orElse(null) : null;
 
         PostEntity entity = PostEntity.fromDomain(post, author, ramenShop);
         return jpaRepository.save(entity).toDomain();
@@ -41,15 +45,8 @@ public class JpaPostRepository implements PostRepository {
     }
 
     @Override
-    public PostUpdateResult update(
-            Long id,
-            Long authorId,
-            PostCategory category,
-            String title,
-            String content,
-            String thumbnailUrl,
-            Long ramenShopId
-    ) {
+    public PostUpdateResult update(Long id, Long authorId, PostCategory category, String title, String content,
+            String thumbnailUrl, Long ramenShopId) {
         PostEntity postEntity = findPostEntity(id);
 
         if (!postEntity.getAuthor().getId().equals(authorId)) {
@@ -61,7 +58,7 @@ public class JpaPostRepository implements PostRepository {
 
         if (ramenShopId != null) {
             ramenShop = ramenShopRepository.findById(ramenShopId)
-                    .orElseThrow(() -> new IllegalArgumentException("없는 라멘집 입니다."));
+                .orElseThrow(() -> new IllegalArgumentException("없는 라멘집 입니다."));
         }
 
         postEntity.update(category, title, content, thumbnailUrl, ramenShop);
@@ -108,7 +105,7 @@ public class JpaPostRepository implements PostRepository {
     }
 
     private PostEntity findPostEntity(Long id) {
-        return jpaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
+        return jpaRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
     }
+
 }

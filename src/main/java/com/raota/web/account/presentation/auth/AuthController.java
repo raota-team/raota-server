@@ -19,31 +19,26 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+
     private final RefreshTokenCookieManager refreshTokenCookieManager;
 
     @PostMapping("/refresh")
-    public ResponseEntity<ApiResponse<AuthTokenResponse>> refresh(
-            HttpServletRequest request,
-            HttpServletResponse response
-    ) {
+    public ResponseEntity<ApiResponse<AuthTokenResponse>> refresh(HttpServletRequest request,
+            HttpServletResponse response) {
         String refreshToken = refreshTokenCookieManager.extractRefreshToken(request);
         TokenRefreshResult result = authService.refresh(refreshToken);
-        response.addHeader("Set-Cookie", refreshTokenCookieManager.createRefreshTokenCookie(result.refreshToken()).toString());
-        return ResponseEntity.ok(ApiResponse.success(AuthTokenResponse.bearer(
-                result.accessToken(),
-                result.accessTokenExpiresIn(),
-                result.memberId()
-        )));
+        response.addHeader("Set-Cookie",
+                refreshTokenCookieManager.createRefreshTokenCookie(result.refreshToken()).toString());
+        return ResponseEntity.ok(ApiResponse
+            .success(AuthTokenResponse.bearer(result.accessToken(), result.accessTokenExpiresIn(), result.memberId())));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout(
-            HttpServletRequest request,
-            HttpServletResponse response
-    ) {
+    public ResponseEntity<ApiResponse<Void>> logout(HttpServletRequest request, HttpServletResponse response) {
         String refreshToken = refreshTokenCookieManager.extractRefreshToken(request);
         authService.logout(refreshToken);
         response.addHeader("Set-Cookie", refreshTokenCookieManager.clearRefreshTokenCookie().toString());
         return ResponseEntity.ok(ApiResponse.success("로그아웃 되었습니다.", null));
     }
+
 }

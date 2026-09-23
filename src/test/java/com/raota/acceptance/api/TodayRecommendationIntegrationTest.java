@@ -50,47 +50,47 @@ class TodayRecommendationIntegrationTest extends BaseIntegrationTest {
         jdbcTemplate.update("DELETE FROM tb_ramen_type");
 
         RamenType tonkotsu = RamenType.builder()
-                .name("돈코츠 라멘")
-                .subTitle("진한 사골 육수")
-                .imageUrl("http://example.com/tonkotsu.jpg")
-                .build();
+            .name("돈코츠 라멘")
+            .subTitle("진한 사골 육수")
+            .imageUrl("http://example.com/tonkotsu.jpg")
+            .build();
         RamenType savedType = ramenTypeRepository.save(tonkotsu);
 
         DailyCuration curation = DailyCuration.builder()
-                .dateKey(currentDateKey())
-                .ramenType(savedType)
-                .title("비 오는 오늘의 진한 한 그릇")
-                .reason("테스트 추천 사유")
-                .build();
+            .dateKey(currentDateKey())
+            .ramenType(savedType)
+            .title("비 오는 오늘의 진한 한 그릇")
+            .reason("테스트 추천 사유")
+            .build();
         dailyCurationRepository.save(curation);
     }
 
     @Test
     @DisplayName("오늘의 라멘 추천 API 호출 성공")
     void getTodayRecommendations_Success() throws Exception {
-        mockMvc.perform(get("/api/v1/discovery/today-recommendations")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data").isArray())
-                .andExpect(jsonPath("$.data[0].name").value("돈코츠 라멘"))
-                .andExpect(jsonPath("$.data[0].title").value("비 오는 오늘의 진한 한 그릇"))
-                .andExpect(jsonPath("$.data[0].reason").value("테스트 추천 사유"));
+        mockMvc.perform(get("/api/v1/discovery/today-recommendations").contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.data").isArray())
+            .andExpect(jsonPath("$.data[0].name").value("돈코츠 라멘"))
+            .andExpect(jsonPath("$.data[0].title").value("비 오는 오늘의 진한 한 그릇"))
+            .andExpect(jsonPath("$.data[0].reason").value("테스트 추천 사유"));
     }
 
     @Test
     @DisplayName("오늘의 라멘 추천 수동 생성 API 호출 성공")
     void generateTodayRecommendations_Success() throws Exception {
-        mockMvc.perform(post("/api/v1/discovery/today-recommendations/generate")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.name").value("돈코츠 라멘"))
-                .andExpect(jsonPath("$.data.title").value("비 오는 오늘의 진한 한 그릇"))
-                .andExpect(jsonPath("$.data.reason").value("테스트 추천 사유"));
+        mockMvc
+            .perform(post("/api/v1/discovery/today-recommendations/generate").contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.data.name").value("돈코츠 라멘"))
+            .andExpect(jsonPath("$.data.title").value("비 오는 오늘의 진한 한 그릇"))
+            .andExpect(jsonPath("$.data.reason").value("테스트 추천 사유"));
     }
 
     private int currentDateKey() {
         return Integer.parseInt(LocalDate.now().toString().replace("-", ""));
     }
+
 }

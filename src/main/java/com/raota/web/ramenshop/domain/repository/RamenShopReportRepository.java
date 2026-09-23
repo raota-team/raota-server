@@ -28,30 +28,26 @@ public interface RamenShopReportRepository extends JpaRepository<RamenShopReport
                    )))
               and (:reportType is null or report.reportType = :reportType)
             order by report.reportedAt desc, report.id desc
-            """,
-            countQuery = """
-                    select count(report)
-                    from RamenShopReport report
-                    join report.ramenShop shop
-                    join report.memberProfile member
-                    where (:keywordBlank = true
-                           or lower(shop.name) like :keyword
-                           or lower(coalesce(shop.branchName, '')) like :keyword
-                           or lower(member.nickname) like :keyword
-                           or lower(coalesce(member.email, '')) like :keyword
-                           or lower(report.content) like :keyword
-                           or (:keywordId is not null and (
-                                report.id = :keywordId
-                                or shop.id = :keywordId
-                                or member.id = :keywordId
-                           )))
-                      and (:reportType is null or report.reportType = :reportType)
-                    """)
-    Page<RamenShopReport> findAdminReports(
-            @Param("keywordBlank") boolean keywordBlank,
-            @Param("keyword") String keyword,
-            @Param("keywordId") Long keywordId,
-            @Param("reportType") RamenShopReportType reportType,
-            Pageable pageable
-    );
+            """, countQuery = """
+            select count(report)
+            from RamenShopReport report
+            join report.ramenShop shop
+            join report.memberProfile member
+            where (:keywordBlank = true
+                   or lower(shop.name) like :keyword
+                   or lower(coalesce(shop.branchName, '')) like :keyword
+                   or lower(member.nickname) like :keyword
+                   or lower(coalesce(member.email, '')) like :keyword
+                   or lower(report.content) like :keyword
+                   or (:keywordId is not null and (
+                        report.id = :keywordId
+                        or shop.id = :keywordId
+                        or member.id = :keywordId
+                   )))
+              and (:reportType is null or report.reportType = :reportType)
+            """)
+    Page<RamenShopReport> findAdminReports(@Param("keywordBlank") boolean keywordBlank,
+            @Param("keyword") String keyword, @Param("keywordId") Long keywordId,
+            @Param("reportType") RamenShopReportType reportType, Pageable pageable);
+
 }

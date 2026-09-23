@@ -16,6 +16,7 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 @Configuration
 @Profile("prod")
 public class ObjectStorageConfig {
+
     @Value("${oci.storage.namespace}")
     private String namespace;
 
@@ -29,44 +30,33 @@ public class ObjectStorageConfig {
     private String secretKey;
 
     @Bean
-    public S3Presigner s3Presigner(){
+    public S3Presigner s3Presigner() {
         return S3Presigner.builder()
-                .endpointOverride(URI.create(compatEndpoint()))
-                .region(Region.of(required("oci.storage.region", region)))
-                .serviceConfiguration(S3Configuration.builder()
-                        .pathStyleAccessEnabled(true)
-                        .build())
-                .credentialsProvider(credentialsProvider())
-                .build();
+            .endpointOverride(URI.create(compatEndpoint()))
+            .region(Region.of(required("oci.storage.region", region)))
+            .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
+            .credentialsProvider(credentialsProvider())
+            .build();
     }
 
     @Bean
     public S3Client s3Client() {
         return S3Client.builder()
-                .endpointOverride(URI.create(compatEndpoint()))
-                .region(Region.of(required("oci.storage.region", region)))
-                .serviceConfiguration(S3Configuration.builder()
-                        .pathStyleAccessEnabled(true)
-                        .build())
-                .credentialsProvider(credentialsProvider())
-                .build();
+            .endpointOverride(URI.create(compatEndpoint()))
+            .region(Region.of(required("oci.storage.region", region)))
+            .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
+            .credentialsProvider(credentialsProvider())
+            .build();
     }
 
     private StaticCredentialsProvider credentialsProvider() {
-        return StaticCredentialsProvider.create(
-                AwsBasicCredentials.create(
-                        required("oci.storage.access-key", accessKey),
-                        required("oci.storage.secret-key", secretKey)
-                )
-        );
+        return StaticCredentialsProvider.create(AwsBasicCredentials
+            .create(required("oci.storage.access-key", accessKey), required("oci.storage.secret-key", secretKey)));
     }
 
     private String compatEndpoint() {
-        return String.format(
-                "https://%s.compat.objectstorage.%s.oraclecloud.com",
-                required("oci.storage.namespace", namespace),
-                required("oci.storage.region", region)
-        );
+        return String.format("https://%s.compat.objectstorage.%s.oraclecloud.com",
+                required("oci.storage.namespace", namespace), required("oci.storage.region", region));
     }
 
     private String required(String propertyName, String value) {
@@ -75,4 +65,5 @@ public class ObjectStorageConfig {
         }
         return value.trim();
     }
+
 }

@@ -3,19 +3,10 @@ package com.raota.web.ramenshop.presentation.request;
 import org.springframework.data.domain.Sort;
 
 public enum RamenShopSortType {
-    LATEST(Sort.by(Sort.Order.desc("id"))),
-    VIEWS(Sort.by(
-            Sort.Order.desc("stats.viewCount"),
-            Sort.Order.desc("id")
-    )),
-    NAME(Sort.by(
-            Sort.Order.asc("name"),
-            Sort.Order.desc("id")
-    )),
-    VISITS(Sort.by(
-            Sort.Order.desc("stats.visitCount"),
-            Sort.Order.desc("id")
-    ));
+
+    LATEST(Sort.by(Sort.Order.desc("id"))), VIEWS(Sort.by(Sort.Order.desc("stats.viewCount"), Sort.Order.desc("id"))),
+    NAME(Sort.by(Sort.Order.asc("name"), Sort.Order.desc("id"))),
+    VISITS(Sort.by(Sort.Order.desc("stats.visitCount"), Sort.Order.desc("id")));
 
     private final Sort sort;
 
@@ -30,4 +21,5 @@ public enum RamenShopSortType {
     public static RamenShopSortType defaultIfNull(RamenShopSortType sortType) {
         return sortType == null ? LATEST : sortType;
     }
+
 }

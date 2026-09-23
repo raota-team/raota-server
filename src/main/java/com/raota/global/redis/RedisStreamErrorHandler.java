@@ -13,14 +13,9 @@ public class RedisStreamErrorHandler implements ErrorHandler {
     public void handleError(Throwable throwable) {
         Throwable rootCause = rootCauseOf(throwable);
 
-        log.error(
-                "Redis Stream listener error. exceptionType={}, rootCauseType={}, rootCauseMessage={}, retryHint={}",
-                throwable.getClass().getName(),
-                rootCause.getClass().getName(),
-                Optional.ofNullable(rootCause.getMessage()).orElse("(no message)"),
-                retryHint(rootCause),
-                throwable
-        );
+        log.error("Redis Stream listener error. exceptionType={}, rootCauseType={}, rootCauseMessage={}, retryHint={}",
+                throwable.getClass().getName(), rootCause.getClass().getName(),
+                Optional.ofNullable(rootCause.getMessage()).orElse("(no message)"), retryHint(rootCause), throwable);
     }
 
     private Throwable rootCauseOf(Throwable throwable) {
@@ -46,4 +41,5 @@ public class RedisStreamErrorHandler implements ErrorHandler {
 
         return "check-listener-log-and-pending-state";
     }
+
 }

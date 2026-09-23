@@ -21,7 +21,9 @@ import tools.jackson.databind.ObjectMapper;
 class RestSecurityErrorHandlerTest {
 
     private ObjectMapper objectMapper;
+
     private RestAuthenticationEntryPoint authenticationEntryPoint;
+
     private RestAccessDeniedHandler accessDeniedHandler;
 
     @BeforeEach
@@ -36,11 +38,8 @@ class RestSecurityErrorHandlerTest {
     void 인증되지_않은_요청은_동일한_401_JSON_계약을_반환한다() throws Exception {
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        authenticationEntryPoint.commence(
-                new MockHttpServletRequest(),
-                response,
-                new InsufficientAuthenticationException("내부 예외 메시지")
-        );
+        authenticationEntryPoint.commence(new MockHttpServletRequest(), response,
+                new InsufficientAuthenticationException("내부 예외 메시지"));
 
         assertThat(response.getStatus()).isEqualTo(401);
         assertThat(response.getHeader(HttpHeaders.WWW_AUTHENTICATE)).isEqualTo("Bearer");
@@ -51,11 +50,7 @@ class RestSecurityErrorHandlerTest {
     void 권한이_부족한_요청은_동일한_403_JSON_계약을_반환한다() throws Exception {
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        accessDeniedHandler.handle(
-                new MockHttpServletRequest(),
-                response,
-                new AccessDeniedException("내부 예외 메시지")
-        );
+        accessDeniedHandler.handle(new MockHttpServletRequest(), response, new AccessDeniedException("내부 예외 메시지"));
 
         assertThat(response.getStatus()).isEqualTo(403);
         assertThat(response.getHeader(HttpHeaders.WWW_AUTHENTICATE)).isNull();
@@ -96,11 +91,8 @@ class RestSecurityErrorHandlerTest {
         MockHttpServletRequest request = mobileRequest("/api/v2/anything");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        authenticationEntryPoint.commence(
-                request,
-                response,
-                new ExpiredJwtAuthenticationException(new IllegalStateException())
-        );
+        authenticationEntryPoint.commence(request, response,
+                new ExpiredJwtAuthenticationException(new IllegalStateException()));
 
         assertThat(response.getStatus()).isEqualTo(401);
         JsonNode body = objectMapper.readTree(response.getContentAsByteArray());
@@ -114,11 +106,8 @@ class RestSecurityErrorHandlerTest {
         request.setServletPath("/");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        authenticationEntryPoint.commence(
-                request,
-                response,
-                new ExpiredJwtAuthenticationException(new IllegalStateException())
-        );
+        authenticationEntryPoint.commence(request, response,
+                new ExpiredJwtAuthenticationException(new IllegalStateException()));
 
         assertThat(response.getStatus()).isEqualTo(401);
         assertErrorResponse(response, "유효하지 않은 액세스 토큰입니다.");
@@ -134,11 +123,8 @@ class RestSecurityErrorHandlerTest {
     void 서버가_판정한_JWT_인증_실패_메시지는_보존한다() throws Exception {
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        authenticationEntryPoint.commence(
-                new MockHttpServletRequest(),
-                response,
-                new JwtAuthenticationException("탈퇴 처리된 계정입니다.", new IllegalStateException())
-        );
+        authenticationEntryPoint.commence(new MockHttpServletRequest(), response,
+                new JwtAuthenticationException("탈퇴 처리된 계정입니다.", new IllegalStateException()));
 
         assertThat(response.getStatus()).isEqualTo(401);
         assertErrorResponse(response, "탈퇴 처리된 계정입니다.");
@@ -153,4 +139,5 @@ class RestSecurityErrorHandlerTest {
         assertThat(body.get("message").stringValue()).isEqualTo(expectedMessage);
         assertThat(body.get("success").booleanValue()).isFalse();
     }
+
 }

@@ -21,10 +21,13 @@ import org.springframework.stereotype.Service;
 public class RamenShopViewRankingService {
 
     private static final String KEY_PREFIX = "ramen-shop:view:";
+
     private static final Duration DAILY_RANKING_TTL = Duration.ofDays(2);
 
     private final StringRedisTemplate redisTemplate;
+
     private final RamenShopRepository ramenShopRepository;
+
     private final Clock clock;
 
     public void increaseTodayViewCount(Long shopId) {
@@ -40,36 +43,36 @@ public class RamenShopViewRankingService {
         }
 
         Set<ZSetOperations.TypedTuple<String>> tuples = redisTemplate.opsForZSet()
-                .reverseRangeWithScores(todayKey(), 0, size - 1);
+            .reverseRangeWithScores(todayKey(), 0, size - 1);
 
         if (tuples == null || tuples.isEmpty()) {
             return Collections.emptyList();
         }
 
-        Map<Long, TodayPopularRamenShopResponse> shops = ramenShopRepository.findPopularTodayShops(shopIdsOf(tuples)).stream()
-                .collect(java.util.stream.Collectors.toMap(
-                        TodayPopularRamenShopResponse::ramenShopId,
-                        Function.identity()
-                ));
+        Map<Long, TodayPopularRamenShopResponse> shops = ramenShopRepository.findPopularTodayShops(shopIdsOf(tuples))
+            .stream()
+            .collect(
+                    java.util.stream.Collectors.toMap(TodayPopularRamenShopResponse::ramenShopId, Function.identity()));
 
         return tuples.stream()
-                .map(ZSetOperations.TypedTuple::getValue)
-                .filter(Objects::nonNull)
-                .map(Long::valueOf)
-                .map(shops::get)
-                .filter(Objects::nonNull)
-                .toList();
+            .map(ZSetOperations.TypedTuple::getValue)
+            .filter(Objects::nonNull)
+            .map(Long::valueOf)
+            .map(shops::get)
+            .filter(Objects::nonNull)
+            .toList();
     }
 
     private List<Long> shopIdsOf(Set<ZSetOperations.TypedTuple<String>> tuples) {
         return tuples.stream()
-                .map(ZSetOperations.TypedTuple::getValue)
-                .filter(Objects::nonNull)
-                .map(Long::valueOf)
-                .toList();
+            .map(ZSetOperations.TypedTuple::getValue)
+            .filter(Objects::nonNull)
+            .map(Long::valueOf)
+            .toList();
     }
 
     private String todayKey() {
         return KEY_PREFIX + LocalDate.now(clock);
     }
+
 }

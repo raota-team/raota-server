@@ -24,11 +24,8 @@ public class FIleController {
      * @param extension 파일 확장자 (jpg, png 등)
      */
     @GetMapping("/upload-ticket")
-    public ResponseEntity<PresignedUrlResponse> getUploadTicket(
-            @RequestParam String type,
-            @RequestParam String extension,
-            @RequestParam(required = false) String contentType
-    ) {
+    public ResponseEntity<PresignedUrlResponse> getUploadTicket(@RequestParam String type,
+            @RequestParam String extension, @RequestParam(required = false) String contentType) {
         String dirName = resolveDirectory(type);
         PresignedUrlResponse response = fileUploader.getPresignedUrl(dirName, extension, contentType);
         return ResponseEntity.ok(response);
@@ -50,4 +47,5 @@ public class FIleController {
     public ResponseEntity<Void> mockUpload() {
         return ResponseEntity.status(HttpStatus.OK).build();
     }
+
 }

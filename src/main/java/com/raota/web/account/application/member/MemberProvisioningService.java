@@ -19,11 +19,11 @@ public class MemberProvisioningService {
     @Transactional
     public MemberProfile createOAuthMember(String nickname, String profileImageUrl) {
         return memberRepository.save(MemberProfile.builder()
-                .nickname(nickname)
-                .imageUrl(profileImageUrl)
-                .backgroundImageUrl(null)
-                .stats(MemberActivityStats.init())
-                .build());
+            .nickname(nickname)
+            .imageUrl(profileImageUrl)
+            .backgroundImageUrl(null)
+            .stats(MemberActivityStats.init())
+            .build());
     }
 
     @Transactional(readOnly = true)
@@ -33,14 +33,13 @@ public class MemberProvisioningService {
 
     @Transactional(readOnly = true)
     public MemberProfile getRequired(Long memberId) {
-        return memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("없는 유저 정보 입니다."));
+        return memberRepository.findById(memberId).orElseThrow(() -> new IllegalArgumentException("없는 유저 정보 입니다."));
     }
 
     @Transactional(readOnly = true)
     public MemberProfile getActiveRequired(Long memberId) {
         return memberRepository.findByIdAndDeletedAtIsNull(memberId)
-                .orElseThrow(() -> new WithdrawnMemberException(MemberLifecycleService.WITHDRAWN_MEMBER_MESSAGE));
+            .orElseThrow(() -> new WithdrawnMemberException(MemberLifecycleService.WITHDRAWN_MEMBER_MESSAGE));
     }
 
     @Transactional(readOnly = true)
@@ -52,4 +51,5 @@ public class MemberProvisioningService {
     public void deleteById(Long memberId) {
         memberRepository.deleteById(memberId);
     }
+
 }

@@ -13,18 +13,16 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 public final class EndpointAccessPolicy {
 
     public enum AccessLevel {
-        PUBLIC,
-        AUTHENTICATED,
-        ADMIN
+
+        PUBLIC, AUTHENTICATED, ADMIN
+
     }
 
     private static final List<Rule> RULES = List.of(
             // Framework and operational endpoints
-            rule(AccessLevel.PUBLIC, HttpMethod.OPTIONS, "/**"),
-            rule(AccessLevel.PUBLIC, HttpMethod.GET, "/login"),
+            rule(AccessLevel.PUBLIC, HttpMethod.OPTIONS, "/**"), rule(AccessLevel.PUBLIC, HttpMethod.GET, "/login"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/oauth2/authorization/**"),
-            rule(AccessLevel.PUBLIC, HttpMethod.GET, "/login/oauth2/code/**"),
-            rule(AccessLevel.PUBLIC, null, "/error"),
+            rule(AccessLevel.PUBLIC, HttpMethod.GET, "/login/oauth2/code/**"), rule(AccessLevel.PUBLIC, null, "/error"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/swagger-ui.html"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/swagger-ui/**"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/v3/api-docs"),
@@ -36,8 +34,7 @@ public final class EndpointAccessPolicy {
 
             // Public application endpoints
             rule(AccessLevel.PUBLIC, HttpMethod.POST, "/auth/refresh"),
-            rule(AccessLevel.PUBLIC, HttpMethod.POST, "/auth/logout"),
-            rule(AccessLevel.PUBLIC, HttpMethod.GET, "/"),
+            rule(AccessLevel.PUBLIC, HttpMethod.POST, "/auth/logout"), rule(AccessLevel.PUBLIC, HttpMethod.GET, "/"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/favicon.ico"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/community/posts"),
             rule(AccessLevel.PUBLIC, HttpMethod.GET, "/community/posts/{postId:[0-9]+}"),
@@ -90,7 +87,8 @@ public final class EndpointAccessPolicy {
             rule(AccessLevel.AUTHENTICATED, HttpMethod.GET, "/users/me/ramen-logs/shops"),
             rule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/ramen-shops/{shopId:[0-9]+}/bookmark"),
             rule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/ramen-shops/{shopId:[0-9]+}/reports"),
-            rule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/ramen-shops/{shopId:[0-9]+}/votes/menus/{menuId:[0-9]+}"),
+            rule(AccessLevel.AUTHENTICATED, HttpMethod.POST,
+                    "/ramen-shops/{shopId:[0-9]+}/votes/menus/{menuId:[0-9]+}"),
             rule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/ramen-shops/{shopId:[0-9]+}/photos"),
             rule(AccessLevel.AUTHENTICATED, HttpMethod.DELETE, "/ramen-shops/{shopId:[0-9]+}/photos/{photoId:[0-9]+}"),
             rule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/ramen-shops/ai-search"),
@@ -106,25 +104,21 @@ public final class EndpointAccessPolicy {
             // Administrative and operational endpoints
             rule(AccessLevel.ADMIN, null, "/admin/**"),
             rule(AccessLevel.ADMIN, HttpMethod.POST, "/api/v1/discovery/today-recommendations/generate"),
-            rule(AccessLevel.ADMIN, null, "/actuator/**")
-    );
+            rule(AccessLevel.ADMIN, null, "/actuator/**"));
 
     private EndpointAccessPolicy() {
     }
 
     static RequestMatcher[] matchersFor(AccessLevel accessLevel) {
         return RULES.stream()
-                .filter(rule -> rule.accessLevel() == accessLevel)
-                .map(Rule::matcher)
-                .toArray(RequestMatcher[]::new);
+            .filter(rule -> rule.accessLevel() == accessLevel)
+            .map(Rule::matcher)
+            .toArray(RequestMatcher[]::new);
     }
 
     public static Set<AccessLevel> matchingAccessLevels(HttpServletRequest request) {
         EnumSet<AccessLevel> matches = EnumSet.noneOf(AccessLevel.class);
-        RULES.stream()
-                .filter(rule -> rule.matcher().matches(request))
-                .map(Rule::accessLevel)
-                .forEach(matches::add);
+        RULES.stream().filter(rule -> rule.matcher().matches(request)).map(Rule::accessLevel).forEach(matches::add);
         return Set.copyOf(matches);
     }
 
@@ -132,26 +126,21 @@ public final class EndpointAccessPolicy {
         RequestMatcher matcher;
         if (method == null) {
             matcher = pathPattern(pattern);
-        } else if (accessLevel == AccessLevel.PUBLIC && method == HttpMethod.GET) {
-            matcher = new OrRequestMatcher(
-                    pathPattern(HttpMethod.GET, pattern),
-                    pathPattern(HttpMethod.HEAD, pattern)
-            );
-        } else {
+        }
+        else if (accessLevel == AccessLevel.PUBLIC && method == HttpMethod.GET) {
+            matcher = new OrRequestMatcher(pathPattern(HttpMethod.GET, pattern), pathPattern(HttpMethod.HEAD, pattern));
+        }
+        else {
             matcher = pathPattern(method, pattern);
         }
         return new Rule(accessLevel, method, pattern, matcher);
     }
 
-    record Rule(
-            AccessLevel accessLevel,
-            HttpMethod method,
-            String pattern,
-            RequestMatcher matcher
-    ) {
+    record Rule(AccessLevel accessLevel, HttpMethod method, String pattern, RequestMatcher matcher) {
         @Override
         public String toString() {
             return "%s %s -> %s".formatted(method == null ? "*" : method, pattern, accessLevel);
         }
     }
+
 }

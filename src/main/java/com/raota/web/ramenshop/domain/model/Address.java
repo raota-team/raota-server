@@ -5,14 +5,9 @@ import jakarta.persistence.Embeddable;
 import java.math.BigDecimal;
 
 @Embeddable
-public record Address(
-        @Column(name = "city") String city,
-        @Column(name = "district") String district,
-        @Column(name = "street") String street,
-        @Column(name = "detail") String detail,
-        @Column(name = "latitude") BigDecimal latitude,
-        @Column(name = "longitude") BigDecimal longitude
-) {
+public record Address(@Column(name = "city") String city, @Column(name = "district") String district,
+        @Column(name = "street") String street, @Column(name = "detail") String detail,
+        @Column(name = "latitude") BigDecimal latitude, @Column(name = "longitude") BigDecimal longitude) {
     public Address {
         if (city == null || city.isBlank()) {
             throw new IllegalArgumentException("도시는 필수입니다.");
@@ -26,7 +21,8 @@ public record Address(
         return new Address(city, district, street, detail, null, null);
     }
 
-    public static Address of(String city, String district, String street, String detail, BigDecimal latitude, BigDecimal longitude) {
+    public static Address of(String city, String district, String street, String detail, BigDecimal latitude,
+            BigDecimal longitude) {
         return new Address(city, district, street, detail, latitude, longitude);
     }
 

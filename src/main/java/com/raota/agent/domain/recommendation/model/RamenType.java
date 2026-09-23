@@ -5,9 +5,13 @@ import lombok.Getter;
 
 @Getter
 public class RamenType {
+
     private final Long id;
+
     private final String name;
+
     private final String subTitle;
+
     private final String imageUrl;
 
     @Builder
@@ -17,4 +21,5 @@ public class RamenType {
         this.subTitle = subTitle;
         this.imageUrl = imageUrl;
     }
+
 }

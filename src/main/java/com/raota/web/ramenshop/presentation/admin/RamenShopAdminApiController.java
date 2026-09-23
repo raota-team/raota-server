@@ -43,77 +43,57 @@ public class RamenShopAdminApiController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<RamenShopAdminMutationResponse>> createShop(
-            @Valid @RequestBody RamenShopAdminForm form,
-            BindingResult bindingResult
-    ) {
+            @Valid @RequestBody RamenShopAdminForm form, BindingResult bindingResult) {
         rejectIfInvalid(bindingResult);
         Long shopId = ramenShopAdminService.createShop(form);
         return ResponseEntity.ok(ApiResponse.success("라멘집이 추가되었습니다.", new RamenShopAdminMutationResponse(shopId)));
     }
 
     @PutMapping("/{shopId}")
-    public ResponseEntity<ApiResponse<RamenShopAdminMutationResponse>> updateShop(
-            @PathVariable Long shopId,
-            @Valid @RequestBody RamenShopAdminForm form,
-            BindingResult bindingResult
-    ) {
+    public ResponseEntity<ApiResponse<RamenShopAdminMutationResponse>> updateShop(@PathVariable Long shopId,
+            @Valid @RequestBody RamenShopAdminForm form, BindingResult bindingResult) {
         rejectIfInvalid(bindingResult);
         ramenShopAdminService.updateShop(shopId, form);
         return ResponseEntity.ok(ApiResponse.success("라멘집 정보가 수정되었습니다.", new RamenShopAdminMutationResponse(shopId)));
     }
 
     @PatchMapping("/{shopId}/visibility")
-    public ResponseEntity<ApiResponse<RamenShopAdminMutationResponse>> updateVisibility(
-            @PathVariable Long shopId,
-            @Valid @RequestBody RamenShopVisibilityUpdateRequest request
-    ) {
+    public ResponseEntity<ApiResponse<RamenShopAdminMutationResponse>> updateVisibility(@PathVariable Long shopId,
+            @Valid @RequestBody RamenShopVisibilityUpdateRequest request) {
         ramenShopAdminService.updateVisibility(shopId, request.published());
-        return ResponseEntity.ok(ApiResponse.success(
-                request.published() ? "라멘집이 공개되었습니다." : "라멘집이 숨김 처리되었습니다.",
-                new RamenShopAdminMutationResponse(shopId)
-        ));
+        return ResponseEntity.ok(ApiResponse.success(request.published() ? "라멘집이 공개되었습니다." : "라멘집이 숨김 처리되었습니다.",
+                new RamenShopAdminMutationResponse(shopId)));
     }
 
     @PatchMapping("/visibility")
     public ResponseEntity<ApiResponse<RamenShopVisibilityBulkUpdateResponse>> updateVisibility(
-            @Valid @RequestBody RamenShopVisibilityBulkUpdateRequest request
-    ) {
-        int updatedCount = ramenShopAdminService.updateVisibility(
-                request.fromId(),
-                request.toId(),
-                request.published()
-        );
-        return ResponseEntity.ok(ApiResponse.success(
-                "라멘집 공개 상태가 일괄 변경되었습니다.",
-                new RamenShopVisibilityBulkUpdateResponse(
-                        request.fromId(),
-                        request.toId(),
-                        request.published(),
-                        updatedCount
-                )
-        ));
+            @Valid @RequestBody RamenShopVisibilityBulkUpdateRequest request) {
+        int updatedCount = ramenShopAdminService.updateVisibility(request.fromId(), request.toId(),
+                request.published());
+        return ResponseEntity
+            .ok(ApiResponse.success("라멘집 공개 상태가 일괄 변경되었습니다.", new RamenShopVisibilityBulkUpdateResponse(
+                    request.fromId(), request.toId(), request.published(), updatedCount)));
     }
 
     @DeleteMapping("/{shopId}")
     public ResponseEntity<ApiResponse<RamenShopAdminMutationResponse>> deleteShop(@PathVariable Long shopId) {
         ramenShopAdminService.deleteShop(shopId);
-        return ResponseEntity.ok(ApiResponse.success(
-                "라멘집이 삭제되었습니다.",
-                new RamenShopAdminMutationResponse(shopId)
-        ));
+        return ResponseEntity.ok(ApiResponse.success("라멘집이 삭제되었습니다.", new RamenShopAdminMutationResponse(shopId)));
     }
 
     private void rejectIfInvalid(BindingResult bindingResult) {
         if (!bindingResult.hasErrors()) {
             return;
         }
-        throw new IllegalArgumentException(bindingResult.getFieldErrors().stream()
-                .findFirst()
-                .map(this::formatFieldError)
-                .orElse("입력값이 올바르지 않습니다."));
+        throw new IllegalArgumentException(bindingResult.getFieldErrors()
+            .stream()
+            .findFirst()
+            .map(this::formatFieldError)
+            .orElse("입력값이 올바르지 않습니다."));
     }
 
     private String formatFieldError(FieldError error) {
         return "%s: %s".formatted(error.getField(), error.getDefaultMessage());
     }
+
 }

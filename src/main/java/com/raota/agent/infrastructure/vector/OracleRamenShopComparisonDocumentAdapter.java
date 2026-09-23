@@ -18,30 +18,22 @@ public class OracleRamenShopComparisonDocumentAdapter implements RamenShopCompar
     }
 
     @Override
-    public List<RamenShopComparisonDocument> searchComparisonDocuments(
-            Long shopId,
-            String query,
-            int topK,
-            double similarityThreshold
-    ) {
-        var documents = vectorStore.similaritySearch(
-                SearchRequest.builder()
-                        .query(query)
-                        .topK(topK)
-                        .similarityThreshold(similarityThreshold)
-                        .filterExpression(RetrievalDocumentFilters.shopProfileOrExternalReviewsForShop(shopId))
-                        .build()
-        );
+    public List<RamenShopComparisonDocument> searchComparisonDocuments(Long shopId, String query, int topK,
+            double similarityThreshold) {
+        var documents = vectorStore.similaritySearch(SearchRequest.builder()
+            .query(query)
+            .topK(topK)
+            .similarityThreshold(similarityThreshold)
+            .filterExpression(RetrievalDocumentFilters.shopProfileOrExternalReviewsForShop(shopId))
+            .build());
 
         if (documents == null || documents.isEmpty()) {
             return List.of();
         }
 
         return documents.stream()
-                .map(document -> new RamenShopComparisonDocument(
-                        document.getText(),
-                        document.getMetadata()
-                ))
-                .toList();
+            .map(document -> new RamenShopComparisonDocument(document.getText(), document.getMetadata()))
+            .toList();
     }
+
 }

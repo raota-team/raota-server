@@ -32,11 +32,8 @@ public interface RagEvaluationRunJpaRepository extends JpaRepository<RagEvaluati
                or (run.createdAt = :createdAt and run.runId < :runId)
             order by run.createdAt desc, run.runId desc
             """)
-    List<RagEvaluationRunEntity> findAfterCursor(
-            @Param("createdAt") LocalDateTime createdAt,
-            @Param("runId") String runId,
-            Pageable pageable
-    );
+    List<RagEvaluationRunEntity> findAfterCursor(@Param("createdAt") LocalDateTime createdAt,
+            @Param("runId") String runId, Pageable pageable);
 
     /**
      * QUEUED 실행만 RUNNING으로 전이한다. 이미 복구·종료된 실행이면 0을 반환한다.
@@ -61,8 +58,8 @@ public interface RagEvaluationRunJpaRepository extends JpaRepository<RagEvaluati
     }
 
     /**
-     * heartbeat가 임계 시각보다 오래된 활성 실행을 FAILED로 전이한다.
-     * 조건부 단일 UPDATE이므로 여러 서버가 동시에 실행하거나 반복 실행해도 결과가 같다.
+     * heartbeat가 임계 시각보다 오래된 활성 실행을 FAILED로 전이한다. 조건부 단일 UPDATE이므로 여러 서버가 동시에 실행하거나 반복
+     * 실행해도 결과가 같다.
      */
     default int failStale(LocalDateTime threshold, String fatalError, LocalDateTime now) {
         return failStale(threshold, fatalError, now, ACTIVE_STATUSES, FAILED);
@@ -77,12 +74,8 @@ public interface RagEvaluationRunJpaRepository extends JpaRepository<RagEvaluati
             where run.runId = :runId
               and run.status = :queued
             """)
-    int markRunning(
-            @Param("runId") String runId,
-            @Param("now") LocalDateTime now,
-            @Param("queued") RagEvaluationStatus queued,
-            @Param("running") RagEvaluationStatus running
-    );
+    int markRunning(@Param("runId") String runId, @Param("now") LocalDateTime now,
+            @Param("queued") RagEvaluationStatus queued, @Param("running") RagEvaluationStatus running);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
@@ -91,11 +84,8 @@ public interface RagEvaluationRunJpaRepository extends JpaRepository<RagEvaluati
             where run.runId = :runId
               and run.status = :running
             """)
-    int touchHeartbeat(
-            @Param("runId") String runId,
-            @Param("now") LocalDateTime now,
-            @Param("running") RagEvaluationStatus running
-    );
+    int touchHeartbeat(@Param("runId") String runId, @Param("now") LocalDateTime now,
+            @Param("running") RagEvaluationStatus running);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
@@ -107,13 +97,9 @@ public interface RagEvaluationRunJpaRepository extends JpaRepository<RagEvaluati
             where run.runId = :runId
               and run.status = :running
             """)
-    int markReviewRequired(
-            @Param("runId") String runId,
-            @Param("aggregateMetrics") String aggregateMetrics,
-            @Param("now") LocalDateTime now,
-            @Param("running") RagEvaluationStatus running,
-            @Param("reviewRequired") RagEvaluationStatus reviewRequired
-    );
+    int markReviewRequired(@Param("runId") String runId, @Param("aggregateMetrics") String aggregateMetrics,
+            @Param("now") LocalDateTime now, @Param("running") RagEvaluationStatus running,
+            @Param("reviewRequired") RagEvaluationStatus reviewRequired);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
@@ -125,13 +111,9 @@ public interface RagEvaluationRunJpaRepository extends JpaRepository<RagEvaluati
             where run.runId = :runId
               and run.status in :activeStatuses
             """)
-    int markFailed(
-            @Param("runId") String runId,
-            @Param("fatalError") String fatalError,
-            @Param("now") LocalDateTime now,
-            @Param("activeStatuses") Collection<RagEvaluationStatus> activeStatuses,
-            @Param("failed") RagEvaluationStatus failed
-    );
+    int markFailed(@Param("runId") String runId, @Param("fatalError") String fatalError,
+            @Param("now") LocalDateTime now, @Param("activeStatuses") Collection<RagEvaluationStatus> activeStatuses,
+            @Param("failed") RagEvaluationStatus failed);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
@@ -143,11 +125,8 @@ public interface RagEvaluationRunJpaRepository extends JpaRepository<RagEvaluati
             where run.status in :activeStatuses
               and (run.heartbeatAt is null or run.heartbeatAt < :threshold)
             """)
-    int failStale(
-            @Param("threshold") LocalDateTime threshold,
-            @Param("fatalError") String fatalError,
-            @Param("now") LocalDateTime now,
-            @Param("activeStatuses") Collection<RagEvaluationStatus> activeStatuses,
-            @Param("failed") RagEvaluationStatus failed
-    );
+    int failStale(@Param("threshold") LocalDateTime threshold, @Param("fatalError") String fatalError,
+            @Param("now") LocalDateTime now, @Param("activeStatuses") Collection<RagEvaluationStatus> activeStatuses,
+            @Param("failed") RagEvaluationStatus failed);
+
 }

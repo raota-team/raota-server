@@ -14,12 +14,14 @@ import tools.jackson.databind.ObjectMapper;
 public class RedisMessagingPublisher implements MessagePublisher {
 
     private final StringRedisTemplate redisTemplate;
+
     private final ObjectMapper redisObjectMapper;
 
     @Override
     public void publish(String topic, Object payload) {
-        String jsonPayload  = redisObjectMapper.writeValueAsString(payload);
-        redisTemplate.opsForStream().add(topic, Collections.singletonMap("payload",jsonPayload));
-        redisTemplate.opsForStream().trim(topic,1000);
+        String jsonPayload = redisObjectMapper.writeValueAsString(payload);
+        redisTemplate.opsForStream().add(topic, Collections.singletonMap("payload", jsonPayload));
+        redisTemplate.opsForStream().trim(topic, 1000);
     }
+
 }

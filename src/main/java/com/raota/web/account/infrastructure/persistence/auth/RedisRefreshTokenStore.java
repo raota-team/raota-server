@@ -11,14 +11,11 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(
-        prefix = "app.auth.refresh-token",
-        name = "store-type",
-        havingValue = "redis"
-)
+@ConditionalOnProperty(prefix = "app.auth.refresh-token", name = "store-type", havingValue = "redis")
 public class RedisRefreshTokenStore implements RefreshTokenStore {
 
     private final StringRedisTemplate redisTemplate;
+
     private final AuthRedisProperties authRedisProperties;
 
     @Override
@@ -41,8 +38,7 @@ public class RedisRefreshTokenStore implements RefreshTokenStore {
 
     @Override
     public void save(Long memberId, String token, Instant expiresAt) {
-        findByMemberId(memberId)
-                .ifPresent(existing -> redisTemplate.delete(tokenKey(existing.token())));
+        findByMemberId(memberId).ifPresent(existing -> redisTemplate.delete(tokenKey(existing.token())));
 
         Duration ttl = Duration.between(Instant.now(), expiresAt);
         if (ttl.isNegative() || ttl.isZero()) {
@@ -55,9 +51,7 @@ public class RedisRefreshTokenStore implements RefreshTokenStore {
 
     @Override
     public void deleteByToken(String token) {
-        findByToken(token).ifPresent(storedToken ->
-                redisTemplate.delete(memberKey(storedToken.memberId()))
-        );
+        findByToken(token).ifPresent(storedToken -> redisTemplate.delete(memberKey(storedToken.memberId())));
         redisTemplate.delete(tokenKey(token));
     }
 
@@ -75,4 +69,5 @@ public class RedisRefreshTokenStore implements RefreshTokenStore {
     private String memberKey(Long memberId) {
         return authRedisProperties.refreshMemberKeyPrefix() + memberId;
     }
+
 }

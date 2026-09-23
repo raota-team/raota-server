@@ -30,77 +30,56 @@ import org.springframework.transaction.annotation.Transactional;
 public class AdminUserService {
 
     private static final int DEFAULT_PAGE_SIZE = 30;
+
     private static final int MAX_PAGE_SIZE = 100;
 
     private final MemberRepository memberRepository;
+
     private final SocialAccountRepository socialAccountRepository;
+
     private final FileUploader fileUploader;
 
     @Transactional(readOnly = true)
-    public Page<AdminUserListItemResponse> getUsers(
-            String keyword,
-            Boolean registrationCompleted,
-            Boolean deleted,
-            AuthProvider provider,
-            Boolean emailPresent,
-            int page,
-            int size
-    ) {
+    public Page<AdminUserListItemResponse> getUsers(String keyword, Boolean registrationCompleted, Boolean deleted,
+            AuthProvider provider, Boolean emailPresent, int page, int size) {
         String normalizedKeyword = normalize(keyword);
         Long keywordMemberId = parseMemberId(normalizedKeyword);
-        Page<MemberProfile> members = memberRepository.findAdminUsers(
-                normalizedKeyword == null,
-                normalizedKeyword == null ? "%" : "%" + normalizedKeyword.toLowerCase() + "%",
-                keywordMemberId,
-                registrationCompleted,
-                deleted,
-                provider == null ? null : provider.name(),
-                emailPresent,
-                PageRequest.of(Math.max(page, 0), normalizeSize(size))
-        );
+        Page<MemberProfile> members = memberRepository.findAdminUsers(normalizedKeyword == null,
+                normalizedKeyword == null ? "%" : "%" + normalizedKeyword.toLowerCase() + "%", keywordMemberId,
+                registrationCompleted, deleted, provider == null ? null : provider.name(), emailPresent,
+                PageRequest.of(Math.max(page, 0), normalizeSize(size)));
         Map<Long, List<SocialAccount>> socialAccountsByMemberId = socialAccountsByMemberId(members.getContent());
 
-        return members.map(member -> AdminUserListItemResponse.from(
-                member,
-                socialAccountsByMemberId.getOrDefault(member.getId(), List.of())
-        ));
+        return members.map(member -> AdminUserListItemResponse.from(member,
+                socialAccountsByMemberId.getOrDefault(member.getId(), List.of())));
     }
 
     @Transactional(readOnly = true)
     public AdminUserDetailResponse getUser(Long memberId) {
         MemberProfile member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("없는 유저 정보 입니다."));
+            .orElseThrow(() -> new IllegalArgumentException("없는 유저 정보 입니다."));
         List<AdminUserSocialAccountResponse> socialAccounts = socialAccountRepository
-                .findAllByMemberIdOrderByProviderAsc(memberId)
-                .stream()
-                .map(AdminUserSocialAccountResponse::from)
-                .toList();
+            .findAllByMemberIdOrderByProviderAsc(memberId)
+            .stream()
+            .map(AdminUserSocialAccountResponse::from)
+            .toList();
 
-        return new AdminUserDetailResponse(
-                member.getId(),
-                AdminUserProfileResponse.from(
-                        member,
-                        accessibleUrl(member.getImageUrl()),
-                        accessibleUrl(member.getBackgroundImageUrl())
-                ),
-                socialAccounts,
-                AdminUserActivityStatsResponse.from(stats(member)),
-                AdminUserActivityVisibilityResponse.from(visibility(member))
-        );
+        return new AdminUserDetailResponse(member.getId(),
+                AdminUserProfileResponse.from(member, accessibleUrl(member.getImageUrl()),
+                        accessibleUrl(member.getBackgroundImageUrl())),
+                socialAccounts, AdminUserActivityStatsResponse.from(stats(member)),
+                AdminUserActivityVisibilityResponse.from(visibility(member)));
     }
 
     private Map<Long, List<SocialAccount>> socialAccountsByMemberId(List<MemberProfile> members) {
-        List<Long> memberIds = members.stream()
-                .map(MemberProfile::getId)
-                .filter(Objects::nonNull)
-                .toList();
+        List<Long> memberIds = members.stream().map(MemberProfile::getId).filter(Objects::nonNull).toList();
         if (memberIds.isEmpty()) {
             return Map.of();
         }
         return socialAccountRepository.findAllByMemberIdIn(memberIds)
-                .stream()
-                .sorted(Comparator.comparing(SocialAccount::getProvider))
-                .collect(Collectors.groupingBy(SocialAccount::getMemberId));
+            .stream()
+            .sorted(Comparator.comparing(SocialAccount::getProvider))
+            .collect(Collectors.groupingBy(SocialAccount::getMemberId));
     }
 
     private String accessibleUrl(String path) {
@@ -112,7 +91,8 @@ public class AdminUserService {
     }
 
     private MemberActivityVisibility visibility(MemberProfile member) {
-        return member.getActivityVisibility() == null ? MemberActivityVisibility.allPublic() : member.getActivityVisibility();
+        return member.getActivityVisibility() == null ? MemberActivityVisibility.allPublic()
+                : member.getActivityVisibility();
     }
 
     private int normalizeSize(int size) {
@@ -136,8 +116,10 @@ public class AdminUserService {
         }
         try {
             return Long.parseLong(keyword);
-        } catch (NumberFormatException exception) {
+        }
+        catch (NumberFormatException exception) {
             return null;
         }
     }
+
 }

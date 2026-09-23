@@ -17,6 +17,7 @@ import tools.jackson.databind.ObjectMapper;
 public class CacheInvalidationListener implements MessageListener {
 
     private final CacheManager cacheManager;
+
     private final ObjectMapper objectMapper;
 
     @Override
@@ -33,13 +34,17 @@ public class CacheInvalidationListener implements MessageListener {
                 if ("ALL".equals(invalidationMessage.key())) {
                     cache.clear();
                     log.info("Cleared all entries in cache: {}", invalidationMessage.cacheName());
-                } else {
+                }
+                else {
                     cache.evict(invalidationMessage.key());
-                    log.debug("Evicted key [{}] from cache: {}", invalidationMessage.key(), invalidationMessage.cacheName());
+                    log.debug("Evicted key [{}] from cache: {}", invalidationMessage.key(),
+                            invalidationMessage.cacheName());
                 }
             }
-        } catch (JacksonException e) {
+        }
+        catch (JacksonException e) {
             log.error("Failed to parse cache invalidation message", e);
         }
     }
+
 }

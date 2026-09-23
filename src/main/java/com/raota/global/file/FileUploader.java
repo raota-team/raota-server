@@ -16,4 +16,5 @@ public interface FileUploader {
     String getAccessibleUrl(String filePath);
 
     void delete(String filePath);
+
 }

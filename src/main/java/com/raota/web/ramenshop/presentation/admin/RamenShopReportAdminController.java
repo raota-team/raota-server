@@ -23,16 +23,11 @@ public class RamenShopReportAdminController {
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<RamenShopReportAdminResponse>>> reports(
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) RamenShopReportType reportType,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "30") int size
-    ) {
-        Page<RamenShopReportAdminResponse> reports = ramenShopReportAdminService.getReports(
-                keyword,
-                reportType,
-                page,
-                size
-        );
+            @RequestParam(required = false) RamenShopReportType reportType, @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size) {
+        Page<RamenShopReportAdminResponse> reports = ramenShopReportAdminService.getReports(keyword, reportType, page,
+                size);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(reports)));
     }
+
 }

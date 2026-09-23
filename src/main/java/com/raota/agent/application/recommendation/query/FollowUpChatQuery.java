@@ -8,12 +8,8 @@ import java.util.List;
 public record FollowUpChatQuery(String contextType, List<Long> shopIds, List<Message> messages) {
 
     public FollowUpChatQuery {
-        shopIds = shopIds == null
-                ? null
-                : Collections.unmodifiableList(new ArrayList<>(shopIds));
-        messages = messages == null
-                ? null
-                : Collections.unmodifiableList(new ArrayList<>(messages));
+        shopIds = shopIds == null ? null : Collections.unmodifiableList(new ArrayList<>(shopIds));
+        messages = messages == null ? null : Collections.unmodifiableList(new ArrayList<>(messages));
     }
 
     public record Message(String role, String content) {

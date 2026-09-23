@@ -35,34 +35,28 @@ import org.springframework.web.bind.annotation.RestController;
 public class RagEvaluationAdminController {
 
     private final RagEvaluationRunService runService;
+
     private final tools.jackson.databind.ObjectMapper objectMapper;
 
     @GetMapping("/datasets")
-    public ResponseEntity<ApiResponse<DatasetView>> datasets(
-            @RequestParam(required = false) String version
-    ) {
+    public ResponseEntity<ApiResponse<DatasetView>> datasets(@RequestParam(required = false) String version) {
         return ResponseEntity.ok(ApiResponse.success(runService.dataset(version)));
     }
 
     @PostMapping("/runs")
     public ResponseEntity<ApiResponse<RunStart>> start(
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
-            @Valid @RequestBody(required = false) StartRequest request
-    ) {
+            @Valid @RequestBody(required = false) StartRequest request) {
         String datasetVersion = request == null ? null : request.datasetVersion();
-        RagEvaluationSplit split = request == null || request.split() == null
-                ? RagEvaluationSplit.DEV : request.split();
+        RagEvaluationSplit split = request == null || request.split() == null ? RagEvaluationSplit.DEV
+                : request.split();
         RunStart result = runService.start(datasetVersion, split, idempotencyKey);
-        return ResponseEntity.status(HttpStatus.ACCEPTED)
-                .body(ApiResponse.success("RAG 평가 실행을 시작했습니다.", result));
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(ApiResponse.success("RAG 평가 실행을 시작했습니다.", result));
     }
 
     @GetMapping("/runs")
-    public ResponseEntity<ApiResponse<?>> runs(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String cursor
-    ) {
+    public ResponseEntity<ApiResponse<?>> runs(@RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size, @RequestParam(required = false) String cursor) {
         if (cursor != null && !cursor.isBlank()) {
             return ResponseEntity.ok(ApiResponse.success(runService.listCursor(cursor, size)));
         }
@@ -75,28 +69,20 @@ public class RagEvaluationAdminController {
     }
 
     @GetMapping("/runs/{runId}/cases")
-    public ResponseEntity<ApiResponse<PageResponse<CaseView>>> cases(
-            @PathVariable String runId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "50") int size,
+    public ResponseEntity<ApiResponse<PageResponse<CaseView>>> cases(@PathVariable String runId,
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "50") int size,
             @RequestParam(required = false) RagEvaluationCaseType type,
-            @RequestParam(required = false) RagEvaluationCaseStatus status
-    ) {
+            @RequestParam(required = false) RagEvaluationCaseStatus status) {
         return ResponseEntity.ok(ApiResponse.success(runService.cases(runId, page, size, type, status)));
     }
 
     @PatchMapping("/runs/{runId}/cases/{caseId}/review")
-    public ResponseEntity<ApiResponse<CaseView>> review(
-            @PathVariable String runId,
-            @PathVariable String caseId,
-            @LoginMember Long reviewerMemberId,
-            @Valid @RequestBody ReviewRequest request
-    ) {
-        ReviewCommand command = new ReviewCommand(
-                request.finalScore(), request.approved(), request.verdict(), request.opinion()
-        );
-        return ResponseEntity.ok(ApiResponse.success("평가 사례 검수를 저장했습니다.",
-                runService.review(runId, caseId, reviewerMemberId, command)));
+    public ResponseEntity<ApiResponse<CaseView>> review(@PathVariable String runId, @PathVariable String caseId,
+            @LoginMember Long reviewerMemberId, @Valid @RequestBody ReviewRequest request) {
+        ReviewCommand command = new ReviewCommand(request.finalScore(), request.approved(), request.verdict(),
+                request.opinion());
+        return ResponseEntity
+            .ok(ApiResponse.success("평가 사례 검수를 저장했습니다.", runService.review(runId, caseId, reviewerMemberId, command)));
     }
 
     @PostMapping("/runs/{runId}/finalize")
@@ -106,12 +92,11 @@ public class RagEvaluationAdminController {
 
     @GetMapping("/runs/{runId}/export")
     public ResponseEntity<byte[]> export(@PathVariable String runId) {
-        byte[] payload = objectMapper.writeValueAsString(runService.export(runId))
-                .getBytes(StandardCharsets.UTF_8);
+        byte[] payload = objectMapper.writeValueAsString(runService.export(runId)).getBytes(StandardCharsets.UTF_8);
         return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=rag-evaluation-" + runId + ".json")
-                .body(payload);
+            .contentType(MediaType.APPLICATION_JSON)
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=rag-evaluation-" + runId + ".json")
+            .body(payload);
     }
 
     public record StartRequest(String datasetVersion, RagEvaluationSplit split) {
@@ -119,4 +104,5 @@ public class RagEvaluationAdminController {
 
     public record ReviewRequest(Integer finalScore, Boolean approved, String verdict, String opinion) {
     }
+
 }

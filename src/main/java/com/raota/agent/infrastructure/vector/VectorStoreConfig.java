@@ -28,20 +28,17 @@ public class VectorStoreConfig {
     }
 
     @Bean
-    public VectorStore vectorStore(
-            @Qualifier("oracleVectorJdbcTemplate") JdbcTemplate oracleVectorJdbcTemplate,
-            EmbeddingModel embeddingModel,
-            OracleVectorProperties properties
-    ) {
+    public VectorStore vectorStore(@Qualifier("oracleVectorJdbcTemplate") JdbcTemplate oracleVectorJdbcTemplate,
+            EmbeddingModel embeddingModel, OracleVectorProperties properties) {
         return OracleVectorStore.builder(oracleVectorJdbcTemplate, embeddingModel)
-                .indexType(parseIndexType(properties.indexType()))
-                .distanceType(parseDistanceType(properties.distanceType()))
-                .dimensions(properties.dimensions())
-                .searchAccuracy(properties.searchAccuracy())
-                .initializeSchema(properties.initializeSchema())
-                .forcedNormalization(properties.forcedNormalization())
-                .removeExistingVectorStoreTable(properties.removeExistingVectorStoreTable())
-                .build();
+            .indexType(parseIndexType(properties.indexType()))
+            .distanceType(parseDistanceType(properties.distanceType()))
+            .dimensions(properties.dimensions())
+            .searchAccuracy(properties.searchAccuracy())
+            .initializeSchema(properties.initializeSchema())
+            .forcedNormalization(properties.forcedNormalization())
+            .removeExistingVectorStoreTable(properties.removeExistingVectorStoreTable())
+            .build();
     }
 
     private OracleVectorStore.OracleVectorStoreIndexType parseIndexType(String value) {
@@ -57,4 +54,5 @@ public class VectorStoreConfig {
         }
         return OracleVectorStore.OracleVectorStoreDistanceType.valueOf(value.toUpperCase());
     }
+
 }

@@ -6,10 +6,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public record RagEvaluationDataset(
-        String version,
-        List<RagEvaluationCase> cases
-) {
+public record RagEvaluationDataset(String version, List<RagEvaluationCase> cases) {
 
     public RagEvaluationDataset {
         if (version == null || version.isBlank()) {
@@ -24,11 +21,9 @@ public record RagEvaluationDataset(
     }
 
     public Map<RagEvaluationCaseType, Long> countsByType() {
-        return cases.stream().collect(Collectors.groupingBy(
-                RagEvaluationCase::type,
-                () -> new EnumMap<>(RagEvaluationCaseType.class),
-                Collectors.counting()
-        ));
+        return cases.stream()
+            .collect(Collectors.groupingBy(RagEvaluationCase::type, () -> new EnumMap<>(RagEvaluationCaseType.class),
+                    Collectors.counting()));
     }
 
     private static void validateCases(List<RagEvaluationCase> cases) {

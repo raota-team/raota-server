@@ -15,16 +15,10 @@ class RagEvaluationDatasetLoaderTest {
     @BeforeEach
     void setUp() {
         loader = new RagEvaluationDatasetLoader(JsonMapper.builder().build());
-        ReflectionTestUtils.setField(
-                loader,
-                "latestDatasetResource",
-                new ClassPathResource("evaluation/rag-mobile-v1.json")
-        );
-        ReflectionTestUtils.setField(
-                loader,
-                "v11DatasetResource",
-                new ClassPathResource("evaluation/rag-mobile-v1.1.json")
-        );
+        ReflectionTestUtils.setField(loader, "latestDatasetResource",
+                new ClassPathResource("evaluation/rag-mobile-v1.json"));
+        ReflectionTestUtils.setField(loader, "v11DatasetResource",
+                new ClassPathResource("evaluation/rag-mobile-v1.1.json"));
     }
 
     @Test
@@ -32,4 +26,5 @@ class RagEvaluationDatasetLoaderTest {
         assertThat(loader.load("rag-mobile-v1.1").version()).isEqualTo("rag-mobile-v1.1");
         assertThat(loader.loadDefault().version()).isEqualTo("rag-mobile-v1.2");
     }
+
 }

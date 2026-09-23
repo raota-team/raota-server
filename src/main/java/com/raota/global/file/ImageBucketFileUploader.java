@@ -24,6 +24,7 @@ public class ImageBucketFileUploader implements FileUploader {
     private static final String CLOUDFLARE_IMAGE_DOMAIN = "https://images.raota.net/";
 
     private final S3Presigner s3Presigner;
+
     private final S3Client s3Client;
 
     @Value("${oci.storage.bucket}")
@@ -44,14 +45,15 @@ public class ImageBucketFileUploader implements FileUploader {
     public String upload(MultipartFile file, String dirName) {
         String objectKey = createObjectKey(dirName, resolveExtension(file));
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                .bucket(bucketName)
-                .key(objectKey)
-                .contentType(file.getContentType())
-                .build();
+            .bucket(bucketName)
+            .key(objectKey)
+            .contentType(file.getContentType())
+            .build();
 
         try {
             s3Client.putObject(putObjectRequest, RequestBody.fromBytes(file.getBytes()));
-        } catch (IOException exception) {
+        }
+        catch (IOException exception) {
             throw new IllegalArgumentException("이미지 업로드에 실패했습니다.", exception);
         }
 
@@ -63,15 +65,15 @@ public class ImageBucketFileUploader implements FileUploader {
         String uniqueFilename = createObjectKey(dirName, extension);
 
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                .bucket(bucketName)
-                .key(uniqueFilename)
-                .contentType(StringUtils.hasText(contentType) ? contentType : null)
-                .build();
+            .bucket(bucketName)
+            .key(uniqueFilename)
+            .contentType(StringUtils.hasText(contentType) ? contentType : null)
+            .build();
 
         PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
-                .signatureDuration(Duration.ofMinutes(5))
-                .putObjectRequest(putObjectRequest)
-                .build();
+            .signatureDuration(Duration.ofMinutes(5))
+            .putObjectRequest(putObjectRequest)
+            .build();
 
         PresignedPutObjectRequest presignedRequest = s3Presigner.presignPutObject(presignRequest);
 
@@ -138,7 +140,8 @@ public class ImageBucketFileUploader implements FileUploader {
             }
 
             return filePath;
-        } catch (Exception exception) {
+        }
+        catch (Exception exception) {
             return filePath;
         }
     }
@@ -147,4 +150,5 @@ public class ImageBucketFileUploader implements FileUploader {
         String extension = StringUtils.getFilenameExtension(file.getOriginalFilename());
         return extension == null || extension.isBlank() ? ".png" : "." + extension;
     }
+
 }

@@ -30,18 +30,23 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * 실제 MySQL 제약 이름 매칭은 RagEvaluationRunConcurrencyIntegrationTest가 검증한다.
- * 여기서는 저장 오류 종류에 따른 분기만 Spring 컨텍스트 없이 확인한다.
+ * 실제 MySQL 제약 이름 매칭은 RagEvaluationRunConcurrencyIntegrationTest가 검증한다. 여기서는 저장 오류 종류에 따른
+ * 분기만 Spring 컨텍스트 없이 확인한다.
  */
 class RagEvaluationRunServiceReservationErrorTest {
 
     private static final String KEY = "reservation-error-key";
+
     private static final LockToken LOCK = new LockToken("lock:rag-evaluation:active", "token");
 
     private final RagEvaluationDatasetLoader datasetLoader = mock(RagEvaluationDatasetLoader.class);
+
     private final RagEvaluationRunJpaRepository runRepository = mock(RagEvaluationRunJpaRepository.class);
+
     private final RagEvaluationRunner runner = mock(RagEvaluationRunner.class);
+
     private final RedisLockClient lockClient = mock(RedisLockClient.class);
+
     private RagEvaluationRunService runService;
 
     @BeforeEach
@@ -53,16 +58,10 @@ class RagEvaluationRunServiceReservationErrorTest {
         given(lockClient.tryAcquire(anyString(), any(Duration.class))).willReturn(Optional.of(LOCK));
         given(lockClient.release(LOCK)).willReturn(true);
         given(runRepository.findFirstByStatusInOrderByCreatedAtDesc(anyCollection())).willReturn(Optional.empty());
-        runService = new RagEvaluationRunService(
-                datasetLoader,
-                runRepository,
-                mock(RagEvaluationCaseResultJpaRepository.class),
-                runner,
-                lockClient,
-                new TransactionTemplate(mock(PlatformTransactionManager.class)),
-                objectMapper,
-                "test", "v1", "test", "{}"
-        );
+        runService = new RagEvaluationRunService(datasetLoader, runRepository,
+                mock(RagEvaluationCaseResultJpaRepository.class), runner, lockClient,
+                new TransactionTemplate(mock(PlatformTransactionManager.class)), objectMapper, "test", "v1", "test",
+                "{}");
     }
 
     @Test
@@ -85,18 +84,17 @@ class RagEvaluationRunServiceReservationErrorTest {
                 "Duplicate entry 'ACTIVE' for key 'tb_rag_evaluation_run.uk_rag_evaluation_run_active_slot'"));
 
         assertThatThrownBy(() -> runService.start(null, RagEvaluationSplit.DEV, KEY))
-                .isInstanceOf(RagEvaluationAlreadyRunningException.class);
+            .isInstanceOf(RagEvaluationAlreadyRunningException.class);
         verify(lockClient).release(LOCK);
     }
 
     @Test
     @DisplayName("멱등키 UNIQUE 충돌은 먼저 저장된 실행을 다시 조회해 반환한다")
     void idempotencyKeyViolationReturnsExistingRun() {
-        RagEvaluationRunEntity existing = RagEvaluationRunEntity.queued(
-                "existing-run", "rag-mobile-v1.1", RagEvaluationSplit.DEV, KEY,
-                LocalDateTime.now().plusHours(24), "test", "v1", "test", "{}");
-        given(runRepository.findByIdempotencyKey(KEY))
-                .willReturn(Optional.empty(), Optional.empty(), Optional.of(existing));
+        RagEvaluationRunEntity existing = RagEvaluationRunEntity.queued("existing-run", "rag-mobile-v1.1",
+                RagEvaluationSplit.DEV, KEY, LocalDateTime.now().plusHours(24), "test", "v1", "test", "{}");
+        given(runRepository.findByIdempotencyKey(KEY)).willReturn(Optional.empty(), Optional.empty(),
+                Optional.of(existing));
         given(runRepository.saveAndFlush(any())).willThrow(violation(
                 "Duplicate entry '" + KEY + "' for key 'tb_rag_evaluation_run.uk_rag_evaluation_run_idempotency_key'"));
 
@@ -107,9 +105,8 @@ class RagEvaluationRunServiceReservationErrorTest {
     }
 
     private static DataIntegrityViolationException violation(String databaseMessage) {
-        return new DataIntegrityViolationException(
-                "could not execute statement",
-                new SQLIntegrityConstraintViolationException(databaseMessage)
-        );
+        return new DataIntegrityViolationException("could not execute statement",
+                new SQLIntegrityConstraintViolationException(databaseMessage));
     }
+
 }

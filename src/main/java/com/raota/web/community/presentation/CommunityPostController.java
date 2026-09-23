@@ -34,14 +34,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class CommunityPostController implements CommunityApi {
 
     private final PostService postService;
+
     private final PostLikeService postLikeService;
+
     private final PostQueryService postQueryService;
 
     @Override
     @PostMapping("/posts/{postId}/likes")
-    public ResponseEntity<ApiResponse<Boolean>> togglePostLike(
-            @PathVariable Long postId,
-            @LoginMember Long memberId) {
+    public ResponseEntity<ApiResponse<Boolean>> togglePostLike(@PathVariable Long postId, @LoginMember Long memberId) {
         return ResponseEntity.ok(ApiResponse.success(postLikeService.toggleLike(postId, memberId)));
     }
 
@@ -49,25 +49,21 @@ public class CommunityPostController implements CommunityApi {
     @GetMapping("/posts")
     public ResponseEntity<ApiResponse<PageResponse<PostCardResult>>> getCommunityPosts(
             @PageableDefault(size = 10, direction = Sort.Direction.DESC) Pageable pageable,
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) Long ramenShopId) {
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(
-                postQueryService.searchPostCards(new PostSearchQuery(category, ramenShopId), pageable)
-        )));
+            @RequestParam(required = false) String category, @RequestParam(required = false) Long ramenShopId) {
+        return ResponseEntity.ok(ApiResponse.success(PageResponse
+            .from(postQueryService.searchPostCards(new PostSearchQuery(category, ramenShopId), pageable))));
     }
 
     @Override
     @GetMapping("/posts/{postId}")
-    public ResponseEntity<ApiResponse<PostDetailResult>> getCommunityPostDetail(
-            @PathVariable Long postId,
+    public ResponseEntity<ApiResponse<PostDetailResult>> getCommunityPostDetail(@PathVariable Long postId,
             @LoginMember(required = false) Long memberId) {
         return ResponseEntity.ok(ApiResponse.success(postQueryService.getPostDetail(postId, memberId)));
     }
 
     @Override
     @PostMapping("/posts/{postId}/views")
-    public ResponseEntity<ApiResponse<Void>> increasePostViewCount(
-            @PathVariable Long postId) {
+    public ResponseEntity<ApiResponse<Void>> increasePostViewCount(@PathVariable Long postId) {
         postService.increaseViewCount(postId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -75,8 +71,7 @@ public class CommunityPostController implements CommunityApi {
     @Override
     @PostMapping("/posts")
     public ResponseEntity<ApiResponse<PostDetailResult>> createCommunityPost(
-            @RequestBody CommunityCreatePostRequest request,
-            @LoginMember Long memberId) {
+            @RequestBody CommunityCreatePostRequest request, @LoginMember Long memberId) {
 
         Long postId = postService.createPost(request.toCommand(memberId));
         return ResponseEntity.ok(ApiResponse.success(postQueryService.getPostDetail(postId, memberId)));
@@ -84,18 +79,15 @@ public class CommunityPostController implements CommunityApi {
 
     @PatchMapping("/posts/{postId}")
     @Override
-    public ResponseEntity<ApiResponse<PostDetailResult>> updateCommunityPost(
-            @PathVariable Long postId,
-            @RequestBody CommunityUpdatePostRequest request,
-            @LoginMember Long memberId) {
+    public ResponseEntity<ApiResponse<PostDetailResult>> updateCommunityPost(@PathVariable Long postId,
+            @RequestBody CommunityUpdatePostRequest request, @LoginMember Long memberId) {
         postService.updatePost(request.toCommand(postId, memberId));
         return ResponseEntity.ok(ApiResponse.success(postQueryService.getPostDetail(postId, memberId)));
     }
 
     @Override
     @DeleteMapping("/posts/{postId}")
-    public ResponseEntity<ApiResponse<Void>> deleteCommunityPost(
-            @PathVariable Long postId,
+    public ResponseEntity<ApiResponse<Void>> deleteCommunityPost(@PathVariable Long postId,
             @LoginMember Long memberId) {
         postService.deletePost(postId, memberId);
         return ResponseEntity.ok(ApiResponse.success(null));
@@ -106,8 +98,8 @@ public class CommunityPostController implements CommunityApi {
     public ResponseEntity<ApiResponse<PageResponse<RamenShopOptionResult>>> getRamenShopOptions(
             @PageableDefault(size = 10, direction = Sort.Direction.DESC) Pageable pageable,
             @RequestParam(required = false) String keyword) {
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(
-                postQueryService.getRamenShopOptions(keyword, pageable)
-        )));
+        return ResponseEntity
+            .ok(ApiResponse.success(PageResponse.from(postQueryService.getRamenShopOptions(keyword, pageable))));
     }
+
 }

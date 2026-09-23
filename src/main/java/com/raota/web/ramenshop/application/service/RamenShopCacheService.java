@@ -28,54 +28,36 @@ import org.springframework.transaction.annotation.Transactional;
 public class RamenShopCacheService {
 
     private final RamenShopRepository ramenShopRepository;
+
     private final RamenLogQueryPort ramenLogQueryPort;
+
     private final FileUploader fileUploader;
 
     @Transactional(readOnly = true)
     @Cacheable(cacheNames = "ramenShopDetail", key = "#shopId.toString()")
     public RamenShopBasicInfoResponse getShopDetail(Long shopId) {
         RamenShop ramenShop = ramenShopRepository.findByIdAndPublishedTrue(shopId)
-                .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
+            .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
 
-        return RamenShopBasicInfoResponse.from(
-                ramenShop,
-                fileUploader.getAccessibleUrl(ramenShop.getImageUrl()),
-                normalMenusOf(ramenShop).stream()
-                        .map(NormalMenuDto::from)
-                        .toList(),
-                eventMenusOf(ramenShop).stream()
-                        .map(EventMenuDto::from)
-                        .toList(),
-                false
-        );
+        return RamenShopBasicInfoResponse.from(ramenShop, fileUploader.getAccessibleUrl(ramenShop.getImageUrl()),
+                normalMenusOf(ramenShop).stream().map(NormalMenuDto::from).toList(),
+                eventMenusOf(ramenShop).stream().map(EventMenuDto::from).toList(), false);
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(
-            cacheNames = "ramenShopList",
+    @Cacheable(cacheNames = "ramenShopList",
             key = "T(String).valueOf(#city) + ':' + T(String).valueOf(#district) + ':' + T(String).valueOf(#keyword) + ':' + T(String).valueOf(#tag) + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort.toString()",
-            condition = "#pageable.pageNumber == 0"
-    )
-    public Page<RamenShopResponse> getFirstPageShopList(String city, String district, String keyword, String tag, Pageable pageable) {
+            condition = "#pageable.pageNumber == 0")
+    public Page<RamenShopResponse> getFirstPageShopList(String city, String district, String keyword, String tag,
+            Pageable pageable) {
         Page<RamenShopResponse> shops = ramenShopRepository.searchStores(city, district, keyword, tag, pageable);
-        List<Long> shopIds = shops.getContent().stream()
-                .map(RamenShopResponse::id)
-                .toList();
+        List<Long> shopIds = shops.getContent().stream().map(RamenShopResponse::id).toList();
         Map<Long, RamenLogPreview> previewsByShopId = findRamenLogPreviews(shopIds);
 
-        return shops
-                .map(store -> new RamenShopResponse(
-                        store.id(),
-                        store.name(),
-                        store.tagLine(),
-                        store.region(),
-                        store.tags(),
-                        fileUploader.getAccessibleUrl(store.thumbnailUrl()),
-                        store.visits(),
-                        store.viewCount(),
-                        previewsByShopId.getOrDefault(store.id(), RamenLogPreview.EMPTY).count(),
-                        previewsByShopId.getOrDefault(store.id(), RamenLogPreview.EMPTY).imageUrls()
-                ));
+        return shops.map(store -> new RamenShopResponse(store.id(), store.name(), store.tagLine(), store.region(),
+                store.tags(), fileUploader.getAccessibleUrl(store.thumbnailUrl()), store.visits(), store.viewCount(),
+                previewsByShopId.getOrDefault(store.id(), RamenLogPreview.EMPTY).count(),
+                previewsByShopId.getOrDefault(store.id(), RamenLogPreview.EMPTY).imageUrls()));
     }
 
     private Map<Long, RamenLogPreview> findRamenLogPreviews(List<Long> shopIds) {
@@ -85,10 +67,8 @@ public class RamenShopCacheService {
 
         Map<Long, RamenLogPreview> result = new LinkedHashMap<>();
         for (RamenLogQueryPort.Preview row : ramenLogQueryPort.findPreviewRowsByShopIds(shopIds)) {
-            RamenLogPreview preview = result.computeIfAbsent(
-                    row.ramenShopId(),
-                    ignored -> new RamenLogPreview(row.ramenLogCount(), new ArrayList<>())
-            );
+            RamenLogPreview preview = result.computeIfAbsent(row.ramenShopId(),
+                    ignored -> new RamenLogPreview(row.ramenLogCount(), new ArrayList<>()));
             preview.imageUrls().add(fileUploader.getAccessibleUrl(row.imageUrl()));
         }
         return result;
@@ -106,5 +86,7 @@ public class RamenShopCacheService {
 
     private record RamenLogPreview(long count, List<String> imageUrls) {
         private static final RamenLogPreview EMPTY = new RamenLogPreview(0L, List.of());
+
     }
+
 }

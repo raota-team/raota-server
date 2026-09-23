@@ -54,8 +54,9 @@ class RedisLockClientIntegrationTest extends BaseIntegrationTest {
         String key = key();
         LockToken expired = lockClient.tryAcquire(key, Duration.ofMillis(200)).orElseThrow();
 
-        Awaitility.await().atMost(Duration.ofSeconds(3))
-                .until(() -> lockClient.tryAcquire(key, Duration.ofSeconds(30)).isPresent());
+        Awaitility.await()
+            .atMost(Duration.ofSeconds(3))
+            .until(() -> lockClient.tryAcquire(key, Duration.ofSeconds(30)).isPresent());
 
         assertThat(lockClient.release(expired)).isFalse();
         assertThat(redisTemplate.hasKey(key)).isTrue();
@@ -65,10 +66,11 @@ class RedisLockClientIntegrationTest extends BaseIntegrationTest {
     @DisplayName("TTL은 0보다 커야 한다")
     void rejectsNonPositiveTtl() {
         assertThatThrownBy(() -> lockClient.tryAcquire(key(), Duration.ZERO))
-                .isInstanceOf(IllegalArgumentException.class);
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     private static String key() {
         return "test:lock:" + UUID.randomUUID();
     }
+
 }

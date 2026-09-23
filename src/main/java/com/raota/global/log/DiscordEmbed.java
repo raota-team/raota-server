@@ -9,9 +9,15 @@ import lombok.Data;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class DiscordEmbed {
+
     private String title;
+
     private String description;
+
     private Integer color;
+
     private String timestamp;
+
     private List<EmbedField> fields;
+
 }

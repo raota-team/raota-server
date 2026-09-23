@@ -23,10 +23,9 @@ import org.hibernate.annotations.CreationTimestamp;
 
 @Getter
 @Entity
-@Table(
-        name = "tb_ramen_log_like",
-        uniqueConstraints = @UniqueConstraint(name = "uk_ramen_log_like", columnNames = {"ramen_log_id", "member_id"})
-)
+@Table(name = "tb_ramen_log_like",
+        uniqueConstraints = @UniqueConstraint(name = "uk_ramen_log_like",
+                columnNames = { "ramen_log_id", "member_id" }))
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
@@ -47,4 +46,5 @@ public class RamenLogLike {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
 }

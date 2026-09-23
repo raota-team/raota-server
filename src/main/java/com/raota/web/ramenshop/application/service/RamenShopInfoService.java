@@ -25,29 +25,30 @@ import org.springframework.transaction.annotation.Transactional;
 public class RamenShopInfoService {
 
     private final RamenShopCacheService ramenShopCacheService;
+
     private final RamenShopRepository ramenShopRepository;
+
     private final BookmarkRepository bookmarkRepository;
+
     private final RamenLogQueryPort ramenLogQueryPort;
+
     private final CacheInvalidationPublisher cacheInvalidationPublisher;
+
     private final RamenShopViewRankingService ramenShopViewRankingService;
 
     @Transactional(readOnly = true)
     public List<RecentVerifiedShopResponse> getRecentVerifiedShops(int limit) {
-        return ramenLogQueryPort.findRecentVerifiedShops(limit).stream()
-                .map(shop -> new RecentVerifiedShopResponse(
-                        shop.id(),
-                        shop.name(),
-                        shop.location(),
-                        shop.imageUrl(),
-                        shop.photoCount()
-                ))
-                .toList();
+        return ramenLogQueryPort.findRecentVerifiedShops(limit)
+            .stream()
+            .map(shop -> new RecentVerifiedShopResponse(shop.id(), shop.name(), shop.location(), shop.imageUrl(),
+                    shop.photoCount()))
+            .toList();
     }
 
     @Transactional(readOnly = true)
     public RamenShopBasicInfoResponse getShopDetailInfo(Long shopId, Long memberId) {
         RamenShop ramenShop = ramenShopRepository.findByIdAndPublishedTrue(shopId)
-                .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
+            .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
         int viewCount = ramenShop.getStats().viewCount();
 
         RamenShopBasicInfoResponse cachedResponse = ramenShopCacheService.getShopDetail(shopId);
@@ -63,21 +64,18 @@ public class RamenShopInfoService {
     @Transactional(readOnly = true)
     public RamenShopMenuOptionsResponse getShopMenuOptions(Long shopId) {
         RamenShop ramenShop = ramenShopRepository.findByIdAndPublishedTrue(shopId)
-                .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
+            .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
         NormalMenus normalMenus = ramenShop.getNormalMenus();
         EventMenus eventMenus = ramenShop.getEventMenus();
 
-        return RamenShopMenuOptionsResponse.from(
-                ramenShop,
-                normalMenus == null ? List.of() : normalMenus.getValues(),
-                eventMenus == null ? List.of() : eventMenus.getValues()
-        );
+        return RamenShopMenuOptionsResponse.from(ramenShop, normalMenus == null ? List.of() : normalMenus.getValues(),
+                eventMenus == null ? List.of() : eventMenus.getValues());
     }
 
     @Transactional
     public void increaseViewCount(Long shopId) {
         RamenShop ramenShop = ramenShopRepository.findByIdAndPublishedTrue(shopId)
-                .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
+            .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
         ramenShop.increaseViewCount();
         ramenShopViewRankingService.increaseTodayViewCount(shopId);
 
@@ -86,21 +84,12 @@ public class RamenShopInfoService {
     }
 
     @Transactional(readOnly = true)
-    public Page<RamenShopResponse> getRamenShopList(
-            String city,
-            String district,
-            String keyword,
-            String tag,
-            RamenShopSortType sort,
-            Pageable pageable
-    ) {
+    public Page<RamenShopResponse> getRamenShopList(String city, String district, String keyword, String tag,
+            RamenShopSortType sort, Pageable pageable) {
         RamenShopSortType sortType = RamenShopSortType.defaultIfNull(sort);
-        Pageable sortedPageable = PageRequest.of(
-                pageable.getPageNumber(),
-                pageable.getPageSize(),
-                sortType.toSort()
-        );
+        Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sortType.toSort());
 
         return ramenShopCacheService.getFirstPageShopList(city, district, keyword, tag, sortedPageable);
     }
+
 }

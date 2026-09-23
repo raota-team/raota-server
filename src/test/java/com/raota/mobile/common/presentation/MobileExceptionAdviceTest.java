@@ -38,48 +38,35 @@ class MobileExceptionAdviceTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(new MobileExceptionController())
-                .setControllerAdvice(
-                        new GlobalExceptionHandler(),
-                        new MobileExceptionAdvice(),
-                        new MobileResponseMetaAdvice()
-                )
-                .addFilters(new RequestIdFilter())
-                .build();
+            .setControllerAdvice(new GlobalExceptionHandler(), new MobileExceptionAdvice(),
+                    new MobileResponseMetaAdvice())
+            .addFilters(new RequestIdFilter())
+            .build();
     }
 
     @Test
     void MobileException은_해당_오류_코드와_requestId로_응답한다() throws Exception {
         MvcResult result = expectFailure(
-                get("/mobile-exception/conflict").header(RequestIdFilter.HEADER, "client-request-id"),
-                409,
-                "CONFLICT"
-        );
+                get("/mobile-exception/conflict").header(RequestIdFilter.HEADER, "client-request-id"), 409, "CONFLICT");
 
         assertThat(JsonPath.<List<Map<String, Object>>>read(body(result), "$.error.fields")).isEmpty();
         assertThat(JsonPath.<String>read(body(result), "$.meta.requestId"))
-                .isEqualTo(result.getResponse().getHeader(RequestIdFilter.HEADER));
+            .isEqualTo(result.getResponse().getHeader(RequestIdFilter.HEADER));
     }
 
     @Test
     void 잘못된_JSON은_필드_오류_없이_400_VALIDATION_ERROR로_응답한다() throws Exception {
         MvcResult result = expectFailure(
-                post("/mobile-exception/body").contentType(MediaType.APPLICATION_JSON).content("{"),
-                400,
-                "VALIDATION_ERROR"
-        );
+                post("/mobile-exception/body").contentType(MediaType.APPLICATION_JSON).content("{"), 400,
+                "VALIDATION_ERROR");
 
         assertThat(JsonPath.<List<Map<String, Object>>>read(body(result), "$.error.fields")).isEmpty();
     }
 
     @Test
     void 잘못된_열거형_값은_중첩_경로를_포함한_필드_오류로_응답한다() throws Exception {
-        MvcResult result = expectFailure(
-                post("/mobile-exception/enum")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"items\":[{\"type\":\"UNKNOWN\"}] }"),
-                400,
-                "VALIDATION_ERROR"
-        );
+        MvcResult result = expectFailure(post("/mobile-exception/enum").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"items\":[{\"type\":\"UNKNOWN\"}] }"), 400, "VALIDATION_ERROR");
 
         assertThat(JsonPath.<String>read(body(result), "$.error.fields[0].field")).isEqualTo("items[0].type");
         assertThat(JsonPath.<String>read(body(result), "$.error.fields[0].code")).isEqualTo("INVALID_FORMAT");
@@ -88,15 +75,11 @@ class MobileExceptionAdviceTest {
     @Test
     void Valid_검증에_실패한_필드는_NotBlank_코드로_응답한다() throws Exception {
         MvcResult result = expectFailure(
-                post("/mobile-exception/validated")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\" \"}"),
-                400,
-                "VALIDATION_ERROR"
-        );
+                post("/mobile-exception/validated").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\" \"}"),
+                400, "VALIDATION_ERROR");
 
         assertThat(JsonPath.<List<Map<String, Object>>>read(body(result), "$.error.fields"))
-                .anySatisfy(field -> assertThat(field).containsEntry("code", "NotBlank"));
+            .anySatisfy(field -> assertThat(field).containsEntry("code", "NotBlank"));
     }
 
     @Test
@@ -125,11 +108,8 @@ class MobileExceptionAdviceTest {
 
     @Test
     void 지원하지_않는_Content_Type은_400_VALIDATION_ERROR로_응답한다() throws Exception {
-        expectFailure(
-                post("/mobile-exception/body").contentType(MediaType.TEXT_PLAIN).content("plain"),
-                400,
-                "VALIDATION_ERROR"
-        );
+        expectFailure(post("/mobile-exception/body").contentType(MediaType.TEXT_PLAIN).content("plain"), 400,
+                "VALIDATION_ERROR");
     }
 
     @Test
@@ -154,16 +134,13 @@ class MobileExceptionAdviceTest {
         expectFailure(get("/mobile-exception/illegal-argument"), 500, "INTERNAL_ERROR");
     }
 
-    private MvcResult expectFailure(
-            org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder request,
-            int expectedStatus,
-            String expectedCode
-    ) throws Exception {
+    private MvcResult expectFailure(org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder request,
+            int expectedStatus, String expectedCode) throws Exception {
         MvcResult result = mockMvc.perform(request)
-                .andExpect(status().is(expectedStatus))
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.code").value(expectedCode))
-                .andReturn();
+            .andExpect(status().is(expectedStatus))
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.error.code").value(expectedCode))
+            .andReturn();
         return result;
     }
 
@@ -228,17 +205,25 @@ class MobileExceptionAdviceTest {
         void illegalArgument() {
             throw new IllegalArgumentException("bad");
         }
+
     }
 
-    record BodyRequest(String value) {}
+    record BodyRequest(String value) {
+    }
 
-    record EnumRequest(List<EnumItem> items) {}
+    record EnumRequest(List<EnumItem> items) {
+    }
 
-    record EnumItem(ItemType type) {}
+    record EnumItem(ItemType type) {
+    }
 
     enum ItemType {
+
         FIRST
+
     }
 
-    record ValidatedRequest(@NotBlank(message = "이름을 입력해 주세요.") String name) {}
+    record ValidatedRequest(@NotBlank(message = "이름을 입력해 주세요.") String name) {
+    }
+
 }

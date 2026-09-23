@@ -9,7 +9,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Component
 @Profile("!prod")
-public class LocalFileUploader implements FileUploader{
+public class LocalFileUploader implements FileUploader {
+
     @Override
     public String upload(MultipartFile file, String dirName) {
         String dummyFilename = dirName + "/" + UUID.randomUUID() + resolveExtension(file);
@@ -40,4 +41,5 @@ public class LocalFileUploader implements FileUploader{
         String extension = StringUtils.getFilenameExtension(file.getOriginalFilename());
         return extension == null || extension.isBlank() ? ".png" : "." + extension;
     }
+
 }

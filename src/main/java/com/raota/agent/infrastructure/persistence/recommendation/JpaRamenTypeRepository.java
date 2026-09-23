@@ -4,4 +4,5 @@ import com.raota.agent.infrastructure.persistence.recommendation.entity.RamenTyp
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface JpaRamenTypeRepository extends JpaRepository<RamenTypeEntity, Long> {
+
 }

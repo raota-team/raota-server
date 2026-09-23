@@ -51,17 +51,16 @@ class RamenShopInfoServiceTest {
         Long shopId = 1L;
         Long memberId = 10L;
         RamenShopBasicInfoResponse cachedResponse = RamenShopBasicInfoResponse.builder()
-                .id(shopId)
-                .name("멘야 하쿠")
-                .is_bookmarked(false)
-                .build();
+            .id(shopId)
+            .name("멘야 하쿠")
+            .is_bookmarked(false)
+            .build();
 
-        given(ramenShopRepository.findByIdAndPublishedTrue(shopId)).willReturn(Optional.of(RamenShop.builder()
-                .name("멘야 하쿠")
-                .build()));
+        given(ramenShopRepository.findByIdAndPublishedTrue(shopId))
+            .willReturn(Optional.of(RamenShop.builder().name("멘야 하쿠").build()));
         given(ramenShopCacheService.getShopDetail(shopId)).willReturn(cachedResponse);
         given(bookmarkRepository.existsByMemberProfileIdAndRamenShopIdAndIsDeletedFalse(memberId, shopId))
-                .willReturn(true);
+            .willReturn(true);
 
         RamenShopBasicInfoResponse response = ramenShopInfoService.getShopDetailInfo(shopId, memberId);
 
@@ -71,9 +70,7 @@ class RamenShopInfoServiceTest {
     @Test
     void increaseViewCountUpdatesShopAndRanking() {
         Long shopId = 1L;
-        RamenShop shop = RamenShop.builder()
-                .name("멘야 하쿠")
-                .build();
+        RamenShop shop = RamenShop.builder().name("멘야 하쿠").build();
 
         given(ramenShopRepository.findByIdAndPublishedTrue(shopId)).willReturn(Optional.of(shop));
 
@@ -88,14 +85,15 @@ class RamenShopInfoServiceTest {
     @Test
     void shopDetailResponseSerializesSnakeCaseBookmarkFieldOnly() throws Exception {
         RamenShopBasicInfoResponse response = RamenShopBasicInfoResponse.builder()
-                .id(1L)
-                .name("멘야 하쿠")
-                .is_bookmarked(true)
-                .build();
+            .id(1L)
+            .name("멘야 하쿠")
+            .is_bookmarked(true)
+            .build();
 
         JsonNode json = new ObjectMapper().readTree(new ObjectMapper().writeValueAsString(response));
 
         assertThat(json.get("is_bookmarked").asBoolean()).isTrue();
         assertThat(json.has("isBookmarked")).isFalse();
     }
+
 }

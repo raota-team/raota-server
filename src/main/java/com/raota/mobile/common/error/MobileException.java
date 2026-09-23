@@ -14,4 +14,5 @@ public final class MobileException extends RuntimeException {
     public MobileErrorCode code() {
         return code;
     }
+
 }

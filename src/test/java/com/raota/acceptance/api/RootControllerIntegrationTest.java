@@ -26,20 +26,17 @@ class RootControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void rootReturnsOk() throws Exception {
-        mockMvc.perform(get("/"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("OK"));
+        mockMvc.perform(get("/")).andExpect(status().isOk()).andExpect(content().string("OK"));
     }
 
     @Test
     void faviconReturnsNoContent() throws Exception {
-        mockMvc.perform(get("/favicon.ico"))
-                .andExpect(status().isNoContent());
+        mockMvc.perform(get("/favicon.ico")).andExpect(status().isNoContent());
     }
 
     @Test
     void missingResourceReturnsNotFound() throws Exception {
-        mockMvc.perform(get("/missing-resource"))
-                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/missing-resource")).andExpect(status().isNotFound());
     }
+
 }

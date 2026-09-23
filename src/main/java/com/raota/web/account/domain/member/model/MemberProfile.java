@@ -128,62 +128,75 @@ public class MemberProfile {
     }
 
     public void increasePostCount() {
-        if (this.memberActivityStats == null) this.memberActivityStats = MemberActivityStats.init();
+        if (this.memberActivityStats == null)
+            this.memberActivityStats = MemberActivityStats.init();
         this.memberActivityStats = this.memberActivityStats.increasePost();
     }
 
     public void decreasePostCount() {
-        if (this.memberActivityStats == null) this.memberActivityStats = MemberActivityStats.init();
+        if (this.memberActivityStats == null)
+            this.memberActivityStats = MemberActivityStats.init();
         this.memberActivityStats = this.memberActivityStats.decreasePost();
     }
 
     public void increaseCommentCount() {
-        if (this.memberActivityStats == null) this.memberActivityStats = MemberActivityStats.init();
+        if (this.memberActivityStats == null)
+            this.memberActivityStats = MemberActivityStats.init();
         this.memberActivityStats = this.memberActivityStats.increaseComment();
     }
 
     public void decreaseCommentCount() {
-        if (this.memberActivityStats == null) this.memberActivityStats = MemberActivityStats.init();
+        if (this.memberActivityStats == null)
+            this.memberActivityStats = MemberActivityStats.init();
         this.memberActivityStats = this.memberActivityStats.decreaseComment();
     }
 
     public void increaseBookmarkCount() {
-        if (this.memberActivityStats == null) this.memberActivityStats = MemberActivityStats.init();
+        if (this.memberActivityStats == null)
+            this.memberActivityStats = MemberActivityStats.init();
         this.memberActivityStats = this.memberActivityStats.increaseBookmark();
     }
 
     public void decreaseBookmarkCount() {
-        if (this.memberActivityStats == null) this.memberActivityStats = MemberActivityStats.init();
+        if (this.memberActivityStats == null)
+            this.memberActivityStats = MemberActivityStats.init();
         this.memberActivityStats = this.memberActivityStats.decreaseBookmark();
     }
 
     public void increasePhotoCount() {
-        if (this.memberActivityStats == null) this.memberActivityStats = MemberActivityStats.init();
+        if (this.memberActivityStats == null)
+            this.memberActivityStats = MemberActivityStats.init();
         this.memberActivityStats = this.memberActivityStats.increasePhoto();
     }
 
     public void decreasePhotoCount() {
-        if (this.memberActivityStats == null) this.memberActivityStats = MemberActivityStats.init();
+        if (this.memberActivityStats == null)
+            this.memberActivityStats = MemberActivityStats.init();
         this.memberActivityStats = this.memberActivityStats.decreasePhoto();
     }
 
     public void increaseVisitedRestaurantCount() {
-        if (this.memberActivityStats == null) this.memberActivityStats = MemberActivityStats.init();
+        if (this.memberActivityStats == null)
+            this.memberActivityStats = MemberActivityStats.init();
         this.memberActivityStats = this.memberActivityStats.increaseVisited();
     }
 
     public void decreaseVisitedRestaurantCount() {
-        if (this.memberActivityStats == null) this.memberActivityStats = MemberActivityStats.init();
+        if (this.memberActivityStats == null)
+            this.memberActivityStats = MemberActivityStats.init();
         this.memberActivityStats = this.memberActivityStats.decreaseVisit();
     }
 
     // Builder용 커스텀 메서드
     public static class MemberProfileBuilder {
+
         private MemberActivityStats memberActivityStats;
 
         public MemberProfileBuilder stats(MemberActivityStats stats) {
             this.memberActivityStats = stats;
             return this;
         }
+
     }
+
 }

@@ -15,8 +15,11 @@ import org.springframework.stereotype.Service;
 public class RecommendationService {
 
     private final ReviewSummaryService reviewSummaryService;
+
     private final FollowUpChatService followUpChatService;
+
     private final DailyCurationService dailyCurationService;
+
     private final FileUploader fileUploader;
 
     public ReviewSummaryResponse summarizeReviews(ReviewSummaryQuery query) {
@@ -28,9 +31,7 @@ public class RecommendationService {
     }
 
     public TodayRecommendationResponse getTodayRecommendation() {
-        return dailyCurationService.getLatestCuration()
-                .map(this::toTodayRecommendationResponse)
-                .orElse(null);
+        return dailyCurationService.getLatestCuration().map(this::toTodayRecommendationResponse).orElse(null);
     }
 
     public TodayRecommendationResponse generateTodayRecommendation() {
@@ -41,4 +42,5 @@ public class RecommendationService {
         String imageUrl = fileUploader.getAccessibleUrl(curation.getEffectiveImageUrl());
         return TodayRecommendationResponse.from(curation, imageUrl);
     }
+
 }

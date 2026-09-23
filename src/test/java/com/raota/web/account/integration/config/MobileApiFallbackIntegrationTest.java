@@ -49,46 +49,43 @@ class MobileApiFallbackIntegrationTest extends BaseIntegrationTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
-                .addFilters(requestIdFilter)
-                .apply(springSecurity())
-                .build();
+            .addFilters(requestIdFilter)
+            .apply(springSecurity())
+            .build();
     }
 
     @Test
     void 인증된_사용자의_없는_v2_경로는_v2_404_응답을_반환한다() throws Exception {
-        MvcResult result = mockMvc.perform(get("/api/v2/no-such-path")
-                        .header(HttpHeaders.AUTHORIZATION, bearerToken()))
-                .andExpect(status().isNotFound())
-                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"))
-                .andReturn();
+        MvcResult result = mockMvc.perform(get("/api/v2/no-such-path").header(HttpHeaders.AUTHORIZATION, bearerToken()))
+            .andExpect(status().isNotFound())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"))
+            .andReturn();
 
         JsonNode body = objectMapper.readTree(result.getResponse().getContentAsByteArray());
         assertThat(body.get("meta").get("requestId").asString())
-                .isEqualTo(result.getResponse().getHeader(RequestIdFilter.HEADER));
+            .isEqualTo(result.getResponse().getHeader(RequestIdFilter.HEADER));
     }
 
     @Test
     void 인증된_사용자의_없는_v1_경로는_본문_없는_404를_유지한다() throws Exception {
-        mockMvc.perform(get("/no-such-v1-path")
-                        .header(HttpHeaders.AUTHORIZATION, bearerToken()))
-                .andExpect(status().isNotFound())
-                .andExpect(content().string(""));
+        mockMvc.perform(get("/no-such-v1-path").header(HttpHeaders.AUTHORIZATION, bearerToken()))
+            .andExpect(status().isNotFound())
+            .andExpect(content().string(""));
     }
 
     @Test
     void 인증되지_않은_사용자의_없는_v2_경로는_기존_401_응답을_유지한다() throws Exception {
         mockMvc.perform(get("/api/v2/no-such-path"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
     }
 
     private String bearerToken() {
-        MemberProfile member = memberRepository.saveAndFlush(MemberProfile.builder()
-                .nickname("v2 오류 응답 테스트 회원")
-                .role(MemberRole.USER)
-                .build());
+        MemberProfile member = memberRepository
+            .saveAndFlush(MemberProfile.builder().nickname("v2 오류 응답 테스트 회원").role(MemberRole.USER).build());
         return "Bearer " + jwtTokenProvider.createAccessToken(member.getId());
     }
+
 }

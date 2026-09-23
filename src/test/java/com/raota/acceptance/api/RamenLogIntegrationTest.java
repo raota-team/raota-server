@@ -28,14 +28,25 @@ class RamenLogIntegrationTest extends BaseIntegrationTest {
     @LocalServerPort
     private int port;
 
-    @Autowired private RamenLogLikeRepository ramenLogLikeRepository;
-    @Autowired private RamenLogRepository ramenLogRepository;
-    @Autowired private RamenShopRepository ramenShopRepository;
-    @Autowired private MemberRepository memberRepository;
-    @Autowired private JwtTokenProvider jwtTokenProvider;
+    @Autowired
+    private RamenLogLikeRepository ramenLogLikeRepository;
+
+    @Autowired
+    private RamenLogRepository ramenLogRepository;
+
+    @Autowired
+    private RamenShopRepository ramenShopRepository;
+
+    @Autowired
+    private MemberRepository memberRepository;
+
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
 
     private MemberProfile member;
+
     private RamenShop shop;
+
     private String accessToken;
 
     @BeforeEach
@@ -46,161 +57,127 @@ class RamenLogIntegrationTest extends BaseIntegrationTest {
         ramenShopRepository.deleteAll();
         memberRepository.deleteAll();
 
-        member = memberRepository.save(MemberProfile.builder()
-                .nickname("라멘로그테스터")
-                .build());
-        shop = ramenShopRepository.save(RamenShop.builder()
-                .name("멘야 로그")
-                .address(Address.of("서울", "마포구", "월드컵로", "1층"))
-                .build());
+        member = memberRepository.save(MemberProfile.builder().nickname("라멘로그테스터").build());
+        shop = ramenShopRepository
+            .save(RamenShop.builder().name("멘야 로그").address(Address.of("서울", "마포구", "월드컵로", "1층")).build());
         accessToken = jwtTokenProvider.createAccessToken(member.getId());
     }
 
     @Test
     void ramenLogCrudVisibilityAndLikeFlow() {
-        Long logId = given()
-                .header("Authorization", "Bearer " + accessToken)
-                .contentType(ContentType.JSON)
-                .body(payload(true))
-        .when()
-                .post("/ramen-logs")
-        .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("data.menuName", equalTo("특제 돈코츠"))
-                .body("data.visitedAt", equalTo("2026-07-01"))
-                .body("data.public", equalTo(true))
-                .body("data.mine", equalTo(true))
-                .extract()
-                .jsonPath()
-                .getLong("data.id");
+        Long logId = given().header("Authorization", "Bearer " + accessToken)
+            .contentType(ContentType.JSON)
+            .body(payload(true))
+            .when()
+            .post("/ramen-logs")
+            .then()
+            .statusCode(HttpStatus.OK.value())
+            .body("data.menuName", equalTo("특제 돈코츠"))
+            .body("data.visitedAt", equalTo("2026-07-01"))
+            .body("data.public", equalTo(true))
+            .body("data.mine", equalTo(true))
+            .extract()
+            .jsonPath()
+            .getLong("data.id");
 
-        given()
-        .when()
-                .get("/ramen-logs?size=8&sort=LATEST")
-        .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("data.items.size()", equalTo(1))
-                .body("data.items[0].liked", equalTo(false))
-                .body("data.items[0].mine", equalTo(false));
+        given().when()
+            .get("/ramen-logs?size=8&sort=LATEST")
+            .then()
+            .statusCode(HttpStatus.OK.value())
+            .body("data.items.size()", equalTo(1))
+            .body("data.items[0].liked", equalTo(false))
+            .body("data.items[0].mine", equalTo(false));
 
-        given()
-                .header("Authorization", "Bearer " + accessToken)
-        .when()
-                .post("/ramen-logs/{logId}/likes", logId)
-        .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("data.liked", equalTo(true))
-                .body("data.likeCount", equalTo(1));
+        given().header("Authorization", "Bearer " + accessToken)
+            .when()
+            .post("/ramen-logs/{logId}/likes", logId)
+            .then()
+            .statusCode(HttpStatus.OK.value())
+            .body("data.liked", equalTo(true))
+            .body("data.likeCount", equalTo(1));
 
-        given()
-                .header("Authorization", "Bearer " + accessToken)
-                .contentType(ContentType.JSON)
-                .body(payload(false))
-        .when()
-                .patch("/ramen-logs/{logId}", logId)
-        .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("data.public", equalTo(false));
+        given().header("Authorization", "Bearer " + accessToken)
+            .contentType(ContentType.JSON)
+            .body(payload(false))
+            .when()
+            .patch("/ramen-logs/{logId}", logId)
+            .then()
+            .statusCode(HttpStatus.OK.value())
+            .body("data.public", equalTo(false));
 
-        given()
-        .when()
-                .get("/ramen-logs?size=8")
-        .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("data.items.size()", equalTo(0));
+        given().when()
+            .get("/ramen-logs?size=8")
+            .then()
+            .statusCode(HttpStatus.OK.value())
+            .body("data.items.size()", equalTo(0));
 
-        given()
-                .header("Authorization", "Bearer " + accessToken)
-        .when()
-                .get("/users/me/ramen-logs?size=8")
-        .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("data.items.size()", equalTo(1))
-                .body("data.items[0].public", equalTo(false))
-                .body("data.items[0].liked", equalTo(true));
+        given().header("Authorization", "Bearer " + accessToken)
+            .when()
+            .get("/users/me/ramen-logs?size=8")
+            .then()
+            .statusCode(HttpStatus.OK.value())
+            .body("data.items.size()", equalTo(1))
+            .body("data.items[0].public", equalTo(false))
+            .body("data.items[0].liked", equalTo(true));
     }
 
     @Test
     void privateLogCategoryHidesOtherwisePublicLogs() {
-        Long logId = given()
-                .header("Authorization", "Bearer " + accessToken)
-                .contentType(ContentType.JSON)
-                .body(payload(true))
-                .post("/ramen-logs")
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .extract()
-                .jsonPath()
-                .getLong("data.id");
+        Long logId = given().header("Authorization", "Bearer " + accessToken)
+            .contentType(ContentType.JSON)
+            .body(payload(true))
+            .post("/ramen-logs")
+            .then()
+            .statusCode(HttpStatus.OK.value())
+            .extract()
+            .jsonPath()
+            .getLong("data.id");
 
-        given()
-                .header("Authorization", "Bearer " + accessToken)
-                .contentType(ContentType.JSON)
-                .body(Map.of(
-                        "logs", false,
-                        "visits", true,
-                        "posts", true,
-                        "comments", true
-                ))
-                .patch("/users/me/privacy-settings")
-                .then()
-                .statusCode(HttpStatus.OK.value());
+        given().header("Authorization", "Bearer " + accessToken)
+            .contentType(ContentType.JSON)
+            .body(Map.of("logs", false, "visits", true, "posts", true, "comments", true))
+            .patch("/users/me/privacy-settings")
+            .then()
+            .statusCode(HttpStatus.OK.value());
 
-        given()
-                .get("/ramen-logs?size=8")
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("data.items.size()", equalTo(0));
+        given().get("/ramen-logs?size=8")
+            .then()
+            .statusCode(HttpStatus.OK.value())
+            .body("data.items.size()", equalTo(0));
 
-        given()
-                .get("/ramen-logs/{logId}", logId)
-                .then()
-                .statusCode(HttpStatus.FORBIDDEN.value());
+        given().get("/ramen-logs/{logId}", logId).then().statusCode(HttpStatus.FORBIDDEN.value());
 
-        given()
-                .header("Authorization", "Bearer " + accessToken)
-                .get("/ramen-logs/{logId}", logId)
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("data.mine", equalTo(true));
+        given().header("Authorization", "Bearer " + accessToken)
+            .get("/ramen-logs/{logId}", logId)
+            .then()
+            .statusCode(HttpStatus.OK.value())
+            .body("data.mine", equalTo(true));
     }
 
     @Test
     void publicFeedIncludesLogsFromDeletedMembers() {
-        given()
-                .header("Authorization", "Bearer " + accessToken)
-                .contentType(ContentType.JSON)
-                .body(payload(true))
-                .post("/ramen-logs")
-                .then()
-                .statusCode(HttpStatus.OK.value());
+        given().header("Authorization", "Bearer " + accessToken)
+            .contentType(ContentType.JSON)
+            .body(payload(true))
+            .post("/ramen-logs")
+            .then()
+            .statusCode(HttpStatus.OK.value());
 
         member.softDelete(LocalDateTime.now());
         memberRepository.saveAndFlush(member);
 
-        given()
-                .get("/ramen-logs?size=8")
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("data.items.size()", equalTo(1));
+        given().get("/ramen-logs?size=8")
+            .then()
+            .statusCode(HttpStatus.OK.value())
+            .body("data.items.size()", equalTo(1));
     }
 
     private Map<String, Object> payload(boolean isPublic) {
         return Map.of(
-                "shopId", shop.getId(),
-                "menuName", "특제 돈코츠",
-                "ramenType", "돈코츠",
-                "imageUrl", "proof/ramen-log.webp",
-                "visitedAt", "2026-07-01",
-                "note", "진하지만 끝맛이 깔끔했다.",
-                "tasteNotes", Map.of(
-                        "broth", List.of("진해요"),
-                        "noodle", List.of("단단해요"),
-                        "seasoning", List.of("딱 좋아요"),
-                        "topping", List.of("차슈 좋아요")
-                ),
-                "revisit", "DEFINITELY",
-                "public", isPublic
-        );
+                "shopId", shop.getId(), "menuName", "특제 돈코츠", "ramenType", "돈코츠", "imageUrl", "proof/ramen-log.webp",
+                "visitedAt", "2026-07-01", "note", "진하지만 끝맛이 깔끔했다.", "tasteNotes", Map.of("broth", List.of("진해요"),
+                        "noodle", List.of("단단해요"), "seasoning", List.of("딱 좋아요"), "topping", List.of("차슈 좋아요")),
+                "revisit", "DEFINITELY", "public", isPublic);
     }
+
 }

@@ -45,4 +45,5 @@ public class OAuth2UserInfoFactory {
         Object value = source.get(key);
         return value == null ? null : String.valueOf(value);
     }
+
 }

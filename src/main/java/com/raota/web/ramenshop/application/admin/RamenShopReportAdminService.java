@@ -14,22 +14,22 @@ import org.springframework.transaction.annotation.Transactional;
 public class RamenShopReportAdminService {
 
     private static final int DEFAULT_PAGE_SIZE = 30;
+
     private static final int MAX_PAGE_SIZE = 100;
 
     private final RamenShopReportRepository ramenShopReportRepository;
 
     @Transactional(readOnly = true)
-    public Page<RamenShopReportAdminResponse> getReports(String keyword, RamenShopReportType reportType, int page, int size) {
+    public Page<RamenShopReportAdminResponse> getReports(String keyword, RamenShopReportType reportType, int page,
+            int size) {
         String normalizedKeyword = normalize(keyword);
         Long keywordId = parseId(normalizedKeyword);
 
-        return ramenShopReportRepository.findAdminReports(
-                normalizedKeyword == null,
-                normalizedKeyword == null ? "%" : "%" + normalizedKeyword.toLowerCase() + "%",
-                keywordId,
-                reportType,
-                PageRequest.of(Math.max(page, 0), normalizeSize(size))
-        ).map(RamenShopReportAdminResponse::from);
+        return ramenShopReportRepository
+            .findAdminReports(normalizedKeyword == null,
+                    normalizedKeyword == null ? "%" : "%" + normalizedKeyword.toLowerCase() + "%", keywordId,
+                    reportType, PageRequest.of(Math.max(page, 0), normalizeSize(size)))
+            .map(RamenShopReportAdminResponse::from);
     }
 
     private int normalizeSize(int size) {
@@ -53,8 +53,10 @@ public class RamenShopReportAdminService {
         }
         try {
             return Long.parseLong(keyword);
-        } catch (NumberFormatException exception) {
+        }
+        catch (NumberFormatException exception) {
             return null;
         }
     }
+
 }

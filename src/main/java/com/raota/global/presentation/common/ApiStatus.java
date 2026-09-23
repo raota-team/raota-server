@@ -2,8 +2,7 @@ package com.raota.global.presentation.common;
 
 public enum ApiStatus {
 
-    SUCCESS(true),
-    FAIL(false);
+    SUCCESS(true), FAIL(false);
 
     private final boolean status;
 

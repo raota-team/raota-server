@@ -11,17 +11,17 @@ import org.springframework.stereotype.Component;
 public class CacheInvalidationPublisher {
 
     private final RedisTemplate<String, Object> cacheRedisTemplate;
+
     private final CacheProperties cacheProperties;
 
     public void publish(String cacheName, String key) {
         log.debug("Publishing cache invalidation - cache: {}, key: {}", cacheName, key);
-        cacheRedisTemplate.convertAndSend(
-                cacheProperties.invalidationTopic(),
-                new CacheInvalidationMessage(cacheName, key)
-        );
+        cacheRedisTemplate.convertAndSend(cacheProperties.invalidationTopic(),
+                new CacheInvalidationMessage(cacheName, key));
     }
 
     public void publishAll(String cacheName) {
         publish(cacheName, "ALL");
     }
+
 }

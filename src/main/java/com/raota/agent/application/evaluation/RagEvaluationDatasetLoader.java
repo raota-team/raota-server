@@ -40,8 +40,10 @@ public class RagEvaluationDatasetLoader {
     private RagEvaluationDataset read(Resource resource) {
         try (InputStream inputStream = resource.getInputStream()) {
             return objectMapper.readValue(inputStream, RagEvaluationDataset.class);
-        } catch (IOException exception) {
+        }
+        catch (IOException exception) {
             throw new IllegalStateException("RAG 평가셋을 읽을 수 없습니다.", exception);
         }
     }
+
 }

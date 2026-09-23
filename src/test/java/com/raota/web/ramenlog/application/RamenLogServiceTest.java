@@ -37,14 +37,29 @@ import org.springframework.security.access.AccessDeniedException;
 @ExtendWith(MockitoExtension.class)
 class RamenLogServiceTest {
 
-    @Mock private RamenLogRepository ramenLogRepository;
-    @Mock private RamenLogLikeRepository ramenLogLikeRepository;
-    @Mock private MemberRepository memberRepository;
-    @Mock private RamenShopRepository ramenShopRepository;
-    @Mock private FileUploader fileUploader;
-    @Mock private CacheInvalidationPublisher cacheInvalidationPublisher;
-    @Mock private MemberActivityVisibilityService memberActivityVisibilityService;
-    @InjectMocks private RamenLogService ramenLogService;
+    @Mock
+    private RamenLogRepository ramenLogRepository;
+
+    @Mock
+    private RamenLogLikeRepository ramenLogLikeRepository;
+
+    @Mock
+    private MemberRepository memberRepository;
+
+    @Mock
+    private RamenShopRepository ramenShopRepository;
+
+    @Mock
+    private FileUploader fileUploader;
+
+    @Mock
+    private CacheInvalidationPublisher cacheInvalidationPublisher;
+
+    @Mock
+    private MemberActivityVisibilityService memberActivityVisibilityService;
+
+    @InjectMocks
+    private RamenLogService ramenLogService;
 
     @Test
     void createsRamenLogFromFrontendPayload() {
@@ -75,9 +90,8 @@ class RamenLogServiceTest {
         RamenLog log = log(100L, author, true);
         given(ramenLogRepository.findByIdAndIsDeletedFalse(100L)).willReturn(Optional.of(log));
         given(memberRepository.findByIdAndDeletedAtIsNull(2L)).willReturn(Optional.of(liker));
-        given(ramenLogLikeRepository.findByRamenLogIdAndMemberId(100L, 2L))
-                .willReturn(Optional.empty())
-                .willReturn(Optional.of(RamenLogLike.builder().ramenLog(log).member(liker).build()));
+        given(ramenLogLikeRepository.findByRamenLogIdAndMemberId(100L, 2L)).willReturn(Optional.empty())
+            .willReturn(Optional.of(RamenLogLike.builder().ramenLog(log).member(liker).build()));
 
         RamenLogLikeResponse liked = ramenLogService.toggleLike(100L, 2L);
         RamenLogLikeResponse unliked = ramenLogService.toggleLike(100L, 2L);
@@ -92,26 +106,14 @@ class RamenLogServiceTest {
         given(ramenLogRepository.findByIdAndIsDeletedFalse(100L)).willReturn(Optional.of(log));
 
         assertThatThrownBy(() -> ramenLogService.update(100L, request(true), 2L))
-                .isInstanceOf(AccessDeniedException.class);
+            .isInstanceOf(AccessDeniedException.class);
     }
 
     private static RamenLogUpsertRequest request(boolean isPublic) {
-        return new RamenLogUpsertRequest(
-                10L,
-                " 특제 돈코츠 ",
-                "돈코츠",
-                "proof/log.webp",
-                LocalDate.of(2026, 7, 1),
-                "맛있다",
-                new RamenLogUpsertRequest.TasteNotesRequest(
-                        List.of("진해요"),
-                        List.of("단단해요"),
-                        List.of("딱 좋아요"),
-                        List.of("차슈 좋아요")
-                ),
-                RevisitIntention.DEFINITELY,
-                isPublic
-        );
+        return new RamenLogUpsertRequest(10L, " 특제 돈코츠 ", "돈코츠", "proof/log.webp", LocalDate.of(2026, 7, 1), "맛있다",
+                new RamenLogUpsertRequest.TasteNotesRequest(List.of("진해요"), List.of("단단해요"), List.of("딱 좋아요"),
+                        List.of("차슈 좋아요")),
+                RevisitIntention.DEFINITELY, isPublic);
     }
 
     private static MemberProfile member(Long id) {
@@ -119,23 +121,20 @@ class RamenLogServiceTest {
     }
 
     private static RamenShop shop(Long id) {
-        return RamenShop.builder()
-                .id(id)
-                .name("멘야 하루")
-                .address(Address.of("서울", "마포구", "월드컵로", null))
-                .build();
+        return RamenShop.builder().id(id).name("멘야 하루").address(Address.of("서울", "마포구", "월드컵로", null)).build();
     }
 
     private static RamenLog log(Long id, MemberProfile author, boolean isPublic) {
         return RamenLog.builder()
-                .id(id)
-                .author(author)
-                .ramenShop(shop(10L))
-                .menuName("특제 돈코츠")
-                .ramenType("돈코츠")
-                .imageUrl("proof/log.webp")
-                .revisit(RevisitIntention.DEFINITELY)
-                .isPublic(isPublic)
-                .build();
+            .id(id)
+            .author(author)
+            .ramenShop(shop(10L))
+            .menuName("특제 돈코츠")
+            .ramenType("돈코츠")
+            .imageUrl("proof/log.webp")
+            .revisit(RevisitIntention.DEFINITELY)
+            .isPublic(isPublic)
+            .build();
     }
+
 }

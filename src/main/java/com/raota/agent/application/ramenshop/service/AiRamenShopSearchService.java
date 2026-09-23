@@ -18,21 +18,20 @@ import org.springframework.stereotype.Service;
 public class AiRamenShopSearchService {
 
     private final RamenShopSearchDocumentPort searchDocumentPort;
+
     private final RamenShopRepository ramenShopRepository;
+
     private final FileUrlPort fileUrlPort;
+
     private final BookmarkService bookmarkService;
+
     private final AiRamenShopSearchQueryParser queryParser;
+
     private final AiRamenShopSearchReranker reranker;
 
-
-    public AiRamenShopSearchService(
-            RamenShopSearchDocumentPort searchDocumentPort,
-            RamenShopRepository ramenShopRepository,
-            FileUrlPort fileUrlPort,
-            BookmarkService bookmarkService,
-            AiRamenShopSearchQueryParser queryParser,
-            AiRamenShopSearchReranker reranker
-    ) {
+    public AiRamenShopSearchService(RamenShopSearchDocumentPort searchDocumentPort,
+            RamenShopRepository ramenShopRepository, FileUrlPort fileUrlPort, BookmarkService bookmarkService,
+            AiRamenShopSearchQueryParser queryParser, AiRamenShopSearchReranker reranker) {
         this.bookmarkService = bookmarkService;
         this.searchDocumentPort = searchDocumentPort;
         this.ramenShopRepository = ramenShopRepository;
@@ -56,31 +55,22 @@ public class AiRamenShopSearchService {
         return reranker.rerank(searchDocumentPort.searchShopDocuments(query.expandedQuery(), 30, 0.35), query, 6);
     }
 
-    private AiRamenShopSearchResult buildSearchResponse(
-            List<AiRamenShopSearchHit> searchResult,
-            Long memberId) {
+    private AiRamenShopSearchResult buildSearchResponse(List<AiRamenShopSearchHit> searchResult, Long memberId) {
         List<AiRamenShopSearchResult.ShopResult> recommendedShops = searchResult.stream()
-                .map(hit -> toRecommendedShopResponse(hit, memberId))
-                .toList();
+            .map(hit -> toRecommendedShopResponse(hit, memberId))
+            .toList();
 
         return new AiRamenShopSearchResult(recommendedShops);
     }
 
-    private AiRamenShopSearchResult.ShopResult toRecommendedShopResponse(
-            AiRamenShopSearchHit hit,
-            Long memberId) {
+    private AiRamenShopSearchResult.ShopResult toRecommendedShopResponse(AiRamenShopSearchHit hit, Long memberId) {
         RamenShop shop = ramenShopRepository.findById(hit.shopId()).orElseThrow();
 
-        return new AiRamenShopSearchResult.ShopResult(
-                shop.getId(),
-                shop.getName(),
-                primaryTag(shop),
-                shop.getAddress() == null ? "" : shop.getAddress().fullAddress(),
-                shop.getDescription(),
+        return new AiRamenShopSearchResult.ShopResult(shop.getId(), shop.getName(), primaryTag(shop),
+                shop.getAddress() == null ? "" : shop.getAddress().fullAddress(), shop.getDescription(),
                 fileUrlPort.getAccessibleUrl(shop.getImageUrl()),
                 Math.min(100, (int) Math.round(hit.finalScore() * 100)),
-                bookmarkService.isBookmarked(memberId, shop.getId())
-        );
+                bookmarkService.isBookmarked(memberId, shop.getId()));
     }
 
     private String primaryTag(RamenShop shop) {
@@ -89,4 +79,5 @@ public class AiRamenShopSearchService {
         }
         return shop.getTags().getFirst();
     }
+
 }

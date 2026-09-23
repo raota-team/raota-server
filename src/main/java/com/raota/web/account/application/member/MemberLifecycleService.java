@@ -19,13 +19,19 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberLifecycleService {
 
     public static final int REJOIN_WAIT_DAYS = 30;
+
     public static final String WITHDRAWN_MEMBER_MESSAGE = "탈퇴 처리된 계정입니다. 탈퇴일로부터 30일 후 재가입할 수 있습니다.";
+
     public static final String WITHDRAW_COMPLETE_MESSAGE = "회원 탈퇴가 완료되었습니다. 탈퇴일로부터 30일 후 재가입할 수 있습니다.";
 
     private final MemberRepository memberRepository;
+
     private final MemberProvisioningService memberProvisioningService;
+
     private final AuthAccountService authAccountService;
+
     private final SocialAccountRepository socialAccountRepository;
+
     private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
@@ -53,4 +59,5 @@ public class MemberLifecycleService {
         }
         return expiredMembers.size();
     }
+
 }

@@ -18,17 +18,15 @@ public class CacheConfig {
     public CacheManager cacheManager() {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager();
 
-        cacheProperties.caches().forEach((cacheName, spec) ->
-                cacheManager.registerCustomCache(
-                        cacheName,
-                        Caffeine.newBuilder()
-                                .recordStats()
-                                .expireAfterWrite(Duration.ofSeconds(spec.ttlSeconds()))
-                                .maximumSize(spec.maximumSize())
-                                .build()
-                )
-        );
+        cacheProperties.caches()
+            .forEach((cacheName, spec) -> cacheManager.registerCustomCache(cacheName,
+                    Caffeine.newBuilder()
+                        .recordStats()
+                        .expireAfterWrite(Duration.ofSeconds(spec.ttlSeconds()))
+                        .maximumSize(spec.maximumSize())
+                        .build()));
 
         return cacheManager;
     }
+
 }

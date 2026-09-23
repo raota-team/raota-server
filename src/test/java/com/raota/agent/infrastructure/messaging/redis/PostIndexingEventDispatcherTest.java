@@ -33,4 +33,5 @@ class PostIndexingEventDispatcherTest {
         // then
         verify(messagePublisher).publish(MessagingTopics.POST_INDEXING, event);
     }
+
 }

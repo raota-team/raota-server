@@ -10,6 +10,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 public class VoteResultsDto {
+
     @JsonProperty("menu_id")
     private Long menuId;
 
@@ -25,11 +26,12 @@ public class VoteResultsDto {
     @Setter
     private boolean isVoted = false;
 
-    public void toggleVoted(){
-        if(isVoted){
+    public void toggleVoted() {
+        if (isVoted) {
             this.isVoted = false;
             return;
         }
         this.isVoted = true;
     }
+
 }

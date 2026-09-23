@@ -81,38 +81,29 @@ public class RamenShop {
     private EventMenus eventMenus = EventMenus.init();
 
     public void addNormalMenu(NormalMenu menu) {
-        if (normalMenus == null) normalMenus = NormalMenus.init();
+        if (normalMenus == null)
+            normalMenus = NormalMenus.init();
         normalMenus.add(menu);
         menu.setShop(this);
     }
 
-    public void addEventMenu(EventMenu eventMenu){
-        if (eventMenus == null) eventMenus = EventMenus.init();
+    public void addEventMenu(EventMenu eventMenu) {
+        if (eventMenus == null)
+            eventMenus = EventMenus.init();
         eventMenus.add(eventMenu);
         eventMenu.setShop(this);
     }
 
-    public void updateBasicInfo(String name, String branchName, String naverMapId, Address address, BusinessHours businessHours,
-                                List<String> tags, String instagramUrl, String catchTableUrl,
-                                String description, String imageUrl) {
-        updateBasicInfo(
-                name,
-                branchName,
-                naverMapId,
-                address,
-                businessHours,
-                tags,
-                instagramUrl,
-                catchTableUrl,
-                description,
-                this.detailedDescription,
-                imageUrl
-        );
+    public void updateBasicInfo(String name, String branchName, String naverMapId, Address address,
+            BusinessHours businessHours, List<String> tags, String instagramUrl, String catchTableUrl,
+            String description, String imageUrl) {
+        updateBasicInfo(name, branchName, naverMapId, address, businessHours, tags, instagramUrl, catchTableUrl,
+                description, this.detailedDescription, imageUrl);
     }
 
-    public void updateBasicInfo(String name, String branchName, String naverMapId, Address address, BusinessHours businessHours,
-                                List<String> tags, String instagramUrl, String catchTableUrl,
-                                String description, String detailedDescription, String imageUrl) {
+    public void updateBasicInfo(String name, String branchName, String naverMapId, Address address,
+            BusinessHours businessHours, List<String> tags, String instagramUrl, String catchTableUrl,
+            String description, String detailedDescription, String imageUrl) {
         this.name = Objects.requireNonNull(name, "name");
         this.branchName = branchName;
         this.naverMapId = naverMapId;
@@ -147,27 +138,33 @@ public class RamenShop {
     }
 
     public void increaseBookmarkCount() {
-        if (this.stats == null) this.stats = ShopStats.init();
+        if (this.stats == null)
+            this.stats = ShopStats.init();
         this.stats = this.stats.increaseBookmark();
     }
 
     public void decreaseBookmarkCount() {
-        if (this.stats == null) this.stats = ShopStats.init();
+        if (this.stats == null)
+            this.stats = ShopStats.init();
         this.stats = this.stats.decreaseBookmark();
     }
 
     public void increaseViewCount() {
-        if (this.stats == null) this.stats = ShopStats.init();
+        if (this.stats == null)
+            this.stats = ShopStats.init();
         this.stats = this.stats.increaseView();
     }
 
     public void increaseVisitCount() {
-        if (this.stats == null) this.stats = ShopStats.init();
+        if (this.stats == null)
+            this.stats = ShopStats.init();
         this.stats = this.stats.increaseVisit();
     }
 
     public void decreaseVisitCount() {
-        if (this.stats == null) this.stats = ShopStats.init();
+        if (this.stats == null)
+            this.stats = ShopStats.init();
         this.stats = this.stats.decreaseVisit();
     }
+
 }

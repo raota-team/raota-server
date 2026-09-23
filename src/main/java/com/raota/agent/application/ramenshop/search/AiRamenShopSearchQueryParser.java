@@ -11,20 +11,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class AiRamenShopSearchQueryParser {
 
-    private static final Map<String, List<String>> REGION_ALIASES = Map.ofEntries(
-            Map.entry("홍대", List.of("서울 마포구")),
-            Map.entry("합정", List.of("서울 마포구")),
-            Map.entry("상수", List.of("서울 마포구")),
-            Map.entry("연남", List.of("서울 마포구")),
-            Map.entry("망원", List.of("서울 마포구")),
-            Map.entry("강남", List.of("서울 강남구", "서울 서초구")),
-            Map.entry("성수", List.of("서울 성동구")),
-            Map.entry("건대", List.of("서울 광진구")),
-            Map.entry("잠실", List.of("서울 송파구")),
-            Map.entry("이태원", List.of("서울 용산구")),
-            Map.entry("명동", List.of("서울 중구")),
-            Map.entry("혜화", List.of("서울 종로구"))
-    );
+    private static final Map<String, List<String>> REGION_ALIASES = Map.ofEntries(Map.entry("홍대", List.of("서울 마포구")),
+            Map.entry("합정", List.of("서울 마포구")), Map.entry("상수", List.of("서울 마포구")), Map.entry("연남", List.of("서울 마포구")),
+            Map.entry("망원", List.of("서울 마포구")), Map.entry("강남", List.of("서울 강남구", "서울 서초구")),
+            Map.entry("성수", List.of("서울 성동구")), Map.entry("건대", List.of("서울 광진구")), Map.entry("잠실", List.of("서울 송파구")),
+            Map.entry("이태원", List.of("서울 용산구")), Map.entry("명동", List.of("서울 중구")), Map.entry("혜화", List.of("서울 종로구")));
 
     public ParsedAiRamenShopSearchQuery parse(String query) {
         String normalizedQuery = query.toLowerCase(Locale.ROOT);
@@ -39,18 +30,12 @@ public class AiRamenShopSearchQueryParser {
         });
 
         List<String> expansions = foodKeywords.stream()
-                .filter(keyword -> !normalizedQuery.contains(keyword.toLowerCase(Locale.ROOT)))
-                .toList();
-        String expandedQuery = expansions.isEmpty()
-                ? query
-                : query + " " + String.join(" ", expansions);
+            .filter(keyword -> !normalizedQuery.contains(keyword.toLowerCase(Locale.ROOT)))
+            .toList();
+        String expandedQuery = expansions.isEmpty() ? query : query + " " + String.join(" ", expansions);
 
-        return new ParsedAiRamenShopSearchQuery(
-                normalizedQuery,
-                expandedQuery,
-                foodTypes,
-                foodKeywords,
-                List.copyOf(regions)
-        );
+        return new ParsedAiRamenShopSearchQuery(normalizedQuery, expandedQuery, foodTypes, foodKeywords,
+                List.copyOf(regions));
     }
+
 }

@@ -18,7 +18,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-
 @AllArgsConstructor
 @Entity
 @Builder
@@ -59,4 +58,5 @@ public class EventMenu {
     public void setShop(RamenShop ramenShop) {
         this.ramenShop = ramenShop;
     }
+
 }

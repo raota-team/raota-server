@@ -16,9 +16,8 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * 앱과 맺은 v2 응답 형식 계약을 Spring Boot 자동 구성 JsonMapper 기준으로 확인한다.
- * 운영 설정 파일은 OCI Vault 로더 때문에 테스트에서 읽을 수 없으므로 Boot 기본 설정 기준으로 확인한다.
- * 앱이 키 존재를 전제로 파싱하므로 null 필드도 생략하지 않아야 한다.
+ * 앱과 맺은 v2 응답 형식 계약을 Spring Boot 자동 구성 JsonMapper 기준으로 확인한다. 운영 설정 파일은 OCI Vault 로더 때문에
+ * 테스트에서 읽을 수 없으므로 Boot 기본 설정 기준으로 확인한다. 앱이 키 존재를 전제로 파싱하므로 null 필드도 생략하지 않아야 한다.
  */
 class MobileApiResponseJsonTest {
 
@@ -26,9 +25,8 @@ class MobileApiResponseJsonTest {
 
     @BeforeAll
     static void setUp() {
-        new ApplicationContextRunner()
-                .withConfiguration(AutoConfigurations.of(JacksonAutoConfiguration.class))
-                .run(context -> jsonMapper = context.getBean(JsonMapper.class));
+        new ApplicationContextRunner().withConfiguration(AutoConfigurations.of(JacksonAutoConfiguration.class))
+            .run(context -> jsonMapper = context.getBean(JsonMapper.class));
     }
 
     @Test
@@ -58,11 +56,8 @@ class MobileApiResponseJsonTest {
 
     @Test
     void 필드_오류는_field_code_message로_직렬화된다() {
-        MobileError error = MobileError.of(
-                MobileErrorCode.VALIDATION_ERROR,
-                "입력값을 확인해 주세요.",
-                List.of(new MobileFieldError("nickname", "NotBlank", "닉네임을 입력해 주세요."))
-        );
+        MobileError error = MobileError.of(MobileErrorCode.VALIDATION_ERROR, "입력값을 확인해 주세요.",
+                List.of(new MobileFieldError("nickname", "NotBlank", "닉네임을 입력해 주세요.")));
         JsonNode field = toJson(MobileApiResponse.failure(error)).get("error").get("fields").get(0);
 
         assertThat(fieldNames(field)).containsExactly("field", "code", "message");
@@ -71,11 +66,8 @@ class MobileApiResponseJsonTest {
 
     @Test
     void ID는_문자열_시각은_UTC_ISO_8601_날짜는_YYYY_MM_DD로_직렬화된다() {
-        V2Sample sample = new V2Sample(
-                "9007199254740993",
-                Instant.parse("2026-09-23T02:00:00.123456Z"),
-                LocalDate.parse("2026-09-23")
-        );
+        V2Sample sample = new V2Sample("9007199254740993", Instant.parse("2026-09-23T02:00:00.123456Z"),
+                LocalDate.parse("2026-09-23"));
         JsonNode data = toJson(MobileApiResponse.success(sample)).get("data");
 
         assertThat(data.get("id").isString()).isTrue();
@@ -96,4 +88,5 @@ class MobileApiResponseJsonTest {
     private static List<String> fieldNames(JsonNode node) {
         return node.propertyNames().stream().toList();
     }
+
 }

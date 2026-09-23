@@ -11,13 +11,10 @@ import com.raota.support.BaseIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
-
 
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,8 +50,8 @@ public class AuthTokenRotationTest extends BaseIntegrationTest {
         refreshTokenStore.save(memberId, oldToken, Instant.now().minusSeconds(10));
 
         assertThatThrownBy(() -> authAccountService.refresh(oldToken))
-                .isInstanceOf(AuthenticationRequiredException.class)
-                .hasMessageContaining("만료된 리프레시 토큰입니다.");
+            .isInstanceOf(AuthenticationRequiredException.class)
+            .hasMessageContaining("만료된 리프레시 토큰입니다.");
 
         assertThat(refreshTokenStore.findByToken(oldToken)).isEmpty();
     }
@@ -64,13 +61,12 @@ public class AuthTokenRotationTest extends BaseIntegrationTest {
         String invalidToken = "none-exists-token";
 
         assertThatThrownBy(() -> authAccountService.refresh(invalidToken))
-                .isInstanceOf(AuthenticationRequiredException.class)
-                .hasMessageContaining("유효하지 않은 리프레시 토큰입니다.");
+            .isInstanceOf(AuthenticationRequiredException.class)
+            .hasMessageContaining("유효하지 않은 리프레시 토큰입니다.");
     }
 
     private Long saveActiveMember() {
-        return memberRepository.save(MemberProfile.builder()
-                .nickname("토큰테스터")
-                .build()).getId();
+        return memberRepository.save(MemberProfile.builder().nickname("토큰테스터").build()).getId();
     }
+
 }

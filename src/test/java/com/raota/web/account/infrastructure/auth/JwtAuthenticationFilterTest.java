@@ -34,15 +34,20 @@ public class JwtAuthenticationFilterTest {
 
     @Mock
     JwtTokenProvider jwtTokenProvider;
+
     @Mock
     RestAuthenticationEntryPoint restAuthenticationEntryPoint;
+
     @Mock
     MemberProvisioningService memberProvisioningService;
+
     @InjectMocks
     JwtAuthenticationFilter jwtAuthenticationFilter;
 
     MockHttpServletRequest request;
+
     MockHttpServletResponse response;
+
     FilterChain filterChain;
 
     @BeforeEach
@@ -65,9 +70,8 @@ public class JwtAuthenticationFilterTest {
 
         assertThat(auth).isNotNull();
         assertThat(auth.getPrincipal()).isInstanceOf(AuthenticatedMember.class);
-        assertThat(auth.getAuthorities())
-                .extracting(authority -> authority.getAuthority())
-                .containsExactly("ROLE_USER", "ROLE_ADMIN");
+        assertThat(auth.getAuthorities()).extracting(authority -> authority.getAuthority())
+            .containsExactly("ROLE_USER", "ROLE_ADMIN");
 
         verify(filterChain).doFilter(request, response);
     }
@@ -100,7 +104,7 @@ public class JwtAuthenticationFilterTest {
         String invalidToken = "invalid-token";
         request.addHeader("Authorization", "Bearer " + invalidToken);
         given(jwtTokenProvider.getMemberId(invalidToken))
-                .willThrow(new JwtAuthenticationException("유효하지 않은 토큰입니다.", new RuntimeException()));
+            .willThrow(new JwtAuthenticationException("유효하지 않은 토큰입니다.", new RuntimeException()));
 
         jwtAuthenticationFilter.doFilter(request, response, filterChain);
 
@@ -122,4 +126,5 @@ public class JwtAuthenticationFilterTest {
         verify(restAuthenticationEntryPoint).commence(any(), any(), any());
         verify(filterChain, never()).doFilter(request, response);
     }
+
 }

@@ -15,7 +15,8 @@ public class PostIndexingEventDispatcher {
     private final MessagePublisher messagePublisher;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void dispatchToRedisStream(PostIndexingEvent event){
-        messagePublisher.publish(MessagingTopics.POST_INDEXING,event);
+    public void dispatchToRedisStream(PostIndexingEvent event) {
+        messagePublisher.publish(MessagingTopics.POST_INDEXING, event);
     }
+
 }

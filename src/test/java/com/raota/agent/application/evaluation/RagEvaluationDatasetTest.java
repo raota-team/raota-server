@@ -20,26 +20,22 @@ class RagEvaluationDatasetTest {
             assertThat(dataset.cases()).hasSize(30);
             assertThat(dataset.casesFor(RagEvaluationSplit.DEV)).hasSize(20);
             assertThat(dataset.casesFor(RagEvaluationSplit.HOLDOUT)).hasSize(10);
-            assertThat(dataset.countsByType())
-                    .containsEntry(RagEvaluationCaseType.SEARCH, 12L)
-                    .containsEntry(RagEvaluationCaseType.SUMMARY, 6L)
-                    .containsEntry(RagEvaluationCaseType.CHAT, 6L)
-                    .containsEntry(RagEvaluationCaseType.COMPARE, 6L);
+            assertThat(dataset.countsByType()).containsEntry(RagEvaluationCaseType.SEARCH, 12L)
+                .containsEntry(RagEvaluationCaseType.SUMMARY, 6L)
+                .containsEntry(RagEvaluationCaseType.CHAT, 6L)
+                .containsEntry(RagEvaluationCaseType.COMPARE, 6L);
             assertThat(dataset.cases()).filteredOn(RagEvaluationCase::contractOnly)
-                    .extracting(RagEvaluationCase::caseId)
-                    .containsExactlyInAnyOrder("search-dev-06", "search-holdout-04");
+                .extracting(RagEvaluationCase::caseId)
+                .containsExactlyInAnyOrder("search-dev-06", "search-holdout-04");
             assertThat(dataset.cases()).allSatisfy(item -> {
                 assertThat(item.primaryK()).isEqualTo(1);
                 assertThat(item.diagnosticK()).isEqualTo(6);
             });
             assertThat(dataset.cases()).filteredOn(item -> item.expectedError() != null)
-                    .extracting(RagEvaluationCase::caseId)
-                    .containsExactlyInAnyOrder(
-                            "summary-dev-04",
-                            "compare-dev-04",
-                            "summary-holdout-02",
-                            "compare-holdout-02"
-                    );
+                .extracting(RagEvaluationCase::caseId)
+                .containsExactlyInAnyOrder("summary-dev-04", "compare-dev-04", "summary-holdout-02",
+                        "compare-holdout-02");
         }
     }
+
 }

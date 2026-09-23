@@ -1,9 +1,6 @@
 package com.raota.web.community.domain.event;
 
-public record PostIndexingEvent(
-        Long postId,
-        PostIndexingAction action
-) {
+public record PostIndexingEvent(Long postId, PostIndexingAction action) {
 
     public PostIndexingEvent {
         if (action == null) {

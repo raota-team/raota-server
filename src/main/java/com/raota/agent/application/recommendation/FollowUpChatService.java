@@ -22,22 +22,24 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class FollowUpChatService {
+
     private static final String CONTEXT_TYPE_SUMMARY = "summary";
+
     private static final String CONTEXT_TYPE_COMPARE = "compare";
+
     private static final int RECENT_MESSAGE_LIMIT = 6;
 
     private final RamenShopReader ramenShopReader;
+
     private final VectorStore vectorStore;
+
     private final ChatClient chatClient;
+
     private final Resource followUpChatTemplate;
 
-    public FollowUpChatService(
-            RamenShopReader ramenShopReader,
-            VectorStore vectorStore,
-            ChatClient.Builder chatClientBuilder,
-            @Value("classpath:/prompts/system-persona.st") Resource systemPersona,
-            @Value("classpath:/prompts/follow-up-chat.st") Resource followUpChatTemplate
-    ) {
+    public FollowUpChatService(RamenShopReader ramenShopReader, VectorStore vectorStore,
+            ChatClient.Builder chatClientBuilder, @Value("classpath:/prompts/system-persona.st") Resource systemPersona,
+            @Value("classpath:/prompts/follow-up-chat.st") Resource followUpChatTemplate) {
         this.ramenShopReader = ramenShopReader;
         this.vectorStore = vectorStore;
         this.chatClient = chatClientBuilder.defaultSystem(systemPersona).build();
@@ -48,7 +50,9 @@ public class FollowUpChatService {
         return followUpChatWithEvidence(request).response();
     }
 
-    /** Executes a follow-up question and returns the documents used to ground the answer. */
+    /**
+     * Executes a follow-up question and returns the documents used to ground the answer.
+     */
     public FollowUpChatExecution followUpChatWithEvidence(FollowUpChatQuery request) {
         validateChatRequest(request);
 
@@ -99,37 +103,32 @@ public class FollowUpChatService {
             throw new IllegalArgumentException("대화 메시지는 필수입니다.");
         }
 
-        if (request.messages().stream()
-                .anyMatch(message -> message == null || !ramenShopReader.hasText(message.content()))) {
+        if (request.messages()
+            .stream()
+            .anyMatch(message -> message == null || !ramenShopReader.hasText(message.content()))) {
             throw new IllegalArgumentException("대화 메시지 내용은 필수입니다.");
         }
     }
 
-    private List<Document> collectChatDocuments(
-            String contextType,
-            List<RamenShop> shops,
-            List<FollowUpChatQuery.Message> messages
-    ) {
+    private List<Document> collectChatDocuments(String contextType, List<RamenShop> shops,
+            List<FollowUpChatQuery.Message> messages) {
         String query = buildChatQuery(contextType, shops, messages);
         FilterExpressionBuilder builder = new FilterExpressionBuilder();
 
-        return vectorStore.similaritySearch(
-                SearchRequest.builder()
-                        .query(query)
-                        .topK(10)
-                        .similarityThreshold(0.4)
-                        .filterExpression(buildChatFilter(builder, shops))
-                        .build()
-        );
+        return vectorStore.similaritySearch(SearchRequest.builder()
+            .query(query)
+            .topK(10)
+            .similarityThreshold(0.4)
+            .filterExpression(buildChatFilter(builder, shops))
+            .build());
     }
 
     private Filter.Expression buildChatFilter(FilterExpressionBuilder builder, List<RamenShop> shops) {
-        var shopFilter = builder.group(filterOp(RetrievalDocumentFilters.shopProfileOrExternalReviewsForShop(shops.getFirst().getId())));
+        var shopFilter = builder
+            .group(filterOp(RetrievalDocumentFilters.shopProfileOrExternalReviewsForShop(shops.getFirst().getId())));
         if (shops.size() == 2) {
-            shopFilter = builder.or(
-                    shopFilter,
-                    builder.group(filterOp(RetrievalDocumentFilters.shopProfileOrExternalReviewsForShop(shops.get(1).getId())))
-            );
+            shopFilter = builder.or(shopFilter, builder
+                .group(filterOp(RetrievalDocumentFilters.shopProfileOrExternalReviewsForShop(shops.get(1).getId()))));
         }
 
         return builder.group(shopFilter).build();
@@ -139,14 +138,8 @@ public class FollowUpChatService {
         return new FilterExpressionBuilder.Op(expression);
     }
 
-    private String buildChatQuery(
-            String contextType,
-            List<RamenShop> shops,
-            List<FollowUpChatQuery.Message> messages
-    ) {
-        String shopNames = shops.stream()
-                .map(RamenShop::getName)
-                .collect(Collectors.joining(" "));
+    private String buildChatQuery(String contextType, List<RamenShop> shops, List<FollowUpChatQuery.Message> messages) {
+        String shopNames = shops.stream().map(RamenShop::getName).collect(Collectors.joining(" "));
         String latestQuestion = findLatestUserMessage(messages);
 
         return "%s %s %s".formatted(contextType, shopNames, latestQuestion);
@@ -163,20 +156,16 @@ public class FollowUpChatService {
         return messages.getLast().content().trim();
     }
 
-    private AiFollowUpChatResult generateChatResult(
-            String contextType,
-            List<RamenShop> shops,
-            List<Document> documents,
-            List<FollowUpChatQuery.Message> messages
-    ) {
+    private AiFollowUpChatResult generateChatResult(String contextType, List<RamenShop> shops, List<Document> documents,
+            List<FollowUpChatQuery.Message> messages) {
         return chatClient.prompt()
-                .user(user -> user.text(followUpChatTemplate)
-                        .param("contextType", contextType)
-                        .param("shopContext", buildShopContext(shops))
-                        .param("documentContext", buildDocumentContext(documents))
-                        .param("messageContext", buildMessageContext(messages)))
-                .call()
-                .entity(AiFollowUpChatResult.class);
+            .user(user -> user.text(followUpChatTemplate)
+                .param("contextType", contextType)
+                .param("shopContext", buildShopContext(shops))
+                .param("documentContext", buildDocumentContext(documents))
+                .param("messageContext", buildMessageContext(messages)))
+            .call()
+            .entity(AiFollowUpChatResult.class);
     }
 
     private AiChatResponse buildChatResponse(AiFollowUpChatResult aiResult) {
@@ -184,46 +173,31 @@ public class FollowUpChatService {
             return fallbackResponse();
         }
 
-        return new AiChatResponse(
-                new AiChatResponse.ChatMessageResponse("ai", aiResult.content().trim())
-        );
+        return new AiChatResponse(new AiChatResponse.ChatMessageResponse("ai", aiResult.content().trim()));
     }
 
     private AiChatResponse fallbackResponse() {
-        return new AiChatResponse(
-                new AiChatResponse.ChatMessageResponse(
-                        "ai",
-                        "확인 가능한 리뷰와 매장 정보가 충분하지 않아 답변하기 어렵습니다. 검색 가능한 리뷰 데이터가 쌓인 뒤 다시 질문해 주세요."
-                )
-        );
+        return new AiChatResponse(new AiChatResponse.ChatMessageResponse("ai",
+                "확인 가능한 리뷰와 매장 정보가 충분하지 않아 답변하기 어렵습니다. 검색 가능한 리뷰 데이터가 쌓인 뒤 다시 질문해 주세요."));
     }
 
     private String buildShopContext(List<RamenShop> shops) {
-        return shops.stream()
-                .map(this::formatShop)
-                .collect(Collectors.joining("\n"));
+        return shops.stream().map(this::formatShop).collect(Collectors.joining("\n"));
     }
 
     private String formatShop(RamenShop shop) {
         return """
-            - 매장ID: %s
-              매장명: %s
-              주소: %s
-              태그: %s
-              설명: %s
-            """.formatted(
-                shop.getId(),
-                shop.getName(),
-                ramenShopReader.addressTextOrDefault(shop),
-                ramenShopReader.tagsTextOrDefault(shop),
-                ramenShopReader.descriptionTextOrDefault(shop)
-        );
+                - 매장ID: %s
+                  매장명: %s
+                  주소: %s
+                  태그: %s
+                  설명: %s
+                """.formatted(shop.getId(), shop.getName(), ramenShopReader.addressTextOrDefault(shop),
+                ramenShopReader.tagsTextOrDefault(shop), ramenShopReader.descriptionTextOrDefault(shop));
     }
 
     private String buildDocumentContext(List<Document> documents) {
-        return documents.stream()
-                .map(this::formatDocument)
-                .collect(Collectors.joining("\n"));
+        return documents.stream().map(this::formatDocument).collect(Collectors.joining("\n"));
     }
 
     private String formatDocument(Document document) {
@@ -232,25 +206,21 @@ public class FollowUpChatService {
         Object source = document.getMetadata().get(RetrievalMetadataKeys.SOURCE);
 
         return """
-            - 매장ID: %s
-              문서유형: %s
-              출처: %s
-              내용: %s
-            """.formatted(
-                shopId == null ? "UNKNOWN" : shopId,
-                documentType == null ? "UNKNOWN" : documentType,
-                source == null ? "UNKNOWN" : source,
-                document.getText()
-        );
+                - 매장ID: %s
+                  문서유형: %s
+                  출처: %s
+                  내용: %s
+                """.formatted(shopId == null ? "UNKNOWN" : shopId, documentType == null ? "UNKNOWN" : documentType,
+                source == null ? "UNKNOWN" : source, document.getText());
     }
 
     private String buildMessageContext(List<FollowUpChatQuery.Message> messages) {
         int skipCount = Math.max(0, messages.size() - RECENT_MESSAGE_LIMIT);
 
         return messages.stream()
-                .skip(skipCount)
-                .map(message -> "%s: %s".formatted(normalizeRole(message.role()), message.content().trim()))
-                .collect(Collectors.joining("\n"));
+            .skip(skipCount)
+            .map(message -> "%s: %s".formatted(normalizeRole(message.role()), message.content().trim()))
+            .collect(Collectors.joining("\n"));
     }
 
     private String normalizeContextType(String contextType) {

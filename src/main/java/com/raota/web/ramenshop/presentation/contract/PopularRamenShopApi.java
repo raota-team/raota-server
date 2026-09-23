@@ -13,10 +13,8 @@ import org.springframework.http.ResponseEntity;
 public interface PopularRamenShopApi {
 
     @Operation(summary = "오늘 많이 본 라멘집 조회", description = "오늘 00시부터 현재까지 상세 조회가 많은 라멘집을 순위순으로 반환합니다.")
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")
-    })
+    @ApiResponses({ @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공") })
     ResponseEntity<ApiResponse<List<TodayPopularRamenShopResponse>>> getTodayPopularShops(
-            @Parameter(description = "가져올 라멘집 개수", example = "5")
-            int limit);
+            @Parameter(description = "가져올 라멘집 개수", example = "5") int limit);
+
 }

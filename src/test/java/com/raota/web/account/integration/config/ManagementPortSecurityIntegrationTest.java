@@ -33,11 +33,12 @@ class ManagementPortSecurityIntegrationTest extends BaseIntegrationTest {
 
     private int status(int port, String path) throws Exception {
         HttpURLConnection connection = (HttpURLConnection) URI.create("http://127.0.0.1:" + port + path)
-                .toURL()
-                .openConnection();
+            .toURL()
+            .openConnection();
         connection.setConnectTimeout(5_000);
         connection.setReadTimeout(5_000);
         connection.setInstanceFollowRedirects(false);
         return connection.getResponseCode();
     }
+
 }

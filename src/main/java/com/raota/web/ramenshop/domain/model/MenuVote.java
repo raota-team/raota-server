@@ -27,6 +27,7 @@ import org.hibernate.annotations.CreationTimestamp;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class MenuVote {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -60,4 +61,5 @@ public class MenuVote {
         this.isCancelled = false;
         this.votedAt = LocalDateTime.now();
     }
+
 }

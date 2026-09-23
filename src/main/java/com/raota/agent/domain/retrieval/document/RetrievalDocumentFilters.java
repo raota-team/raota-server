@@ -11,28 +11,20 @@ public final class RetrievalDocumentFilters {
     public static Filter.Expression externalReviewChunksForShop(Long shopId) {
         FilterExpressionBuilder builder = new FilterExpressionBuilder();
 
-        return builder.and(
-                shopIdFilter(builder, shopId),
-                builder.group(builder.and(
-                        externalReviewChunkFilter(builder),
-                        externalReviewSourceFilter(builder)
-                ))
-        ).build();
+        return builder
+            .and(shopIdFilter(builder, shopId),
+                    builder.group(builder.and(externalReviewChunkFilter(builder), externalReviewSourceFilter(builder))))
+            .build();
     }
 
     public static Filter.Expression shopProfileOrExternalReviewsForShop(Long shopId) {
         FilterExpressionBuilder builder = new FilterExpressionBuilder();
 
-        return builder.and(
-                shopIdFilter(builder, shopId),
-                builder.group(builder.or(
-                        shopProfileFilter(builder),
-                        builder.group(builder.and(
-                                externalReviewChunkFilter(builder),
-                                externalReviewSourceFilter(builder)
-                        ))
-                ))
-        ).build();
+        return builder
+            .and(shopIdFilter(builder, shopId),
+                    builder.group(builder.or(shopProfileFilter(builder), builder
+                        .group(builder.and(externalReviewChunkFilter(builder), externalReviewSourceFilter(builder))))))
+            .build();
     }
 
     private static FilterExpressionBuilder.Op shopIdFilter(FilterExpressionBuilder builder, Long shopId) {
@@ -48,10 +40,8 @@ public final class RetrievalDocumentFilters {
     }
 
     private static FilterExpressionBuilder.Op externalReviewSourceFilter(FilterExpressionBuilder builder) {
-        return builder.in(
-                RetrievalMetadataKeys.SOURCE,
-                RetrievalDocumentSource.CATCHTABLE.name(),
-                RetrievalDocumentSource.NAVER_REVIEW.name()
-        );
+        return builder.in(RetrievalMetadataKeys.SOURCE, RetrievalDocumentSource.CATCHTABLE.name(),
+                RetrievalDocumentSource.NAVER_REVIEW.name());
     }
+
 }

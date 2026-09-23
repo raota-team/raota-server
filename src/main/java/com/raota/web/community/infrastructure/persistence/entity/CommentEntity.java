@@ -66,14 +66,16 @@ public class CommentEntity {
         return Comment.of(id, post.getId(), member.getId(), content, createdAt);
     }
 
-    public static CommentEntity fromDomain(Comment comment, PostEntity post, MemberProfile member, CommentEntity parent) {
+    public static CommentEntity fromDomain(Comment comment, PostEntity post, MemberProfile member,
+            CommentEntity parent) {
         return CommentEntity.builder()
-                .id(comment.getId())
-                .post(post)
-                .member(member)
-                .content(comment.getContent())
-                .parent(parent)
-                .createdAt(comment.getCreatedAt())
-                .build();
+            .id(comment.getId())
+            .post(post)
+            .member(member)
+            .content(comment.getContent())
+            .parent(parent)
+            .createdAt(comment.getCreatedAt())
+            .build();
     }
+
 }

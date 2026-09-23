@@ -22,9 +22,7 @@ public class RamenTypeRepositoryImpl implements RamenTypeRepository {
 
     @Override
     public List<RamenType> findAll() {
-        return jpaRamenTypeRepository.findAll().stream()
-                .map(RamenTypeEntity::toDomain)
-                .collect(Collectors.toList());
+        return jpaRamenTypeRepository.findAll().stream().map(RamenTypeEntity::toDomain).collect(Collectors.toList());
     }
 
     @Override
@@ -32,4 +30,5 @@ public class RamenTypeRepositoryImpl implements RamenTypeRepository {
         RamenTypeEntity entity = RamenTypeEntity.from(ramenType);
         return jpaRamenTypeRepository.save(entity).toDomain();
     }
+
 }

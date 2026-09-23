@@ -30,6 +30,7 @@ import org.springframework.web.context.WebApplicationContext;
 class AdminUserControllerTest extends BaseIntegrationTest {
 
     private MockMvc mockMvc;
+
     private String adminToken;
 
     @Autowired
@@ -46,16 +47,12 @@ class AdminUserControllerTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
-                .apply(springSecurity())
-                .build();
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).apply(springSecurity()).build();
         socialAccountRepository.deleteAll();
         memberRepository.deleteAll();
 
-        MemberProfile admin = memberRepository.saveAndFlush(MemberProfile.builder()
-                .nickname("관리자")
-                .role(MemberRole.ADMIN)
-                .build());
+        MemberProfile admin = memberRepository
+            .saveAndFlush(MemberProfile.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         adminToken = jwtTokenProvider.createAccessToken(admin.getId());
     }
 
@@ -68,40 +65,29 @@ class AdminUserControllerTest extends BaseIntegrationTest {
         MemberProfile deletedMember = saveMember("탈퇴회원", "deleted@example.com", true, true);
         saveSocialAccount(deletedMember, AuthProvider.KAKAO, "kakao-2", "deleted@example.com");
 
-        mockMvc.perform(adminGet("/admin/api/users")
-                        .param("keyword", "카카오"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("SUCCESS"))
-                .andExpect(jsonPath("$.data.items[0].id").value(kakaoMember.getId()))
-                .andExpect(jsonPath("$.data.items[0].role").value("USER"))
-                .andExpect(jsonPath("$.data.page.totalElements").value(1));
+        mockMvc.perform(adminGet("/admin/api/users").param("keyword", "카카오"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("SUCCESS"))
+            .andExpect(jsonPath("$.data.items[0].id").value(kakaoMember.getId()))
+            .andExpect(jsonPath("$.data.items[0].role").value("USER"))
+            .andExpect(jsonPath("$.data.page.totalElements").value(1));
 
-        assertBody(getBody("/admin/api/users?keyword=" + kakaoMember.getId()))
-                .contains("카카오회원")
-                .doesNotContain("구글회원");
-        assertBody(getBody("/admin/api/users?provider=GOOGLE"))
-                .contains("구글회원")
-                .doesNotContain("카카오회원");
-        assertBody(getBody("/admin/api/users?registrationCompleted=false"))
-                .contains("구글회원")
-                .doesNotContain("카카오회원");
-        assertBody(getBody("/admin/api/users?deleted=true"))
-                .contains("탈퇴회원")
-                .doesNotContain("카카오회원");
-        assertBody(getBody("/admin/api/users?emailPresent=false"))
-                .contains("구글회원")
-                .doesNotContain("kakao@example.com");
+        assertBody(getBody("/admin/api/users?keyword=" + kakaoMember.getId())).contains("카카오회원").doesNotContain("구글회원");
+        assertBody(getBody("/admin/api/users?provider=GOOGLE")).contains("구글회원").doesNotContain("카카오회원");
+        assertBody(getBody("/admin/api/users?registrationCompleted=false")).contains("구글회원").doesNotContain("카카오회원");
+        assertBody(getBody("/admin/api/users?deleted=true")).contains("탈퇴회원").doesNotContain("카카오회원");
+        assertBody(getBody("/admin/api/users?emailPresent=false")).contains("구글회원").doesNotContain("kakao@example.com");
     }
 
     @Test
     void 사용자_상세를_JSON으로_조회한다() throws Exception {
         MemberProfile member = MemberProfile.builder()
-                .nickname("상세회원")
-                .email("detail@example.com")
-                .imageUrl("profile/detail.jpg")
-                .backgroundImageUrl("background/detail.jpg")
-                .bio("라멘 좋아함")
-                .build();
+            .nickname("상세회원")
+            .email("detail@example.com")
+            .imageUrl("profile/detail.jpg")
+            .backgroundImageUrl("background/detail.jpg")
+            .bio("라멘 좋아함")
+            .build();
         member.completeRegistration();
         member.updateActivityVisibility(true, false, true, false);
         repeat(3, member::increaseVisitedRestaurantCount);
@@ -113,23 +99,20 @@ class AdminUserControllerTest extends BaseIntegrationTest {
         saveSocialAccount(member, AuthProvider.KAKAO, "kakao-detail", "social-detail@example.com");
 
         mockMvc.perform(adminGet("/admin/api/users/{memberId}", member.getId()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("SUCCESS"))
-                .andExpect(jsonPath("$.data.id").value(member.getId()))
-                .andExpect(jsonPath("$.data.profile.nickname").value("상세회원"))
-                .andExpect(jsonPath("$.data.profile.email").value("detail@example.com"))
-                .andExpect(jsonPath("$.data.profile.role").value("USER"))
-                .andExpect(jsonPath("$.data.socialAccounts[0].email").value("social-detail@example.com"))
-                .andExpect(jsonPath("$.data.socialAccounts[0].providerUserId").value("kakao-detail"))
-                .andExpect(jsonPath("$.data.activityStats.commentCount").value(7))
-                .andExpect(jsonPath("$.data.activityVisibility.visitsPublic").value(false));
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("SUCCESS"))
+            .andExpect(jsonPath("$.data.id").value(member.getId()))
+            .andExpect(jsonPath("$.data.profile.nickname").value("상세회원"))
+            .andExpect(jsonPath("$.data.profile.email").value("detail@example.com"))
+            .andExpect(jsonPath("$.data.profile.role").value("USER"))
+            .andExpect(jsonPath("$.data.socialAccounts[0].email").value("social-detail@example.com"))
+            .andExpect(jsonPath("$.data.socialAccounts[0].providerUserId").value("kakao-detail"))
+            .andExpect(jsonPath("$.data.activityStats.commentCount").value(7))
+            .andExpect(jsonPath("$.data.activityVisibility.visitsPublic").value(false));
     }
 
     private MemberProfile saveMember(String nickname, String email, boolean registrationCompleted, boolean deleted) {
-        MemberProfile member = MemberProfile.builder()
-                .nickname(nickname)
-                .email(email)
-                .build();
+        MemberProfile member = MemberProfile.builder().nickname(nickname).email(email).build();
         if (registrationCompleted) {
             member.completeRegistration();
         }
@@ -141,13 +124,13 @@ class AdminUserControllerTest extends BaseIntegrationTest {
 
     private void saveSocialAccount(MemberProfile member, AuthProvider provider, String providerUserId, String email) {
         socialAccountRepository.save(SocialAccount.builder()
-                .provider(provider)
-                .providerUserId(providerUserId)
-                .email(email)
-                .nickname(member.getNickname())
-                .profileImageUrl(member.getImageUrl())
-                .memberId(member.getId())
-                .build());
+            .provider(provider)
+            .providerUserId(providerUserId)
+            .email(email)
+            .nickname(member.getNickname())
+            .profileImageUrl(member.getImageUrl())
+            .memberId(member.getId())
+            .build());
     }
 
     private void repeat(int times, Runnable runnable) {
@@ -158,19 +141,19 @@ class AdminUserControllerTest extends BaseIntegrationTest {
 
     private String getBody(String path) throws Exception {
         MvcResult result = mockMvc.perform(adminGet(path))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("SUCCESS"))
-                .andReturn();
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("SUCCESS"))
+            .andReturn();
         return result.getResponse().getContentAsString();
     }
 
     private MockHttpServletRequestBuilder adminGet(String path, Object... uriVariables) {
-        return get(path, uriVariables)
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken);
+        return get(path, uriVariables).header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken);
     }
 
     private org.assertj.core.api.AbstractStringAssert<?> assertBody(String body) {
         assertThat(body).isNotBlank();
         return assertThat(body);
     }
+
 }

@@ -17,17 +17,9 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
     private final RestSecurityErrorWriter errorWriter;
 
     @Override
-    public void handle(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            AccessDeniedException accessDeniedException
-    ) throws IOException {
-        errorWriter.write(
-                request,
-                response,
-                HttpServletResponse.SC_FORBIDDEN,
-                "FORBIDDEN",
-                ACCESS_DENIED_MESSAGE
-        );
+    public void handle(HttpServletRequest request, HttpServletResponse response,
+            AccessDeniedException accessDeniedException) throws IOException {
+        errorWriter.write(request, response, HttpServletResponse.SC_FORBIDDEN, "FORBIDDEN", ACCESS_DENIED_MESSAGE);
     }
+
 }
