@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  # 포맷 검사와 전체 테스트를 병렬로 실행하고, 둘 다 통과해야 이미지를 빌드하고 배포한다.
+  # format-check·test·build-image는 동시에 실행되고, 셋 다 성공해야 deploy가 latest 태그를 붙이고 운영 배포를 요청한다.
   format-check:
     uses: ./.github/workflows/format-check.yml
     permissions:
@@ -21,8 +21,7 @@ jobs:
     permissions:
       contents: read
 
-  build-and-dispatch:
-    needs: [format-check, test]
+  build-image:
     runs-on: [self-hosted, linux, arm64]
 
     environment:
@@ -44,20 +43,46 @@ jobs:
           distribution: temurin
           java-version: "25"
 
-      - name: Build jar (tests run in verify job)
+      - name: Build jar (tests run in the test job)
         run: ./gradlew clean bootJar -x test
 
       - name: Docker login to OCIR
         run: |
           echo "${{ secrets.OCIR_AUTH_TOKEN }}" | docker login "${{ secrets.OCIR_REGISTRY }}" -u "${{ secrets.OCIR_USERNAME }}" --password-stdin
 
-      - name: Build and push image
+      - name: Build and push commit image
         env:
           IMAGE_URI: ${{ secrets.OCIR_REGISTRY }}/${{ secrets.OCIR_NAMESPACE }}/${{ secrets.OCIR_REPOSITORY }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build --build-arg GIT_COMMIT="${IMAGE_TAG}" -t "${IMAGE_URI}:${IMAGE_TAG}" -t "${IMAGE_URI}:latest" .
+          docker build --build-arg GIT_COMMIT="${IMAGE_TAG}" -t "${IMAGE_URI}:${IMAGE_TAG}" .
           docker push "${IMAGE_URI}:${IMAGE_TAG}"
+
+  deploy:
+    needs: [format-check, test, build-image]
+    runs-on: [self-hosted, linux, arm64]
+
+    environment:
+      name: raota-prod-server
+    concurrency:
+      group: raota-prod-deploy
+      cancel-in-progress: false
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Docker login to OCIR
+        run: |
+          echo "${{ secrets.OCIR_AUTH_TOKEN }}" | docker login "${{ secrets.OCIR_REGISTRY }}" -u "${{ secrets.OCIR_USERNAME }}" --password-stdin
+
+      - name: Tag verified image as latest
+        env:
+          IMAGE_URI: ${{ secrets.OCIR_REGISTRY }}/${{ secrets.OCIR_NAMESPACE }}/${{ secrets.OCIR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker pull "${IMAGE_URI}:${IMAGE_TAG}"
+          docker tag "${IMAGE_URI}:${IMAGE_TAG}" "${IMAGE_URI}:latest"
           docker push "${IMAGE_URI}:latest"
 
       - name: Dispatch infra deploy workflow
@@ -89,7 +114,7 @@ jobs:
           INFRA_REPOSITORY: raota-team/raota-infra
           INFRA_WORKFLOW_FILE: deploy-prod-compose.yml
           WAIT_TIMEOUT_SECONDS: 1800
-          POLL_INTERVAL_SECONDS: 15
+          POLL_INTERVAL_SECONDS: 5
         shell: bash
         run: |
           set -euo pipefail
