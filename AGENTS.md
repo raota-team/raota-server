@@ -18,7 +18,7 @@ MySQL 8 + Flyway, Redis, Spring Security(OAuth2 + JWT), Spring AI(Oracle Vector 
 
 - 테스트는 `test` 프로필로 실행되며 통합 테스트(`BaseIntegrationTest`)가 Testcontainers로 MySQL 8 · Redis를 띄운다. **Docker가 실행 중이어야 한다.**
 - 패키지 이동, `@NamedInterface` 변경, 새 모듈 추가 뒤에는 전체 테스트를 실행한다.
-- CI(`.github/workflows/ci.yml`)가 `checkFormat`과 전체 테스트를 GitHub 호스팅 러너에서 실행한다. `main` push는 CD가 이 검증을 통과한 뒤에만 배포한다.
+- CI는 `.github/workflows/format-check.yml`(`checkFormat`)과 `test.yml`(전체 테스트)로 나뉘어 GitHub 호스팅 러너에서 병렬 실행된다. `main` push는 CD가 두 워크플로를 모두 통과한 뒤에만 배포한다.
 
 ## 아키텍처
 

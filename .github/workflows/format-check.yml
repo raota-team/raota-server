@@ -1,4 +1,4 @@
-name: CI - Format Check and Tests
+name: CI - Format Check
 
 on:
   pull_request:
@@ -14,10 +14,9 @@ permissions:
   contents: read
 
 jobs:
-  verify:
-    # 통합 테스트가 Testcontainers(MySQL·Redis)를 쓰므로 Docker가 있는 GitHub 호스팅 러너에서 실행한다.
+  check-format:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
 
     steps:
       - name: Checkout code
@@ -32,14 +31,3 @@ jobs:
 
       - name: Check format
         run: ./gradlew checkFormat
-
-      - name: Test
-        run: ./gradlew test
-
-      - name: Upload test reports
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-reports
-          path: build/reports/tests/test
-          retention-days: 7
