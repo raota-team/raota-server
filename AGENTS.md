@@ -27,6 +27,7 @@ MySQL 8 + Flyway, Redis, Spring Security(OAuth2 + JWT), Spring AI(Oracle Vector 
 - 새 도메인은 `com.raota.mobile.<domain>`에 두고 그 루트 `package-info.java`에 `@ApplicationModule`을 선언한다. `com.raota.mobile` 자체에는 붙이지 않는다.
 - 구현보다 먼저 모듈 등록과 `ModulithArchitectureTest`(예상 모듈 목록) 갱신을 한다.
 - `web`과 `mobile`은 서로 참조하지 않는다. v1 데이터가 필요하면 `web` 클래스가 아니라 v1 테이블을 직접 읽는다.
+- v2 오류는 `mobile.common.error.MobileException(MobileErrorCode, message)`으로 던진다. `ResponseStatusException`, `IllegalArgumentException`, `EntityNotFoundException` 등은 v2에서 500 `INTERNAL_ERROR`로 처리된다.
 
 ## API 접근 정책 (fail-closed)
 

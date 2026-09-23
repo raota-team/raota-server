@@ -1,5 +1,6 @@
 package com.raota.mobile.common.presentation.response;
 
+import com.raota.mobile.common.error.MobileErrorCode;
 import java.util.List;
 
 public record MobileError(String code, String message, List<MobileFieldError> fields) {

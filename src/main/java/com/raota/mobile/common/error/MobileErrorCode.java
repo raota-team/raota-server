@@ -1,4 +1,4 @@
-package com.raota.mobile.common.presentation.response;
+package com.raota.mobile.common.error;
 
 import org.springframework.http.HttpStatus;
 

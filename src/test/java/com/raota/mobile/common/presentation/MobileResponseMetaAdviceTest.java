@@ -8,7 +8,7 @@ import com.jayway.jsonpath.JsonPath;
 import com.raota.global.presentation.common.RequestIdFilter;
 import com.raota.mobile.common.presentation.response.MobileApiResponse;
 import com.raota.mobile.common.presentation.response.MobileError;
-import com.raota.mobile.common.presentation.response.MobileErrorCode;
+import com.raota.mobile.common.error.MobileErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
