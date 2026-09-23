@@ -1,5 +1,7 @@
 package com.raota.system;
 
+import static com.tngtech.archunit.base.DescribedPredicate.not;
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -42,7 +44,8 @@ class ModulithArchitectureTest {
                         "web.account",
                         "web.community",
                         "web.ramenlog",
-                        "web.ramenshop"
+                        "web.ramenshop",
+                        "mobile.common"
                 ),
                 modules.stream()
                         .map(module -> module.getIdentifier().toString())
@@ -65,6 +68,15 @@ class ModulithArchitectureTest {
     void mobileDoesNotDependOnWeb() {
         noClasses().that().resideInAPackage("com.raota.mobile..")
                 .should().dependOnClassesThat().resideInAPackage("com.raota.web..")
+                .allowEmptyShould(true)
+                .check(PRODUCTION_CLASSES);
+    }
+
+    @Test
+    void mobileCommonDoesNotDependOnOtherMobileModules() {
+        noClasses().that().resideInAPackage("com.raota.mobile.common..")
+                .should().dependOnClassesThat(resideInAPackage("com.raota.mobile..")
+                        .and(not(resideInAPackage("com.raota.mobile.common.."))))
                 .allowEmptyShould(true)
                 .check(PRODUCTION_CLASSES);
     }
