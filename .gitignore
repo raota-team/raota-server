@@ -44,3 +44,8 @@ out/
 
 # macOS
 .DS_Store
+
+# 로컬 전용: 설계 문서, omp 설정, 라이브러리 호환성 실험
+/docs/
+/.omp/
+/compatibility-tests/
