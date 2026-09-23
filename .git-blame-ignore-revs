@@ -1,0 +1,5 @@
+# git blame에서 건너뛸 대량 포맷 커밋
+# 로컬 적용: git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# style: 전체 소스에 Spring Java Format 적용
+7c841ba2b4f3fcecebb70b09420eb755a0e2002d
