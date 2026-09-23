@@ -1,0 +1,42 @@
+name: CI - Tests
+
+on:
+  pull_request:
+  push:
+    # main은 CD 워크플로가 이 워크플로를 호출해 배포 전에 검증한다.
+    branches-ignore:
+      - main
+    paths-ignore:
+      - '**.md'
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    # 통합 테스트가 Testcontainers(MySQL·Redis)를 쓰므로 Docker가 있는 GitHub 호스팅 러너에서 실행한다.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: gradle
+
+      - name: Test
+        run: ./gradlew test
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: build/reports/tests/test
+          retention-days: 7
