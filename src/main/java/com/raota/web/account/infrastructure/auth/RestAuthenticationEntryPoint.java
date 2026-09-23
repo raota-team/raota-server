@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     private static final String AUTHENTICATION_REQUIRED_MESSAGE = "인증이 필요합니다.";
+    private static final String EXPIRED_ACCESS_TOKEN_MESSAGE = "액세스 토큰이 만료되었습니다.";
 
     private final RestSecurityErrorWriter errorWriter;
 
@@ -24,10 +25,17 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
             AuthenticationException authException
     ) throws IOException {
         response.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer");
+        boolean expiredToken = authException instanceof ExpiredJwtAuthenticationException;
+        String v2Code = expiredToken ? "TOKEN_EXPIRED" : "UNAUTHORIZED";
+        String message = expiredToken && RestSecurityErrorWriter.isV2Request(request)
+                ? EXPIRED_ACCESS_TOKEN_MESSAGE
+                : responseMessage(authException);
         errorWriter.write(
+                request,
                 response,
                 HttpServletResponse.SC_UNAUTHORIZED,
-                responseMessage(authException)
+                v2Code,
+                message
         );
     }
 

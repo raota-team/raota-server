@@ -25,11 +25,6 @@ Raota Server는 라멘 매장 정보, 방문 인증샷, 메뉴 투표, 북마크
 - AI 기반 취향 추천, 매장 비교, 리뷰 요약, 후속 채팅
 - `ADMIN` 권한으로 보호되는 라멘 매장 CRUD, 회원/제보 조회 및 검색/RAG 인덱싱 API
 
-## 문서
-
-- [아키텍처 규칙](docs/architecture.md)
-- [API 접근 정책](docs/security/access-policy.md)
-
 ## 기술 스택
 
 ### Back-end
@@ -62,7 +57,7 @@ Raota Server는 라멘 매장 정보, 방문 인증샷, 메뉴 투표, 북마크
 
 ### 패키지 구조
 
-Spring Modulith 기반 기능 중심 모듈러 모놀리스입니다. 모듈별 계층 규칙은 [아키텍처 규칙](docs/architecture.md)을 따릅니다.
+Spring Modulith 기반 기능 중심 모듈러 모놀리스입니다.
 
 ```text
 src/main/java/com/raota

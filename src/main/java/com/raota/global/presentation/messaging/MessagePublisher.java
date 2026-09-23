@@ -1,4 +1,4 @@
-package com.raota.global.messaging;
+package com.raota.global.presentation.messaging;
 
 public interface MessagePublisher {
     /**
