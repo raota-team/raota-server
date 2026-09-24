@@ -155,4 +155,6 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
     systemProperty 'spring.profiles.active', 'test'
+    // Spring 테스트 컨텍스트 캐시가 통합 테스트 컨텍스트 여러 개를 함께 보관하므로 기본값(512MB)보다 크게 잡는다.
+    maxHeapSize = '1g'
 }
