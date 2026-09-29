@@ -165,6 +165,12 @@ app:
       kakao:
         # v1 웹과 같은 Kakao 앱(라오타)의 앱 ID. 비밀값이 아니다.
         app-id: ${APP_MOBILE_OAUTH_KAKAO_APP_ID:1422344}
+      apple:
+        bundle-id: ${APP_MOBILE_OAUTH_APPLE_BUNDLE_ID}
+        team-id: ${APP_MOBILE_OAUTH_APPLE_TEAM_ID}
+        key-id: ${APP_MOBILE_OAUTH_APPLE_KEY_ID}
+        private-key: ${APP_MOBILE_OAUTH_APPLE_PRIVATE_KEY}
+        token-encryption-key: ${APP_MOBILE_OAUTH_APPLE_TOKEN_ENCRYPTION_KEY}
     account:
       withdrawal-grace-period: ${APP_MOBILE_ACCOUNT_WITHDRAWAL_GRACE_PERIOD:30d}
   redis:
