@@ -6,6 +6,7 @@ import com.raota.mobile.account.application.port.RefreshTokenStore;
 import com.raota.mobile.account.application.port.SocialTokenVerifier;
 import com.raota.mobile.account.application.result.MobileLoginResult;
 import com.raota.mobile.account.application.result.MobileMemberResult;
+import com.raota.mobile.account.application.result.MobileTokenResult;
 import com.raota.mobile.account.application.result.SocialIdentity;
 import com.raota.mobile.account.domain.model.MobileUser;
 import com.raota.mobile.account.domain.model.MobileUserOAuthAccount;
@@ -60,6 +61,18 @@ public class MobileAuthService {
         Long userId = loginMember.userId();
         return new MobileLoginResult(accessTokens.issue(userId), refreshTokens.issue(userId),
                 accessTokens.expiresInSeconds(), loginMember.isNewMember(), loginMember.member());
+    }
+
+    public MobileTokenResult reissue(String refreshToken) {
+        Long userId = refreshTokens.consume(refreshToken)
+            .orElseThrow(() -> new MobileException(MobileErrorCode.UNAUTHORIZED, "유효하지 않은 리프레시 토큰입니다."));
+        availableUser(userId);
+        return new MobileTokenResult(accessTokens.issue(userId), refreshTokens.issue(userId),
+                accessTokens.expiresInSeconds());
+    }
+
+    public void logout(String refreshToken, Long userId) {
+        refreshTokens.revoke(refreshToken, userId);
     }
 
     private SocialTokenVerifier verifierFor(OAuthProvider provider) {

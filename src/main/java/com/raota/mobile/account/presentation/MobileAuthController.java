@@ -1,10 +1,13 @@
 package com.raota.mobile.account.presentation;
 
 import com.raota.mobile.account.application.result.MobileLoginResult;
+import com.raota.mobile.account.application.result.MobileTokenResult;
 import com.raota.mobile.account.application.service.MobileAuthService;
 import com.raota.mobile.account.presentation.request.SocialLoginRequest;
+import com.raota.mobile.account.presentation.request.RefreshTokenRequest;
 import com.raota.mobile.common.presentation.response.MobileApiResponse;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,6 +27,17 @@ public class MobileAuthController {
     @PostMapping("/oauth/login")
     public MobileApiResponse<MobileLoginResult> login(@Valid @RequestBody SocialLoginRequest request) {
         return MobileApiResponse.success(authService.login(request.toCommand()));
+    }
+
+    @PostMapping("/token/reissue")
+    public MobileApiResponse<MobileTokenResult> reissue(@RequestBody RefreshTokenRequest request) {
+        return MobileApiResponse.success(authService.reissue(request.refreshToken()));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@RequestBody RefreshTokenRequest request, @LoginUser Long userId) {
+        authService.logout(request.refreshToken(), userId);
+        return ResponseEntity.noContent().build();
     }
 
 }

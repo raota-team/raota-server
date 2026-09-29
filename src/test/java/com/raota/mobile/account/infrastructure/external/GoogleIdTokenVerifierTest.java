@@ -43,6 +43,14 @@ class GoogleIdTokenVerifierTest {
     }
 
     @Test
+    void Google의_도메인_발급자_표기도_허용한다() throws Exception {
+        var identity = verifier(keyPair)
+            .verify(credential(token(keyPair, "accounts.google.com", "mobile-client", Instant.now().plusSeconds(300))));
+
+        assertThat(identity.subject()).isEqualTo("google-subject");
+    }
+
+    @Test
     void 다른_앱을_대상으로_하는_토큰은_거부한다() throws Exception {
         assertInvalid(
                 credential(token(keyPair, "accounts.google.com", "foreign-client", Instant.now().plusSeconds(300))),

@@ -43,6 +43,14 @@ class MobileOAuthPropertiesTest {
     }
 
     @Test
+    void Google_클라이언트_ID_목록에_빈_항목이_있으면_시작하지_않는다() {
+        contextRunner
+            .withPropertyValues("app.mobile.oauth.google.client-ids[0]=mobile-client",
+                    "app.mobile.oauth.google.client-ids[1]= ", "app.mobile.oauth.kakao.app-id=123456")
+            .run(context -> assertThat(context.getStartupFailure()).isNotNull());
+    }
+
+    @Test
     void 쉼표로_구분한_클라이언트_ID와_기본_API_주소를_읽는다() {
         contextRunner
             .withPropertyValues("app.mobile.oauth.google.client-ids=first-client,second-client",

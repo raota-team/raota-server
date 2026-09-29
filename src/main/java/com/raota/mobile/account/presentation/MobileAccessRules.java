@@ -13,7 +13,9 @@ public class MobileAccessRules implements AccessRuleContributor {
 
     @Override
     public List<AccessRule> accessRules() {
-        return List.of(new AccessRule(AccessLevel.PUBLIC, HttpMethod.POST, "/api/v2/auth/oauth/login"));
+        return List.of(new AccessRule(AccessLevel.PUBLIC, HttpMethod.POST, "/api/v2/auth/oauth/login"),
+                new AccessRule(AccessLevel.PUBLIC, HttpMethod.POST, "/api/v2/auth/token/reissue"),
+                new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/api/v2/auth/logout"));
     }
 
 }
