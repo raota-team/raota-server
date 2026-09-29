@@ -67,4 +67,12 @@ public class MobileUserOAuthAccount {
         this.lastLoginAt = now;
     }
 
+    /** Apple의 갱신 토큰은 암호화된 값으로만 보관한다. */
+    public void storeAppleRefreshToken(String encrypted) {
+        if (provider != OAuthProvider.APPLE) {
+            throw new IllegalStateException("Apple 계정에만 갱신 토큰을 보관할 수 있습니다.");
+        }
+        this.appleRefreshTokenEncrypted = encrypted;
+    }
+
 }

@@ -4,6 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -13,6 +16,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.raota.global.presentation.common.RequestIdFilter;
 import com.raota.mobile.account.application.command.SocialCredential;
+import com.raota.mobile.account.application.port.AppleTokenClient;
+import com.raota.mobile.account.application.port.ProviderTokenCipher;
 import com.raota.mobile.account.application.port.RefreshTokenStore;
 import com.raota.mobile.account.application.service.MobileMemberService;
 import com.raota.mobile.account.application.result.SocialIdentity;
@@ -20,6 +25,7 @@ import com.raota.mobile.account.domain.model.MobileUserStatus;
 import com.raota.mobile.account.domain.model.OAuthProvider;
 import com.raota.mobile.account.domain.repository.MobileUserOAuthAccountRepository;
 import com.raota.mobile.account.domain.repository.MobileUserRepository;
+import com.raota.mobile.account.infrastructure.external.AppleIdentityTokenVerifier;
 import com.raota.mobile.account.infrastructure.external.GoogleIdTokenVerifier;
 import com.raota.mobile.account.infrastructure.auth.MobileAccessTokenService;
 import com.raota.mobile.account.infrastructure.auth.MobileAuthProperties;
@@ -88,6 +94,15 @@ class MobileAuthIntegrationTest extends BaseIntegrationTest {
     @MockitoBean
     private GoogleIdTokenVerifier googleVerifier;
 
+    @MockitoBean
+    private AppleIdentityTokenVerifier appleVerifier;
+
+    @MockitoBean
+    private AppleTokenClient appleTokens;
+
+    @Autowired
+    private ProviderTokenCipher tokenCipher;
+
     private final Set<Long> createdUserIds = ConcurrentHashMap.newKeySet();
 
     private final Map<String, Long> issuedRefreshTokens = new ConcurrentHashMap<>();
@@ -105,16 +120,20 @@ class MobileAuthIntegrationTest extends BaseIntegrationTest {
         email = "same@example.com";
         when(kakaoVerifier.provider()).thenReturn(OAuthProvider.KAKAO);
         when(googleVerifier.provider()).thenReturn(OAuthProvider.GOOGLE);
+        when(appleVerifier.provider()).thenReturn(OAuthProvider.APPLE);
         when(kakaoVerifier.verify(any(SocialCredential.class)))
             .thenAnswer(invocation -> new SocialIdentity(OAuthProvider.KAKAO, subject, email));
         when(googleVerifier.verify(any(SocialCredential.class)))
             .thenAnswer(invocation -> new SocialIdentity(OAuthProvider.GOOGLE, subject, email));
+        when(appleVerifier.verify(any(SocialCredential.class)))
+            .thenAnswer(invocation -> new SocialIdentity(OAuthProvider.APPLE, subject, email));
+        when(appleTokens.exchange(any(String.class), any(String.class))).thenReturn("apple-refresh");
     }
 
     @AfterEach
     void cleanUp() {
         issuedRefreshTokens.forEach((token, userId) -> refreshTokens.revoke(token, userId));
-        for (OAuthProvider provider : Set.of(OAuthProvider.KAKAO, OAuthProvider.GOOGLE)) {
+        for (OAuthProvider provider : Set.of(OAuthProvider.KAKAO, OAuthProvider.GOOGLE, OAuthProvider.APPLE)) {
             accounts.findByProviderAndProviderSubject(provider, subject).ifPresent(accounts::delete);
         }
         createdUserIds.forEach(users::deleteById);
@@ -230,11 +249,20 @@ class MobileAuthIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void 지원하지_않는_제공자와_누락된_Google_ID_토큰은_400이다() throws Exception {
+    void 누락된_Google_및_Apple_인증_정보는_400이다() throws Exception {
         mvc.perform(post("/api/v2/auth/oauth/login").contentType(MediaType.APPLICATION_JSON)
             .content(mapper.writeValueAsBytes(Map.of("provider", "APPLE"))))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+        for (Map<String, String> body : List.of(
+                Map.of("provider", "APPLE", "nonce", "nonce", "authorizationCode", "code"),
+                Map.of("provider", "APPLE", "idToken", "token", "authorizationCode", "code"),
+                Map.of("provider", "APPLE", "idToken", "token", "nonce", "nonce"))) {
+            mvc.perform(post("/api/v2/auth/oauth/login").contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsBytes(body)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+        }
 
         when(googleVerifier.verify(any(SocialCredential.class))).thenAnswer(invocation -> {
             SocialCredential credential = invocation.getArgument(0);
@@ -247,6 +275,79 @@ class MobileAuthIntegrationTest extends BaseIntegrationTest {
             .content(mapper.writeValueAsBytes(Map.of("provider", "GOOGLE"))))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
+    void Apple_최초_로그인과_재로그인에서_갱신_토큰을_암호화해_교체한다() throws Exception {
+        when(appleTokens.exchange(any(String.class), any(String.class))).thenReturn("first-refresh", "second-refresh");
+        JsonNode first = appleLogin("valid", "raw-nonce");
+        Long userId = Long.valueOf(first.get("member").get("id").asString());
+        String firstEncrypted = accounts.findByProviderAndProviderSubject(OAuthProvider.APPLE, subject)
+            .orElseThrow()
+            .getAppleRefreshTokenEncrypted();
+        assertThat(firstEncrypted).startsWith("v1:").doesNotContain("first-refresh");
+        assertThat(tokenCipher.decrypt(firstEncrypted)).isEqualTo("first-refresh");
+
+        JsonNode second = appleLogin("valid", "raw-nonce");
+        assertThat(second.get("isNewMember").asBoolean()).isFalse();
+        assertThat(Long.valueOf(second.get("member").get("id").asString())).isEqualTo(userId);
+        String replaced = accounts.findByProviderAndProviderSubject(OAuthProvider.APPLE, subject)
+            .orElseThrow()
+            .getAppleRefreshTokenEncrypted();
+        assertThat(replaced).isNotEqualTo(firstEncrypted);
+        assertThat(tokenCipher.decrypt(replaced)).isEqualTo("second-refresh");
+    }
+
+    @Test
+    void Apple_검증에서_잘못된_nonce나_대상_앱은_401이며_코드를_교환하지_않는다() throws Exception {
+        when(appleVerifier.verify(any(SocialCredential.class))).thenAnswer(invocation -> {
+            SocialCredential credential = invocation.getArgument(0);
+            if (!"raw-nonce".equals(credential.nonce()) || !"valid".equals(credential.idToken())) {
+                throw new MobileException(MobileErrorCode.OAUTH_CREDENTIAL_INVALID, "소셜 로그인 정보를 확인할 수 없습니다.");
+            }
+            return new SocialIdentity(OAuthProvider.APPLE, subject, email);
+        });
+        for (Map<String, String> body : List.of(
+                Map.of("provider", "APPLE", "idToken", "valid", "nonce", "wrong-nonce", "authorizationCode", "code"),
+                Map.of("provider", "APPLE", "idToken", "wrong-audience", "nonce", "raw-nonce", "authorizationCode",
+                        "code"))) {
+            mvc.perform(post("/api/v2/auth/oauth/login").contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsBytes(body)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("OAUTH_CREDENTIAL_INVALID"));
+        }
+        verify(appleTokens, never()).exchange(any(String.class), any(String.class));
+    }
+
+    @Test
+    void 탈퇴_유예_중인_Apple_회원은_인가_코드를_교환하지_않는다() throws Exception {
+        JsonNode login = appleLogin("valid", "raw-nonce");
+        Long userId = Long.valueOf(login.get("member").get("id").asString());
+        jdbcTemplate.update("UPDATE tb_v2_user SET status = 'WITHDRAW_PENDING' WHERE id = ?", userId);
+        clearInvocations(appleTokens);
+
+        mvc.perform(post("/api/v2/auth/oauth/login").contentType(MediaType.APPLICATION_JSON)
+            .content(mapper.writeValueAsBytes(Map.of("provider", "APPLE", "idToken", "valid", "nonce", "raw-nonce",
+                    "authorizationCode", "new-code"))))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.error.message").value("사용할 수 없는 계정입니다."));
+        verify(appleTokens, never()).exchange(any(String.class), any(String.class));
+    }
+
+    private JsonNode appleLogin(String token, String nonce) throws Exception {
+        byte[] body = mvc
+            .perform(post("/api/v2/auth/oauth/login").contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsBytes(
+                        Map.of("provider", "APPLE", "idToken", token, "nonce", nonce, "authorizationCode", "code"))))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsByteArray();
+        JsonNode data = mapper.readTree(body).get("data");
+        Long userId = Long.valueOf(data.get("member").get("id").asString());
+        createdUserIds.add(userId);
+        issuedRefreshTokens.put(data.get("refreshToken").asString(), userId);
+        return data;
     }
 
     @Test
