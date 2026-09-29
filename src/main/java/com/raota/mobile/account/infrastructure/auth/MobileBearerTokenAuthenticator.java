@@ -5,6 +5,7 @@ import com.raota.global.security.jwt.JwtTokenException;
 import com.raota.mobile.account.domain.model.MobileUser;
 import com.raota.mobile.account.domain.model.MobileUserStatus;
 import com.raota.mobile.account.domain.repository.MobileUserRepository;
+import com.raota.mobile.common.presentation.MobileApiPath;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.Ordered;
@@ -27,8 +28,7 @@ public class MobileBearerTokenAuthenticator implements BearerTokenAuthenticator 
 
     @Override
     public boolean supports(HttpServletRequest request) {
-        String path = request.getRequestURI().substring(request.getContextPath().length());
-        return path.equals("/api/v2") || path.startsWith("/api/v2/");
+        return MobileApiPath.matches(request);
     }
 
     @Override

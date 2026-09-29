@@ -43,12 +43,13 @@ public class BearerTokenAuthenticationFilter extends OncePerRequestFilter {
                 .orElseThrow(() -> new BearerTokenAuthenticationException("유효하지 않은 액세스 토큰입니다.", null));
             SecurityContextHolder.getContext()
                 .setAuthentication(authenticator.authenticate(authorizationHeader.substring(7)));
-            filterChain.doFilter(request, response);
         }
         catch (AuthenticationException exception) {
             SecurityContextHolder.clearContext();
             entryPoint.commence(request, response, exception);
+            return;
         }
+        filterChain.doFilter(request, response);
     }
 
 }

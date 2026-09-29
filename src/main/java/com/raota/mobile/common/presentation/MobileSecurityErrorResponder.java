@@ -30,8 +30,7 @@ public class MobileSecurityErrorResponder implements SecurityErrorResponder {
 
     @Override
     public boolean supports(HttpServletRequest request) {
-        String path = request.getRequestURI().substring(request.getContextPath().length());
-        return path.equals("/api/v2") || path.startsWith("/api/v2/");
+        return MobileApiPath.matches(request);
     }
 
     @Override

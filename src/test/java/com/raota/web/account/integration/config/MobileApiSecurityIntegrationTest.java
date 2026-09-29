@@ -18,6 +18,7 @@ import com.raota.web.account.infrastructure.auth.AuthProperties;
 import com.raota.web.account.infrastructure.auth.JwtTokenProvider;
 import com.raota.support.BaseIntegrationTest;
 import jakarta.persistence.EntityManager;
+import java.net.URI;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -145,6 +146,16 @@ class MobileApiSecurityIntegrationTest extends BaseIntegrationTest {
             .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"))
             .andExpect(jsonPath("$.success").value(false))
             .andExpect(jsonPath("$.status").doesNotExist());
+    }
+
+    @Test
+    void 인코딩된_v2_경로에서도_v1_토큰으로_인증할_수_없다() throws Exception {
+        String token = jwtTokenProvider.createAccessToken(1L);
+
+        mockMvc
+            .perform(get(URI.create("/%61pi/v2/unclassified-probe")).header(HttpHeaders.AUTHORIZATION, bearer(token)))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
     }
 
     @Test
