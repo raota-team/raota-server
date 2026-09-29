@@ -85,4 +85,24 @@ public class MobileUser {
         return new MobileUser(email);
     }
 
+    /** 변경 요청에서 누락한 필드는 유지하고 빈 문자열만 지운다. */
+    public void updateProfile(String email, String avatarUrl, String bio, String favoriteRamenType) {
+        if (email != null) {
+            this.email = clearIfEmpty(email);
+        }
+        if (avatarUrl != null) {
+            this.avatarUrl = clearIfEmpty(avatarUrl);
+        }
+        if (bio != null) {
+            this.bio = clearIfEmpty(bio);
+        }
+        if (favoriteRamenType != null) {
+            this.favoriteRamenType = clearIfEmpty(favoriteRamenType);
+        }
+    }
+
+    private String clearIfEmpty(String value) {
+        return value.isEmpty() ? null : value;
+    }
+
 }
