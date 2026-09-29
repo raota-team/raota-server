@@ -48,6 +48,8 @@ public class SecurityConfig {
             .permitAll()
             .requestMatchers(accessRuleRegistry.matchersFor(AccessLevel.ADMIN))
             .hasRole("ADMIN")
+            .requestMatchers(accessRuleRegistry.matchersFor(AccessLevel.ACTIVE_MEMBER))
+            .hasAuthority(AccessLevel.ACTIVE_MEMBER_AUTHORITY)
             .requestMatchers(accessRuleRegistry.matchersFor(AccessLevel.AUTHENTICATED))
             .authenticated()
             .anyRequest()

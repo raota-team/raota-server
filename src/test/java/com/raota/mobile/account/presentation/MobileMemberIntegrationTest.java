@@ -10,6 +10,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.raota.global.presentation.common.RequestIdFilter;
+import com.raota.global.security.AccessLevel;
+import com.raota.global.security.AccessRule;
+import com.raota.global.security.AccessRuleContributor;
 import com.raota.mobile.account.domain.model.MobileUser;
 import com.raota.mobile.account.domain.repository.MobileUserRepository;
 import com.raota.mobile.account.infrastructure.auth.MobileAccessTokenService;
@@ -17,13 +20,17 @@ import com.raota.support.BaseIntegrationTest;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.http.MediaType;
@@ -118,14 +125,16 @@ class MobileMemberIntegrationTest extends BaseIntegrationTest {
     void 잘못된_프로필_필드는_필드_오류와_함께_400이다() throws Exception {
         Long userId = createUser();
 
-        for (String fieldAndValue : new String[] { "\"email\":\"invalid\"",
-                "\"avatarUrl\":\"http://example.com/a.png\"", "\"bio\":\"" + "a".repeat(501) + "\"" }) {
+        for (String[] invalidField : new String[][] { { "email", "\"email\":\"invalid\"" },
+                { "avatarUrl", "\"avatarUrl\":\"http://example.com/a.png\"" },
+                { "avatarUrl", "\"avatarUrl\":\"https://example.com:abc/a.png\"" },
+                { "bio", "\"bio\":\"" + "a".repeat(501) + "\"" } }) {
             mvc.perform(patch("/api/v2/members/me").header(HttpHeaders.AUTHORIZATION, authorization(userId))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{" + fieldAndValue + "}"))
+                .content("{" + invalidField[1] + "}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
-                .andExpect(jsonPath("$.error.fields[0].field").exists());
+                .andExpect(jsonPath("$.error.fields[0].field").value(invalidField[0]));
         }
     }
 
@@ -362,6 +371,47 @@ class MobileMemberIntegrationTest extends BaseIntegrationTest {
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM tb_v2_user_consent WHERE user_id = ?",
                 Integer.class, userId))
             .isZero();
+    }
+
+    @Test
+    void 가입_중에는_ACTIVE_MEMBER를_거절하고_완료_후_새_토큰은_통과한다() throws Exception {
+        Long onboardingId = createUser();
+        Long activeId = createUser();
+        jdbcTemplate.update(
+                "UPDATE tb_v2_user SET status = 'ACTIVE', nickname = 'Active2', nickname_normalized = 'active2', onboarding_completed_at = NOW(6) WHERE id = ?",
+                activeId);
+
+        mvc.perform(get("/api/v2/test/active-only"))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
+        mvc.perform(get("/api/v2/test/active-only").header(HttpHeaders.AUTHORIZATION, authorization(onboardingId)))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.error.code").value("ONBOARDING_REQUIRED"))
+            .andExpect(jsonPath("$.error.message").value("온보딩을 먼저 완료해 주세요."));
+        mvc.perform(get("/api/v2/test/active-only").header(HttpHeaders.AUTHORIZATION, authorization(activeId)))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+
+        mvc.perform(put("/api/v2/members/me/onboarding").header(HttpHeaders.AUTHORIZATION, authorization(onboardingId))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                    {"nickname":"NewActive","consents":[
+                    {"type":"TERMS","documentVersion":"2026-09-01","granted":true},
+                    {"type":"PRIVACY","documentVersion":"2026-09-01","granted":true}]}
+                    """)).andExpect(status().isOk());
+        mvc.perform(get("/api/v2/test/active-only").header(HttpHeaders.AUTHORIZATION, authorization(onboardingId)))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+    }
+
+    @TestConfiguration
+    static class ActiveMemberOnlyRule {
+
+        @Bean
+        AccessRuleContributor activeMemberOnlyAccessRule() {
+            return () -> List.of(new AccessRule(AccessLevel.ACTIVE_MEMBER, HttpMethod.GET, "/api/v2/test/active-only"));
+        }
+
     }
 
     private Long createUser() {

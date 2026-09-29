@@ -41,9 +41,10 @@ v1 접근 규칙은 `web.account`의 `EndpointAccessPolicy`, v2 접근 규칙은
 
 endpoint를 추가하거나 메서드·경로를 바꾸면 함께 처리한다.
 
-1. v1은 `web/account/infrastructure/config/EndpointAccessPolicy`, v2는 `mobile/account/presentation/MobileAccessRules`에 `PUBLIC` / `AUTHENTICATED` / `ADMIN` 중 하나로 등록.
+1. v1은 `web/account/infrastructure/config/EndpointAccessPolicy`, v2는 `mobile/account/presentation/MobileAccessRules`에 `PUBLIC` / `AUTHENTICATED` / `ACTIVE_MEMBER` / `ADMIN` 중 하나로 등록.
 2. `ApiAccessPolicyInventoryTest`의 endpoint 수 갱신.
 3. PUBLIC 또는 ADMIN 예외를 추가했다면 익명·USER·ADMIN 동작 테스트 추가.
+4. 새 v2 쓰기 API는 원칙적으로 `ACTIVE_MEMBER`로 등록한다. 온보딩 중 이용해야 하는 내 정보 조회·수정, 온보딩, 닉네임 중복 확인, 업로드 티켓, 로그아웃만 `AUTHENTICATED`로 등록한다.
 
 `Long` ID 동적 경로는 `[0-9]+`로 제한한다.
 
