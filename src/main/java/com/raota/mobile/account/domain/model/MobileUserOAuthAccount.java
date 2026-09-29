@@ -63,4 +63,8 @@ public class MobileUserOAuthAccount {
         return new MobileUserOAuthAccount(userId, provider, providerSubject, providerEmail, now);
     }
 
+    public void recordLogin(Instant now) {
+        this.lastLoginAt = now;
+    }
+
 }
