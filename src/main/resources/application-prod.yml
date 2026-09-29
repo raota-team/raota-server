@@ -158,6 +158,11 @@ app:
       issuer: raota-mobile
       access-token-secret: ${APP_MOBILE_AUTH_ACCESS_TOKEN_SECRET}
       access-token-expiry-seconds: 1800
+    oauth:
+      google:
+        client-ids: ${APP_MOBILE_OAUTH_GOOGLE_CLIENT_IDS}
+      kakao:
+        app-id: ${APP_MOBILE_OAUTH_KAKAO_APP_ID}
   redis:
     auth:
       refresh-token-key-prefix: "${APP_REDIS_AUTH_REFRESH_TOKEN_KEY_PREFIX:auth:refresh:token:}"

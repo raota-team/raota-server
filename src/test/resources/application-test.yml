@@ -86,6 +86,11 @@ app:
       issuer: raota-mobile-test
       access-token-secret: mobile-v2-signing-secret-for-tests-0123456789abcdef
       access-token-expiry-seconds: 1800
+    oauth:
+      google:
+        client-ids: test-google-mobile-client
+      kakao:
+        app-id: "123456"
   redis:
     auth:
       refresh-token-key-prefix: "auth:refresh:token:"
