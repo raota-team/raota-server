@@ -3,12 +3,14 @@ package com.raota.mobile.account.presentation;
 import com.raota.mobile.account.application.result.MobileMemberResult;
 import com.raota.mobile.account.application.result.MobileNicknameAvailabilityResult;
 import com.raota.mobile.account.application.service.MobileMemberService;
+import com.raota.mobile.account.presentation.request.MobileOnboardingRequest;
 import com.raota.mobile.account.presentation.request.MobileProfileUpdateRequest;
 import com.raota.mobile.common.presentation.response.MobileApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -38,6 +40,12 @@ public class MobileMemberController {
     public MobileApiResponse<MobileNicknameAvailabilityResult> nicknameAvailability(@LoginUser Long userId,
             @RequestParam String nickname) {
         return MobileApiResponse.success(members.nicknameAvailability(userId, nickname));
+    }
+
+    @PutMapping("/me/onboarding")
+    public MobileApiResponse<MobileMemberResult> onboard(@LoginUser Long userId,
+            @Valid @RequestBody MobileOnboardingRequest request) {
+        return MobileApiResponse.success(members.onboard(userId, request.toCommand()));
     }
 
 }

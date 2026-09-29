@@ -1,5 +1,7 @@
 package com.raota.mobile.account.domain.model;
 
+import com.raota.mobile.common.error.MobileErrorCode;
+import com.raota.mobile.common.error.MobileException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -99,6 +101,17 @@ public class MobileUser {
         if (favoriteRamenType != null) {
             this.favoriteRamenType = clearIfEmpty(favoriteRamenType);
         }
+    }
+
+    /** 가입 중인 회원의 표시 이름과 상태를 한 번만 확정한다. */
+    public void completeOnboarding(Nickname nickname, Instant now) {
+        if (status != MobileUserStatus.ONBOARDING) {
+            throw new MobileException(MobileErrorCode.CONFLICT, "이미 온보딩을 마쳤습니다.");
+        }
+        this.nickname = nickname.display();
+        this.nicknameNormalized = nickname.normalized();
+        this.status = MobileUserStatus.ACTIVE;
+        this.onboardingCompletedAt = now;
     }
 
     private String clearIfEmpty(String value) {
