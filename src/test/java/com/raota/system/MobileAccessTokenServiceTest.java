@@ -42,7 +42,7 @@ class MobileAccessTokenServiceTest {
 
     private MobileAccessTokenService mobileTokens(long expirySeconds) {
         return new MobileAccessTokenService(
-                new MobileAuthProperties("raota-mobile-test", MOBILE_SECRET, expirySeconds));
+                new MobileAuthProperties("raota-mobile-test", MOBILE_SECRET, expirySeconds, 1209600, "v2:refresh:"));
     }
 
 }

@@ -27,12 +27,16 @@ class MobileAuthPropertiesTest {
     }
 
     @Test
-    void 만료_설정이_없으면_기본값_1800초를_사용한다() {
+    void 만료_설정이_없으면_기본_만료와_키_접두어를_사용한다() {
         contextRunner
             .withPropertyValues("app.mobile.auth.issuer=raota-mobile-test",
                     "app.mobile.auth.access-token-secret=mobile-v2-signing-secret-for-tests-0123456789abcdef")
-            .run(context -> assertThat(context.getBean(MobileAuthProperties.class).accessTokenExpirySeconds())
-                .isEqualTo(1800));
+            .run(context -> {
+                MobileAuthProperties properties = context.getBean(MobileAuthProperties.class);
+                assertThat(properties.accessTokenExpirySeconds()).isEqualTo(1800);
+                assertThat(properties.refreshTokenExpirySeconds()).isEqualTo(1209600);
+                assertThat(properties.refreshTokenKeyPrefix()).isEqualTo("v2:refresh:");
+            });
     }
 
     @Configuration(proxyBeanMethods = false)
