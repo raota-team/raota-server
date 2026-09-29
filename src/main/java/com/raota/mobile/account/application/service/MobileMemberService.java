@@ -1,8 +1,11 @@
 package com.raota.mobile.account.application.service;
 
+import com.raota.mobile.account.application.config.MobileAccountProperties;
+import com.raota.mobile.account.application.port.RefreshTokenStore;
 import com.raota.mobile.account.application.command.MobileOnboardingCommand;
 import com.raota.mobile.account.application.result.MobileMemberResult;
 import com.raota.mobile.account.application.result.MobileNicknameAvailabilityResult;
+import com.raota.mobile.account.application.result.MobileWithdrawalResult;
 import com.raota.mobile.account.domain.model.Nickname;
 import com.raota.mobile.account.domain.model.MobileUser;
 import com.raota.mobile.account.domain.model.ConsentType;
@@ -31,14 +34,21 @@ public class MobileMemberService {
 
     private final MobileUserConsentRepository consents;
 
-    private final TransactionTemplate onboardingTransaction;
+    private final RefreshTokenStore refreshTokens;
+
+    private final MobileAccountProperties accountProperties;
+
+    private final TransactionTemplate accountTransaction;
 
     public MobileMemberService(MobileUserRepository users, MobileUserConsentRepository consents,
-            PlatformTransactionManager transactionManager) {
+            PlatformTransactionManager transactionManager, RefreshTokenStore refreshTokens,
+            MobileAccountProperties accountProperties) {
         this.users = users;
         this.consents = consents;
-        this.onboardingTransaction = new TransactionTemplate(transactionManager);
-        this.onboardingTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        this.refreshTokens = refreshTokens;
+        this.accountProperties = accountProperties;
+        this.accountTransaction = new TransactionTemplate(transactionManager);
+        this.accountTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
 
     @Transactional(readOnly = true)
@@ -49,7 +59,7 @@ public class MobileMemberService {
     @Transactional
     public MobileMemberResult updateProfile(Long userId, String email, String avatarUrl, String bio,
             String favoriteRamenType) {
-        MobileUser user = availableUser(userId);
+        MobileUser user = availableUser(users.findByIdForUpdate(userId));
         user.updateProfile(email, avatarUrl, bio, favoriteRamenType);
         return MobileMemberResult.from(user);
     }
@@ -64,7 +74,7 @@ public class MobileMemberService {
 
     public MobileMemberResult onboard(Long userId, MobileOnboardingCommand command) {
         try {
-            return onboardingTransaction.execute(status -> {
+            return accountTransaction.execute(status -> {
                 MobileUser user = availableUser(users.findByIdForUpdate(userId));
                 if (user.getStatus() == MobileUserStatus.ACTIVE) {
                     throw new MobileException(MobileErrorCode.CONFLICT, "이미 온보딩을 마쳤습니다.");
@@ -93,6 +103,17 @@ public class MobileMemberService {
             }
             throw exception;
         }
+    }
+
+    public MobileWithdrawalResult requestWithdrawal(Long userId) {
+        MobileWithdrawalResult result = accountTransaction.execute(status -> {
+            MobileUser user = users.findByIdForUpdate(userId)
+                .orElseThrow(() -> new MobileException(MobileErrorCode.UNAUTHORIZED, "사용할 수 없는 계정입니다."));
+            user.requestWithdrawal(Instant.now(), accountProperties.withdrawalGracePeriod());
+            return new MobileWithdrawalResult(user.getStatus(), user.getPurgeScheduledAt());
+        });
+        refreshTokens.revokeAll(userId);
+        return result;
     }
 
     private void validateConsents(List<MobileOnboardingCommand.ConsentDecision> decisions) {

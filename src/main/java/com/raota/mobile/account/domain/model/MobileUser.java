@@ -11,6 +11,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.time.Duration;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -112,6 +113,16 @@ public class MobileUser {
         this.nicknameNormalized = nickname.normalized();
         this.status = MobileUserStatus.ACTIVE;
         this.onboardingCompletedAt = now;
+    }
+
+    /** 탈퇴가 가능한 계정은 유예 기한까지 비활성 상태로 전환한다. */
+    public void requestWithdrawal(Instant now, Duration grace) {
+        if (status != MobileUserStatus.ONBOARDING && status != MobileUserStatus.ACTIVE) {
+            throw new MobileException(MobileErrorCode.CONFLICT, "이미 탈퇴를 요청했거나 사용할 수 없는 계정입니다.");
+        }
+        this.status = MobileUserStatus.WITHDRAW_PENDING;
+        this.withdrawalRequestedAt = now;
+        this.purgeScheduledAt = now.plus(grace);
     }
 
     private String clearIfEmpty(String value) {
