@@ -56,10 +56,8 @@ public class KakaoAccessTokenVerifier implements SocialTokenVerifier {
             if (profile == null || profile.get("id") == null || profile.get("id").isNull()) {
                 throw invalidCredential();
             }
-            JsonNode account = profile.get("kakao_account");
-            JsonNode email = account == null ? null : account.get("email");
             return new SocialIdentity(provider(), profile.get("id").asString(),
-                    email == null || email.isNull() ? null : email.asString());
+                    verifiedEmail(profile.get("kakao_account")));
         }
         catch (RestClientResponseException exception) {
             if (exception.getStatusCode().is4xxClientError()) {
@@ -67,6 +65,16 @@ public class KakaoAccessTokenVerifier implements SocialTokenVerifier {
             }
             throw exception;
         }
+    }
+
+    /** Kakao가 유효하고 인증된 이메일이라고 표시한 경우에만 이메일을 쓴다. */
+    private static String verifiedEmail(JsonNode account) {
+        if (account == null || account.get("email") == null || account.get("email").isNull()) {
+            return null;
+        }
+        boolean valid = account.path("is_email_valid").asBoolean(false);
+        boolean verified = account.path("is_email_verified").asBoolean(false);
+        return valid && verified ? account.get("email").asString() : null;
     }
 
     private static MobileException invalidCredential() {

@@ -20,7 +20,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-/** Google의 공개 키와 토큰의 시각·발급자·대상을 함께 검증한다. */
+/** Google의 공개 키와 토큰의 시각·발급자·대상을 함께 검증한다. 이메일은 Google이 인증한 경우에만 쓴다. */
 @Component
 public class GoogleIdTokenVerifier implements SocialTokenVerifier {
 
@@ -61,7 +61,9 @@ public class GoogleIdTokenVerifier implements SocialTokenVerifier {
             if (validator.validate(jwt).hasErrors()) {
                 throw invalidCredential();
             }
-            return new SocialIdentity(provider(), jwt.getSubject(), jwt.getClaimAsString("email"));
+            String email = Boolean.TRUE.equals(jwt.getClaimAsBoolean("email_verified")) ? jwt.getClaimAsString("email")
+                    : null;
+            return new SocialIdentity(provider(), jwt.getSubject(), email);
         }
         catch (JwtException exception) {
             throw invalidCredential();

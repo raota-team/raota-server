@@ -43,6 +43,20 @@ class GoogleIdTokenVerifierTest {
     }
 
     @Test
+    void 인증되지_않았거나_인증_여부가_없는_이메일은_쓰지_않는다() throws Exception {
+        Instant expiresAt = Instant.now().plusSeconds(300);
+
+        var unverified = verifier(keyPair)
+            .verify(credential(token(keyPair, "https://accounts.google.com", "mobile-client", expiresAt, false)));
+        var absent = verifier(keyPair)
+            .verify(credential(token(keyPair, "https://accounts.google.com", "mobile-client", expiresAt, null)));
+
+        assertThat(unverified.subject()).isEqualTo("google-subject");
+        assertThat(unverified.email()).isNull();
+        assertThat(absent.email()).isNull();
+    }
+
+    @Test
     void Google의_도메인_발급자_표기도_허용한다() throws Exception {
         var identity = verifier(keyPair)
             .verify(credential(token(keyPair, "accounts.google.com", "mobile-client", Instant.now().plusSeconds(300))));
@@ -107,13 +121,21 @@ class GoogleIdTokenVerifierTest {
     }
 
     private static String token(KeyPair key, String issuer, String audience, Instant expiresAt) throws Exception {
-        JWTClaimsSet claims = new JWTClaimsSet.Builder().issuer(issuer)
+        return token(key, issuer, audience, expiresAt, true);
+    }
+
+    private static String token(KeyPair key, String issuer, String audience, Instant expiresAt, Boolean emailVerified)
+            throws Exception {
+        JWTClaimsSet.Builder builder = new JWTClaimsSet.Builder().issuer(issuer)
             .audience(audience)
             .subject("google-subject")
             .claim("email", "member@example.com")
             .issueTime(Date.from(Instant.now().minusSeconds(30)))
-            .expirationTime(Date.from(expiresAt))
-            .build();
+            .expirationTime(Date.from(expiresAt));
+        if (emailVerified != null) {
+            builder.claim("email_verified", emailVerified);
+        }
+        JWTClaimsSet claims = builder.build();
         SignedJWT jwt = new SignedJWT(new JWSHeader(JWSAlgorithm.RS256), claims);
         jwt.sign(new RSASSASigner(key.getPrivate()));
         return jwt.serialize();

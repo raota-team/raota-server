@@ -41,7 +41,8 @@ class KakaoAccessTokenVerifierTest {
             .andRespond(withSuccess("{\"app_id\":123456}", MediaType.APPLICATION_JSON));
         server.expect(once(), requestTo("https://kakao.example/v2/user/me"))
             .andExpect(header("Authorization", "Bearer kakao-token"))
-            .andRespond(withSuccess("{\"id\":987654,\"kakao_account\":{\"email\":\"member@example.com\"}}",
+            .andRespond(withSuccess(
+                    "{\"id\":987654,\"kakao_account\":{\"email\":\"member@example.com\",\"is_email_valid\":true,\"is_email_verified\":true}}",
                     MediaType.APPLICATION_JSON));
 
         var identity = verifier.verify(credential("kakao-token"));
@@ -49,6 +50,22 @@ class KakaoAccessTokenVerifierTest {
         assertThat(identity.provider()).isEqualTo(OAuthProvider.KAKAO);
         assertThat(identity.subject()).isEqualTo("987654");
         assertThat(identity.email()).isEqualTo("member@example.com");
+        server.verify();
+    }
+
+    @Test
+    void 인증되지_않은_카카오_이메일은_쓰지_않는다() {
+        server.expect(once(), requestTo("https://kakao.example/v1/user/access_token_info"))
+            .andRespond(withSuccess("{\"app_id\":123456}", MediaType.APPLICATION_JSON));
+        server.expect(once(), requestTo("https://kakao.example/v2/user/me"))
+            .andRespond(withSuccess(
+                    "{\"id\":987654,\"kakao_account\":{\"email\":\"member@example.com\",\"is_email_valid\":true,\"is_email_verified\":false}}",
+                    MediaType.APPLICATION_JSON));
+
+        var identity = verifier.verify(credential("kakao-token"));
+
+        assertThat(identity.subject()).isEqualTo("987654");
+        assertThat(identity.email()).isNull();
         server.verify();
     }
 
