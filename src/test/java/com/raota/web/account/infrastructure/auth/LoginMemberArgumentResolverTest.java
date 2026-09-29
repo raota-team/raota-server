@@ -10,6 +10,7 @@ import com.raota.web.account.infrastructure.auth.AuthenticationRequiredException
 import com.raota.web.account.infrastructure.auth.LoginMember;
 import com.raota.web.account.infrastructure.auth.LoginMemberArgumentResolver;
 import java.lang.reflect.Method;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,6 +38,11 @@ public class LoginMemberArgumentResolverTest {
         mavContainer = mock(ModelAndViewContainer.class);
         webRequest = mock(NativeWebRequest.class);
         binderFactory = mock(WebDataBinderFactory.class);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test

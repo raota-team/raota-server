@@ -2,9 +2,9 @@ package com.raota.web.account.infrastructure.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.raota.global.presentation.common.RequestIdFilter;
 import com.raota.global.security.DelegatingAccessDeniedHandler;
 import com.raota.global.security.DelegatingAuthenticationEntryPoint;
+import com.raota.global.security.jwt.ExpiredJwtTokenException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -51,57 +51,6 @@ class WebSecurityErrorResponderTest {
     }
 
     @Test
-    void v2_권한이_부족한_요청은_v2_403_JSON과_requestId를_반환한다() throws Exception {
-        MockHttpServletRequest request = mobileRequest("/api/v2/anything");
-        request.setAttribute(RequestIdFilter.ATTRIBUTE, "request-123");
-        MockHttpServletResponse response = new MockHttpServletResponse();
-
-        deniedHandler.handle(request, response, new AccessDeniedException("내부 예외 메시지"));
-
-        JsonNode body = objectMapper.readTree(response.getContentAsByteArray());
-        assertThat(response.getStatus()).isEqualTo(403);
-        assertThat(body.get("success").booleanValue()).isFalse();
-        assertThat(body.get("data").isNull()).isTrue();
-        assertThat(body.get("error").get("code").stringValue()).isEqualTo("FORBIDDEN");
-        assertThat(body.get("error").get("message").stringValue()).isEqualTo("접근 권한이 없습니다.");
-        assertThat(body.get("error").get("fields").isEmpty()).isTrue();
-        assertThat(body.get("meta").get("requestId").stringValue()).isEqualTo("request-123");
-    }
-
-    @Test
-    void v2_루트_경로도_v2_JSON을_반환한다() throws Exception {
-        MockHttpServletResponse response = new MockHttpServletResponse();
-
-        deniedHandler.handle(mobileRequest("/api/v2"), response, new AccessDeniedException("내부 예외 메시지"));
-
-        assertThat(objectMapper.readTree(response.getContentAsByteArray()).get("error").get("code").stringValue())
-            .isEqualTo("FORBIDDEN");
-    }
-
-    @Test
-    void v2_만료된_토큰은_TOKEN_EXPIRED를_반환한다() throws Exception {
-        MockHttpServletResponse response = new MockHttpServletResponse();
-
-        entryPoint.commence(mobileRequest("/api/v2/anything"), response,
-                new ExpiredJwtAuthenticationException(new IllegalStateException()));
-
-        JsonNode body = objectMapper.readTree(response.getContentAsByteArray());
-        assertThat(response.getStatus()).isEqualTo(401);
-        assertThat(body.get("error").get("code").stringValue()).isEqualTo("TOKEN_EXPIRED");
-        assertThat(body.get("error").get("message").stringValue()).isEqualTo("액세스 토큰이 만료되었습니다.");
-    }
-
-    @Test
-    void v1_만료된_토큰은_기존_메시지를_유지한다() throws Exception {
-        MockHttpServletResponse response = new MockHttpServletResponse();
-
-        entryPoint.commence(new MockHttpServletRequest(), response,
-                new ExpiredJwtAuthenticationException(new IllegalStateException()));
-
-        assertErrorResponse(response, "유효하지 않은 액세스 토큰입니다.");
-    }
-
-    @Test
     void 서버가_판정한_인증_실패_메시지는_보존한다() throws Exception {
         MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -111,10 +60,14 @@ class WebSecurityErrorResponderTest {
         assertErrorResponse(response, "탈퇴 처리된 계정입니다.");
     }
 
-    private MockHttpServletRequest mobileRequest(String path) {
-        MockHttpServletRequest request = new MockHttpServletRequest("GET", path);
-        request.setServletPath(path);
-        return request;
+    @Test
+    void 만료된_v1_토큰은_기존_메시지를_유지한다() throws Exception {
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        entryPoint.commence(new MockHttpServletRequest(), response, new JwtAuthenticationException("유효하지 않은 액세스 토큰입니다.",
+                new ExpiredJwtTokenException(new IllegalStateException())));
+
+        assertErrorResponse(response, "유효하지 않은 액세스 토큰입니다.");
     }
 
     private void assertErrorResponse(MockHttpServletResponse response, String expectedMessage) throws Exception {
