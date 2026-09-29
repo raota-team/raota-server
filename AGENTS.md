@@ -31,10 +31,13 @@ MySQL 8 + Flyway, Redis, Spring Security(OAuth2 + JWT), Spring AI(Oracle Vector 
 - 구현보다 먼저 모듈 등록과 `ModulithArchitectureTest`(예상 모듈 목록) 갱신을 한다.
 - `web`과 `mobile`은 서로 참조하지 않는다. v1 데이터가 필요하면 `web` 클래스가 아니라 v1 테이블을 직접 읽는다.
 - v2 오류는 `mobile.common.error.MobileException(MobileErrorCode, message)`으로 던진다. `ResponseStatusException`, `IllegalArgumentException`, `EntityNotFoundException` 등은 v2에서 500 `INTERNAL_ERROR`로 처리된다.
-- v2 오류 응답은 발생 단계별로 이미 처리된다: 보안 필터(401·403)는 `RestSecurityErrorWriter`, 컨트롤러 결정 전(없는 경로·405)은 `MobileFallbackExceptionResolver`, 컨트롤러 결정 후는 `MobileExceptionAdvice`. v2 도메인 코드는 새 advice나 resolver를 만들지 않고 `MobileException`만 던진다.
+- v2 오류 응답은 발생 단계별로 이미 처리된다: 보안 필터(401·403)는 `MobileSecurityErrorResponder`, 컨트롤러 결정 전(없는 경로·405)은 `MobileFallbackExceptionResolver`, 컨트롤러 결정 후는 `MobileExceptionAdvice`. v2 도메인 코드는 새 advice나 resolver를 만들지 않고 `MobileException`만 던진다.
 - v2 응답 JSON: ID 필드는 `String`, 시각은 `Instant`(UTC ISO-8601, 끝에 `Z`), 날짜는 `LocalDate`(`YYYY-MM-DD`). v2 응답에 `LocalDateTime`은 쓰지 않는다(운영 JVM이 `Asia/Seoul`이라 KST 표시 없는 값이 나간다). null 필드는 생략하지 않는다. 전역 Jackson·JVM 타임존 설정은 v1에 영향을 주므로 바꾸지 않는다.
 
 ## API 접근 정책 (fail-closed)
+
+보안 필터 체인은 `global.security`에 하나만 두고 각 모듈이 인증기·오류 응답기·접근 규칙을 플러그인으로 제공한다.
+v1 접근 규칙은 `web.account`의 `EndpointAccessPolicy`가 관리한다.
 
 endpoint를 추가하거나 메서드·경로를 바꾸면 함께 처리한다.
 
