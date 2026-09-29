@@ -125,6 +125,21 @@ public class MobileUser {
         this.purgeScheduledAt = now.plus(grace);
     }
 
+    /** 유예 기간이 끝난 회원의 식별 가능한 프로필을 지운다. */
+    public void anonymize() {
+        if (status != MobileUserStatus.WITHDRAW_PENDING) {
+            throw new MobileException(MobileErrorCode.CONFLICT, "탈퇴 유예 중인 계정만 익명화할 수 있습니다.");
+        }
+        this.status = MobileUserStatus.WITHDRAWN;
+        this.email = null;
+        this.nickname = null;
+        this.nicknameNormalized = null;
+        this.avatarUrl = null;
+        this.bio = null;
+        this.favoriteRamenType = null;
+        this.purgeScheduledAt = null;
+    }
+
     private String clearIfEmpty(String value) {
         return value.isEmpty() ? null : value;
     }

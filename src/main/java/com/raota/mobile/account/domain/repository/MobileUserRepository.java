@@ -1,8 +1,12 @@
 package com.raota.mobile.account.domain.repository;
 
+import com.raota.mobile.account.domain.model.MobileUserStatus;
 import com.raota.mobile.account.domain.model.MobileUser;
 import jakarta.persistence.LockModeType;
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -15,5 +19,30 @@ public interface MobileUserRepository extends JpaRepository<MobileUser, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select user from MobileUser user where user.id = :id")
     Optional<MobileUser> findByIdForUpdate(Long id);
+
+    @Query("""
+            select user.id as id, user.purgeScheduledAt as purgeScheduledAt from MobileUser user
+            where user.status = :status and user.purgeScheduledAt <= :now
+            order by user.purgeScheduledAt, user.id
+            """)
+    List<DueUser> findDueForPurge(MobileUserStatus status, Instant now, Pageable pageable);
+
+    @Query("""
+            select user.id as id, user.purgeScheduledAt as purgeScheduledAt from MobileUser user
+            where user.status = :status and user.purgeScheduledAt <= :now
+            and (user.purgeScheduledAt > :afterScheduledAt
+                or (user.purgeScheduledAt = :afterScheduledAt and user.id > :afterId))
+            order by user.purgeScheduledAt, user.id
+            """)
+    List<DueUser> findDueForPurgeAfter(MobileUserStatus status, Instant now, Instant afterScheduledAt, Long afterId,
+            Pageable pageable);
+
+    interface DueUser {
+
+        Long getId();
+
+        Instant getPurgeScheduledAt();
+
+    }
 
 }
