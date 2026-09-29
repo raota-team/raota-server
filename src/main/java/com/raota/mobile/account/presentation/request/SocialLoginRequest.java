@@ -3,6 +3,8 @@ package com.raota.mobile.account.presentation.request;
 import com.raota.mobile.account.application.command.SocialCredential;
 import com.raota.mobile.account.application.command.SocialLoginCommand;
 import com.raota.mobile.account.domain.model.OAuthProvider;
+import com.raota.mobile.common.error.MobileErrorCode;
+import com.raota.mobile.common.error.MobileException;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
@@ -11,7 +13,14 @@ public record SocialLoginRequest(@NotNull OAuthProvider provider, @Size(max = 81
         @Size(max = 8192) String accessToken, @Size(max = 8192) String authorizationCode,
         @Size(max = 8192) String nonce) {
 
+    private static boolean missing(String value) {
+        return value == null || value.isBlank();
+    }
+
     public SocialLoginCommand toCommand() {
+        if (provider == OAuthProvider.APPLE && (missing(idToken) || missing(nonce) || missing(authorizationCode))) {
+            throw new MobileException(MobileErrorCode.VALIDATION_ERROR, "Apple ID 토큰, nonce 및 인가 코드가 필요합니다.");
+        }
         return new SocialLoginCommand(provider, new SocialCredential(idToken, accessToken, authorizationCode, nonce));
     }
 
