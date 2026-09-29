@@ -5,4 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface MobileUserRepository extends JpaRepository<MobileUser, Long> {
 
+    boolean existsByNicknameNormalizedAndIdNot(String nicknameNormalized, Long id);
+
 }

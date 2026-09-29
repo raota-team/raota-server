@@ -17,7 +17,8 @@ public class MobileAccessRules implements AccessRuleContributor {
                 new AccessRule(AccessLevel.PUBLIC, HttpMethod.POST, "/api/v2/auth/token/reissue"),
                 new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/api/v2/auth/logout"),
                 new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.GET, "/api/v2/members/me"),
-                new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.PATCH, "/api/v2/members/me"));
+                new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.PATCH, "/api/v2/members/me"),
+                new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.GET, "/api/v2/members/nickname-availability"));
     }
 
 }

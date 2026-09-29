@@ -1,6 +1,8 @@
 package com.raota.mobile.account.application.service;
 
 import com.raota.mobile.account.application.result.MobileMemberResult;
+import com.raota.mobile.account.application.result.MobileNicknameAvailabilityResult;
+import com.raota.mobile.account.domain.model.Nickname;
 import com.raota.mobile.account.domain.model.MobileUser;
 import com.raota.mobile.account.domain.model.MobileUserStatus;
 import com.raota.mobile.account.domain.repository.MobileUserRepository;
@@ -28,6 +30,14 @@ public class MobileMemberService {
         MobileUser user = availableUser(userId);
         user.updateProfile(email, avatarUrl, bio, favoriteRamenType);
         return MobileMemberResult.from(user);
+    }
+
+    @Transactional(readOnly = true)
+    public MobileNicknameAvailabilityResult nicknameAvailability(Long userId, String rawNickname) {
+        availableUser(userId);
+        Nickname nickname = Nickname.of(rawNickname);
+        return new MobileNicknameAvailabilityResult(nickname.display(),
+                !users.existsByNicknameNormalizedAndIdNot(nickname.normalized(), userId));
     }
 
     private MobileUser availableUser(Long userId) {

@@ -145,6 +145,42 @@ class MobileMemberIntegrationTest extends BaseIntegrationTest {
             .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
     }
 
+    @Test
+    void 닉네임_중복_확인은_표시값을_돌려주며_내_닉네임은_사용_가능하다() throws Exception {
+        Long userId = createUser();
+        Long otherId = createUser();
+        jdbcTemplate.update("UPDATE tb_v2_user SET nickname = 'Ramen', nickname_normalized = 'ramen' WHERE id = ?",
+                otherId);
+
+        mvc.perform(get("/api/v2/members/nickname-availability").param("nickname", "  Ｎｅｗ_９  ")
+            .header(HttpHeaders.AUTHORIZATION, authorization(userId)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.nickname").value("New_9"))
+            .andExpect(jsonPath("$.data.available").value(true));
+        mvc.perform(get("/api/v2/members/nickname-availability").param("nickname", "rAmEn")
+            .header(HttpHeaders.AUTHORIZATION, authorization(userId)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.available").value(false));
+        mvc.perform(get("/api/v2/members/nickname-availability").param("nickname", "ＲＡＭＥＮ")
+            .header(HttpHeaders.AUTHORIZATION, authorization(otherId)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.available").value(true));
+    }
+
+    @Test
+    void 유효하지_않은_닉네임은_400이고_익명_중복_조회는_401이다() throws Exception {
+        Long userId = createUser();
+
+        mvc.perform(get("/api/v2/members/nickname-availability").param("nickname", "라멘🍜")
+            .header(HttpHeaders.AUTHORIZATION, authorization(userId)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
+            .andExpect(jsonPath("$.error.message").value("닉네임은 2~12자의 한글·영문·숫자·밑줄만 쓸 수 있습니다."));
+        mvc.perform(get("/api/v2/members/nickname-availability").param("nickname", "라멘"))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
+    }
+
     private Long createUser() {
         Long userId = users.saveAndFlush(MobileUser.onboarding("member@example.com")).getId();
         createdUserIds.add(userId);
