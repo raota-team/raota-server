@@ -42,4 +42,11 @@ class JwtCodecTest {
         assertThatThrownBy(() -> codec.verifySubject(token)).isInstanceOf(ExpiredJwtTokenException.class);
     }
 
+    @Test
+    void 비어_있거나_해석되지_않은_placeholder가_남은_서명_키는_거부한다() {
+        assertThatThrownBy(() -> new JwtCodec("raota-mobile-test", " ")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new JwtCodec("raota-mobile-test", "${APP_MOBILE_AUTH_ACCESS_TOKEN_SECRET}"))
+            .isInstanceOf(IllegalArgumentException.class);
+    }
+
 }

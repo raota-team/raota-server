@@ -18,7 +18,14 @@ public class JwtCodec {
 
     private final SecretKey signingKey;
 
+    /**
+     * 서명 키가 비어 있거나 {@code ${...}} placeholder가 해석되지 않은 채 남아 있으면 거부한다. 설정 바인딩은 해석하지 못한
+     * placeholder를 문자 그대로 넘기므로, 그대로 쓰면 누구나 아는 값이 서명 키가 된다.
+     */
     public JwtCodec(String issuer, String secret) {
+        if (secret == null || secret.isBlank() || secret.contains("${")) {
+            throw new IllegalArgumentException("JWT 서명 키가 설정되지 않았습니다.");
+        }
         this.issuer = issuer;
         this.signingKey = createSigningKey(secret);
     }
