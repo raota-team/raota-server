@@ -1,8 +1,8 @@
 package com.raota.web.account.infrastructure.auth;
 
-import org.springframework.security.core.AuthenticationException;
+import com.raota.global.security.BearerTokenAuthenticationException;
 
-public class JwtAuthenticationException extends AuthenticationException {
+public class JwtAuthenticationException extends BearerTokenAuthenticationException {
 
     public JwtAuthenticationException(String message, Throwable cause) {
         super(message, cause);

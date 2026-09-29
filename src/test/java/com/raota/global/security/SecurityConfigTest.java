@@ -1,4 +1,4 @@
-package com.raota.web.account.integration.config;
+package com.raota.global.security;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
