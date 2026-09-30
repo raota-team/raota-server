@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 
 /** 토큰 자체는 저장하지 않고 SHA-256 해시로 Redis 키를 만든다. */
 @Component
-public class RedisRefreshTokenStore implements RefreshTokenStore {
+public class MobileRedisRefreshTokenStore implements RefreshTokenStore {
 
     private final StringRedisTemplate redis;
 
@@ -22,7 +22,7 @@ public class RedisRefreshTokenStore implements RefreshTokenStore {
 
     private final SecureRandom random = new SecureRandom();
 
-    public RedisRefreshTokenStore(StringRedisTemplate redis, MobileAuthProperties properties) {
+    public MobileRedisRefreshTokenStore(StringRedisTemplate redis, MobileAuthProperties properties) {
         this.redis = redis;
         this.properties = properties;
     }
