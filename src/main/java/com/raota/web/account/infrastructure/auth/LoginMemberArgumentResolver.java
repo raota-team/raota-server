@@ -10,8 +10,8 @@ import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
 /**
- * 컨트롤러 메소드 파라미터로 '@LoginMember Long memberId'를 사용할 수 있게 해주는 Resolver.
- * JwtAuthenticationFilter가 보안 컨텍스트에 저장해둔 인증 정보를 자동으로 꺼내서 주입한다.
+ * 컨트롤러 메소드 파라미터로 '@LoginMember Long memberId'를 사용할 수 있게 해주는 Resolver. 인증기가 보안 컨텍스트에 저장한
+ * 회원 정보를 꺼내서 주입한다.
  */
 @Component
 public class LoginMemberArgumentResolver implements HandlerMethodArgumentResolver {

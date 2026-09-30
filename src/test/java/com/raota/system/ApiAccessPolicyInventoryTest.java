@@ -1,8 +1,9 @@
-package com.raota.web.account.integration.config;
+package com.raota.system;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.raota.web.account.infrastructure.config.EndpointAccessPolicy;
+import com.raota.global.security.AccessLevel;
+import com.raota.global.security.AccessRuleRegistry;
 import com.raota.support.BaseIntegrationTest;
 import java.util.Comparator;
 import java.util.List;
@@ -26,13 +27,16 @@ class ApiAccessPolicyInventoryTest extends BaseIntegrationTest {
     @Autowired
     private RequestMappingHandlerMapping requestMappingHandlerMapping;
 
+    @Autowired
+    private AccessRuleRegistry accessRuleRegistry;
+
     @Test
     void 모든_애플리케이션_엔드포인트는_접근_등급이_명시되어_있다() {
         List<Endpoint> endpoints = applicationEndpoints();
 
         assertThat(endpoints).hasSize(EXPECTED_APPLICATION_ENDPOINT_COUNT);
         assertThat(endpoints).allSatisfy(endpoint -> {
-            Set<EndpointAccessPolicy.AccessLevel> accessLevels = matchingAccessLevels(endpoint);
+            Set<AccessLevel> accessLevels = matchingAccessLevels(endpoint);
 
             assertThat(accessLevels)
                 .withFailMessage("접근 정책을 하나만 명시해야 합니다. endpoint=%s, matches=%s", endpoint, accessLevels)
@@ -49,26 +53,21 @@ class ApiAccessPolicyInventoryTest extends BaseIntegrationTest {
         assertThat(matchingAccessLevels("GET", "/ramen-shops/internal/menus")).isEmpty();
         assertThat(matchingAccessLevels("GET", "/ramen-logs/moderation")).isEmpty();
 
-        assertThat(matchingAccessLevels("GET", "/community/posts/1"))
-            .containsExactly(EndpointAccessPolicy.AccessLevel.PUBLIC);
-        assertThat(matchingAccessLevels("GET", "/ramen-shops/1"))
-            .containsExactly(EndpointAccessPolicy.AccessLevel.PUBLIC);
-        assertThat(matchingAccessLevels("GET", "/ramen-logs/1"))
-            .containsExactly(EndpointAccessPolicy.AccessLevel.PUBLIC);
+        assertThat(matchingAccessLevels("GET", "/community/posts/1")).containsExactly(AccessLevel.PUBLIC);
+        assertThat(matchingAccessLevels("GET", "/ramen-shops/1")).containsExactly(AccessLevel.PUBLIC);
+        assertThat(matchingAccessLevels("GET", "/ramen-logs/1")).containsExactly(AccessLevel.PUBLIC);
     }
 
     @Test
     void Springdoc_YAML_명세도_공개한다() {
-        assertThat(matchingAccessLevels("GET", "/v3/api-docs.yaml"))
-            .containsExactly(EndpointAccessPolicy.AccessLevel.PUBLIC);
+        assertThat(matchingAccessLevels("GET", "/v3/api-docs.yaml")).containsExactly(AccessLevel.PUBLIC);
     }
 
     @Test
     void 공개_GET_경로는_암묵적인_HEAD_요청도_허용한다() {
-        assertThat(matchingAccessLevels("HEAD", "/")).containsExactly(EndpointAccessPolicy.AccessLevel.PUBLIC);
-        assertThat(matchingAccessLevels("HEAD", "/community/posts/1"))
-            .containsExactly(EndpointAccessPolicy.AccessLevel.PUBLIC);
-        assertThat(matchingAccessLevels("HEAD", "/actuator/health")).contains(EndpointAccessPolicy.AccessLevel.PUBLIC);
+        assertThat(matchingAccessLevels("HEAD", "/")).containsExactly(AccessLevel.PUBLIC);
+        assertThat(matchingAccessLevels("HEAD", "/community/posts/1")).containsExactly(AccessLevel.PUBLIC);
+        assertThat(matchingAccessLevels("HEAD", "/actuator/health")).contains(AccessLevel.PUBLIC);
         assertThat(matchingAccessLevels("HEAD", "/security-policy-unclassified")).isEmpty();
     }
 
@@ -99,15 +98,15 @@ class ApiAccessPolicyInventoryTest extends BaseIntegrationTest {
             .toList();
     }
 
-    private Set<EndpointAccessPolicy.AccessLevel> matchingAccessLevels(Endpoint endpoint) {
+    private Set<AccessLevel> matchingAccessLevels(Endpoint endpoint) {
         String examplePath = PATH_VARIABLE.matcher(endpoint.path()).replaceAll("1");
         return matchingAccessLevels(endpoint.method(), examplePath);
     }
 
-    private Set<EndpointAccessPolicy.AccessLevel> matchingAccessLevels(String method, String path) {
+    private Set<AccessLevel> matchingAccessLevels(String method, String path) {
         MockHttpServletRequest request = new MockHttpServletRequest(method, path);
         request.setServletPath(path);
-        return EndpointAccessPolicy.matchingAccessLevels(request);
+        return accessRuleRegistry.matchingAccessLevels(request);
     }
 
     private record Endpoint(String method, String path) {

@@ -8,6 +8,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.raota.global.presentation.common.RequestIdFilter;
+import com.raota.mobile.account.domain.model.MobileUser;
+import com.raota.mobile.account.domain.repository.MobileUserRepository;
+import com.raota.mobile.account.infrastructure.auth.MobileAccessTokenService;
 import com.raota.support.BaseIntegrationTest;
 import com.raota.web.account.domain.member.model.MemberProfile;
 import com.raota.web.account.domain.member.model.MemberRole;
@@ -39,6 +42,12 @@ class MobileApiFallbackIntegrationTest extends BaseIntegrationTest {
     private MemberRepository memberRepository;
 
     @Autowired
+    private MobileUserRepository mobileUsers;
+
+    @Autowired
+    private MobileAccessTokenService mobileAccessTokens;
+
+    @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
     @Autowired
@@ -56,7 +65,8 @@ class MobileApiFallbackIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void 인증된_사용자의_없는_v2_경로는_v2_404_응답을_반환한다() throws Exception {
-        MvcResult result = mockMvc.perform(get("/api/v2/no-such-path").header(HttpHeaders.AUTHORIZATION, bearerToken()))
+        MvcResult result = mockMvc
+            .perform(get("/api/v2/no-such-path").header(HttpHeaders.AUTHORIZATION, mobileBearerToken()))
             .andExpect(status().isNotFound())
             .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.success").value(false))
@@ -70,7 +80,7 @@ class MobileApiFallbackIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void 인증된_사용자의_없는_v1_경로는_본문_없는_404를_유지한다() throws Exception {
-        mockMvc.perform(get("/no-such-v1-path").header(HttpHeaders.AUTHORIZATION, bearerToken()))
+        mockMvc.perform(get("/no-such-v1-path").header(HttpHeaders.AUTHORIZATION, webBearerToken()))
             .andExpect(status().isNotFound())
             .andExpect(content().string(""));
     }
@@ -82,10 +92,15 @@ class MobileApiFallbackIntegrationTest extends BaseIntegrationTest {
             .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
     }
 
-    private String bearerToken() {
+    private String webBearerToken() {
         MemberProfile member = memberRepository
             .saveAndFlush(MemberProfile.builder().nickname("v2 오류 응답 테스트 회원").role(MemberRole.USER).build());
         return "Bearer " + jwtTokenProvider.createAccessToken(member.getId());
+    }
+
+    private String mobileBearerToken() {
+        MobileUser user = mobileUsers.saveAndFlush(MobileUser.onboarding("fallback-test@example.com"));
+        return "Bearer " + mobileAccessTokens.issue(user.getId());
     }
 
 }

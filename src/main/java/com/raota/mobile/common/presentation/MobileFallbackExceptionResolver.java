@@ -50,8 +50,7 @@ public class MobileFallbackExceptionResolver implements HandlerExceptionResolver
     @Override
     public ModelAndView resolveException(HttpServletRequest request, HttpServletResponse response, Object handler,
             Exception ex) {
-        String path = request.getRequestURI().substring(request.getContextPath().length());
-        if (!path.equals("/api/v2") && !path.startsWith("/api/v2/")) {
+        if (!MobileApiPath.matches(request)) {
             return null;
         }
         if (handler instanceof HandlerMethod) {

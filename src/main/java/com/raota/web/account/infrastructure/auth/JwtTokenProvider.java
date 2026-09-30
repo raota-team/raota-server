@@ -1,14 +1,9 @@
 package com.raota.web.account.infrastructure.auth;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.util.Date;
-import javax.crypto.SecretKey;
+import com.raota.global.security.jwt.JwtCodec;
+import com.raota.global.security.jwt.JwtTokenException;
+import java.time.Duration;
+import java.util.Map;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -16,35 +11,23 @@ public class JwtTokenProvider {
 
     private final AuthProperties authProperties;
 
-    private final SecretKey signingKey;
+    private final JwtCodec codec;
 
     public JwtTokenProvider(AuthProperties authProperties) {
         this.authProperties = authProperties;
-        this.signingKey = createSigningKey(authProperties.accessTokenSecret());
+        this.codec = new JwtCodec(authProperties.issuer(), authProperties.accessTokenSecret());
     }
 
     public String createAccessToken(Long memberId) {
-        Instant now = Instant.now();
-        Instant expiresAt = now.plusSeconds(authProperties.accessTokenExpirySeconds());
-        return Jwts.builder()
-            .issuer(authProperties.issuer())
-            .subject(String.valueOf(memberId))
-            .issuedAt(Date.from(now))
-            .expiration(Date.from(expiresAt))
-            .claim("memberId", memberId)
-            .signWith(signingKey)
-            .compact();
+        return codec.issue(String.valueOf(memberId), Duration.ofSeconds(authProperties.accessTokenExpirySeconds()),
+                Map.of("memberId", memberId));
     }
 
     public Long getMemberId(String token) {
         try {
-            Claims claims = Jwts.parser().verifyWith(signingKey).build().parseSignedClaims(token).getPayload();
-            return Long.valueOf(claims.getSubject());
+            return Long.valueOf(codec.verifySubject(token));
         }
-        catch (ExpiredJwtException exception) {
-            throw new ExpiredJwtAuthenticationException(exception);
-        }
-        catch (RuntimeException exception) {
+        catch (JwtTokenException | NumberFormatException exception) {
             throw new JwtAuthenticationException("유효하지 않은 액세스 토큰입니다.", exception);
         }
     }
@@ -55,17 +38,6 @@ public class JwtTokenProvider {
 
     public long refreshTokenExpirySeconds() {
         return authProperties.refreshTokenExpirySeconds();
-    }
-
-    private SecretKey createSigningKey(String secret) {
-        byte[] keyBytes;
-        try {
-            keyBytes = Decoders.BASE64.decode(secret);
-        }
-        catch (RuntimeException exception) {
-            keyBytes = secret.getBytes(StandardCharsets.UTF_8);
-        }
-        return Keys.hmacShaKeyFor(keyBytes);
     }
 
 }
