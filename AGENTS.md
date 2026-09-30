@@ -37,11 +37,11 @@ MySQL 8 + Flyway, Redis, Spring Security(OAuth2 + JWT), Spring AI(Oracle Vector 
 ## API 접근 정책 (fail-closed)
 
 보안 필터 체인은 `global.security`에 하나만 두고 각 모듈이 인증기·오류 응답기·접근 규칙을 플러그인으로 제공한다.
-v1 접근 규칙은 `web.account`의 `EndpointAccessPolicy`가 관리한다.
+v1 접근 규칙은 `web.account`의 `EndpointAccessPolicy`, v2 접근 규칙은 `mobile.account`의 `MobileAccessRules`가 관리한다.
 
 endpoint를 추가하거나 메서드·경로를 바꾸면 함께 처리한다.
 
-1. `web/account/infrastructure/config/EndpointAccessPolicy`에 `PUBLIC` / `AUTHENTICATED` / `ADMIN` 중 하나로 등록.
+1. v1은 `web/account/infrastructure/config/EndpointAccessPolicy`, v2는 `mobile/account/presentation/MobileAccessRules`에 `PUBLIC` / `AUTHENTICATED` / `ADMIN` 중 하나로 등록.
 2. `ApiAccessPolicyInventoryTest`의 endpoint 수 갱신.
 3. PUBLIC 또는 ADMIN 예외를 추가했다면 익명·USER·ADMIN 동작 테스트 추가.
 

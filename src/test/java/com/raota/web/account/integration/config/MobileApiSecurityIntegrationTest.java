@@ -100,7 +100,8 @@ class MobileApiSecurityIntegrationTest extends BaseIntegrationTest {
     @Test
     void 만료된_v2_액세스_토큰은_TOKEN_EXPIRED를_반환한다() throws Exception {
         String expiredToken = new MobileAccessTokenService(
-                new MobileAuthProperties(mobileAuthProperties.issuer(), mobileAuthProperties.accessTokenSecret(), -60))
+                new MobileAuthProperties(mobileAuthProperties.issuer(), mobileAuthProperties.accessTokenSecret(), -60,
+                        mobileAuthProperties.refreshTokenExpirySeconds(), mobileAuthProperties.refreshTokenKeyPrefix()))
             .issue(1L);
         MvcResult result = mockMvc
             .perform(get("/api/v2/unclassified-probe").header(HttpHeaders.AUTHORIZATION, bearer(expiredToken)))
