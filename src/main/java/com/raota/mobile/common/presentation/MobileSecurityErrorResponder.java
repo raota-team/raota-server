@@ -4,6 +4,7 @@ import com.raota.global.presentation.common.RequestIdFilter;
 import com.raota.global.security.BearerTokenAuthenticationException;
 import com.raota.global.security.SecurityErrorResponder;
 import com.raota.global.security.jwt.ExpiredJwtTokenException;
+import com.raota.mobile.common.MobileAuthorities;
 import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.presentation.response.MobileApiResponse;
 import com.raota.mobile.common.presentation.response.MobileError;
@@ -17,6 +18,8 @@ import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
@@ -50,6 +53,13 @@ public class MobileSecurityErrorResponder implements SecurityErrorResponder {
     @Override
     public void forbidden(HttpServletRequest request, HttpServletResponse response, AccessDeniedException exception)
             throws IOException {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getAuthorities()
+            .stream()
+            .anyMatch(authority -> MobileAuthorities.ONBOARDING.equals(authority.getAuthority()))) {
+            write(request, response, MobileErrorCode.ONBOARDING_REQUIRED, "온보딩을 먼저 완료해 주세요.");
+            return;
+        }
         write(request, response, MobileErrorCode.FORBIDDEN, "접근 권한이 없습니다.");
     }
 
