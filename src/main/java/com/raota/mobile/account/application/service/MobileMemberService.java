@@ -16,6 +16,7 @@ import com.raota.mobile.account.domain.repository.MobileUserConsentRepository;
 import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
@@ -109,7 +110,9 @@ public class MobileMemberService {
         MobileWithdrawalResult result = accountTransaction.execute(status -> {
             MobileUser user = users.findByIdForUpdate(userId)
                 .orElseThrow(() -> new MobileException(MobileErrorCode.UNAUTHORIZED, "사용할 수 없는 계정입니다."));
-            user.requestWithdrawal(Instant.now(), accountProperties.withdrawalGracePeriod());
+            // 응답의 삭제 예정 시각이 DATETIME(6)에 저장되는 값과 같도록 마이크로초로 자른다.
+            user.requestWithdrawal(Instant.now().truncatedTo(ChronoUnit.MICROS),
+                    accountProperties.withdrawalGracePeriod());
             return new MobileWithdrawalResult(user.getStatus(), user.getPurgeScheduledAt());
         });
         refreshTokens.revokeAll(userId);
