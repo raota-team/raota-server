@@ -160,9 +160,11 @@ app:
       access-token-expiry-seconds: 1800
     oauth:
       google:
-        client-ids: ${APP_MOBILE_OAUTH_GOOGLE_CLIENT_IDS}
+        # 모바일 앱의 Google 로그인도 v1 웹 OAuth 클라이언트를 webClientId로 쓴다.
+        client-ids: ${APP_MOBILE_OAUTH_GOOGLE_CLIENT_IDS:${GOOGLE_CLIENT_ID}}
       kakao:
-        app-id: ${APP_MOBILE_OAUTH_KAKAO_APP_ID}
+        # v1 웹과 같은 Kakao 앱(라오타)의 앱 ID. 비밀값이 아니다.
+        app-id: ${APP_MOBILE_OAUTH_KAKAO_APP_ID:1422344}
   redis:
     auth:
       refresh-token-key-prefix: "${APP_REDIS_AUTH_REFRESH_TOKEN_KEY_PREFIX:auth:refresh:token:}"
