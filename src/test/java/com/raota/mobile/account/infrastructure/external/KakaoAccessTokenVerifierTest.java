@@ -29,9 +29,12 @@ class KakaoAccessTokenVerifierTest {
     void setUp() {
         RestClient.Builder builder = RestClient.builder();
         server = MockRestServiceServer.bindTo(builder).build();
-        verifier = new KakaoAccessTokenVerifier(builder,
-                new MobileOAuthProperties(new MobileOAuthProperties.Google(List.of("client"), "https://unused.example"),
-                        new MobileOAuthProperties.Kakao("123456", "https://kakao.example")));
+        verifier = new KakaoAccessTokenVerifier(builder, new MobileOAuthProperties(
+                new MobileOAuthProperties.Google(List.of("client"), "https://unused.example"),
+                new MobileOAuthProperties.Kakao("123456", "https://kakao.example"),
+                new MobileOAuthProperties.Apple("net.raota.mobile.test", "TESTTEAM01", "TESTKEY001", "test-key",
+                        "cm2PatRyO0rn/bD+j2wAupkmWGwmDGXdnq3PxZx59Fk=", "https://unused.example/certs",
+                        "https://appleid.apple.com", "https://unused.example/token", "https://unused.example/revoke")));
     }
 
     @Test

@@ -91,6 +91,12 @@ app:
         client-ids: test-google-mobile-client
       kakao:
         app-id: "123456"
+      apple:
+        bundle-id: net.raota.mobile.test
+        team-id: TESTTEAM01
+        key-id: TESTKEY001
+        private-key: "-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgw4zEakl00q5X9eIK\n+j+GQW0W4Fb8R4Q6kEV7odtm4i6hRANCAAQJGHc0sWuVetbHV8LtpGVTsHqZ/lhz\nSk2/4rd1RrdsfhXiOtoU7Di2FH3afJE/PQlJHgiKbs5QjhyYjsCrsDJN\n-----END PRIVATE KEY-----"
+        token-encryption-key: cm2PatRyO0rn/bD+j2wAupkmWGwmDGXdnq3PxZx59Fk=
   redis:
     auth:
       refresh-token-key-prefix: "auth:refresh:token:"

@@ -111,7 +111,10 @@ class GoogleIdTokenVerifierTest {
     private static GoogleIdTokenVerifier verifier(KeyPair key) {
         var properties = new MobileOAuthProperties(
                 new MobileOAuthProperties.Google(List.of("mobile-client"), "https://unused.example/certs"),
-                new MobileOAuthProperties.Kakao("123456", "https://kapi.kakao.com"));
+                new MobileOAuthProperties.Kakao("123456", "https://kapi.kakao.com"),
+                new MobileOAuthProperties.Apple("net.raota.mobile.test", "TESTTEAM01", "TESTKEY001", "test-key",
+                        "cm2PatRyO0rn/bD+j2wAupkmWGwmDGXdnq3PxZx59Fk=", "https://unused.example/certs",
+                        "https://appleid.apple.com", "https://unused.example/token", "https://unused.example/revoke"));
         return new GoogleIdTokenVerifier(properties,
                 NimbusJwtDecoder.withPublicKey((java.security.interfaces.RSAPublicKey) key.getPublic()).build());
     }
