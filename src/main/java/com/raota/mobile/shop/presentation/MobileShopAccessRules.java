@@ -15,7 +15,10 @@ public class MobileShopAccessRules implements AccessRuleContributor {
     public List<AccessRule> accessRules() {
         return List.of(new AccessRule(AccessLevel.PUBLIC, HttpMethod.GET, "/api/v2/shops"),
                 new AccessRule(AccessLevel.PUBLIC, HttpMethod.GET, "/api/v2/shops/map-pins"),
-                new AccessRule(AccessLevel.PUBLIC, HttpMethod.GET, "/api/v2/shops/{shopId:[0-9]+}"));
+                new AccessRule(AccessLevel.PUBLIC, HttpMethod.GET, "/api/v2/shops/{shopId:[0-9]+}"),
+                new AccessRule(AccessLevel.ACTIVE_MEMBER, HttpMethod.PUT, "/api/v2/shops/{shopId:[0-9]+}/bookmark"),
+                new AccessRule(AccessLevel.ACTIVE_MEMBER, HttpMethod.DELETE, "/api/v2/shops/{shopId:[0-9]+}/bookmark"),
+                new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.GET, "/api/v2/members/me/bookmarked-shops"));
     }
 
 }

@@ -1,6 +1,7 @@
 package com.raota.mobile.shop.presentation;
 
 import com.raota.mobile.common.cursor.CursorPage;
+import com.raota.mobile.common.presentation.LoginUser;
 import com.raota.mobile.common.presentation.response.MobileApiResponse;
 import com.raota.mobile.shop.application.query.MobileShopSort;
 import com.raota.mobile.shop.application.result.MobileShopDetail;
@@ -27,14 +28,14 @@ public class MobileShopController {
     private final MobileShopQueryService shops;
 
     @GetMapping
-    public MobileApiResponse<CursorPage<MobileShopSummary>> list(
+    public MobileApiResponse<CursorPage<MobileShopSummary>> list(@LoginUser(required = false) Long userId,
             @RequestParam(defaultValue = "POPULAR") MobileShopSort sort, @RequestParam(required = false) String query,
             @RequestParam(required = false) String region, @RequestParam(required = false) String ramenType,
             @RequestParam(defaultValue = "false") boolean openNow, @RequestParam(required = false) BigDecimal latitude,
             @RequestParam(required = false) BigDecimal longitude, @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "20") @Min(1) @Max(CursorPage.MAX_SIZE) int size) {
         return MobileApiResponse
-            .success(shops.list(sort, query, region, ramenType, openNow, latitude, longitude, cursor, size));
+            .success(shops.list(userId, sort, query, region, ramenType, openNow, latitude, longitude, cursor, size));
     }
 
     @GetMapping("/map-pins")
@@ -43,8 +44,9 @@ public class MobileShopController {
     }
 
     @GetMapping("/{shopId:[0-9]+}")
-    public MobileApiResponse<MobileShopDetail> detail(@PathVariable Long shopId) {
-        return MobileApiResponse.success(shops.detail(shopId));
+    public MobileApiResponse<MobileShopDetail> detail(@LoginUser(required = false) Long userId,
+            @PathVariable Long shopId) {
+        return MobileApiResponse.success(shops.detail(userId, shopId));
     }
 
 }

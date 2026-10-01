@@ -4,6 +4,8 @@ import com.raota.mobile.common.cursor.Cursor;
 import com.raota.mobile.common.cursor.CursorPage;
 import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
+import com.raota.mobile.shop.application.port.MobileShopBookmarkPort;
+import com.raota.mobile.shop.application.port.MobileShopBookmarkPort.SavedShop;
 import com.raota.mobile.shop.application.port.MobileShopSearchPort;
 import com.raota.mobile.shop.application.port.MobileShopSearchPort.RankedShop;
 import com.raota.mobile.shop.application.query.MobileShopSort;
@@ -53,11 +55,13 @@ public class MobileShopQueryService {
 
     private final MobileShopServicePerkRepository perks;
 
+    private final MobileShopBookmarkPort bookmarks;
+
     private final MobileShopOpenStatus openStatus;
 
     @Transactional(readOnly = true)
-    public CursorPage<MobileShopSummary> list(MobileShopSort sort, String query, String region, String ramenType,
-            boolean openNow, BigDecimal latitude, BigDecimal longitude, String rawCursor, int size) {
+    public CursorPage<MobileShopSummary> list(Long userId, MobileShopSort sort, String query, String region,
+            String ramenType, boolean openNow, BigDecimal latitude, BigDecimal longitude, String rawCursor, int size) {
         validate(sort, latitude, longitude);
         BigDecimal searchLatitude = coordinate(latitude, 90);
         BigDecimal searchLongitude = coordinate(longitude, 180);
@@ -79,10 +83,11 @@ public class MobileShopQueryService {
         CursorPage<RankedShop> page = CursorPage.of(ranked, size, RankedShop::position);
         List<Long> pageIds = page.items().stream().map(RankedShop::id).toList();
         Map<Long, String> firstImages = images(pageIds);
+        var bookmarkedIds = bookmarks.bookmarkedShopIds(userId, pageIds);
         List<MobileShopSummary> items = page.items()
             .stream()
             .map(row -> summary(byId.get(row.id()), firstImages.get(row.id()),
-                    byHours.getOrDefault(row.id(), List.of()), row.distance()))
+                    byHours.getOrDefault(row.id(), List.of()), row.distance(), bookmarkedIds.contains(row.id())))
             .toList();
         return new CursorPage<>(items, page.nextCursor(), page.hasNext());
     }
@@ -99,14 +104,14 @@ public class MobileShopQueryService {
     }
 
     @Transactional
-    public MobileShopDetail detail(Long shopId) {
+    public MobileShopDetail detail(Long userId, Long shopId) {
         MobileShop shop = shops.findByIdAndPublishedTrueAndDeletedAtIsNull(shopId)
             .orElseThrow(() -> new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "매장을 찾을 수 없습니다."));
         List<MobileShopImage> shopImages = images.findByShopIdInOrderBySortOrderAscIdAsc(List.of(shopId));
         List<MobileShopBusinessHour> shopHours = hours.findByShopIdInOrderByDayOfWeekAsc(List.of(shopId));
         List<Hours> openHours = shopHours.stream().map(this::toHours).toList();
         MobileShopSummary base = summary(shop, shopImages.isEmpty() ? null : shopImages.getFirst().getUrl(), openHours,
-                null);
+                null, bookmarks.bookmarkedShopIds(userId, List.of(shopId)).contains(shopId));
         List<MobileShopBusinessHourResult> businessHours = shopHours.stream()
             .map(hour -> new MobileShopBusinessHourResult(hour.getDayOfWeek(), time(hour.getOpensAt()),
                     time(hour.getClosesAt()), time(hour.getBreakStart()), time(hour.getBreakEnd()),
@@ -128,6 +133,22 @@ public class MobileShopQueryService {
                 servicePerks, shop.getAiReviewSummary(), shop.getAiSummaryKeywords(), shop.getAiSummaryGeneratedAt());
     }
 
+    @Transactional(readOnly = true)
+    public CursorPage<MobileShopSummary> bookmarked(Long userId, String rawCursor, int size) {
+        List<SavedShop> saved = bookmarks.saved(userId, Cursor.parse(rawCursor).orElse(null), size + 1);
+        CursorPage<SavedShop> page = CursorPage.of(saved, size, SavedShop::position);
+        List<Long> ids = page.items().stream().map(SavedShop::shopId).toList();
+        Map<Long, MobileShop> byId = byId(ids);
+        Map<Long, String> firstImages = images(ids);
+        Map<Long, List<Hours>> byHours = hours(ids);
+        List<MobileShopSummary> items = page.items()
+            .stream()
+            .map(row -> summary(byId.get(row.shopId()), firstImages.get(row.shopId()),
+                    byHours.getOrDefault(row.shopId(), List.of()), null, true))
+            .toList();
+        return new CursorPage<>(items, page.nextCursor(), page.hasNext());
+    }
+
     private Hours toHours(MobileShopBusinessHour hour) {
         return new Hours(hour.getDayOfWeek(), hour.getOpensAt(), hour.getClosesAt(), hour.getBreakStart(),
                 hour.getBreakEnd(), hour.isClosed());
@@ -137,10 +158,11 @@ public class MobileShopQueryService {
         return value == null ? null : value.format(CLOCK_TIME);
     }
 
-    private MobileShopSummary summary(MobileShop shop, String imageUrl, List<Hours> shopHours, BigDecimal distance) {
+    private MobileShopSummary summary(MobileShop shop, String imageUrl, List<Hours> shopHours, BigDecimal distance,
+            boolean bookmarked) {
         return new MobileShopSummary(shop.getId().toString(), shop.getName(), shop.getBranchName(), shop.getAddress(),
                 shop.getRegion(), shop.getLatitude(), shop.getLongitude(), imageUrl, shop.getTagline(),
-                shop.getRamenTypes(), shop.getTags(), shop.getLogCount(), shop.getBookmarkCount(), false,
+                shop.getRamenTypes(), shop.getTags(), shop.getLogCount(), shop.getBookmarkCount(), bookmarked,
                 shop.getBusinessStatus(), openStatus.isOpen(shop.getHoursVerifiedAt(), shopHours),
                 distance == null ? null : distance.setScale(0, RoundingMode.HALF_UP).intValue());
     }
