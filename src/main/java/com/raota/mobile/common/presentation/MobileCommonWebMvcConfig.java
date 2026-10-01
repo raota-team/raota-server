@@ -1,17 +1,17 @@
-package com.raota.mobile.account.presentation;
+package com.raota.mobile.common.presentation;
 
 import java.util.List;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/** 모바일 회원 ID를 받는 컨트롤러 매개변수를 해석한다. */
+/** 모바일 API 컨트롤러의 필수·선택 회원 ID를 해석한다. */
 @Configuration
-public class MobileWebMvcConfig implements WebMvcConfigurer {
+public class MobileCommonWebMvcConfig implements WebMvcConfigurer {
 
-    private final LoginUserArgumentResolver loginUserArgumentResolver;
+    private final MobileLoginUserArgumentResolver loginUserArgumentResolver;
 
-    public MobileWebMvcConfig(LoginUserArgumentResolver loginUserArgumentResolver) {
+    public MobileCommonWebMvcConfig(MobileLoginUserArgumentResolver loginUserArgumentResolver) {
         this.loginUserArgumentResolver = loginUserArgumentResolver;
     }
 

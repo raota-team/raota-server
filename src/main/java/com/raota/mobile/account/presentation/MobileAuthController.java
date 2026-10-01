@@ -5,6 +5,7 @@ import com.raota.mobile.account.application.result.MobileTokenResult;
 import com.raota.mobile.account.application.service.MobileAuthService;
 import com.raota.mobile.account.presentation.request.SocialLoginRequest;
 import com.raota.mobile.account.presentation.request.RefreshTokenRequest;
+import com.raota.mobile.common.presentation.LoginUser;
 import com.raota.mobile.common.presentation.response.MobileApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;

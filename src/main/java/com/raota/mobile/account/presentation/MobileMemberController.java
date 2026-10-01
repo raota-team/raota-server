@@ -8,6 +8,7 @@ import com.raota.mobile.account.presentation.request.MobileOnboardingRequest;
 import com.raota.mobile.account.presentation.request.MobileProfileUpdateRequest;
 import com.raota.mobile.account.presentation.request.MobileWithdrawalRequest;
 import com.raota.mobile.common.presentation.response.MobileApiResponse;
+import com.raota.mobile.common.presentation.LoginUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
