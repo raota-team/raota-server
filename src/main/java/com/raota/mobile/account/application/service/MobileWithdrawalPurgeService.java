@@ -1,7 +1,11 @@
 package com.raota.mobile.account.application.service;
 
+import com.raota.mobile.account.application.port.AppleTokenClient;
+import com.raota.mobile.account.application.port.ProviderTokenCipher;
 import com.raota.mobile.account.domain.model.MobileUser;
+import com.raota.mobile.account.domain.model.MobileUserOAuthAccount;
 import com.raota.mobile.account.domain.model.MobileUserStatus;
+import com.raota.mobile.account.domain.model.OAuthProvider;
 import com.raota.mobile.account.domain.repository.MobileUserConsentRepository;
 import com.raota.mobile.account.domain.repository.MobileUserOAuthAccountRepository;
 import com.raota.mobile.account.domain.repository.MobileUserRepository;
@@ -14,7 +18,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
-/** 탈퇴 유예가 끝난 회원의 식별 데이터를 회원별로 정리한다. */
+/** 탈퇴 유예가 끝난 회원의 외부 토큰과 식별 데이터를 회원별로 정리한다. */
 @Slf4j
 @Service
 public class MobileWithdrawalPurgeService {
@@ -25,15 +29,22 @@ public class MobileWithdrawalPurgeService {
 
     private final MobileUserConsentRepository consents;
 
+    private final AppleTokenClient appleTokens;
+
+    private final ProviderTokenCipher cipher;
+
     private final TransactionTemplate purgeTransaction;
 
     private static final int PAGE_SIZE = 100;
 
     public MobileWithdrawalPurgeService(MobileUserRepository users, MobileUserOAuthAccountRepository accounts,
-            MobileUserConsentRepository consents, PlatformTransactionManager transactionManager) {
+            MobileUserConsentRepository consents, AppleTokenClient appleTokens, ProviderTokenCipher cipher,
+            PlatformTransactionManager transactionManager) {
         this.users = users;
         this.accounts = accounts;
         this.consents = consents;
+        this.appleTokens = appleTokens;
+        this.cipher = cipher;
         this.purgeTransaction = new TransactionTemplate(transactionManager);
         this.purgeTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
@@ -53,6 +64,7 @@ public class MobileWithdrawalPurgeService {
                 afterScheduledAt = candidate.getPurgeScheduledAt();
                 afterId = userId;
                 try {
+                    revokeAppleTokens(userId);
                     if (Boolean.TRUE.equals(purgeTransaction.execute(status -> anonymize(userId, now)))) {
                         purged++;
                     }
@@ -63,6 +75,14 @@ public class MobileWithdrawalPurgeService {
             }
             if (due.size() < PAGE_SIZE) {
                 return purged;
+            }
+        }
+    }
+
+    private void revokeAppleTokens(Long userId) {
+        for (MobileUserOAuthAccount account : accounts.findAllByUserId(userId)) {
+            if (account.getProvider() == OAuthProvider.APPLE && account.getAppleRefreshTokenEncrypted() != null) {
+                appleTokens.revoke(cipher.decrypt(account.getAppleRefreshTokenEncrypted()));
             }
         }
     }
