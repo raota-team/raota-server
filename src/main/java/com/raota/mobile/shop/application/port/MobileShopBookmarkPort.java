@@ -12,6 +12,8 @@ public interface MobileShopBookmarkPort {
 
     void remove(Long userId, Long shopId);
 
+    void removeForPurgedUser(Long userId);
+
     Set<Long> bookmarkedShopIds(Long userId, List<Long> shopIds);
 
     List<SavedShop> saved(Long userId, Cursor cursor, int limit);

@@ -44,6 +44,16 @@ public class MobileShopJdbcBookmarks implements MobileShopBookmarkPort {
     }
 
     @Override
+    public void removeForPurgedUser(Long userId) {
+        // 한 매장에 회원별 PK 하나만 있으므로 실제로 지워진 행에 대해서만 카운터를 줄인다.
+        List<Long> shopIds = jdbc.queryForList("SELECT shop_id FROM tb_v2_shop_bookmark WHERE user_id = ?", Long.class,
+                userId);
+        for (Long shopId : shopIds) {
+            remove(userId, shopId);
+        }
+    }
+
+    @Override
     public Set<Long> bookmarkedShopIds(Long userId, List<Long> shopIds) {
         if (userId == null || shopIds.isEmpty()) {
             return Set.of();
