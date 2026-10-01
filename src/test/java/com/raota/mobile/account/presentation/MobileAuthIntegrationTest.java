@@ -1,6 +1,7 @@
 package com.raota.mobile.account.presentation;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
@@ -13,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.raota.global.presentation.common.RequestIdFilter;
 import com.raota.mobile.account.application.command.SocialCredential;
 import com.raota.mobile.account.application.port.RefreshTokenStore;
+import com.raota.mobile.account.application.service.MobileMemberService;
 import com.raota.mobile.account.application.result.SocialIdentity;
 import com.raota.mobile.account.domain.model.MobileUserStatus;
 import com.raota.mobile.account.domain.model.OAuthProvider;
@@ -25,6 +27,9 @@ import com.raota.mobile.account.infrastructure.external.KakaoAccessTokenVerifier
 import com.raota.support.BaseIntegrationTest;
 import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -73,6 +78,9 @@ class MobileAuthIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private MobileMemberService members;
 
     @MockitoBean
     private KakaoAccessTokenVerifier kakaoVerifier;
@@ -259,6 +267,79 @@ class MobileAuthIntegrationTest extends BaseIntegrationTest {
             .andExpect(status().isUnauthorized())
             .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"))
             .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
+    void 탈퇴_요청은_모든_기기의_토큰을_폐기하고_재로그인을_차단한다() throws Exception {
+        JsonNode deviceA = login("KAKAO", "accessToken");
+        JsonNode deviceB = login("KAKAO", "accessToken");
+        Long userId = Long.valueOf(deviceA.get("member").get("id").asString());
+        String accessToken = deviceA.get("accessToken").asString();
+
+        String response = mvc
+            .perform(post("/api/v2/members/me/withdrawal").header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsBytes(Map.of("reasonCode", "NOT_USING", "confirmation", "WITHDRAW"))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.status").value("WITHDRAW_PENDING"))
+            .andExpect(jsonPath("$.data.purgeScheduledAt").isNotEmpty())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+        var user = users.findById(userId).orElseThrow();
+        assertThat(user.getStatus()).isEqualTo(MobileUserStatus.WITHDRAW_PENDING);
+        assertThat(Duration.between(user.getWithdrawalRequestedAt(), user.getPurgeScheduledAt()))
+            .isEqualTo(Duration.ofDays(30));
+        assertThat(Instant.parse(mapper.readTree(response).get("data").get("purgeScheduledAt").asString()))
+            .isEqualTo(user.getPurgeScheduledAt());
+        mvc.perform(get("/api/v2/members/me").header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.error.message").value("사용할 수 없는 계정입니다."));
+        rejectRefresh(deviceA.get("refreshToken").asString());
+        rejectRefresh(deviceB.get("refreshToken").asString());
+        mvc.perform(post("/api/v2/auth/oauth/login").contentType(MediaType.APPLICATION_JSON)
+            .content(mapper.writeValueAsBytes(Map.of("provider", "KAKAO", "accessToken", "fake-credential"))))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.error.message").value("사용할 수 없는 계정입니다."));
+        mvc.perform(post("/api/v2/members/me/withdrawal").header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(mapper.writeValueAsBytes(Map.of("reasonCode", "NOT_USING", "confirmation", "WITHDRAW"))))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void 탈퇴_확인_오류와_인증_없는_요청은_거부한다() throws Exception {
+        JsonNode login = login("KAKAO", "accessToken");
+        String token = login.get("accessToken").asString();
+        for (String body : List.of("{\"reasonCode\":\"NOT_USING\",\"confirmation\":\"wrong\"}",
+                "{\"reasonCode\":\"NOT_USING\"}", "{\"reasonCode\":\" \",\"confirmation\":\"WITHDRAW\"}")) {
+            mvc.perform(post("/api/v2/members/me/withdrawal").header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.error.fields[0].field").exists());
+        }
+        mvc.perform(post("/api/v2/members/me/withdrawal").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"reasonCode\":\"NOT_USING\",\"confirmation\":\"WITHDRAW\"}"))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void 활성_회원도_탈퇴할_수_있지만_같은_회원의_중복_요청은_충돌한다() throws Exception {
+        JsonNode login = login("KAKAO", "accessToken");
+        Long userId = Long.valueOf(login.get("member").get("id").asString());
+        jdbcTemplate.update("UPDATE tb_v2_user SET status = 'ACTIVE' WHERE id = ?", userId);
+
+        mvc.perform(post("/api/v2/members/me/withdrawal")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + login.get("accessToken").asString())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"reasonCode\":\"OTHER\",\"confirmation\":\"WITHDRAW\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.status").value("WITHDRAW_PENDING"));
+        assertThatThrownBy(() -> members.requestWithdrawal(userId)).isInstanceOfSatisfying(MobileException.class,
+                error -> assertThat(error.code()).isEqualTo(MobileErrorCode.CONFLICT));
     }
 
     private JsonNode reissue(String token) throws Exception {

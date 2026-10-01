@@ -165,6 +165,8 @@ app:
       kakao:
         # v1 웹과 같은 Kakao 앱(라오타)의 앱 ID. 비밀값이 아니다.
         app-id: ${APP_MOBILE_OAUTH_KAKAO_APP_ID:1422344}
+    account:
+      withdrawal-grace-period: ${APP_MOBILE_ACCOUNT_WITHDRAWAL_GRACE_PERIOD:30d}
   redis:
     auth:
       refresh-token-key-prefix: "${APP_REDIS_AUTH_REFRESH_TOKEN_KEY_PREFIX:auth:refresh:token:}"

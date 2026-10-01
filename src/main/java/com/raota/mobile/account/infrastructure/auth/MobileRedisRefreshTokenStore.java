@@ -9,6 +9,7 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
@@ -32,8 +33,12 @@ public class MobileRedisRefreshTokenStore implements RefreshTokenStore {
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
         String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-        redis.opsForValue()
-            .set(key(token), userId.toString(), Duration.ofSeconds(properties.refreshTokenExpirySeconds()));
+        String hash = hash(token);
+        Duration lifetime = Duration.ofSeconds(properties.refreshTokenExpirySeconds());
+        redis.opsForValue().set(properties.refreshTokenKeyPrefix() + hash, userId.toString(), lifetime);
+        String userKey = userKey(userId);
+        redis.opsForSet().add(userKey, hash);
+        redis.expire(userKey, lifetime);
         return token;
     }
 
@@ -42,12 +47,14 @@ public class MobileRedisRefreshTokenStore implements RefreshTokenStore {
         if (refreshToken == null || refreshToken.isBlank()) {
             return Optional.empty();
         }
-        String key = key(refreshToken);
-        String value = redis.opsForValue().get(key);
-        if (value == null || !Boolean.TRUE.equals(redis.delete(key))) {
+        String hash = hash(refreshToken);
+        String value = redis.opsForValue().getAndDelete(properties.refreshTokenKeyPrefix() + hash);
+        if (value == null) {
             return Optional.empty();
         }
-        return Optional.of(Long.valueOf(value));
+        Long userId = Long.valueOf(value);
+        redis.opsForSet().remove(userKey(userId), hash);
+        return Optional.of(userId);
     }
 
     @Override
@@ -55,16 +62,32 @@ public class MobileRedisRefreshTokenStore implements RefreshTokenStore {
         if (refreshToken == null || refreshToken.isBlank()) {
             return;
         }
-        String key = key(refreshToken);
-        if (userId.toString().equals(redis.opsForValue().get(key))) {
-            redis.delete(key);
+        String hash = hash(refreshToken);
+        String tokenKey = properties.refreshTokenKeyPrefix() + hash;
+        if (userId.toString().equals(redis.opsForValue().get(tokenKey))) {
+            redis.delete(tokenKey);
+            redis.opsForSet().remove(userKey(userId), hash);
         }
     }
 
-    private String key(String token) {
+    @Override
+    public void revokeAll(Long userId) {
+        String userKey = userKey(userId);
+        Set<String> hashes = redis.opsForSet().members(userKey);
+        if (hashes != null && !hashes.isEmpty()) {
+            redis.delete(hashes.stream().map(hash -> properties.refreshTokenKeyPrefix() + hash).toList());
+        }
+        redis.delete(userKey);
+    }
+
+    private String userKey(Long userId) {
+        return properties.refreshTokenKeyPrefix() + "user:" + userId;
+    }
+
+    private String hash(String token) {
         try {
             byte[] hash = MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8));
-            return properties.refreshTokenKeyPrefix() + HexFormat.of().formatHex(hash);
+            return HexFormat.of().formatHex(hash);
         }
         catch (NoSuchAlgorithmException exception) {
             throw new IllegalStateException("SHA-256 알고리즘을 사용할 수 없습니다.", exception);

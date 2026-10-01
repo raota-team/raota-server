@@ -7,6 +7,7 @@ import com.raota.support.BaseIntegrationTest;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.HexFormat;
+import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -38,7 +39,35 @@ class MobileRedisRefreshTokenStoreIntegrationTest extends BaseIntegrationTest {
             assertThat(redis.hasKey(key)).isFalse();
         }
         finally {
+
             redis.delete(key);
+        }
+    }
+
+    @Test
+    void 탈퇴하면_모든_기기의_토큰만_폐기하고_다른_회원의_토큰은_유지된다() throws Exception {
+        Long userId = 10042L;
+        Long otherUserId = 10043L;
+        String first = tokens.issue(userId);
+        String userKey = properties.refreshTokenKeyPrefix() + "user:" + userId;
+        redis.expire(userKey, Duration.ofSeconds(2));
+        String second = tokens.issue(userId);
+        String other = tokens.issue(otherUserId);
+        try {
+            assertThat(redis.opsForSet().members(userKey)).containsExactlyInAnyOrder(hash(first), hash(second));
+            assertThat(redis.getExpire(userKey, TimeUnit.SECONDS)).isBetween(1L,
+                    properties.refreshTokenExpirySeconds());
+            tokens.revokeAll(userId);
+            assertThat(redis.hasKey(userKey)).isFalse();
+            assertThat(redis.hasKey(key(first))).isFalse();
+            assertThat(redis.hasKey(key(second))).isFalse();
+            assertThat(tokens.consume(first)).isEmpty();
+            assertThat(tokens.consume(second)).isEmpty();
+            assertThat(tokens.consume(other)).contains(otherUserId);
+        }
+        finally {
+            tokens.revokeAll(userId);
+            tokens.revokeAll(otherUserId);
         }
     }
 
@@ -83,6 +112,10 @@ class MobileRedisRefreshTokenStoreIntegrationTest extends BaseIntegrationTest {
     private String key(String token) throws Exception {
         byte[] hash = MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8));
         return properties.refreshTokenKeyPrefix() + HexFormat.of().formatHex(hash);
+    }
+
+    private String hash(String token) throws Exception {
+        return key(token).substring(properties.refreshTokenKeyPrefix().length());
     }
 
 }
