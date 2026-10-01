@@ -3,6 +3,7 @@ package com.raota.mobile.shop.presentation;
 import com.raota.mobile.common.cursor.CursorPage;
 import com.raota.mobile.common.presentation.response.MobileApiResponse;
 import com.raota.mobile.shop.application.query.MobileShopSort;
+import com.raota.mobile.shop.application.result.MobileShopDetail;
 import com.raota.mobile.shop.application.result.MobileShopMapPin;
 import com.raota.mobile.shop.application.result.MobileShopSummary;
 import com.raota.mobile.shop.application.service.MobileShopQueryService;
@@ -12,6 +13,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -38,6 +40,11 @@ public class MobileShopController {
     @GetMapping("/map-pins")
     public MobileApiResponse<List<MobileShopMapPin>> mapPins() {
         return MobileApiResponse.success(shops.mapPins());
+    }
+
+    @GetMapping("/{shopId:[0-9]+}")
+    public MobileApiResponse<MobileShopDetail> detail(@PathVariable Long shopId) {
+        return MobileApiResponse.success(shops.detail(shopId));
     }
 
 }

@@ -7,6 +7,10 @@ import com.raota.mobile.common.error.MobileException;
 import com.raota.mobile.shop.application.port.MobileShopSearchPort;
 import com.raota.mobile.shop.application.port.MobileShopSearchPort.RankedShop;
 import com.raota.mobile.shop.application.query.MobileShopSort;
+import com.raota.mobile.shop.application.result.MobileShopBusinessHourResult;
+import com.raota.mobile.shop.application.result.MobileShopDetail;
+import com.raota.mobile.shop.application.result.MobileShopImageResult;
+import com.raota.mobile.shop.application.result.MobileShopServicePerkResult;
 import com.raota.mobile.shop.application.result.MobileShopMapPin;
 import com.raota.mobile.shop.application.result.MobileShopSummary;
 import com.raota.mobile.shop.domain.model.MobileShop;
@@ -14,11 +18,14 @@ import com.raota.mobile.shop.domain.model.MobileShopBusinessHour;
 import com.raota.mobile.shop.domain.model.MobileShopImage;
 import com.raota.mobile.shop.domain.repository.MobileShopBusinessHourRepository;
 import com.raota.mobile.shop.domain.repository.MobileShopImageRepository;
+import com.raota.mobile.shop.domain.repository.MobileShopServicePerkRepository;
 import com.raota.mobile.shop.domain.repository.MobileShopRepository;
 import com.raota.mobile.shop.domain.service.MobileShopOpenStatus;
 import com.raota.mobile.shop.domain.service.MobileShopOpenStatus.Hours;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -34,6 +41,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class MobileShopQueryService {
 
+    private static final DateTimeFormatter CLOCK_TIME = DateTimeFormatter.ofPattern("HH:mm");
+
     private final MobileShopSearchPort search;
 
     private final MobileShopRepository shops;
@@ -41,6 +50,8 @@ public class MobileShopQueryService {
     private final MobileShopImageRepository images;
 
     private final MobileShopBusinessHourRepository hours;
+
+    private final MobileShopServicePerkRepository perks;
 
     private final MobileShopOpenStatus openStatus;
 
@@ -87,6 +98,45 @@ public class MobileShopQueryService {
             .toList();
     }
 
+    @Transactional
+    public MobileShopDetail detail(Long shopId) {
+        MobileShop shop = shops.findByIdAndPublishedTrueAndDeletedAtIsNull(shopId)
+            .orElseThrow(() -> new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "매장을 찾을 수 없습니다."));
+        List<MobileShopImage> shopImages = images.findByShopIdInOrderBySortOrderAscIdAsc(List.of(shopId));
+        List<MobileShopBusinessHour> shopHours = hours.findByShopIdInOrderByDayOfWeekAsc(List.of(shopId));
+        List<Hours> openHours = shopHours.stream().map(this::toHours).toList();
+        MobileShopSummary base = summary(shop, shopImages.isEmpty() ? null : shopImages.getFirst().getUrl(), openHours,
+                null);
+        List<MobileShopBusinessHourResult> businessHours = shopHours.stream()
+            .map(hour -> new MobileShopBusinessHourResult(hour.getDayOfWeek(), time(hour.getOpensAt()),
+                    time(hour.getClosesAt()), time(hour.getBreakStart()), time(hour.getBreakEnd()),
+                    time(hour.getLastOrderAt()), hour.isClosed()))
+            .toList();
+        List<MobileShopServicePerkResult> servicePerks = perks.findByShopIdOrderByIdAsc(shopId)
+            .stream()
+            .map(perk -> new MobileShopServicePerkResult(perk.getPerkType(), perk.getStatus(), perk.getPrice(),
+                    perk.getConditionText(), perk.getVerifiedAt()))
+            .toList();
+        shops.incrementViewCount(shopId);
+        return new MobileShopDetail(base.id(), base.name(), base.branchName(), base.address(), base.region(),
+                base.latitude(), base.longitude(), base.imageUrl(), base.tagline(), base.ramenTypes(), base.tags(),
+                base.logCount(), base.bookmarkCount(), base.isBookmarked(), base.businessStatus(), base.isOpen(),
+                base.distanceMeters(), shop.getDescription(), shop.getPhone(), shop.getInstagramUrl(),
+                shop.getReservationUrl(), shop.getWebsiteUrl(), shop.getNaverPlaceId(), shop.getKakaoPlaceId(),
+                shop.getPriceMin(), shop.getPriceMax(), shop.getClosedDaysText(), shop.getHoursVerifiedAt(),
+                shopImages.stream().map(image -> new MobileShopImageResult(image.getUrl())).toList(), businessHours,
+                servicePerks, shop.getAiReviewSummary(), shop.getAiSummaryKeywords(), shop.getAiSummaryGeneratedAt());
+    }
+
+    private Hours toHours(MobileShopBusinessHour hour) {
+        return new Hours(hour.getDayOfWeek(), hour.getOpensAt(), hour.getClosesAt(), hour.getBreakStart(),
+                hour.getBreakEnd(), hour.isClosed());
+    }
+
+    private String time(LocalTime value) {
+        return value == null ? null : value.format(CLOCK_TIME);
+    }
+
     private MobileShopSummary summary(MobileShop shop, String imageUrl, List<Hours> shopHours, BigDecimal distance) {
         return new MobileShopSummary(shop.getId().toString(), shop.getName(), shop.getBranchName(), shop.getAddress(),
                 shop.getRegion(), shop.getLatitude(), shop.getLongitude(), imageUrl, shop.getTagline(),
@@ -116,9 +166,7 @@ public class MobileShopQueryService {
         Map<Long, List<Hours>> byShop = new HashMap<>();
         if (!ids.isEmpty()) {
             for (MobileShopBusinessHour hour : hours.findByShopIdInOrderByDayOfWeekAsc(ids)) {
-                byShop.computeIfAbsent(hour.getShopId(), ignored -> new ArrayList<>())
-                    .add(new Hours(hour.getDayOfWeek(), hour.getOpensAt(), hour.getClosesAt(), hour.getBreakStart(),
-                            hour.getBreakEnd(), hour.isClosed()));
+                byShop.computeIfAbsent(hour.getShopId(), ignored -> new ArrayList<>()).add(toHours(hour));
             }
         }
         return byShop;

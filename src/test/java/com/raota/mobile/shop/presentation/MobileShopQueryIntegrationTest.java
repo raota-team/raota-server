@@ -153,6 +153,63 @@ class MobileShopQueryIntegrationTest extends BaseIntegrationTest {
             .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
     }
 
+    @Test
+    void 공개_상세는_사진과_시간과_혜택을_내보내고_조회수를_원자적으로_늘린다() throws Exception {
+        jdbc.update("""
+                UPDATE tb_v2_shop SET phone = '02-1234', instagram_url = 'https://instagram',
+                    reservation_url = 'https://reserve', website_url = 'https://website',
+                    naver_place_id = 'naver-1', kakao_place_id = 'kakao-1',
+                    price_min = 9000, price_max = 14000, description = '긴 소개', tagline = '한 줄',
+                    closed_days_text = '수요일', ai_review_summary = '육수가 진하다',
+                    ai_summary_keywords = '["육수","면"]',
+                    ai_summary_generated_at = '2026-09-01 01:00:00.123456'
+                WHERE id = ?
+                """, FIRST);
+        jdbc.update("""
+                INSERT INTO tb_v2_shop_service_perk
+                    (shop_id, perk_type, status, price, condition_text, verified_at)
+                VALUES (?, 'NOODLE_REFILL', 'FREE', NULL, '점심', '2026-09-01 01:00:00.123456')
+                """, FIRST);
+
+        JsonNode detail = data("/api/v2/shops/" + FIRST);
+        assertThat(detail.get("id").asString()).isEqualTo(id(FIRST));
+        assertThat(detail.get("description").asString()).isEqualTo("긴 소개");
+        assertThat(detail.get("phone").asString()).isEqualTo("02-1234");
+        assertThat(detail.get("images").get(0).get("url").asString()).isEqualTo("https://first");
+        assertThat(detail.get("images").get(1).get("url").asString()).isEqualTo("https://later");
+        assertThat(detail.get("businessHours").size()).isEqualTo(7);
+        assertThat(detail.get("businessHours").get(0).get("dayOfWeek").asInt()).isEqualTo(1);
+        assertThat(detail.get("businessHours").get(0).get("opensAt").asString()).isEqualTo("00:00");
+        assertThat(detail.get("businessHours").get(0).get("lastOrderAt").isNull()).isTrue();
+        assertThat(detail.get("servicePerks").get(0).get("type").asString()).isEqualTo("NOODLE_REFILL");
+        assertThat(detail.get("servicePerks").get(0).get("status").asString()).isEqualTo("FREE");
+        assertThat(detail.get("aiSummaryKeywords").get(0).asString()).isEqualTo("육수");
+        assertThat(detail.get("hoursVerifiedAt").asString()).endsWith("Z");
+        assertThat(detail.get("aiSummaryGeneratedAt").asString()).contains(".123456Z");
+        assertThat(mapper.readValue(detail.toString(),
+                new tools.jackson.core.type.TypeReference<java.util.Map<String, Object>>() {
+                }))
+            .containsOnlyKeys("id", "name", "branchName", "address", "region", "latitude", "longitude", "imageUrl",
+                    "tagline", "ramenTypes", "tags", "logCount", "bookmarkCount", "isBookmarked", "businessStatus",
+                    "isOpen", "distanceMeters", "description", "phone", "instagramUrl", "reservationUrl", "websiteUrl",
+                    "naverPlaceId", "kakaoPlaceId", "priceMin", "priceMax", "closedDaysText", "hoursVerifiedAt",
+                    "images", "businessHours", "servicePerks", "aiReviewSummary", "aiSummaryKeywords",
+                    "aiSummaryGeneratedAt");
+
+        data("/api/v2/shops/" + FIRST);
+        assertThat(jdbc.queryForObject("SELECT view_count FROM tb_v2_shop WHERE id = ?", Integer.class, FIRST))
+            .isEqualTo(12);
+    }
+
+    @Test
+    void 알_수_없거나_숨김_삭제된_매장_상세는_404이다() throws Exception {
+        for (long id : new long[] { HIDDEN, DELETED, 900002999L }) {
+            mvc.perform(get("/api/v2/shops/" + id))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+        }
+    }
+
     private void assertPages(String sort, List<String> expected, String coordinates) throws Exception {
         List<String> received = new ArrayList<>();
         String cursor = null;
