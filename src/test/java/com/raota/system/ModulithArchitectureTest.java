@@ -40,7 +40,7 @@ class ModulithArchitectureTest {
 
         assertEquals(
                 Set.of("global", "agent", "web.account", "web.community", "web.ramenlog", "web.ramenshop",
-                        "mobile.account", "mobile.common", "mobile.shop"),
+                        "mobile.account", "mobile.common", "mobile.ramenlog", "mobile.shop"),
                 modules.stream().map(module -> module.getIdentifier().toString()).collect(Collectors.toSet()));
 
         modules.verify();

@@ -154,6 +154,8 @@ app:
     cors:
       allowed-origins: ${APP_AUTH_ALLOWED_ORIGINS:https://www.raota.net,https://raota.net,http://localhost:3000}
   mobile:
+    upload:
+      image-base-url: https://images.raota.net/
     auth:
       issuer: raota-mobile
       access-token-secret: ${APP_MOBILE_AUTH_ACCESS_TOKEN_SECRET}
