@@ -191,17 +191,7 @@ public class MobileRamenLogService {
             .stream()
             .map(MobileRamenLogImage::getUrl)
             .toList();
-        MobileRamenLogDetail.Scores scores = log.getSatisfactionScore() == null ? null
-                : new MobileRamenLogDetail.Scores(log.getSatisfactionScore(), log.getBrothDensityScore(),
-                        log.getNoodleFirmnessScore(), log.getToppingScore(), log.getRevisitIntention().score());
-        return new MobileRamenLogDetail(log.getId().toString(),
-                new MobileRamenLogDetail.Author(author.id().toString(), author.nickname(), author.avatarUrl(),
-                        author.logCount()),
-                new MobileRamenLogDetail.Shop(shop.id().toString(), shop.name(), shop.branchName(), shop.region()),
-                log.getMenuName(), log.getRamenType(), log.getVisitedAt(), imageUrls, log.getNote(),
-                log.getTasteNoteCodes(), log.getRevisitIntention(), log.getVisibility(), scores, log.getLikeCount(),
-                log.getCommentCount(), false, log.getUserId().equals(viewerId), log.getCreatedAt(), log.getUpdatedAt(),
-                List.of(), null);
+        return MobileRamenLogViews.detail(log, author, shop, imageUrls, viewerId);
     }
 
     private MobileRamenLog existingForUpdate(Long id) {
