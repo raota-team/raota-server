@@ -20,7 +20,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 
 class ApiAccessPolicyInventoryTest extends BaseIntegrationTest {
 
-    private static final int EXPECTED_APPLICATION_ENDPOINT_COUNT = 103;
+    private static final int EXPECTED_APPLICATION_ENDPOINT_COUNT = 107;
 
     private static final Pattern PATH_VARIABLE = Pattern.compile("\\{[^/]+}");
 

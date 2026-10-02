@@ -9,4 +9,6 @@ public interface MobileRamenLogImageRepository extends JpaRepository<MobileRamen
 
     List<MobileRamenLogImage> findByRamenLogIdInOrderByRamenLogIdAscSortOrderAsc(Collection<Long> logIds);
 
+    void deleteByRamenLogId(Long logId);
+
 }

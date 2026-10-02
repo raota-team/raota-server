@@ -112,4 +112,26 @@ public class MobileRamenLog {
         return log;
     }
 
+    public void changeDetails(LocalDate visitedAt, String menuName, String ramenType, Byte satisfaction,
+            Byte brothDensity, Byte noodleFirmness, Byte topping, RevisitIntention revisitIntention, String note,
+            List<String> tasteNoteCodes, LogVisibility visibility, Instant updatedAt) {
+        this.visitedAt = visitedAt;
+        this.menuName = menuName;
+        this.ramenType = ramenType;
+        this.satisfactionScore = satisfaction;
+        this.brothDensityScore = brothDensity;
+        this.noodleFirmnessScore = noodleFirmness;
+        this.toppingScore = topping;
+        this.revisitIntention = revisitIntention;
+        this.note = note;
+        this.tasteNoteCodes = tasteNoteCodes;
+        this.visibility = visibility;
+        this.updatedAt = updatedAt;
+    }
+
+    public void softDelete(Instant now) {
+        this.deletedAt = now;
+        this.updatedAt = now;
+    }
+
 }

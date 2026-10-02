@@ -125,12 +125,21 @@ public class MobileShopQueryService {
         shops.incrementViewCount(shopId);
         return new MobileShopDetail(base.id(), base.name(), base.branchName(), base.address(), base.region(),
                 base.latitude(), base.longitude(), base.imageUrl(), base.tagline(), base.ramenTypes(), base.tags(),
-                base.logCount(), base.bookmarkCount(), base.isBookmarked(), base.businessStatus(), base.isOpen(),
-                base.distanceMeters(), shop.getDescription(), shop.getPhone(), shop.getInstagramUrl(),
-                shop.getReservationUrl(), shop.getWebsiteUrl(), shop.getNaverPlaceId(), shop.getKakaoPlaceId(),
-                shop.getPriceMin(), shop.getPriceMax(), shop.getClosedDaysText(), shop.getHoursVerifiedAt(),
+                base.logCount(), base.bookmarkCount(), averageSatisfaction(shop), base.isBookmarked(),
+                base.businessStatus(), base.isOpen(), base.distanceMeters(), shop.getDescription(), shop.getPhone(),
+                shop.getInstagramUrl(), shop.getReservationUrl(), shop.getWebsiteUrl(), shop.getNaverPlaceId(),
+                shop.getKakaoPlaceId(), shop.getPriceMin(), shop.getPriceMax(), shop.getClosedDaysText(),
+                shop.getHoursVerifiedAt(),
                 shopImages.stream().map(image -> new MobileShopImageResult(image.getUrl())).toList(), businessHours,
                 servicePerks, shop.getAiReviewSummary(), shop.getAiSummaryKeywords(), shop.getAiSummaryGeneratedAt());
+    }
+
+    private BigDecimal averageSatisfaction(MobileShop shop) {
+        if (shop.getScoredLogCount() < 3) {
+            return null;
+        }
+        return BigDecimal.valueOf(shop.getSatisfactionScoreSum())
+            .divide(BigDecimal.valueOf(shop.getScoredLogCount()), 1, RoundingMode.HALF_UP);
     }
 
     @Transactional(readOnly = true)
