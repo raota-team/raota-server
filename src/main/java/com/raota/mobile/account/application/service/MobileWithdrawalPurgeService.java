@@ -1,5 +1,6 @@
 package com.raota.mobile.account.application.service;
 
+import com.raota.mobile.account.domain.event.MobileMemberPurgedEvent;
 import com.raota.mobile.account.domain.model.MobileUser;
 import com.raota.mobile.account.domain.model.MobileUserStatus;
 import com.raota.mobile.account.domain.repository.MobileUserConsentRepository;
@@ -10,6 +11,7 @@ import java.time.Instant;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -25,15 +27,19 @@ public class MobileWithdrawalPurgeService {
 
     private final MobileUserConsentRepository consents;
 
+    private final ApplicationEventPublisher events;
+
     private final TransactionTemplate purgeTransaction;
 
     private static final int PAGE_SIZE = 100;
 
     public MobileWithdrawalPurgeService(MobileUserRepository users, MobileUserOAuthAccountRepository accounts,
-            MobileUserConsentRepository consents, PlatformTransactionManager transactionManager) {
+            MobileUserConsentRepository consents, PlatformTransactionManager transactionManager,
+            ApplicationEventPublisher events) {
         this.users = users;
         this.accounts = accounts;
         this.consents = consents;
+        this.events = events;
         this.purgeTransaction = new TransactionTemplate(transactionManager);
         this.purgeTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
@@ -76,6 +82,7 @@ public class MobileWithdrawalPurgeService {
         consents.deleteByUserId(userId);
         accounts.deleteByUserId(userId);
         user.anonymize();
+        events.publishEvent(new MobileMemberPurgedEvent(userId));
         return true;
     }
 
