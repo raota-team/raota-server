@@ -69,6 +69,8 @@ class MobileRamenLogCrudIntegrationTest extends BaseIntegrationTest {
 
     private Long onboarding;
 
+    private Long admin;
+
     @BeforeEach
     void setUp() {
         mvc = MockMvcBuilders.webAppContextSetup(context).addFilters(requestIdFilter).apply(springSecurity()).build();
@@ -83,6 +85,8 @@ class MobileRamenLogCrudIntegrationTest extends BaseIntegrationTest {
         owner = active();
         other = active();
         onboarding = users.saveAndFlush(MobileUser.onboarding("ramen-onboarding@example.com")).getId();
+        admin = active();
+        jdbc.update("UPDATE tb_v2_user SET role = 'ADMIN' WHERE id = ?", admin);
     }
 
     @AfterEach
@@ -92,7 +96,7 @@ class MobileRamenLogCrudIntegrationTest extends BaseIntegrationTest {
                 SHOP, HIDDEN_SHOP);
         jdbc.update("DELETE FROM tb_v2_ramen_log WHERE shop_id IN (?, ?)", SHOP, HIDDEN_SHOP);
         jdbc.update("DELETE FROM tb_v2_shop WHERE id IN (?, ?)", SHOP, HIDDEN_SHOP);
-        for (Long userId : List.of(owner, other, onboarding)) {
+        for (Long userId : List.of(owner, other, onboarding, admin)) {
             users.deleteById(userId);
         }
     }
@@ -204,6 +208,20 @@ class MobileRamenLogCrudIntegrationTest extends BaseIntegrationTest {
         withdrawing.requestWithdrawal(Instant.now(), Duration.ofDays(30));
         users.saveAndFlush(withdrawing);
         mvc.perform(get("/api/v2/ramen-logs/{logId}", publicId).header(HttpHeaders.AUTHORIZATION, auth(other)))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void 공개_기록은_익명_USER_ADMIN_모두_보고_비공개_기록은_ADMIN에게도_보이지_않는다() throws Exception {
+        String publicId = create(owner, "access-public", valid()).get("id").asString();
+        String privateId = create(owner, "access-private", valid().replace("\"PUBLIC\"", "\"PRIVATE\"")).get("id")
+            .asString();
+        mvc.perform(get("/api/v2/ramen-logs/{logId}", publicId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.isMine").value(false));
+        assertThat(detail(publicId, other).get("isMine").asBoolean()).isFalse();
+        assertThat(detail(publicId, admin).get("isMine").asBoolean()).isFalse();
+        mvc.perform(get("/api/v2/ramen-logs/{logId}", privateId).header(HttpHeaders.AUTHORIZATION, auth(admin)))
             .andExpect(status().isNotFound());
     }
 

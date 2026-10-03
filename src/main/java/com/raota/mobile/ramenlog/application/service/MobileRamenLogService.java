@@ -5,14 +5,12 @@ import com.raota.mobile.account.application.facade.MobileAccountRamenLogFacade.M
 import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
 import com.raota.mobile.ramenlog.application.command.MobileCreateRamenLogCommand;
-import com.raota.mobile.ramenlog.application.command.MobileCreateRamenLogCommand.Scores;
 import com.raota.mobile.ramenlog.application.command.MobileUpdateRamenLogCommand;
 import com.raota.mobile.ramenlog.application.result.MobileRamenLogDetail;
 import com.raota.mobile.ramenlog.domain.model.LogVisibility;
 import com.raota.mobile.ramenlog.domain.model.MobileRamenLog;
 import com.raota.mobile.ramenlog.domain.model.MobileRamenLogImage;
 import com.raota.mobile.ramenlog.domain.model.MobileTasteNote;
-import com.raota.mobile.ramenlog.domain.model.RevisitIntention;
 import com.raota.mobile.ramenlog.domain.repository.MobileRamenLogImageRepository;
 import com.raota.mobile.ramenlog.domain.repository.MobileRamenLogRepository;
 import com.raota.mobile.shop.application.facade.MobileShopRamenLogFacade;
@@ -86,15 +84,12 @@ public class MobileRamenLogService {
         try {
             // UNIQUE 충돌은 이 트랜잭션만 되돌린 뒤 별도 읽기로 먼저 커밋된 기록을 조회한다.
             id = createTransaction.execute(status -> {
-                Scores scores = command.scores();
-                MobileRamenLog log = logs
-                    .saveAndFlush(MobileRamenLog.create(userId, shopId, command.visitedAt(), command.menuName().trim(),
-                            command.ramenType(), (byte) scores.satisfaction(), (byte) scores.brothDensity(),
-                            (byte) scores.noodleFirmness(), (byte) scores.topping(), command.revisitIntention(),
-                            command.note(), command.tasteNoteCodes(), command.visibility(), key, now));
+                MobileRamenLog log = logs.saveAndFlush(MobileRamenLog.create(userId, shopId, command.visitedAt(),
+                        command.menuName(), command.ramenType(), command.scores(), command.revisitIntention(),
+                        command.note(), command.tasteNoteCodes(), command.visibility(), key, now));
                 saveImages(log.getId(), command.imageUrls());
                 accounts.incrementLogCount(userId);
-                shops.recordLogAdded(shopId, scores.satisfaction());
+                shops.recordLogAdded(shopId, log.satisfaction());
                 return log.getId();
             });
         }
@@ -135,24 +130,9 @@ public class MobileRamenLogService {
         if (command.imageUrls() != null) {
             validateImageUrls(command.imageUrls());
         }
-        LocalDate visitedAt = command.visitedAt() == null ? log.getVisitedAt() : command.visitedAt();
-        String menuName = command.menuName() == null ? log.getMenuName() : command.menuName().trim();
-        String ramenType = command.ramenType() == null ? log.getRamenType() : command.ramenType();
-        Scores scores = command.scores();
-        RevisitIntention revisit = command.revisitIntention() == null ? log.getRevisitIntention()
-                : command.revisitIntention();
-        String note = command.note() == null ? log.getNote() : command.note();
-        List<String> tasteCodes = command.tasteNoteCodes() == null ? log.getTasteNoteCodes() : command.tasteNoteCodes();
-        LogVisibility visibility = command.visibility() == null ? log.getVisibility() : command.visibility();
-        Integer before = log.getSatisfactionScore() == null ? null : log.getSatisfactionScore().intValue();
-        Integer after = scores == null ? before : scores.satisfaction();
-        log.changeDetails(visitedAt, menuName, ramenType,
-                scores == null ? log.getSatisfactionScore() : (byte) scores.satisfaction(),
-                scores == null ? log.getBrothDensityScore() : (byte) scores.brothDensity(),
-                scores == null ? log.getNoodleFirmnessScore() : (byte) scores.noodleFirmness(),
-                scores == null ? log.getToppingScore() : (byte) scores.topping(), revisit, note,
-                List.copyOf(tasteCodes), visibility, now());
-        shops.recordSatisfactionChanged(log.getShopId(), before, after);
+        Integer before = log.satisfaction();
+        log.edit(command.toEdit(), now());
+        shops.recordSatisfactionChanged(log.getShopId(), before, log.satisfaction());
         if (command.imageUrls() != null) {
             images.deleteByRamenLogId(logId);
             images.flush();
@@ -167,10 +147,12 @@ public class MobileRamenLogService {
         requireAuthor(log, userId);
         log.softDelete(now());
         accounts.decrementLogCount(userId);
-        shops.recordLogRemoved(log.getShopId(),
-                log.getSatisfactionScore() == null ? null : log.getSatisfactionScore().intValue());
+        shops.recordLogRemoved(log.getShopId(), log.satisfaction());
     }
 
+    /**
+     * 삭제한 기록의 키로 다시 오면 삭제된 기록을 돌려줄 수도, 새로 만들 수도 없다. 키는 UNIQUE로 남아 있으므로 409로 알린다.
+     */
     private void rejectDeletedReplay(MobileRamenLog log) {
         if (log.getDeletedAt() != null) {
             throw new MobileException(MobileErrorCode.CONFLICT, "이미 삭제된 기록의 요청입니다.");
@@ -250,13 +232,7 @@ public class MobileRamenLogService {
     private void validateTasteCodes(List<String> codes) {
         Set<String> distinct = new HashSet<>();
         for (String code : codes) {
-            if (!distinct.add(code)) {
-                throw invalid();
-            }
-            try {
-                MobileTasteNote.valueOf(code);
-            }
-            catch (IllegalArgumentException exception) {
+            if (!distinct.add(code) || !MobileTasteNote.isCode(code)) {
                 throw invalid();
             }
         }

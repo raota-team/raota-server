@@ -1,11 +1,14 @@
 package com.raota.mobile.ramenlog.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.raota.mobile.account.application.facade.MobileAccountRamenLogFacade;
 import com.raota.mobile.account.domain.model.MobileUser;
 import com.raota.mobile.account.domain.model.Nickname;
 import com.raota.mobile.account.domain.repository.MobileUserRepository;
+import com.raota.mobile.common.error.MobileErrorCode;
+import com.raota.mobile.common.error.MobileException;
 import com.raota.mobile.shop.application.facade.MobileShopRamenLogFacade;
 import com.raota.support.BaseIntegrationTest;
 import java.time.Instant;
@@ -60,11 +63,11 @@ class MobileRamenLogFacadesIntegrationTest extends BaseIntegrationTest {
     @Test
     void 공개_매장과_작성자를_묶어서_읽고_비공개_매장은_제외한다() {
         assertThat(shops.findPublishedShopRef(SHOP_ID).name()).isEqualTo("기록 매장");
-        assertThat(shops.findPublishedShopRefs(List.of(SHOP_ID, SHOP_ID + 1))).containsOnlyKeys(SHOP_ID);
         assertThat(accounts.authors(List.of(userId, userId + 1))).containsOnlyKeys(userId);
         assertThat(accounts.authors(List.of(userId)).get(userId).active()).isTrue();
         jdbc.update("UPDATE tb_v2_shop SET is_published = FALSE WHERE id = ?", SHOP_ID);
-        assertThat(shops.findPublishedShopRefs(List.of(SHOP_ID))).isEmpty();
+        assertThatThrownBy(() -> shops.findPublishedShopRef(SHOP_ID)).isInstanceOfSatisfying(MobileException.class,
+                exception -> assertThat(exception.code()).isEqualTo(MobileErrorCode.RESOURCE_NOT_FOUND));
         assertThat(shops.findShopRefs(List.of(SHOP_ID)).get(SHOP_ID).name()).isEqualTo("기록 매장");
     }
 

@@ -1,7 +1,6 @@
 package com.raota.mobile.shop.domain.repository;
 
 import com.raota.mobile.shop.domain.model.MobileShop;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,8 +13,6 @@ public interface MobileShopRepository extends JpaRepository<MobileShop, Long> {
     Optional<MobileShop> findByIdAndPublishedTrueAndDeletedAtIsNull(Long id);
 
     List<MobileShop> findByPublishedTrueAndDeletedAtIsNull();
-
-    List<MobileShop> findByIdInAndPublishedTrueAndDeletedAtIsNull(Collection<Long> ids);
 
     @Modifying
     @Query("""

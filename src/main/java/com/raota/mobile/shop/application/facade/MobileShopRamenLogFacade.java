@@ -26,13 +26,6 @@ public class MobileShopRamenLogFacade {
             .orElseThrow(() -> new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "매장을 찾을 수 없습니다."));
     }
 
-    public Map<Long, MobileShopRef> findPublishedShopRefs(Collection<Long> shopIds) {
-        if (shopIds.isEmpty()) {
-            return Map.of();
-        }
-        return refs(shops.findByIdInAndPublishedTrueAndDeletedAtIsNull(shopIds));
-    }
-
     /** 이미 작성된 기록은 매장의 공개 상태와 관계없이 해당 매장 이름을 표시한다. */
     public Map<Long, MobileShopRef> findShopRefs(Collection<Long> shopIds) {
         if (shopIds.isEmpty()) {
