@@ -4,7 +4,7 @@ import com.raota.global.file.FileUploader;
 import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
 import com.raota.mobile.ramenlog.application.command.MobileUploadTicketCommand;
-import com.raota.mobile.ramenlog.application.result.MobileUploadTicketResponse;
+import com.raota.mobile.ramenlog.application.result.MobileUploadTickets;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -16,22 +16,22 @@ public class MobileUploadTicketService {
 
     private final FileUploader uploader;
 
-    public MobileUploadTicketResponse issue(MobileUploadTicketCommand command) {
+    public MobileUploadTickets issue(MobileUploadTicketCommand command) {
         if (command.purpose() == MobileUploadTicketCommand.Purpose.PROFILE && command.files().size() != 1) {
             throw new MobileException(MobileErrorCode.VALIDATION_ERROR, "프로필 사진은 한 장만 업로드할 수 있습니다.");
         }
         String directory = command.purpose() == MobileUploadTicketCommand.Purpose.PROFILE ? "v2/profiles"
                 : "v2/ramen-logs";
-        List<MobileUploadTicketResponse.Upload> uploads = command.files().stream().map(file -> {
+        List<MobileUploadTickets.Upload> uploads = command.files().stream().map(file -> {
             String extension = file.extension();
             if (!validExtension(file.contentType(), extension)) {
                 throw new MobileException(MobileErrorCode.VALIDATION_ERROR, "사진 형식과 확장자를 확인해 주세요.");
             }
             var signed = uploader.getPresignedUrl(directory, "." + extension, file.contentType());
-            return new MobileUploadTicketResponse.Upload("PUT", signed.uploadUrl(), null,
+            return new MobileUploadTickets.Upload("PUT", signed.uploadUrl(), null,
                     Map.of("Content-Type", file.contentType()), signed.imgUrl());
         }).toList();
-        return new MobileUploadTicketResponse(uploads);
+        return new MobileUploadTickets(uploads);
     }
 
     private boolean validExtension(String contentType, String extension) {
