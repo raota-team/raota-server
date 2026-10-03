@@ -1,7 +1,7 @@
 package com.raota.mobile.ramenlog.presentation;
 
 import com.raota.mobile.common.presentation.response.MobileApiResponse;
-import com.raota.mobile.ramenlog.application.result.MobileUploadTicketResponse;
+import com.raota.mobile.ramenlog.application.result.MobileUploadTickets;
 import com.raota.mobile.ramenlog.application.service.MobileUploadTicketService;
 import com.raota.mobile.ramenlog.presentation.request.MobileUploadTicketRequest;
 import jakarta.validation.Valid;
@@ -19,7 +19,7 @@ public class MobileUploadTicketController {
     private final MobileUploadTicketService tickets;
 
     @PostMapping
-    public MobileApiResponse<MobileUploadTicketResponse> issue(@Valid @RequestBody MobileUploadTicketRequest request) {
+    public MobileApiResponse<MobileUploadTickets> issue(@Valid @RequestBody MobileUploadTicketRequest request) {
         return MobileApiResponse.success(tickets.issue(request.toCommand()));
     }
 
