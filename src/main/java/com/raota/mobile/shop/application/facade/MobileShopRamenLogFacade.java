@@ -41,7 +41,13 @@ public class MobileShopRamenLogFacade {
 
     @Transactional
     public void recordLogRemoved(Long shopId, Integer satisfaction) {
-        shops.recordLogRemoved(shopId, satisfaction == null ? 0 : satisfaction, satisfaction == null ? 0 : 1);
+        recordLogsRemoved(shopId, 1, satisfaction == null ? 0 : satisfaction, satisfaction == null ? 0 : 1);
+    }
+
+    /** 여러 기록을 한꺼번에 지울 때 매장 집계를 한 번에 되돌린다. */
+    @Transactional
+    public void recordLogsRemoved(Long shopId, int logs, int scoreSum, int scoredLogs) {
+        shops.recordLogsRemoved(shopId, logs, scoreSum, scoredLogs);
     }
 
     @Transactional

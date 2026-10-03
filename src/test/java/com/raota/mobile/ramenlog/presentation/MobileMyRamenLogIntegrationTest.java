@@ -168,6 +168,17 @@ class MobileMyRamenLogIntegrationTest extends BaseIntegrationTest {
         }
     }
 
+    @Test
+    void 맛_태그_정의는_익명_USER_ADMIN_모두_조회한다() throws Exception {
+        jdbc.update("UPDATE tb_v2_user SET role = 'ADMIN' WHERE id = ?", other);
+        mvc.perform(get("/api/v2/taste-note-definitions")).andExpect(status().isOk());
+        for (Long userId : List.of(owner, other)) {
+            mvc.perform(get("/api/v2/taste-note-definitions").header(HttpHeaders.AUTHORIZATION, auth(userId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.groups.length()").value(4));
+        }
+    }
+
     private String create(Long userId, String key, String date, String visibility) throws Exception {
         String body = """
                 {"shopId":"%d","visitedAt":"%s","menuName":"라멘","ramenType":"쇼유",

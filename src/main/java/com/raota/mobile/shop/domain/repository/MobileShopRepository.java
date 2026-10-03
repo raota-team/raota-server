@@ -26,14 +26,14 @@ public interface MobileShopRepository extends JpaRepository<MobileShop, Long> {
     @Modifying
     @Query("""
             update MobileShop shop set shop.logCount =
-                    case when shop.logCount > 0 then shop.logCount - 1 else 0 end,
+                    case when shop.logCount > :logs then shop.logCount - :logs else 0 end,
                 shop.satisfactionScoreSum =
                     case when shop.satisfactionScoreSum > :score then shop.satisfactionScoreSum - :score else 0 end,
                 shop.scoredLogCount =
                     case when shop.scoredLogCount > :scored then shop.scoredLogCount - :scored else 0 end
             where shop.id = :id
             """)
-    void recordLogRemoved(Long id, int score, int scored);
+    void recordLogsRemoved(Long id, int logs, int score, int scored);
 
     @Modifying
     @Query("""
