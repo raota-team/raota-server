@@ -82,6 +82,8 @@ app:
       allowed-origins:
         - http://localhost:3000
   mobile:
+    upload:
+      image-base-url: https://mock.cdn.com/
     auth:
       issuer: raota-mobile-test
       access-token-secret: mobile-v2-signing-secret-for-tests-0123456789abcdef

@@ -110,6 +110,12 @@ public class MobileShop {
     @Column(name = "log_count", nullable = false)
     private int logCount;
 
+    @Column(name = "satisfaction_score_sum", nullable = false)
+    private int satisfactionScoreSum;
+
+    @Column(name = "scored_log_count", nullable = false)
+    private int scoredLogCount;
+
     @Column(name = "bookmark_count", nullable = false)
     private int bookmarkCount;
 

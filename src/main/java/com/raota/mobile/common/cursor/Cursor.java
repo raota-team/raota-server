@@ -4,6 +4,7 @@ import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Base64;
 import java.util.Optional;
 
@@ -26,6 +27,13 @@ public record Cursor(String sortValue, long id) {
     }
 
     public static Cursor of(Instant sortValue, long id) {
+        if (sortValue == null) {
+            throw invalidCursor();
+        }
+        return new Cursor(sortValue.toString(), id);
+    }
+
+    public static Cursor of(LocalDate sortValue, long id) {
         if (sortValue == null) {
             throw invalidCursor();
         }

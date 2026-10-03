@@ -190,11 +190,11 @@ class MobileShopQueryIntegrationTest extends BaseIntegrationTest {
                 new tools.jackson.core.type.TypeReference<java.util.Map<String, Object>>() {
                 }))
             .containsOnlyKeys("id", "name", "branchName", "address", "region", "latitude", "longitude", "imageUrl",
-                    "tagline", "ramenTypes", "tags", "logCount", "bookmarkCount", "isBookmarked", "businessStatus",
-                    "isOpen", "distanceMeters", "description", "phone", "instagramUrl", "reservationUrl", "websiteUrl",
-                    "naverPlaceId", "kakaoPlaceId", "priceMin", "priceMax", "closedDaysText", "hoursVerifiedAt",
-                    "images", "businessHours", "servicePerks", "aiReviewSummary", "aiSummaryKeywords",
-                    "aiSummaryGeneratedAt");
+                    "tagline", "ramenTypes", "tags", "logCount", "bookmarkCount", "averageSatisfaction", "isBookmarked",
+                    "businessStatus", "isOpen", "distanceMeters", "description", "phone", "instagramUrl",
+                    "reservationUrl", "websiteUrl", "naverPlaceId", "kakaoPlaceId", "priceMin", "priceMax",
+                    "closedDaysText", "hoursVerifiedAt", "images", "businessHours", "servicePerks", "aiReviewSummary",
+                    "aiSummaryKeywords", "aiSummaryGeneratedAt");
 
         data("/api/v2/shops/" + FIRST);
         assertThat(jdbc.queryForObject("SELECT view_count FROM tb_v2_shop WHERE id = ?", Integer.class, FIRST))

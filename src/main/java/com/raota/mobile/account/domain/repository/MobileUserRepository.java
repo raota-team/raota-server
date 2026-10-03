@@ -8,10 +8,23 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 
 public interface MobileUserRepository extends JpaRepository<MobileUser, Long> {
+
+    @Modifying
+    @Query("update MobileUser user set user.logCount = user.logCount + 1 where user.id = :id")
+    void incrementLogCount(Long id);
+
+    @Modifying
+    @Query("""
+            update MobileUser user set user.logCount =
+                case when user.logCount > 0 then user.logCount - 1 else 0 end
+            where user.id = :id
+            """)
+    void decrementLogCount(Long id);
 
     boolean existsByNicknameNormalizedAndIdNot(String nicknameNormalized, Long id);
 
