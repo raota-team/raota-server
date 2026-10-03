@@ -89,19 +89,15 @@ public class MobileRamenLog {
     private Instant deletedAt;
 
     public static MobileRamenLog create(Long userId, Long shopId, LocalDate visitedAt, String menuName,
-            String ramenType, byte satisfaction, byte brothDensity, byte noodleFirmness, byte topping,
-            RevisitIntention revisitIntention, String note, List<String> tasteNoteCodes, LogVisibility visibility,
-            String idempotencyKey, Instant now) {
+            String ramenType, MobileRamenLogScores scores, RevisitIntention revisitIntention, String note,
+            List<String> tasteNoteCodes, LogVisibility visibility, String idempotencyKey, Instant now) {
         MobileRamenLog log = new MobileRamenLog();
         log.userId = userId;
         log.shopId = shopId;
         log.visitedAt = visitedAt;
-        log.menuName = menuName;
+        log.menuName = menuName.trim();
         log.ramenType = ramenType;
-        log.satisfactionScore = satisfaction;
-        log.brothDensityScore = brothDensity;
-        log.noodleFirmnessScore = noodleFirmness;
-        log.toppingScore = topping;
+        log.applyScores(scores);
         log.revisitIntention = revisitIntention;
         log.note = note;
         log.tasteNoteCodes = List.copyOf(tasteNoteCodes);
@@ -112,21 +108,44 @@ public class MobileRamenLog {
         return log;
     }
 
-    public void changeDetails(LocalDate visitedAt, String menuName, String ramenType, Byte satisfaction,
-            Byte brothDensity, Byte noodleFirmness, Byte topping, RevisitIntention revisitIntention, String note,
-            List<String> tasteNoteCodes, LogVisibility visibility, Instant updatedAt) {
-        this.visitedAt = visitedAt;
-        this.menuName = menuName;
-        this.ramenType = ramenType;
-        this.satisfactionScore = satisfaction;
-        this.brothDensityScore = brothDensity;
-        this.noodleFirmnessScore = noodleFirmness;
-        this.toppingScore = topping;
-        this.revisitIntention = revisitIntention;
-        this.note = note;
-        this.tasteNoteCodes = tasteNoteCodes;
-        this.visibility = visibility;
-        this.updatedAt = updatedAt;
+    public void edit(MobileRamenLogEdit edit, Instant now) {
+        if (edit.visitedAt() != null) {
+            this.visitedAt = edit.visitedAt();
+        }
+        if (edit.menuName() != null) {
+            this.menuName = edit.menuName().trim();
+        }
+        if (edit.ramenType() != null) {
+            this.ramenType = edit.ramenType();
+        }
+        if (edit.scores() != null) {
+            applyScores(edit.scores());
+        }
+        if (edit.revisitIntention() != null) {
+            this.revisitIntention = edit.revisitIntention();
+        }
+        if (edit.note() != null) {
+            this.note = edit.note();
+        }
+        if (edit.tasteNoteCodes() != null) {
+            this.tasteNoteCodes = List.copyOf(edit.tasteNoteCodes());
+        }
+        if (edit.visibility() != null) {
+            this.visibility = edit.visibility();
+        }
+        this.updatedAt = now;
+    }
+
+    /** 매장 평균 만족도 집계에 쓰는 만족도다. 점수가 없는 기록은 null이다. */
+    public Integer satisfaction() {
+        return satisfactionScore == null ? null : satisfactionScore.intValue();
+    }
+
+    private void applyScores(MobileRamenLogScores scores) {
+        this.satisfactionScore = (byte) scores.satisfaction();
+        this.brothDensityScore = (byte) scores.brothDensity();
+        this.noodleFirmnessScore = (byte) scores.noodleFirmness();
+        this.toppingScore = (byte) scores.topping();
     }
 
     public void softDelete(Instant now) {

@@ -1,5 +1,9 @@
 package com.raota.mobile.ramenlog.domain.model;
 
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 public enum MobileTasteNote {
 
     BROTH_01("BROTH", "진해요"), BROTH_02("BROTH", "깔끔해요"), BROTH_03("BROTH", "감칠맛 좋아요"), BROTH_04("BROTH", "기름져요"),
@@ -9,6 +13,10 @@ public enum MobileTasteNote {
     SEASONING_04("SEASONING", "매콤해요"), SEASONING_05("SEASONING", "밥 생각나요"), TOPPING_01("TOPPING", "차슈 좋아요"),
     TOPPING_02("TOPPING", "계란 좋아요"), TOPPING_03("TOPPING", "멘마 좋아요"), TOPPING_04("TOPPING", "파 향 좋아요"),
     TOPPING_05("TOPPING", "구성 알차요");
+
+    private static final Set<String> CODES = Arrays.stream(values())
+        .map(Enum::name)
+        .collect(Collectors.toUnmodifiableSet());
 
     private final String category;
 
@@ -25,6 +33,10 @@ public enum MobileTasteNote {
 
     public String label() {
         return label;
+    }
+
+    public static boolean isCode(String code) {
+        return CODES.contains(code);
     }
 
 }
