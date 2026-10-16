@@ -66,8 +66,8 @@ public class MobileRamenLogQueryService {
     }
 
     /**
-     * 공개 기록을 정렬 기준의 커서로 읽는다. 활성 회원이 아닌 작성자(탈퇴 유예·정지)의 기록은 건너뛰고, 걸러낸 만큼 다음 묶음을 더 읽어 페이지를
-     * 채운다.
+     * 공개 기록을 정렬 기준의 커서로 읽는다. 로그인한 회원이 차단한 작성자와 신고한 기록은 쿼리에서 빼고, 활성 회원이 아닌 작성자(탈퇴 유예·정지)의
+     * 기록은 건너뛴 뒤 걸러낸 만큼 다음 묶음을 더 읽어 페이지를 채운다.
      */
     @Transactional(readOnly = true)
     public CursorPage<MobileRamenLogSummary> feed(Long viewerId, MobileRamenLogSort sort, String ramenType, Long shopId,
@@ -76,7 +76,7 @@ public class MobileRamenLogQueryService {
         List<MobileRamenLog> visible = new ArrayList<>();
         Map<Long, MobileAuthor> authors = new HashMap<>();
         while (true) {
-            List<MobileRamenLog> batch = feedBatch(sort, ramenType, shopId, after, size + 1);
+            List<MobileRamenLog> batch = feedBatch(sort, ramenType, shopId, viewerId, after, size + 1);
             Set<Long> unknown = batch.stream()
                 .map(MobileRamenLog::getUserId)
                 .filter(id -> !authors.containsKey(id))
@@ -134,15 +134,20 @@ public class MobileRamenLogQueryService {
         return new CursorPage<>(items, page.nextCursor(), page.hasNext());
     }
 
-    private List<MobileRamenLog> feedBatch(MobileRamenLogSort sort, String ramenType, Long shopId, Cursor after,
-            int limit) {
-        Long afterId = after == null ? null : after.id();
+    private List<MobileRamenLog> feedBatch(MobileRamenLogSort sort, String ramenType, Long shopId, Long viewerId,
+            Cursor after, int limit) {
         PageRequest page = PageRequest.of(0, limit);
+        if (after == null) {
+            return switch (sort) {
+                case LATEST -> logs.findLatest(LogVisibility.PUBLIC, ramenType, shopId, viewerId, null, null, page);
+                case LIKES -> logs.findMostLiked(LogVisibility.PUBLIC, ramenType, shopId, viewerId, null, null, page);
+            };
+        }
         return switch (sort) {
-            case LATEST -> logs.findLatest(LogVisibility.PUBLIC, ramenType, shopId,
-                    after == null ? null : parseInstant(after), afterId, page);
-            case LIKES -> logs.findMostLiked(LogVisibility.PUBLIC, ramenType, shopId,
-                    after == null ? null : parseLikes(after), afterId, page);
+            case LATEST -> logs.findLatest(LogVisibility.PUBLIC, ramenType, shopId, viewerId, parseInstant(after),
+                    after.id(), page);
+            case LIKES -> logs.findMostLiked(LogVisibility.PUBLIC, ramenType, shopId, viewerId, parseLikes(after),
+                    after.id(), page);
         };
     }
 

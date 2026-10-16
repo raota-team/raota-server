@@ -30,29 +30,45 @@ public interface MobileRamenLogRepository extends JpaRepository<MobileRamenLog, 
             """)
     List<MobileRamenLog> findMine(Long userId, LocalDate afterDate, Long afterId, Pageable limit);
 
+    /** 로그인한 회원에게는 그 회원이 차단한 작성자의 기록과 그 회원이 신고한 기록을 빼고 보여준다. */
     @Query("""
             select log from MobileRamenLog log
             where log.visibility = :visibility and log.deletedAt is null
                 and (:ramenType is null or log.ramenType = :ramenType)
                 and (:shopId is null or log.shopId = :shopId)
+                and (:viewerId is null or (
+                    log.userId not in (
+                        select block.blockedId from MobileUserBlock block where block.blockerId = :viewerId)
+                    and log.id not in (
+                        select report.targetId from MobileContentReport report
+                        where report.reporterId = :viewerId
+                            and report.targetType = com.raota.mobile.ramenlog.domain.model.ReportTargetType.RAMEN_LOG)))
                 and (:afterCreatedAt is null or log.createdAt < :afterCreatedAt
                      or (log.createdAt = :afterCreatedAt and log.id < :afterId))
             order by log.createdAt desc, log.id desc
             """)
-    List<MobileRamenLog> findLatest(LogVisibility visibility, String ramenType, Long shopId, Instant afterCreatedAt,
-            Long afterId, Pageable limit);
+    List<MobileRamenLog> findLatest(LogVisibility visibility, String ramenType, Long shopId, Long viewerId,
+            Instant afterCreatedAt, Long afterId, Pageable limit);
 
+    /** {@link #findLatest}와 같은 조건을 공감 수 순으로 읽는다. */
     @Query("""
             select log from MobileRamenLog log
             where log.visibility = :visibility and log.deletedAt is null
                 and (:ramenType is null or log.ramenType = :ramenType)
                 and (:shopId is null or log.shopId = :shopId)
+                and (:viewerId is null or (
+                    log.userId not in (
+                        select block.blockedId from MobileUserBlock block where block.blockerId = :viewerId)
+                    and log.id not in (
+                        select report.targetId from MobileContentReport report
+                        where report.reporterId = :viewerId
+                            and report.targetType = com.raota.mobile.ramenlog.domain.model.ReportTargetType.RAMEN_LOG)))
                 and (:afterLikes is null or log.likeCount < :afterLikes
                      or (log.likeCount = :afterLikes and log.id < :afterId))
             order by log.likeCount desc, log.id desc
             """)
-    List<MobileRamenLog> findMostLiked(LogVisibility visibility, String ramenType, Long shopId, Integer afterLikes,
-            Long afterId, Pageable limit);
+    List<MobileRamenLog> findMostLiked(LogVisibility visibility, String ramenType, Long shopId, Long viewerId,
+            Integer afterLikes, Long afterId, Pageable limit);
 
     @Query("""
             select log.shopId as shopId, count(log) as logs,

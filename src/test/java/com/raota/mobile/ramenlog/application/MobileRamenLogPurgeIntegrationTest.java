@@ -89,10 +89,27 @@ class MobileRamenLogPurgeIntegrationTest extends BaseIntegrationTest {
                     VALUES (?, ?, '댓글', '2026-09-01 00:00:00', '2026-09-01 00:00:00', ?)
                     """, comment);
         }
+        jdbc.update("""
+                INSERT INTO tb_v2_content_report (reporter_id, target_type, target_id, reason, status, created_at)
+                VALUES (?, 'RAMEN_LOG', ?, 'SPAM', 'OPEN', '2026-09-01 00:00:00'),
+                    (?, 'RAMEN_LOG', ?, 'SPAM', 'OPEN', '2026-09-01 00:00:00'),
+                    (?, 'RAMEN_LOG', ?, 'ABUSE', 'OPEN', '2026-09-01 00:00:00')
+                """, dueId, OTHER_LOG, otherId, DUE_LOG, otherId, OTHER_LOG);
+        jdbc.update("""
+                INSERT INTO tb_v2_content_report (reporter_id, target_type, target_id, reason, status, created_at)
+                SELECT ?, 'RAMEN_LOG_COMMENT', id, 'SPAM', 'OPEN', '2026-09-01 00:00:00'
+                FROM tb_v2_ramen_log_comment WHERE ramen_log_id = ? AND user_id = ? AND deleted_at IS NULL
+                """, otherId, OTHER_LOG, dueId);
+        jdbc.update("""
+                INSERT INTO tb_v2_user_block (blocker_id, blocked_id, created_at)
+                VALUES (?, ?, '2026-09-01 00:00:00'), (?, ?, '2026-09-01 00:00:00')
+                """, dueId, otherId, otherId, dueId);
     }
 
     @AfterEach
     void cleanUp() {
+        jdbc.update("DELETE FROM tb_v2_content_report WHERE reporter_id IN (?, ?)", dueId, otherId);
+        jdbc.update("DELETE FROM tb_v2_user_block WHERE blocker_id IN (?, ?)", dueId, otherId);
         jdbc.update("DELETE FROM tb_v2_ramen_log_comment WHERE ramen_log_id IN (?, ?)", DUE_LOG, OTHER_LOG);
         jdbc.update("DELETE FROM tb_v2_ramen_log_like WHERE ramen_log_id IN (?, ?)", DUE_LOG, OTHER_LOG);
         jdbc.update("DELETE FROM tb_v2_ramen_log_image WHERE ramen_log_id IN (?, ?, ?, ?)", DUE_LOG, DELETED_LOG,
@@ -105,7 +122,7 @@ class MobileRamenLogPurgeIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void 유예_기한이_지난_회원의_공감과_댓글과_사진과_기록만_삭제하고_공감_수와_댓글_수와_활성_기록의_매장_집계를_되돌린다() {
+    void 유예_기한이_지난_회원의_신고와_차단과_공감과_댓글과_사진과_기록만_삭제하고_공감_수와_댓글_수와_활성_기록의_매장_집계를_되돌린다() {
         assertThat(purges.purgeExpired(REQUESTED_AT.plus(Duration.ofDays(30)))).isEqualTo(1);
         assertThat(users.findById(dueId).orElseThrow().getStatus()).isEqualTo(MobileUserStatus.WITHDRAWN);
         assertThat(jdbc.queryForObject("SELECT log_count FROM tb_v2_user WHERE id = ?", Integer.class, dueId))
@@ -137,6 +154,13 @@ class MobileRamenLogPurgeIntegrationTest extends BaseIntegrationTest {
         assertThat(jdbc.queryForList("SELECT user_id FROM tb_v2_ramen_log_comment WHERE ramen_log_id IN (?, ?)",
                 Long.class, DUE_LOG, OTHER_LOG))
             .containsExactly(otherId);
+        assertThat(jdbc.queryForList("""
+                SELECT CONCAT(reporter_id, ':', target_type, ':', target_id) FROM tb_v2_content_report
+                WHERE reporter_id IN (?, ?)
+                """, String.class, dueId, otherId)).containsExactly(otherId + ":RAMEN_LOG:" + OTHER_LOG);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_user_block WHERE blocker_id IN (?, ?)",
+                Integer.class, dueId, otherId))
+            .isZero();
     }
 
     private void insertLog(long id, Long userId, Integer satisfaction, boolean deleted) {

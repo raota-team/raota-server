@@ -118,13 +118,17 @@ public class MobileRamenLogCommentService {
         return view(previous, userId);
     }
 
-    /** 활성 회원이 아닌 작성자(탈퇴 유예·정지)의 댓글은 건너뛰고, 걸러낸 만큼 다음 묶음을 더 읽어 페이지를 채운다. */
+    /**
+     * 로그인한 회원이 차단한 작성자와 신고한 댓글은 쿼리에서 빼고, 활성 회원이 아닌 작성자(탈퇴 유예·정지)의 댓글은 건너뛴 뒤 걸러낸 만큼 다음 묶음을
+     * 더 읽어 페이지를 채운다.
+     */
     private CursorPage<MobileRamenLogCommentResult> page(Long logId, Long viewerId, Instant afterAt, Long afterId,
             int size) {
         List<MobileRamenLogComment> visible = new ArrayList<>();
         Map<Long, MobileAuthor> authors = new HashMap<>();
         while (true) {
-            List<MobileRamenLogComment> batch = comments.findPage(logId, afterAt, afterId, PageRequest.of(0, size + 1));
+            List<MobileRamenLogComment> batch = comments.findPage(logId, viewerId, afterAt, afterId,
+                    PageRequest.of(0, size + 1));
             Set<Long> unknown = batch.stream()
                 .map(MobileRamenLogComment::getUserId)
                 .filter(id -> !authors.containsKey(id))
