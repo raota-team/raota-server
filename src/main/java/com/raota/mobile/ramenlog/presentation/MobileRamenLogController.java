@@ -1,12 +1,18 @@
 package com.raota.mobile.ramenlog.presentation;
 
+import com.raota.mobile.common.cursor.CursorPage;
 import com.raota.mobile.common.presentation.LoginUser;
 import com.raota.mobile.common.presentation.response.MobileApiResponse;
+import com.raota.mobile.ramenlog.application.query.MobileRamenLogSort;
 import com.raota.mobile.ramenlog.application.result.MobileRamenLogDetail;
+import com.raota.mobile.ramenlog.application.result.MobileRamenLogSummary;
+import com.raota.mobile.ramenlog.application.service.MobileRamenLogQueryService;
 import com.raota.mobile.ramenlog.application.service.MobileRamenLogService;
 import com.raota.mobile.ramenlog.presentation.request.MobileCreateRamenLogRequest;
 import com.raota.mobile.ramenlog.presentation.request.MobileUpdateRamenLogRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -20,6 +26,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -29,6 +36,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class MobileRamenLogController {
 
     private final MobileRamenLogService logs;
+
+    private final MobileRamenLogQueryService queries;
+
+    @GetMapping
+    public MobileApiResponse<CursorPage<MobileRamenLogSummary>> feed(@LoginUser(required = false) Long userId,
+            @RequestParam(defaultValue = "LATEST") MobileRamenLogSort sort,
+            @RequestParam(required = false) String ramenType, @RequestParam(required = false) Long shopId,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(CursorPage.MAX_SIZE) int size) {
+        return MobileApiResponse.success(queries.feed(userId, sort, ramenType, shopId, cursor, size));
+    }
 
     @PostMapping
     public ResponseEntity<MobileApiResponse<MobileRamenLogDetail>> create(@LoginUser Long userId,

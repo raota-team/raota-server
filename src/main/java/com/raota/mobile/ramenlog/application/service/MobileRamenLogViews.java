@@ -15,19 +15,19 @@ final class MobileRamenLogViews {
     }
 
     static MobileRamenLogDetail detail(MobileRamenLog log, MobileAuthor author, MobileShopRef shop,
-            List<String> imageUrls, Long viewerId) {
+            List<String> imageUrls, boolean liked, Long viewerId) {
         return new MobileRamenLogDetail(log.getId().toString(), author(author), shop(shop), log.getMenuName(),
                 log.getRamenType(), log.getVisitedAt(), imageUrls, log.getNote(), log.getTasteNoteCodes(),
                 log.getRevisitIntention(), log.getVisibility(), scores(log), log.getLikeCount(), log.getCommentCount(),
-                false, log.getUserId().equals(viewerId), log.getCreatedAt(), log.getUpdatedAt(), List.of(), null);
+                liked, log.getUserId().equals(viewerId), log.getCreatedAt(), log.getUpdatedAt(), List.of(), null);
     }
 
     static MobileRamenLogSummary summary(MobileRamenLog log, MobileAuthor author, MobileShopRef shop,
-            List<String> imageUrls) {
+            List<String> imageUrls, boolean liked, Long viewerId) {
         return new MobileRamenLogSummary(log.getId().toString(), author(author), shop(shop), log.getMenuName(),
                 log.getRamenType(), log.getVisitedAt(), imageUrls, log.getNote(), log.getTasteNoteCodes(),
                 log.getRevisitIntention(), log.getVisibility(), scores(log), log.getLikeCount(), log.getCommentCount(),
-                false, true, log.getCreatedAt());
+                liked, log.getUserId().equals(viewerId), log.getCreatedAt());
     }
 
     static MobileRamenLogSummaryItem summaryItem(MobileRamenLog log, MobileShopRef shop) {

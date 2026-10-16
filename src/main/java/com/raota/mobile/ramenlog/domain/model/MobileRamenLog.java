@@ -141,6 +141,19 @@ public class MobileRamenLog {
         return satisfactionScore == null ? null : satisfactionScore.intValue();
     }
 
+    /** 공개 기록은 누구나, 비공개 기록은 작성자만 볼 수 있다. */
+    public boolean visibleTo(Long viewerId) {
+        return visibility == LogVisibility.PUBLIC || userId.equals(viewerId);
+    }
+
+    public void addLike() {
+        this.likeCount++;
+    }
+
+    public void removeLike() {
+        this.likeCount = Math.max(0, likeCount - 1);
+    }
+
     private void applyScores(MobileRamenLogScores scores) {
         this.satisfactionScore = (byte) scores.satisfaction();
         this.brothDensityScore = (byte) scores.brothDensity();

@@ -10,6 +10,7 @@ import com.raota.mobile.account.domain.repository.MobileUserRepository;
 import com.raota.support.BaseIntegrationTest;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -68,10 +69,20 @@ class MobileRamenLogPurgeIntegrationTest extends BaseIntegrationTest {
             jdbc.update("INSERT INTO tb_v2_ramen_log_image (ramen_log_id, url, sort_order) VALUES (?, ?, 0)", id,
                     "https://mock.cdn.com/v2/ramen-logs/" + id + ".png");
         }
+        jdbc.update("UPDATE tb_v2_ramen_log SET like_count = 2 WHERE id = ?", OTHER_LOG);
+        jdbc.update("UPDATE tb_v2_ramen_log SET like_count = 1 WHERE id = ?", DUE_LOG);
+        for (Object[] like : List.of(new Object[] { dueId, OTHER_LOG }, new Object[] { otherId, OTHER_LOG },
+                new Object[] { otherId, DUE_LOG })) {
+            jdbc.update("""
+                    INSERT INTO tb_v2_ramen_log_like (user_id, ramen_log_id, created_at)
+                    VALUES (?, ?, '2026-09-01 00:00:00')
+                    """, like);
+        }
     }
 
     @AfterEach
     void cleanUp() {
+        jdbc.update("DELETE FROM tb_v2_ramen_log_like WHERE ramen_log_id IN (?, ?)", DUE_LOG, OTHER_LOG);
         jdbc.update("DELETE FROM tb_v2_ramen_log_image WHERE ramen_log_id IN (?, ?, ?, ?)", DUE_LOG, DELETED_LOG,
                 OTHER_LOG, DUE_UNSCORED_LOG);
         jdbc.update("DELETE FROM tb_v2_ramen_log WHERE id IN (?, ?, ?, ?)", DUE_LOG, DELETED_LOG, OTHER_LOG,
@@ -82,7 +93,7 @@ class MobileRamenLogPurgeIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void 유예_기한이_지난_회원의_사진과_기록만_삭제하고_점수_없는_기록을_포함한_활성_기록의_매장_집계를_되돌린다() {
+    void 유예_기한이_지난_회원의_공감과_사진과_기록만_삭제하고_공감_수와_점수_없는_기록을_포함한_활성_기록의_매장_집계를_되돌린다() {
         assertThat(purges.purgeExpired(REQUESTED_AT.plus(Duration.ofDays(30)))).isEqualTo(1);
         assertThat(users.findById(dueId).orElseThrow().getStatus()).isEqualTo(MobileUserStatus.WITHDRAWN);
         assertThat(jdbc.queryForObject("SELECT log_count FROM tb_v2_user WHERE id = ?", Integer.class, dueId))
@@ -103,6 +114,11 @@ class MobileRamenLogPurgeIntegrationTest extends BaseIntegrationTest {
             .containsEntry("log_count", 1)
             .containsEntry("satisfaction_score_sum", 4)
             .containsEntry("scored_log_count", 1);
+        assertThat(jdbc.queryForObject("SELECT like_count FROM tb_v2_ramen_log WHERE id = ?", Integer.class, OTHER_LOG))
+            .isEqualTo(1);
+        assertThat(jdbc.queryForList("SELECT user_id FROM tb_v2_ramen_log_like WHERE ramen_log_id IN (?, ?)",
+                Long.class, DUE_LOG, OTHER_LOG))
+            .containsExactly(otherId);
     }
 
     private void insertLog(long id, Long userId, Integer satisfaction, boolean deleted) {

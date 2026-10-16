@@ -1,7 +1,9 @@
 package com.raota.mobile.ramenlog.domain.repository;
 
+import com.raota.mobile.ramenlog.domain.model.LogVisibility;
 import com.raota.mobile.ramenlog.domain.model.MobileRamenLog;
 import jakarta.persistence.LockModeType;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +31,30 @@ public interface MobileRamenLogRepository extends JpaRepository<MobileRamenLog, 
     List<MobileRamenLog> findMine(Long userId, LocalDate afterDate, Long afterId, Pageable limit);
 
     @Query("""
+            select log from MobileRamenLog log
+            where log.visibility = :visibility and log.deletedAt is null
+                and (:ramenType is null or log.ramenType = :ramenType)
+                and (:shopId is null or log.shopId = :shopId)
+                and (:afterCreatedAt is null or log.createdAt < :afterCreatedAt
+                     or (log.createdAt = :afterCreatedAt and log.id < :afterId))
+            order by log.createdAt desc, log.id desc
+            """)
+    List<MobileRamenLog> findLatest(LogVisibility visibility, String ramenType, Long shopId, Instant afterCreatedAt,
+            Long afterId, Pageable limit);
+
+    @Query("""
+            select log from MobileRamenLog log
+            where log.visibility = :visibility and log.deletedAt is null
+                and (:ramenType is null or log.ramenType = :ramenType)
+                and (:shopId is null or log.shopId = :shopId)
+                and (:afterLikes is null or log.likeCount < :afterLikes
+                     or (log.likeCount = :afterLikes and log.id < :afterId))
+            order by log.likeCount desc, log.id desc
+            """)
+    List<MobileRamenLog> findMostLiked(LogVisibility visibility, String ramenType, Long shopId, Integer afterLikes,
+            Long afterId, Pageable limit);
+
+    @Query("""
             select log.shopId as shopId, count(log) as logs,
                 coalesce(sum(log.satisfactionScore), 0) as scoreSum, count(log.satisfactionScore) as scoredLogs
             from MobileRamenLog log
@@ -36,6 +62,15 @@ public interface MobileRamenLogRepository extends JpaRepository<MobileRamenLog, 
             group by log.shopId
             """)
     List<ShopLogTotals> sumLiveLogsByShop(Long userId);
+
+    /** 회원이 공감했던 기록의 공감 수를 하나씩 줄인다. 공감 행을 지우기 전에 호출한다. */
+    @Modifying
+    @Query("""
+            update MobileRamenLog log set log.likeCount = log.likeCount - 1
+            where log.likeCount > 0
+                and log.id in (select liked.ramenLogId from MobileRamenLogLike liked where liked.userId = :userId)
+            """)
+    void decrementLikesBy(Long userId);
 
     @Modifying
     @Query("delete from MobileRamenLog log where log.userId = :userId")
