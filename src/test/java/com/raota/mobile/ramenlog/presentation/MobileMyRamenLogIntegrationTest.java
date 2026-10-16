@@ -109,7 +109,10 @@ class MobileMyRamenLogIntegrationTest extends BaseIntegrationTest {
                 assertThat(item.get("shop").get("branchName").asString()).isEqualTo("강남점");
                 assertThat(item.get("author").get("id").asString()).isEqualTo(owner.toString());
             }
-            cursor = page.get("nextCursor").isNull() ? null : page.get("nextCursor").asString();
+            cursor = null;
+            if (!page.get("nextCursor").isNull()) {
+                cursor = page.get("nextCursor").asString();
+            }
             assertThat(page.get("hasNext").asBoolean()).isEqualTo(cursor != null);
         }
         while (cursor != null);

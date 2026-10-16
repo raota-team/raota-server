@@ -68,8 +68,12 @@ public class MobileShopQueryService {
         Cursor cursor = Cursor.parse(rawCursor).orElse(null);
         // 확인된 영업시간은 요일·휴식에 따라 달라져 SQL 정렬 이후 일괄 계산한다.
         // 매장은 약 550개라 openNow 요청만 후보 전체를 읽어 필터링한 뒤 페이지를 만든다.
+        Integer limit = size + 1;
+        if (openNow) {
+            limit = null;
+        }
         List<RankedShop> ranked = search.search(sort, query, region, ramenType, searchLatitude, searchLongitude, cursor,
-                openNow ? null : size + 1);
+                limit);
         List<Long> ids = ranked.stream().map(RankedShop::id).toList();
         Map<Long, MobileShop> byId = byId(ids);
         Map<Long, List<Hours>> byHours = hours(ids);
@@ -110,8 +114,12 @@ public class MobileShopQueryService {
         List<MobileShopImage> shopImages = images.findByShopIdInOrderBySortOrderAscIdAsc(List.of(shopId));
         List<MobileShopBusinessHour> shopHours = hours.findByShopIdInOrderByDayOfWeekAsc(List.of(shopId));
         List<Hours> openHours = shopHours.stream().map(this::toHours).toList();
-        MobileShopSummary base = summary(shop, shopImages.isEmpty() ? null : shopImages.getFirst().getUrl(), openHours,
-                null, bookmarks.bookmarkedShopIds(userId, List.of(shopId)).contains(shopId));
+        String imageUrl = null;
+        if (!shopImages.isEmpty()) {
+            imageUrl = shopImages.getFirst().getUrl();
+        }
+        MobileShopSummary base = summary(shop, imageUrl, openHours, null,
+                bookmarks.bookmarkedShopIds(userId, List.of(shopId)).contains(shopId));
         List<MobileShopBusinessHourResult> businessHours = shopHours.stream()
             .map(hour -> new MobileShopBusinessHourResult(hour.getDayOfWeek(), time(hour.getOpensAt()),
                     time(hour.getClosesAt()), time(hour.getBreakStart()), time(hour.getBreakEnd()),
@@ -164,7 +172,10 @@ public class MobileShopQueryService {
     }
 
     private String time(LocalTime value) {
-        return value == null ? null : value.format(CLOCK_TIME);
+        if (value == null) {
+            return null;
+        }
+        return value.format(CLOCK_TIME);
     }
 
     private MobileShopSummary summary(MobileShop shop, String imageUrl, List<Hours> shopHours, BigDecimal distance,
@@ -173,7 +184,14 @@ public class MobileShopQueryService {
                 shop.getRegion(), shop.getLatitude(), shop.getLongitude(), imageUrl, shop.getTagline(),
                 shop.getRamenTypes(), shop.getTags(), shop.getLogCount(), shop.getBookmarkCount(), bookmarked,
                 shop.getBusinessStatus(), openStatus.isOpen(shop.getHoursVerifiedAt(), shopHours),
-                distance == null ? null : distance.setScale(0, RoundingMode.HALF_UP).intValue());
+                roundedMeters(distance));
+    }
+
+    private Integer roundedMeters(BigDecimal distance) {
+        if (distance == null) {
+            return null;
+        }
+        return distance.setScale(0, RoundingMode.HALF_UP).intValue();
     }
 
     private Map<Long, MobileShop> byId(List<Long> ids) {

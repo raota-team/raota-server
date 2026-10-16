@@ -61,8 +61,10 @@ public class GoogleIdTokenVerifier implements SocialTokenVerifier {
             if (validator.validate(jwt).hasErrors()) {
                 throw invalidCredential();
             }
-            String email = Boolean.TRUE.equals(jwt.getClaimAsBoolean("email_verified")) ? jwt.getClaimAsString("email")
-                    : null;
+            String email = null;
+            if (Boolean.TRUE.equals(jwt.getClaimAsBoolean("email_verified"))) {
+                email = jwt.getClaimAsString("email");
+            }
             return new SocialIdentity(provider(), jwt.getSubject(), email);
         }
         catch (JwtException exception) {
@@ -71,8 +73,10 @@ public class GoogleIdTokenVerifier implements SocialTokenVerifier {
     }
 
     private static OAuth2TokenValidatorResult validate(boolean valid) {
-        return valid ? OAuth2TokenValidatorResult.success()
-                : OAuth2TokenValidatorResult.failure(new OAuth2Error("invalid_token"));
+        if (valid) {
+            return OAuth2TokenValidatorResult.success();
+        }
+        return OAuth2TokenValidatorResult.failure(new OAuth2Error("invalid_token"));
     }
 
     private static MobileException invalidCredential() {

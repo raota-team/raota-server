@@ -82,8 +82,10 @@ public class MobileShopJdbcBookmarks implements MobileShopBookmarkPort {
             sql.append(" AND (bookmark.created_at < ? OR (bookmark.created_at = ? AND bookmark.shop_id < ?))");
         }
         sql.append(" ORDER BY bookmark.created_at DESC, bookmark.shop_id DESC LIMIT ?");
-        Object[] args = at == null ? new Object[] { userId, limit }
-                : new Object[] { userId, Timestamp.from(at), Timestamp.from(at), cursor.id(), limit };
+        Object[] args = new Object[] { userId, limit };
+        if (at != null) {
+            args = new Object[] { userId, Timestamp.from(at), Timestamp.from(at), cursor.id(), limit };
+        }
         return jdbc.query(sql.toString(), (rs, index) -> new SavedShop(rs.getLong("shop_id"),
                 Cursor.of(rs.getTimestamp("created_at").toInstant(), rs.getLong("shop_id"))), args);
     }

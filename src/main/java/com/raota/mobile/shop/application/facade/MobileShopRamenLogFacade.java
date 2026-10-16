@@ -36,12 +36,12 @@ public class MobileShopRamenLogFacade {
 
     @Transactional
     public void recordLogAdded(Long shopId, Integer satisfaction) {
-        shops.recordLogAdded(shopId, satisfaction == null ? 0 : satisfaction, satisfaction == null ? 0 : 1);
+        shops.recordLogAdded(shopId, score(satisfaction), scored(satisfaction));
     }
 
     @Transactional
     public void recordLogRemoved(Long shopId, Integer satisfaction) {
-        recordLogsRemoved(shopId, 1, satisfaction == null ? 0 : satisfaction, satisfaction == null ? 0 : 1);
+        recordLogsRemoved(shopId, 1, score(satisfaction), scored(satisfaction));
     }
 
     /** 여러 기록을 한꺼번에 지울 때 매장 집계를 한 번에 되돌린다. */
@@ -55,8 +55,23 @@ public class MobileShopRamenLogFacade {
         if (Objects.equals(oldScore, newScore)) {
             return;
         }
-        shops.recordSatisfactionChanged(shopId, (newScore == null ? 0 : newScore) - (oldScore == null ? 0 : oldScore),
-                (newScore == null ? 0 : 1) - (oldScore == null ? 0 : 1));
+        shops.recordSatisfactionChanged(shopId, score(newScore) - score(oldScore), scored(newScore) - scored(oldScore));
+    }
+
+    /** 점수가 없는 기록(v1 복사분)은 합계에 0을 더한다. */
+    private static int score(Integer satisfaction) {
+        if (satisfaction == null) {
+            return 0;
+        }
+        return satisfaction;
+    }
+
+    /** 점수가 있는 기록 수에 더할 값이다. */
+    private static int scored(Integer satisfaction) {
+        if (satisfaction == null) {
+            return 0;
+        }
+        return 1;
     }
 
     private Map<Long, MobileShopRef> refs(List<MobileShop> found) {

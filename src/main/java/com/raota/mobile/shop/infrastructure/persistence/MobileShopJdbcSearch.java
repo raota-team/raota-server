@@ -36,7 +36,10 @@ public class MobileShopJdbcSearch implements MobileShopSearchPort {
     @Override
     public List<RankedShop> search(MobileShopSort sort, String query, String region, String ramenType,
             BigDecimal latitude, BigDecimal longitude, Cursor cursor, Integer limit) {
-        String distance = latitude == null ? "NULL" : HAVERSINE;
+        String distance = HAVERSINE;
+        if (latitude == null) {
+            distance = "NULL";
+        }
         String sortValue = switch (sort) {
             case POPULAR -> "s.view_count";
             case LATEST -> "s.created_at";
@@ -63,9 +66,13 @@ public class MobileShopJdbcSearch implements MobileShopSearchPort {
             params.addValue("ramenType", ramenType);
         }
         sql.append(") ranked WHERE 1 = 1");
-        boolean ascending = sort == MobileShopSort.DISTANCE;
+        String operator = "<";
+        String direction = "DESC";
+        if (sort == MobileShopSort.DISTANCE) {
+            operator = ">";
+            direction = "ASC";
+        }
         if (cursor != null) {
-            String operator = ascending ? ">" : "<";
             sql.append(" AND (ranked.sort_value ")
                 .append(operator)
                 .append(" :position OR (ranked.sort_value = :position AND ranked.id ")
@@ -73,10 +80,7 @@ public class MobileShopJdbcSearch implements MobileShopSearchPort {
                 .append(" :cursorId))");
             params.addValue("position", position(sort, cursor)).addValue("cursorId", cursor.id());
         }
-        sql.append(" ORDER BY ranked.sort_value ")
-            .append(ascending ? "ASC" : "DESC")
-            .append(", ranked.id ")
-            .append(ascending ? "ASC" : "DESC");
+        sql.append(" ORDER BY ranked.sort_value ").append(direction).append(", ranked.id ").append(direction);
         if (limit != null) {
             sql.append(" LIMIT :limit");
             params.addValue("limit", limit);

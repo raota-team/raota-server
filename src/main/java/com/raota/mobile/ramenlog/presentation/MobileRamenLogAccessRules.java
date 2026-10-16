@@ -7,7 +7,7 @@ import java.util.List;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 
-/** 라멘 기록과 업로드 API의 접근 등급을 등록한다. */
+/** 라멘 기록, 라운지와 업로드 API의 접근 등급을 등록한다. */
 @Component
 public class MobileRamenLogAccessRules implements AccessRuleContributor {
 
@@ -15,9 +15,21 @@ public class MobileRamenLogAccessRules implements AccessRuleContributor {
     public List<AccessRule> accessRules() {
         return List.of(new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/api/v2/files/upload-tickets"),
                 new AccessRule(AccessLevel.ACTIVE_MEMBER, HttpMethod.POST, "/api/v2/ramen-logs"),
+                new AccessRule(AccessLevel.PUBLIC, HttpMethod.GET, "/api/v2/ramen-logs"),
                 new AccessRule(AccessLevel.PUBLIC, HttpMethod.GET, "/api/v2/ramen-logs/{logId:[0-9]+}"),
                 new AccessRule(AccessLevel.ACTIVE_MEMBER, HttpMethod.PATCH, "/api/v2/ramen-logs/{logId:[0-9]+}"),
                 new AccessRule(AccessLevel.ACTIVE_MEMBER, HttpMethod.DELETE, "/api/v2/ramen-logs/{logId:[0-9]+}"),
+                new AccessRule(AccessLevel.ACTIVE_MEMBER, HttpMethod.PUT, "/api/v2/ramen-logs/{logId:[0-9]+}/like"),
+                new AccessRule(AccessLevel.ACTIVE_MEMBER, HttpMethod.DELETE, "/api/v2/ramen-logs/{logId:[0-9]+}/like"),
+                new AccessRule(AccessLevel.PUBLIC, HttpMethod.GET, "/api/v2/ramen-logs/{logId:[0-9]+}/comments"),
+                new AccessRule(AccessLevel.ACTIVE_MEMBER, HttpMethod.POST,
+                        "/api/v2/ramen-logs/{logId:[0-9]+}/comments"),
+                new AccessRule(AccessLevel.ACTIVE_MEMBER, HttpMethod.DELETE,
+                        "/api/v2/ramen-log-comments/{commentId:[0-9]+}"),
+                new AccessRule(AccessLevel.ACTIVE_MEMBER, HttpMethod.POST, "/api/v2/reports"),
+                new AccessRule(AccessLevel.ACTIVE_MEMBER, HttpMethod.PUT, "/api/v2/members/{memberId:[0-9]+}/block"),
+                new AccessRule(AccessLevel.ACTIVE_MEMBER, HttpMethod.DELETE, "/api/v2/members/{memberId:[0-9]+}/block"),
+                new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.GET, "/api/v2/members/me/blocks"),
                 new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.GET, "/api/v2/members/me/ramen-logs"),
                 new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.GET, "/api/v2/members/me/ramen-logs/summary"),
                 new AccessRule(AccessLevel.PUBLIC, HttpMethod.GET, "/api/v2/taste-note-definitions"));

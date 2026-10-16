@@ -45,8 +45,11 @@ public class MobileSecurityErrorResponder implements SecurityErrorResponder {
                 return;
             }
         }
-        String message = exception instanceof BearerTokenAuthenticationException && exception.getMessage() != null
-                && !exception.getMessage().isBlank() ? exception.getMessage() : "인증이 필요합니다.";
+        String message = "인증이 필요합니다.";
+        if (exception instanceof BearerTokenAuthenticationException && exception.getMessage() != null
+                && !exception.getMessage().isBlank()) {
+            message = exception.getMessage();
+        }
         write(request, response, MobileErrorCode.UNAUTHORIZED, message);
     }
 

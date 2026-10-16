@@ -56,16 +56,8 @@ class MobileShopPurgeIntegrationTest extends BaseIntegrationTest {
         MobileUser active = MobileUser.onboarding("active@example.com");
         active.completeOnboarding(Nickname.of("PurgeMember"), REQUESTED_AT);
         activeId = users.saveAndFlush(active).getId();
-        for (long shopId : List.of(SHARED, INCONSISTENT_COUNT)) {
-            jdbc.update(
-                    """
-                            INSERT INTO tb_v2_shop (id, name, address, ramen_types, tags, business_status,
-                                ai_summary_keywords, view_count, log_count, bookmark_count, is_published, created_at, updated_at)
-                            VALUES (?, '정리 매장', '서울', '[]', '[]', 'UNKNOWN', '[]', 0, 0, ?, TRUE,
-                                '2026-09-01 00:00:00.000000', '2026-09-01 00:00:00.000000')
-                            """,
-                    shopId, shopId == SHARED ? 2 : 0);
-        }
+        insertShop(SHARED, 2);
+        insertShop(INCONSISTENT_COUNT, 0);
         jdbc.update(
                 "INSERT INTO tb_v2_shop_bookmark (user_id, shop_id, created_at) VALUES (?, ?, CURRENT_TIMESTAMP(6))",
                 dueId, SHARED);
@@ -89,6 +81,15 @@ class MobileShopPurgeIntegrationTest extends BaseIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT bookmark_count FROM tb_v2_shop WHERE id = ?", Integer.class,
                 INCONSISTENT_COUNT))
             .isZero();
+    }
+
+    private void insertShop(long shopId, int bookmarkCount) {
+        jdbc.update("""
+                INSERT INTO tb_v2_shop (id, name, address, ramen_types, tags, business_status,
+                    ai_summary_keywords, view_count, log_count, bookmark_count, is_published, created_at, updated_at)
+                VALUES (?, '정리 매장', '서울', '[]', '[]', 'UNKNOWN', '[]', 0, 0, ?, TRUE,
+                    '2026-09-01 00:00:00.000000', '2026-09-01 00:00:00.000000')
+                """, shopId, bookmarkCount);
     }
 
 }

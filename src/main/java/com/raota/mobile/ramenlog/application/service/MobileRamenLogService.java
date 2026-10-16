@@ -7,11 +7,11 @@ import com.raota.mobile.common.error.MobileException;
 import com.raota.mobile.ramenlog.application.command.MobileCreateRamenLogCommand;
 import com.raota.mobile.ramenlog.application.command.MobileUpdateRamenLogCommand;
 import com.raota.mobile.ramenlog.application.result.MobileRamenLogDetail;
-import com.raota.mobile.ramenlog.domain.model.LogVisibility;
 import com.raota.mobile.ramenlog.domain.model.MobileRamenLog;
 import com.raota.mobile.ramenlog.domain.model.MobileRamenLogImage;
 import com.raota.mobile.ramenlog.domain.model.MobileTasteNote;
 import com.raota.mobile.ramenlog.domain.repository.MobileRamenLogImageRepository;
+import com.raota.mobile.ramenlog.domain.repository.MobileRamenLogLikeRepository;
 import com.raota.mobile.ramenlog.domain.repository.MobileRamenLogRepository;
 import com.raota.mobile.shop.application.facade.MobileShopRamenLogFacade;
 import com.raota.mobile.shop.application.facade.MobileShopRamenLogFacade.MobileShopRef;
@@ -44,6 +44,10 @@ public class MobileRamenLogService {
 
     private final MobileRamenLogImageRepository images;
 
+    private final MobileRamenLogLikeRepository likes;
+
+    private final MobileRamenLogCommentService comments;
+
     private final MobileShopRamenLogFacade shops;
 
     private final MobileAccountRamenLogFacade accounts;
@@ -55,10 +59,13 @@ public class MobileRamenLogService {
     private final TransactionTemplate createTransaction;
 
     public MobileRamenLogService(MobileRamenLogRepository logs, MobileRamenLogImageRepository images,
-            MobileShopRamenLogFacade shops, MobileAccountRamenLogFacade accounts, MobileUploadedImagePolicy imagePolicy,
-            Clock clock, PlatformTransactionManager transactionManager) {
+            MobileRamenLogLikeRepository likes, MobileRamenLogCommentService comments, MobileShopRamenLogFacade shops,
+            MobileAccountRamenLogFacade accounts, MobileUploadedImagePolicy imagePolicy, Clock clock,
+            PlatformTransactionManager transactionManager) {
         this.logs = logs;
         this.images = images;
+        this.likes = likes;
+        this.comments = comments;
         this.shops = shops;
         this.accounts = accounts;
         this.imagePolicy = imagePolicy;
@@ -105,10 +112,7 @@ public class MobileRamenLogService {
     public MobileRamenLogDetail detail(Long logId, Long viewerId) {
         MobileRamenLog log = existing(logId);
         MobileAuthor author = author(log.getUserId());
-        if (log.getVisibility() == LogVisibility.PRIVATE && !log.getUserId().equals(viewerId)) {
-            throw notFound();
-        }
-        if (!author.active()) {
+        if (!log.visibleTo(viewerId) || !author.active()) {
             throw notFound();
         }
         return response(log, author, viewerId);
@@ -173,7 +177,9 @@ public class MobileRamenLogService {
             .stream()
             .map(MobileRamenLogImage::getUrl)
             .toList();
-        return MobileRamenLogViews.detail(log, author, shop, imageUrls, viewerId);
+        boolean liked = viewerId != null && likes.existsByUserIdAndRamenLogId(viewerId, log.getId());
+        return MobileRamenLogViews.detail(log, author, shop, imageUrls, liked, comments.preview(log.getId(), viewerId),
+                viewerId);
     }
 
     private MobileRamenLog existingForUpdate(Long id) {
