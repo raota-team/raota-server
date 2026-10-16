@@ -225,6 +225,37 @@ class MobileRamenLogCommentIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
+    void 같은_댓글을_동시에_지워도_한_번만_지워지고_댓글_수는_한_번만_줄어든다() throws Exception {
+        create(LOG, writer, "keep", "{\"content\":\"남을 댓글\"}").andExpect(status().isCreated());
+        String id = data(create(LOG, writer, "race-delete", "{\"content\":\"지울 댓글\"}").andExpect(status().isCreated()))
+            .get("id")
+            .asString();
+        ExecutorService executor = Executors.newFixedThreadPool(4);
+        CountDownLatch start = new CountDownLatch(1);
+        List<Future<Integer>> results = new ArrayList<>();
+        for (int attempt = 0; attempt < 4; attempt++) {
+            results.add(executor.submit(() -> {
+                start.await();
+                return mvc
+                    .perform(delete("/api/v2/ramen-log-comments/{commentId}", id).header(HttpHeaders.AUTHORIZATION,
+                            auth(writer)))
+                    .andReturn()
+                    .getResponse()
+                    .getStatus();
+            }));
+        }
+        start.countDown();
+        List<Integer> statuses = new ArrayList<>();
+        for (Future<Integer> result : results) {
+            statuses.add(result.get(30, TimeUnit.SECONDS));
+        }
+        executor.shutdown();
+
+        assertThat(statuses).containsExactlyInAnyOrder(204, 404, 404, 404);
+        assertThat(commentCount(LOG)).isEqualTo(1);
+    }
+
+    @Test
     void 볼_수_없게_된_기록의_댓글은_누가_지워도_404이고_같은_키로_다시_보내도_404다() throws Exception {
         String id = data(create(LOG, writer, "hidden", "{\"content\":\"숨길 댓글\"}").andExpect(status().isCreated()))
             .get("id")

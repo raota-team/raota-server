@@ -19,6 +19,10 @@ public interface MobileRamenLogCommentRepository extends JpaRepository<MobileRam
     @Query("select comment from MobileRamenLogComment comment where comment.id = :id")
     Optional<MobileRamenLogComment> findByIdForUpdate(Long id);
 
+    /** 잠그기 전에 엔티티를 영속성 컨텍스트에 올리지 않으려고 부모 기록 ID만 읽는다. */
+    @Query("select comment.ramenLogId from MobileRamenLogComment comment where comment.id = :id")
+    Optional<Long> findRamenLogIdById(Long id);
+
     @Query("""
             select comment from MobileRamenLogComment comment
             where comment.ramenLogId = :logId and comment.deletedAt is null
