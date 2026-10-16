@@ -10,6 +10,7 @@ MySQL 8 + Flyway, Redis, Spring Security(OAuth2 + JWT), Spring AI(Oracle Vector 
 ```bash
 ./gradlew format                               # Spring Java Format 자동 적용 (커밋 전)
 ./gradlew checkFormat                          # 포맷 검사 (CI·CD에서 실행)
+./gradlew checkstyleMain checkstyleTest        # v2 코드 규칙 검사 (CI·CD에서 실행)
 ./gradlew compileJava compileTestJava          # 빠른 컴파일 확인
 ./gradlew test --tests 'com.raota.system.ModulithArchitectureTest'
 ./gradlew test --tests '<FQCN>'                # 변경 범위 테스트
@@ -18,7 +19,7 @@ MySQL 8 + Flyway, Redis, Spring Security(OAuth2 + JWT), Spring AI(Oracle Vector 
 
 - 테스트는 `test` 프로필로 실행되며 통합 테스트(`BaseIntegrationTest`)가 Testcontainers로 MySQL 8 · Redis를 띄운다. **Docker가 실행 중이어야 한다.**
 - 패키지 이동, `@NamedInterface` 변경, 새 모듈 추가 뒤에는 전체 테스트를 실행한다.
-- CI는 `.github/workflows/format-check.yml`(`checkFormat`)과 `test.yml`(전체 테스트)로 나뉘어 GitHub 호스팅 러너에서 병렬 실행된다. `main` push는 CD가 두 워크플로를 모두 통과한 뒤에만 배포한다.
+- CI는 `.github/workflows/format-check.yml`(`checkFormat`, `checkstyleMain`, `checkstyleTest`)과 `test.yml`(전체 테스트)로 나뉘어 GitHub 호스팅 러너에서 병렬 실행된다. `main` push는 CD가 두 워크플로를 모두 통과한 뒤에만 배포한다.
 
 ## 아키텍처
 
@@ -33,6 +34,7 @@ MySQL 8 + Flyway, Redis, Spring Security(OAuth2 + JWT), Spring AI(Oracle Vector 
 - v2 오류는 `mobile.common.error.MobileException(MobileErrorCode, message)`으로 던진다. `ResponseStatusException`, `IllegalArgumentException`, `EntityNotFoundException` 등은 v2에서 500 `INTERNAL_ERROR`로 처리된다.
 - v2 오류 응답은 발생 단계별로 이미 처리된다: 보안 필터(401·403)는 `MobileSecurityErrorResponder`, 컨트롤러 결정 전(없는 경로·405)은 `MobileFallbackExceptionResolver`, 컨트롤러 결정 후는 `MobileExceptionAdvice`. v2 도메인 코드는 새 advice나 resolver를 만들지 않고 `MobileException`만 던진다.
 - v2 응답 JSON: ID 필드는 `String`, 시각은 `Instant`(UTC ISO-8601, 끝에 `Z`), 날짜는 `LocalDate`(`YYYY-MM-DD`). v2 응답에 `LocalDateTime`은 쓰지 않는다(운영 JVM이 `Asia/Seoul`이라 KST 표시 없는 값이 나간다). null 필드는 생략하지 않는다. 전역 Jackson·JVM 타임존 설정은 v1에 영향을 주므로 바꾸지 않는다.
+- v2 코드(`com.raota.mobile`, 테스트 포함)에서는 삼항 연산자(`a ? b : c`)를 쓰지 않는다. `if` 문, `switch` 식 또는 작은 메서드로 쓴다. Checkstyle `AvoidInlineConditionals`(`config/checkstyle/checkstyle.xml`)가 `mobile` 패키지만 검사한다.
 
 ## API 접근 정책 (fail-closed)
 

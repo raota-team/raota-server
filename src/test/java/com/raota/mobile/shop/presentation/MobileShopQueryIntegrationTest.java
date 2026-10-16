@@ -78,10 +78,9 @@ class MobileShopQueryIntegrationTest extends BaseIntegrationTest {
 
     @AfterEach
     void cleanUp() {
-        for (String table : List.of("tb_v2_shop_image", "tb_v2_shop_business_hour", "tb_v2_shop")) {
-            jdbc.update("DELETE FROM " + table + " WHERE " + (table.equals("tb_v2_shop") ? "id" : "shop_id")
-                    + " BETWEEN ? AND ?", FIRST, DELETED);
-        }
+        jdbc.update("DELETE FROM tb_v2_shop_image WHERE shop_id BETWEEN ? AND ?", FIRST, DELETED);
+        jdbc.update("DELETE FROM tb_v2_shop_business_hour WHERE shop_id BETWEEN ? AND ?", FIRST, DELETED);
+        jdbc.update("DELETE FROM tb_v2_shop WHERE id BETWEEN ? AND ?", FIRST, DELETED);
     }
 
     @Test
@@ -214,12 +213,17 @@ class MobileShopQueryIntegrationTest extends BaseIntegrationTest {
         List<String> received = new ArrayList<>();
         String cursor = null;
         for (int i = 0; i < expected.size(); i++) {
-            String path = "/api/v2/shops?sort=" + sort + "&size=1" + coordinates
-                    + (cursor == null ? "" : "&cursor=" + cursor);
+            String path = "/api/v2/shops?sort=" + sort + "&size=1" + coordinates;
+            if (cursor != null) {
+                path += "&cursor=" + cursor;
+            }
             JsonNode page = list(path);
             received.addAll(ids(page));
             assertThat(page.get("hasNext").asBoolean()).isEqualTo(i < expected.size() - 1);
-            cursor = page.get("nextCursor").isNull() ? null : page.get("nextCursor").asString();
+            cursor = null;
+            if (!page.get("nextCursor").isNull()) {
+                cursor = page.get("nextCursor").asString();
+            }
         }
         assertThat(received).containsExactlyElementsOf(expected);
     }
@@ -247,7 +251,10 @@ class MobileShopQueryIntegrationTest extends BaseIntegrationTest {
     }
 
     private List<String> ids(JsonNode entries) {
-        JsonNode nodes = entries.isArray() ? entries : entries.get("items");
+        JsonNode nodes = entries;
+        if (!entries.isArray()) {
+            nodes = entries.get("items");
+        }
         List<String> ids = new ArrayList<>();
         nodes.forEach(node -> ids.add(node.get("id").asString()));
         return ids;
@@ -259,16 +266,22 @@ class MobileShopQueryIntegrationTest extends BaseIntegrationTest {
 
     private void seed(long id, String name, String region, String ramenTypes, int views, String createdAt,
             String latitude, boolean published, boolean deleted, boolean verified) {
+        Timestamp verifiedAt = null;
+        if (verified) {
+            verifiedAt = Timestamp.from(Instant.parse("2026-09-01T00:00:00Z"));
+        }
+        Timestamp deletedAt = null;
+        if (deleted) {
+            deletedAt = Timestamp.from(Instant.parse("2026-09-06T00:00:00Z"));
+        }
         jdbc.update("""
                 INSERT INTO tb_v2_shop (id, name, branch_name, address, region, latitude, longitude,
                     ramen_types, tags, business_status, hours_verified_at, ai_summary_keywords,
                     view_count, log_count, bookmark_count, is_published, created_at, updated_at, deleted_at)
                 VALUES (?, ?, NULL, '서울', ?, ?, 127.00000000, ?, '[]', 'OPERATIONAL', ?, '[]',
                     ?, 0, 0, ?, ?, ?, ?)
-                """, id, name, region, latitude, ramenTypes,
-                verified ? Timestamp.from(Instant.parse("2026-09-01T00:00:00Z")) : null, views, published,
-                Timestamp.from(Instant.parse(createdAt)), Timestamp.from(Instant.parse(createdAt)),
-                deleted ? Timestamp.from(Instant.parse("2026-09-06T00:00:00Z")) : null);
+                """, id, name, region, latitude, ramenTypes, verifiedAt, views, published,
+                Timestamp.from(Instant.parse(createdAt)), Timestamp.from(Instant.parse(createdAt)), deletedAt);
     }
 
 }

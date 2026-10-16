@@ -141,7 +141,10 @@ public class MobileUser {
     }
 
     private String clearIfEmpty(String value) {
-        return value.isEmpty() ? null : value;
+        if (value.isEmpty()) {
+            return null;
+        }
+        return value;
     }
 
 }

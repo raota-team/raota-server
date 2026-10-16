@@ -138,7 +138,10 @@ public class MobileRamenLog {
 
     /** 매장 평균 만족도 집계에 쓰는 만족도다. 점수가 없는 기록은 null이다. */
     public Integer satisfaction() {
-        return satisfactionScore == null ? null : satisfactionScore.intValue();
+        if (satisfactionScore == null) {
+            return null;
+        }
+        return satisfactionScore.intValue();
     }
 
     /** 공개 기록은 누구나, 비공개 기록은 작성자만 볼 수 있다. */

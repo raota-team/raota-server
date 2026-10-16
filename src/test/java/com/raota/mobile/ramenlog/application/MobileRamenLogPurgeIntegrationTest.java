@@ -164,14 +164,21 @@ class MobileRamenLogPurgeIntegrationTest extends BaseIntegrationTest {
     }
 
     private void insertLog(long id, Long userId, Integer satisfaction, boolean deleted) {
+        Integer otherScore = null;
+        if (satisfaction != null) {
+            otherScore = 3;
+        }
+        java.sql.Timestamp deletedAt = null;
+        if (deleted) {
+            deletedAt = java.sql.Timestamp.from(REQUESTED_AT);
+        }
         jdbc.update("""
                 INSERT INTO tb_v2_ramen_log (id, user_id, shop_id, visited_at, menu_name, ramen_type,
                     satisfaction_score, broth_density_score, noodle_firmness_score, topping_score,
                     revisit_intention, note, taste_note_codes, visibility, created_at, updated_at, deleted_at)
                 VALUES (?, ?, ?, '2026-09-01', '라멘', '쇼유', ?, ?, ?, ?,
                     'OFTEN', '', '[]', 'PUBLIC', '2026-09-01 00:00:00', '2026-09-01 00:00:00', ?)
-                """, id, userId, SHOP, satisfaction, satisfaction == null ? null : 3, satisfaction == null ? null : 3,
-                satisfaction == null ? null : 3, deleted ? java.sql.Timestamp.from(REQUESTED_AT) : null);
+                """, id, userId, SHOP, satisfaction, otherScore, otherScore, otherScore, deletedAt);
     }
 
 }

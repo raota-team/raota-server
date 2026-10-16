@@ -74,7 +74,10 @@ public class KakaoAccessTokenVerifier implements SocialTokenVerifier {
         }
         boolean valid = account.path("is_email_valid").asBoolean(false);
         boolean verified = account.path("is_email_verified").asBoolean(false);
-        return valid && verified ? account.get("email").asString() : null;
+        if (valid && verified) {
+            return account.get("email").asString();
+        }
+        return null;
     }
 
     private static MobileException invalidCredential() {

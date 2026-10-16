@@ -255,11 +255,15 @@ class MobileLoungeSafetyIntegrationTest extends BaseIntegrationTest {
     }
 
     private void insertComment(long id, long logId, Long userId, int minute, boolean deleted) {
+        String deletedAt = null;
+        if (deleted) {
+            deletedAt = "2026-09-02 00:00:00";
+        }
         jdbc.update("""
                 INSERT INTO tb_v2_ramen_log_comment (id, ramen_log_id, user_id, content, created_at, updated_at,
                     deleted_at)
                 VALUES (?, ?, ?, '댓글', TIMESTAMPADD(MINUTE, ?, '2026-09-01 00:00:00'), '2026-09-01 00:00:00', ?)
-                """, id, logId, userId, minute, deleted ? "2026-09-02 00:00:00" : null);
+                """, id, logId, userId, minute, deletedAt);
     }
 
     private Long active() {

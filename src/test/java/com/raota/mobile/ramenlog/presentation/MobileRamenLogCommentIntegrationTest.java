@@ -172,10 +172,11 @@ class MobileRamenLogCommentIntegrationTest extends BaseIntegrationTest {
         created.add(withdrawing);
         List<Long> visible = new ArrayList<>();
         for (int minute = 0; minute < 24; minute++) {
-            Long userId = minute % 4 == 1 ? withdrawing : writer;
-            long id = insertComment(LOG, userId, minute);
-            if (!userId.equals(withdrawing)) {
-                visible.add(id);
+            if (minute % 4 == 1) {
+                insertComment(LOG, withdrawing, minute);
+            }
+            else {
+                visible.add(insertComment(LOG, writer, minute));
             }
         }
 

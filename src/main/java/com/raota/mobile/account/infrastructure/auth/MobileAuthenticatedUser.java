@@ -15,13 +15,17 @@ public record MobileAuthenticatedUser(Long userId, MobileUserStatus status,
         Collection<? extends GrantedAuthority> authorities) implements MobilePrincipal {
 
     public static MobileAuthenticatedUser of(MobileUser user) {
-        String statusAuthority = user.getStatus() == MobileUserStatus.ACTIVE ? AccessLevel.ACTIVE_MEMBER_AUTHORITY
-                : MobileAuthorities.ONBOARDING;
+        String statusAuthority = MobileAuthorities.ONBOARDING;
+        if (user.getStatus() == MobileUserStatus.ACTIVE) {
+            statusAuthority = AccessLevel.ACTIVE_MEMBER_AUTHORITY;
+        }
         SimpleGrantedAuthority membership = new SimpleGrantedAuthority(statusAuthority);
-        List<SimpleGrantedAuthority> authorities = user.getRole() == MobileUserRole.ADMIN
-                ? List.of(new SimpleGrantedAuthority("ROLE_USER"), new SimpleGrantedAuthority("ROLE_ADMIN"), membership)
-                : List.of(new SimpleGrantedAuthority("ROLE_USER"), membership);
-        return new MobileAuthenticatedUser(user.getId(), user.getStatus(), authorities);
+        if (user.getRole() == MobileUserRole.ADMIN) {
+            return new MobileAuthenticatedUser(user.getId(), user.getStatus(), List
+                .of(new SimpleGrantedAuthority("ROLE_USER"), new SimpleGrantedAuthority("ROLE_ADMIN"), membership));
+        }
+        return new MobileAuthenticatedUser(user.getId(), user.getStatus(),
+                List.of(new SimpleGrantedAuthority("ROLE_USER"), membership));
     }
 
 }

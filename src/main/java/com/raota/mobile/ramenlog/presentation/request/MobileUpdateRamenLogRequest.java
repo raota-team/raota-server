@@ -2,6 +2,7 @@ package com.raota.mobile.ramenlog.presentation.request;
 
 import com.raota.mobile.ramenlog.application.command.MobileUpdateRamenLogCommand;
 import com.raota.mobile.ramenlog.domain.model.LogVisibility;
+import com.raota.mobile.ramenlog.domain.model.MobileRamenLogScores;
 import com.raota.mobile.ramenlog.domain.model.RevisitIntention;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
@@ -16,8 +17,11 @@ public record MobileUpdateRamenLogRequest(LocalDate visitedAt,
         List<@NotBlank String> tasteNoteCodes, LogVisibility visibility,
         @Size(max = 3) List<@NotBlank @Size(max = 1000) String> imageUrls) {
     public MobileUpdateRamenLogCommand toCommand() {
-        return new MobileUpdateRamenLogCommand(visitedAt, menuName, ramenType,
-                scores == null ? null : scores.toScores(), revisitIntention, note, tasteNoteCodes, visibility,
-                imageUrls);
+        MobileRamenLogScores changedScores = null;
+        if (scores != null) {
+            changedScores = scores.toScores();
+        }
+        return new MobileUpdateRamenLogCommand(visitedAt, menuName, ramenType, changedScores, revisitIntention, note,
+                tasteNoteCodes, visibility, imageUrls);
     }
 }

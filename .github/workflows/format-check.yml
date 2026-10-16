@@ -29,5 +29,5 @@ jobs:
           java-version: "25"
           cache: gradle
 
-      - name: Check format
-        run: ./gradlew checkFormat
+      - name: Check format and code rules
+        run: ./gradlew checkFormat checkstyleMain checkstyleTest

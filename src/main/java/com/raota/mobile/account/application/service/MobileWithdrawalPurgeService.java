@@ -50,10 +50,14 @@ public class MobileWithdrawalPurgeService {
         Long afterId = null;
         var pageSize = PageRequest.of(0, PAGE_SIZE);
         while (true) {
-            List<MobileUserRepository.DueUser> due = afterScheduledAt == null
-                    ? users.findDueForPurge(MobileUserStatus.WITHDRAW_PENDING, now, pageSize)
-                    : users.findDueForPurgeAfter(MobileUserStatus.WITHDRAW_PENDING, now, afterScheduledAt, afterId,
-                            pageSize);
+            List<MobileUserRepository.DueUser> due;
+            if (afterScheduledAt == null) {
+                due = users.findDueForPurge(MobileUserStatus.WITHDRAW_PENDING, now, pageSize);
+            }
+            else {
+                due = users.findDueForPurgeAfter(MobileUserStatus.WITHDRAW_PENDING, now, afterScheduledAt, afterId,
+                        pageSize);
+            }
             for (MobileUserRepository.DueUser candidate : due) {
                 Long userId = candidate.getId();
                 afterScheduledAt = candidate.getPurgeScheduledAt();

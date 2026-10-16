@@ -20,8 +20,10 @@ public class MobileUploadTicketService {
         if (command.purpose() == MobileUploadTicketCommand.Purpose.PROFILE && command.files().size() != 1) {
             throw new MobileException(MobileErrorCode.VALIDATION_ERROR, "프로필 사진은 한 장만 업로드할 수 있습니다.");
         }
-        String directory = command.purpose() == MobileUploadTicketCommand.Purpose.PROFILE ? "v2/profiles"
-                : "v2/ramen-logs";
+        String directory = switch (command.purpose()) {
+            case PROFILE -> "v2/profiles";
+            case RAMEN_LOG -> "v2/ramen-logs";
+        };
         List<MobileUploadTickets.Upload> uploads = command.files().stream().map(file -> {
             String extension = file.extension();
             if (!validExtension(file.contentType(), extension)) {

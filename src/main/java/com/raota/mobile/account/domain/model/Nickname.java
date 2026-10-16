@@ -12,7 +12,10 @@ public record Nickname(String display, String normalized) {
     private static final Pattern ALLOWED = Pattern.compile("[가-힣a-zA-Z0-9_]+");
 
     public static Nickname of(String raw) {
-        String display = raw == null ? "" : Normalizer.normalize(raw.trim(), Normalizer.Form.NFKC);
+        String display = "";
+        if (raw != null) {
+            display = Normalizer.normalize(raw.trim(), Normalizer.Form.NFKC);
+        }
         int length = display.codePointCount(0, display.length());
         if (length < 2 || length > 12 || !ALLOWED.matcher(display).matches()) {
             throw new MobileException(MobileErrorCode.VALIDATION_ERROR, "닉네임은 2~12자의 한글·영문·숫자·밑줄만 쓸 수 있습니다.");

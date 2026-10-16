@@ -63,8 +63,10 @@ public class MobileRamenLogCommentService {
     public CursorPage<MobileRamenLogCommentResult> list(Long logId, Long viewerId, String rawCursor, int size) {
         visibility.visible(logId, viewerId);
         Cursor cursor = Cursor.parse(rawCursor).orElse(null);
-        return page(logId, viewerId, cursor == null ? null : parseInstant(cursor), cursor == null ? null : cursor.id(),
-                size);
+        if (cursor == null) {
+            return page(logId, viewerId, null, null, size);
+        }
+        return page(logId, viewerId, parseInstant(cursor), cursor.id(), size);
     }
 
     /** 기록 상세에 붙이는 첫 댓글 묶음이다. 기록을 볼 수 있는지는 호출한 쪽이 확인한다. */

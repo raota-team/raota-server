@@ -200,13 +200,17 @@ class MobileRamenLogFeedIntegrationTest extends BaseIntegrationTest {
     private void insertLog(long id, Long userId, String ramenType, String visibility, int likes, int minute,
             boolean deleted) {
         Timestamp createdAt = Timestamp.from(BASE.plus(Duration.ofMinutes(minute)));
+        Timestamp deletedAt = null;
+        if (deleted) {
+            deletedAt = createdAt;
+        }
         jdbc.update("""
                 INSERT INTO tb_v2_ramen_log (id, user_id, shop_id, visited_at, menu_name, ramen_type,
                     satisfaction_score, broth_density_score, noodle_firmness_score, topping_score,
                     revisit_intention, note, taste_note_codes, visibility, like_count, created_at, updated_at,
                     deleted_at)
                 VALUES (?, ?, ?, '2026-09-01', '라멘', ?, 4, 3, 3, 3, 'OFTEN', '', '[]', ?, ?, ?, ?, ?)
-                """, id, userId, SHOP, ramenType, visibility, likes, createdAt, createdAt, deleted ? createdAt : null);
+                """, id, userId, SHOP, ramenType, visibility, likes, createdAt, createdAt, deletedAt);
     }
 
     private Long active() {

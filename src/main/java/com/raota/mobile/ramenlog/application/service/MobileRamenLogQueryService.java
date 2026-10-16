@@ -57,9 +57,13 @@ public class MobileRamenLogQueryService {
     @Transactional(readOnly = true)
     public CursorPage<MobileRamenLogSummary> list(Long userId, String rawCursor, int size) {
         Cursor cursor = Cursor.parse(rawCursor).orElse(null);
-        LocalDate after = parseDate(cursor);
-        List<MobileRamenLog> fetched = logs.findMine(userId, after, cursor == null ? null : cursor.id(),
-                PageRequest.of(0, size + 1));
+        LocalDate afterDate = null;
+        Long afterId = null;
+        if (cursor != null) {
+            afterDate = parseDate(cursor);
+            afterId = cursor.id();
+        }
+        List<MobileRamenLog> fetched = logs.findMine(userId, afterDate, afterId, PageRequest.of(0, size + 1));
         CursorPage<MobileRamenLog> page = CursorPage.of(fetched, size,
                 log -> Cursor.of(log.getVisitedAt(), log.getId()));
         return summaries(page, accounts.authors(List.of(userId)), userId);
@@ -124,7 +128,7 @@ public class MobileRamenLogQueryService {
         for (MobileRamenLogImage image : images.findByRamenLogIdInOrderByRamenLogIdAscSortOrderAsc(ids)) {
             urls.computeIfAbsent(image.getRamenLogId(), ignored -> new ArrayList<>()).add(image.getUrl());
         }
-        Set<Long> liked = viewerId == null ? Set.of() : new HashSet<>(likes.findLikedLogIds(viewerId, ids));
+        Set<Long> liked = likedLogIds(viewerId, ids);
         List<MobileRamenLogSummary> items = page.items()
             .stream()
             .map(log -> MobileRamenLogViews.summary(log, authors.get(log.getUserId()),
@@ -132,6 +136,14 @@ public class MobileRamenLogQueryService {
                     liked.contains(log.getId()), viewerId))
             .toList();
         return new CursorPage<>(items, page.nextCursor(), page.hasNext());
+    }
+
+    /** 비회원은 공감한 기록이 없다. */
+    private Set<Long> likedLogIds(Long viewerId, List<Long> ids) {
+        if (viewerId == null) {
+            return Set.of();
+        }
+        return new HashSet<>(likes.findLikedLogIds(viewerId, ids));
     }
 
     private List<MobileRamenLog> feedBatch(MobileRamenLogSort sort, String ramenType, Long shopId, Long viewerId,
