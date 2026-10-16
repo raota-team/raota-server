@@ -106,7 +106,8 @@ public class MobileRamenLogCommentService {
      */
     @Transactional
     public void delete(Long commentId, Long userId) {
-        Long logId = comments.findById(commentId).map(MobileRamenLogComment::getRamenLogId).orElseThrow(this::notFound);
+        // 댓글 엔티티는 잠금 조회로 처음 읽어야 한다. 먼저 엔티티를 읽어 두면 잠금 조회가 그 낡은 인스턴스를 돌려줘 동시 삭제를 막지 못한다.
+        Long logId = comments.findRamenLogIdById(commentId).orElseThrow(this::notFound);
         MobileRamenLog log = visibility.visibleForUpdate(logId, userId);
         MobileRamenLogComment comment = comments.findByIdForUpdate(commentId)
             .filter(found -> found.getDeletedAt() == null)
