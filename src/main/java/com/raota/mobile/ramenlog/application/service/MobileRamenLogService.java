@@ -46,6 +46,8 @@ public class MobileRamenLogService {
 
     private final MobileRamenLogLikeRepository likes;
 
+    private final MobileRamenLogCommentService comments;
+
     private final MobileShopRamenLogFacade shops;
 
     private final MobileAccountRamenLogFacade accounts;
@@ -57,11 +59,13 @@ public class MobileRamenLogService {
     private final TransactionTemplate createTransaction;
 
     public MobileRamenLogService(MobileRamenLogRepository logs, MobileRamenLogImageRepository images,
-            MobileRamenLogLikeRepository likes, MobileShopRamenLogFacade shops, MobileAccountRamenLogFacade accounts,
-            MobileUploadedImagePolicy imagePolicy, Clock clock, PlatformTransactionManager transactionManager) {
+            MobileRamenLogLikeRepository likes, MobileRamenLogCommentService comments, MobileShopRamenLogFacade shops,
+            MobileAccountRamenLogFacade accounts, MobileUploadedImagePolicy imagePolicy, Clock clock,
+            PlatformTransactionManager transactionManager) {
         this.logs = logs;
         this.images = images;
         this.likes = likes;
+        this.comments = comments;
         this.shops = shops;
         this.accounts = accounts;
         this.imagePolicy = imagePolicy;
@@ -174,7 +178,8 @@ public class MobileRamenLogService {
             .map(MobileRamenLogImage::getUrl)
             .toList();
         boolean liked = viewerId != null && likes.existsByUserIdAndRamenLogId(viewerId, log.getId());
-        return MobileRamenLogViews.detail(log, author, shop, imageUrls, liked, viewerId);
+        return MobileRamenLogViews.detail(log, author, shop, imageUrls, liked, comments.preview(log.getId(), viewerId),
+                viewerId);
     }
 
     private MobileRamenLog existingForUpdate(Long id) {

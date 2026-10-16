@@ -78,10 +78,22 @@ class MobileRamenLogPurgeIntegrationTest extends BaseIntegrationTest {
                     VALUES (?, ?, '2026-09-01 00:00:00')
                     """, like);
         }
+        jdbc.update("UPDATE tb_v2_ramen_log SET comment_count = 2 WHERE id = ?", OTHER_LOG);
+        jdbc.update("UPDATE tb_v2_ramen_log SET comment_count = 1 WHERE id = ?", DUE_LOG);
+        for (Object[] comment : List.of(new Object[] { OTHER_LOG, dueId, null },
+                new Object[] { OTHER_LOG, otherId, null }, new Object[] { OTHER_LOG, dueId, "2026-09-02 00:00:00" },
+                new Object[] { DUE_LOG, otherId, null })) {
+            jdbc.update("""
+                    INSERT INTO tb_v2_ramen_log_comment (ramen_log_id, user_id, content, created_at, updated_at,
+                        deleted_at)
+                    VALUES (?, ?, '댓글', '2026-09-01 00:00:00', '2026-09-01 00:00:00', ?)
+                    """, comment);
+        }
     }
 
     @AfterEach
     void cleanUp() {
+        jdbc.update("DELETE FROM tb_v2_ramen_log_comment WHERE ramen_log_id IN (?, ?)", DUE_LOG, OTHER_LOG);
         jdbc.update("DELETE FROM tb_v2_ramen_log_like WHERE ramen_log_id IN (?, ?)", DUE_LOG, OTHER_LOG);
         jdbc.update("DELETE FROM tb_v2_ramen_log_image WHERE ramen_log_id IN (?, ?, ?, ?)", DUE_LOG, DELETED_LOG,
                 OTHER_LOG, DUE_UNSCORED_LOG);
@@ -93,7 +105,7 @@ class MobileRamenLogPurgeIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void 유예_기한이_지난_회원의_공감과_사진과_기록만_삭제하고_공감_수와_점수_없는_기록을_포함한_활성_기록의_매장_집계를_되돌린다() {
+    void 유예_기한이_지난_회원의_공감과_댓글과_사진과_기록만_삭제하고_공감_수와_댓글_수와_활성_기록의_매장_집계를_되돌린다() {
         assertThat(purges.purgeExpired(REQUESTED_AT.plus(Duration.ofDays(30)))).isEqualTo(1);
         assertThat(users.findById(dueId).orElseThrow().getStatus()).isEqualTo(MobileUserStatus.WITHDRAWN);
         assertThat(jdbc.queryForObject("SELECT log_count FROM tb_v2_user WHERE id = ?", Integer.class, dueId))
@@ -117,6 +129,12 @@ class MobileRamenLogPurgeIntegrationTest extends BaseIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT like_count FROM tb_v2_ramen_log WHERE id = ?", Integer.class, OTHER_LOG))
             .isEqualTo(1);
         assertThat(jdbc.queryForList("SELECT user_id FROM tb_v2_ramen_log_like WHERE ramen_log_id IN (?, ?)",
+                Long.class, DUE_LOG, OTHER_LOG))
+            .containsExactly(otherId);
+        assertThat(
+                jdbc.queryForObject("SELECT comment_count FROM tb_v2_ramen_log WHERE id = ?", Integer.class, OTHER_LOG))
+            .isEqualTo(1);
+        assertThat(jdbc.queryForList("SELECT user_id FROM tb_v2_ramen_log_comment WHERE ramen_log_id IN (?, ?)",
                 Long.class, DUE_LOG, OTHER_LOG))
             .containsExactly(otherId);
     }

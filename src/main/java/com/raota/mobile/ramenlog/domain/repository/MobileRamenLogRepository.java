@@ -72,6 +72,15 @@ public interface MobileRamenLogRepository extends JpaRepository<MobileRamenLog, 
             """)
     void decrementLikesBy(Long userId);
 
+    /** 탈퇴 정리에서 한 기록의 댓글 수를 한 번에 줄인다. 0 밑으로 내려가지 않는다. */
+    @Modifying
+    @Query("""
+            update MobileRamenLog log
+            set log.commentCount = case when log.commentCount > :count then log.commentCount - :count else 0 end
+            where log.id = :logId
+            """)
+    void removeComments(Long logId, int count);
+
     @Modifying
     @Query("delete from MobileRamenLog log where log.userId = :userId")
     void deleteForUser(Long userId);

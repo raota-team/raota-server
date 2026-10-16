@@ -21,6 +21,11 @@ public class MobileRamenLogAccessRules implements AccessRuleContributor {
                 new AccessRule(AccessLevel.ACTIVE_MEMBER, HttpMethod.DELETE, "/api/v2/ramen-logs/{logId:[0-9]+}"),
                 new AccessRule(AccessLevel.ACTIVE_MEMBER, HttpMethod.PUT, "/api/v2/ramen-logs/{logId:[0-9]+}/like"),
                 new AccessRule(AccessLevel.ACTIVE_MEMBER, HttpMethod.DELETE, "/api/v2/ramen-logs/{logId:[0-9]+}/like"),
+                new AccessRule(AccessLevel.PUBLIC, HttpMethod.GET, "/api/v2/ramen-logs/{logId:[0-9]+}/comments"),
+                new AccessRule(AccessLevel.ACTIVE_MEMBER, HttpMethod.POST,
+                        "/api/v2/ramen-logs/{logId:[0-9]+}/comments"),
+                new AccessRule(AccessLevel.ACTIVE_MEMBER, HttpMethod.DELETE,
+                        "/api/v2/ramen-log-comments/{commentId:[0-9]+}"),
                 new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.GET, "/api/v2/members/me/ramen-logs"),
                 new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.GET, "/api/v2/members/me/ramen-logs/summary"),
                 new AccessRule(AccessLevel.PUBLIC, HttpMethod.GET, "/api/v2/taste-note-definitions"));

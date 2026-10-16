@@ -154,6 +154,14 @@ public class MobileRamenLog {
         this.likeCount = Math.max(0, likeCount - 1);
     }
 
+    public void addComment() {
+        this.commentCount++;
+    }
+
+    public void removeComment() {
+        this.commentCount = Math.max(0, commentCount - 1);
+    }
+
     private void applyScores(MobileRamenLogScores scores) {
         this.satisfactionScore = (byte) scores.satisfaction();
         this.brothDensityScore = (byte) scores.brothDensity();
