@@ -44,6 +44,9 @@ public class MobileRamenLogQueryService {
 
     private static final MobileTasteNoteDefinitions DEFINITIONS = definitionsFromEnum();
 
+    /** 걸러낸 기록을 채우려고 한 요청에서 더 읽는 묶음 수의 상한이다. 요청당 최대 {@code 5 × (size + 1)}행을 읽는다. */
+    static final int MAX_FEED_BATCHES = 5;
+
     private final MobileRamenLogRepository logs;
 
     private final MobileRamenLogImageRepository images;
@@ -71,7 +74,8 @@ public class MobileRamenLogQueryService {
 
     /**
      * 공개 기록을 정렬 기준의 커서로 읽는다. 로그인한 회원이 차단한 작성자와 신고한 기록은 쿼리에서 빼고, 활성 회원이 아닌 작성자(탈퇴 유예·정지)의
-     * 기록은 건너뛴 뒤 걸러낸 만큼 다음 묶음을 더 읽어 페이지를 채운다.
+     * 기록은 건너뛴 뒤 걸러낸 만큼 다음 묶음을 더 읽어 페이지를 채운다. 묶음 상한에 닿으면 요청 크기보다 짧은 페이지와 마지막으로 읽은 위치의 커서를
+     * 돌려준다.
      */
     @Transactional(readOnly = true)
     public CursorPage<MobileRamenLogSummary> feed(Long viewerId, MobileRamenLogSort sort, String ramenType, Long shopId,
@@ -79,7 +83,7 @@ public class MobileRamenLogQueryService {
         Cursor after = Cursor.parse(rawCursor).orElse(null);
         List<MobileRamenLog> visible = new ArrayList<>();
         Map<Long, MobileAuthor> authors = new HashMap<>();
-        while (true) {
+        for (int batches = 1;; batches++) {
             List<MobileRamenLog> batch = feedBatch(sort, ramenType, shopId, viewerId, after, size + 1);
             Set<Long> unknown = batch.stream()
                 .map(MobileRamenLog::getUserId)
@@ -96,6 +100,9 @@ public class MobileRamenLogQueryService {
                 break;
             }
             after = feedCursor(sort, batch.getLast());
+            if (batches == MAX_FEED_BATCHES) {
+                return summaries(new CursorPage<>(visible, after.encode(), true), authors, viewerId);
+            }
         }
         CursorPage<MobileRamenLog> page = CursorPage.of(visible, size, log -> feedCursor(sort, log));
         return summaries(page, authors, viewerId);

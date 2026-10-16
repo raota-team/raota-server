@@ -226,6 +226,51 @@ class MobileRamenLogCommentIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
+    void 볼_수_없게_된_기록의_댓글은_누가_지워도_404이고_같은_키로_다시_보내도_404다() throws Exception {
+        String id = data(create(LOG, writer, "hidden", "{\"content\":\"숨길 댓글\"}").andExpect(status().isCreated()))
+            .get("id")
+            .asString();
+        mvc.perform(
+                delete("/api/v2/ramen-log-comments/{commentId}", id).header(HttpHeaders.AUTHORIZATION, auth(author)))
+            .andExpect(status().isForbidden());
+        jdbc.update("UPDATE tb_v2_ramen_log SET visibility = 'PRIVATE' WHERE id = ?", LOG);
+
+        for (Long userId : List.of(admin, writer)) {
+            mvc.perform(delete("/api/v2/ramen-log-comments/{commentId}", id).header(HttpHeaders.AUTHORIZATION,
+                    auth(userId)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+        }
+        create(LOG, writer, "hidden", "{\"content\":\"숨길 댓글\"}").andExpect(status().isNotFound());
+        assertThat(commentCount(LOG)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT deleted_at IS NULL FROM tb_v2_ramen_log_comment WHERE id = ?",
+                Boolean.class, Long.valueOf(id)))
+            .isTrue();
+    }
+
+    @Test
+    void 걸러낼_댓글이_많으면_한_요청에서_묶음_상한까지만_읽고_빈_페이지와_이어_읽을_커서를_돌려준다() throws Exception {
+        MobileUser pending = MobileUser.onboarding("comment-" + UUID.randomUUID() + "@example.com");
+        pending.completeOnboarding(Nickname.of("C" + UUID.randomUUID().toString().substring(0, 8)), BASE);
+        pending.requestWithdrawal(BASE, Duration.ofDays(30));
+        Long withdrawing = users.saveAndFlush(pending).getId();
+        created.add(withdrawing);
+        for (int minute = 0; minute < 12; minute++) {
+            insertComment(OTHER_LOG, withdrawing, minute);
+        }
+        long last = insertComment(OTHER_LOG, writer, 12);
+
+        JsonNode first = data(mvc.perform(page(OTHER_LOG).param("size", "1")).andExpect(status().isOk()));
+        assertThat(ids(first)).isEmpty();
+        assertThat(first.get("hasNext").asBoolean()).isTrue();
+        JsonNode second = data(
+                mvc.perform(page(OTHER_LOG).param("size", "1").param("cursor", first.get("nextCursor").asString()))
+                    .andExpect(status().isOk()));
+        assertThat(ids(second)).containsExactly(last);
+        assertThat(second.get("hasNext").asBoolean()).isFalse();
+    }
+
+    @Test
     void 볼_수_없는_기록은_404이고_읽기는_누구나_쓰기는_활성_회원만_가능하다() throws Exception {
         create(PRIVATE_LOG, writer, "private", "{\"content\":\"비공개\"}").andExpect(status().isNotFound());
         mvc.perform(page(PRIVATE_LOG)).andExpect(status().isNotFound());

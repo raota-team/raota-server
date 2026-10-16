@@ -35,6 +35,9 @@ public class MobileRamenLogCommentService {
 
     private static final int PREVIEW_SIZE = 20;
 
+    /** 걸러낸 댓글을 채우려고 한 요청에서 더 읽는 묶음 수의 상한이다. */
+    private static final int MAX_BATCHES = 5;
+
     private final MobileRamenLogCommentRepository comments;
 
     private final MobileRamenLogRepository logs;
@@ -99,9 +102,14 @@ public class MobileRamenLogCommentService {
         return view(comments.findById(id).orElseThrow(this::notFound), userId);
     }
 
-    /** 댓글 행을 잠가 같은 댓글을 동시에 지워도 기록의 댓글 수는 한 번만 줄어든다. */
+    /**
+     * 볼 수 없는 기록의 댓글은 작성자 여부와 관계없이 404로 응답해 존재를 드러내지 않는다. 작성과 같은 순서(기록 → 댓글)로 행을 잠가, 같은
+     * 댓글을 동시에 지워도 기록의 댓글 수는 한 번만 줄어든다.
+     */
     @Transactional
     public void delete(Long commentId, Long userId) {
+        Long logId = comments.findById(commentId).map(MobileRamenLogComment::getRamenLogId).orElseThrow(this::notFound);
+        MobileRamenLog log = visibility.visibleForUpdate(logId, userId);
         MobileRamenLogComment comment = comments.findByIdForUpdate(commentId)
             .filter(found -> found.getDeletedAt() == null)
             .orElseThrow(this::notFound);
@@ -109,26 +117,30 @@ public class MobileRamenLogCommentService {
             throw new MobileException(MobileErrorCode.FORBIDDEN, "작성자만 댓글을 삭제할 수 있습니다.");
         }
         comment.softDelete(Instant.now(clock).truncatedTo(ChronoUnit.MICROS));
-        logs.findByIdForUpdate(comment.getRamenLogId()).ifPresent(MobileRamenLog::removeComment);
+        log.removeComment();
     }
 
-    /** 같은 키의 재시도는 처음 만든 댓글을 돌려준다. 다른 기록에 쓰였거나 이미 지운 댓글의 키는 409다. */
+    /**
+     * 같은 키의 재시도는 처음 만든 댓글을 돌려준다. 다른 기록에 쓰였거나 이미 지운 댓글의 키는 409이고, 그 사이 기록을 볼 수 없게 됐으면 새
+     * 작성과 같이 404다.
+     */
     private MobileRamenLogCommentResult replay(MobileRamenLogComment previous, Long logId, Long userId) {
         if (!previous.getRamenLogId().equals(logId) || previous.getDeletedAt() != null) {
             throw new MobileException(MobileErrorCode.CONFLICT, "이미 사용한 요청 키입니다.");
         }
+        visibility.visible(logId, userId);
         return view(previous, userId);
     }
 
     /**
      * 로그인한 회원이 차단한 작성자와 신고한 댓글은 쿼리에서 빼고, 활성 회원이 아닌 작성자(탈퇴 유예·정지)의 댓글은 건너뛴 뒤 걸러낸 만큼 다음 묶음을
-     * 더 읽어 페이지를 채운다.
+     * 더 읽어 페이지를 채운다. 묶음 상한에 닿으면 요청 크기보다 짧은 페이지와 마지막으로 읽은 위치의 커서를 돌려준다.
      */
     private CursorPage<MobileRamenLogCommentResult> page(Long logId, Long viewerId, Instant afterAt, Long afterId,
             int size) {
         List<MobileRamenLogComment> visible = new ArrayList<>();
         Map<Long, MobileAuthor> authors = new HashMap<>();
-        while (true) {
+        for (int batches = 1;; batches++) {
             List<MobileRamenLogComment> batch = comments.findPage(logId, viewerId, afterAt, afterId,
                     PageRequest.of(0, size + 1));
             Set<Long> unknown = batch.stream()
@@ -147,9 +159,17 @@ public class MobileRamenLogCommentService {
             }
             afterAt = batch.getLast().getCreatedAt();
             afterId = batch.getLast().getId();
+            if (batches == MAX_BATCHES) {
+                return results(new CursorPage<>(visible, Cursor.of(afterAt, afterId).encode(), true), authors,
+                        viewerId);
+            }
         }
-        CursorPage<MobileRamenLogComment> page = CursorPage.of(visible, size,
-                comment -> Cursor.of(comment.getCreatedAt(), comment.getId()));
+        return results(CursorPage.of(visible, size, comment -> Cursor.of(comment.getCreatedAt(), comment.getId())),
+                authors, viewerId);
+    }
+
+    private CursorPage<MobileRamenLogCommentResult> results(CursorPage<MobileRamenLogComment> page,
+            Map<Long, MobileAuthor> authors, Long viewerId) {
         List<MobileRamenLogCommentResult> items = page.items()
             .stream()
             .map(comment -> MobileRamenLogViews.comment(comment, authors.get(comment.getUserId()), viewerId))
