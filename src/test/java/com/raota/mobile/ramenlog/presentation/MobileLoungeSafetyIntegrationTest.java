@@ -185,6 +185,23 @@ class MobileLoungeSafetyIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
+    void 활성_회원이_아닌_회원은_없는_회원과_같이_404이고_차단_목록에서도_빠진다() throws Exception {
+        block(reporter, other).andExpect(status().isNoContent());
+        block(reporter, author).andExpect(status().isNoContent());
+        jdbc.update("UPDATE tb_v2_user SET status = 'WITHDRAW_PENDING' WHERE id = ?", other);
+
+        block(bystander, other).andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_user_block WHERE blocker_id = ?", Integer.class,
+                bystander))
+            .isZero();
+        mvc.perform(get("/api/v2/members/me/blocks").header(HttpHeaders.AUTHORIZATION, auth(reporter)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.length()").value(1))
+            .andExpect(jsonPath("$.data[0].id").value(String.valueOf(author)));
+    }
+
+    @Test
     void 자기_자신과_없는_회원은_차단할_수_없고_비회원과_가입_중인_회원은_쓰기를_할_수_없다() throws Exception {
         block(reporter, reporter).andExpect(status().isBadRequest());
         block(reporter, 900006698L).andExpect(status().isNotFound());
