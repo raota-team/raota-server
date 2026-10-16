@@ -121,6 +121,24 @@ class MobileRamenLogFeedIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
+    void 걸러낼_기록이_많으면_한_요청에서_묶음_상한까지만_읽고_빈_페이지와_이어_읽을_커서를_돌려준다() throws Exception {
+        insertLog(LOG + 40, author, "쇼유", "PUBLIC", 0, 1, false);
+        for (int minute = 2; minute <= 13; minute++) {
+            insertLog(LOG + 40 + minute, withdrawing, "쇼유", "PUBLIC", 0, minute, false);
+        }
+
+        JsonNode first = feed(get("/api/v2/ramen-logs").param("shopId", String.valueOf(SHOP)).param("size", "1"));
+        assertThat(ids(first)).isEmpty();
+        assertThat(first.get("hasNext").asBoolean()).isTrue();
+
+        JsonNode second = feed(get("/api/v2/ramen-logs").param("shopId", String.valueOf(SHOP))
+            .param("size", "1")
+            .param("cursor", first.get("nextCursor").asString()));
+        assertThat(ids(second)).containsExactly(LOG + 40);
+        assertThat(second.get("hasNext").asBoolean()).isFalse();
+    }
+
+    @Test
     void 공감순은_공감_수와_ID_역순으로_이어지고_라멘_종류로_거른다() throws Exception {
         insertLog(LOG + 11, author, "쇼유", "PUBLIC", 5, 1, false);
         insertLog(LOG + 12, author, "쇼유", "PUBLIC", 9, 2, false);
