@@ -1,6 +1,7 @@
 package com.raota.mobile.shop.domain.repository;
 
 import com.raota.mobile.shop.domain.model.MobileShop;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -49,5 +50,21 @@ public interface MobileShopRepository extends JpaRepository<MobileShop, Long> {
     @Modifying
     @Query("update MobileShop shop set shop.viewCount = shop.viewCount + 1 where shop.id = :id")
     void incrementViewCount(Long id);
+
+    /** 요약 생성에 시간이 걸리므로 엔티티를 저장하지 않고 요약 컬럼만 바꿔 그 사이 바뀐 집계 컬럼을 덮어쓰지 않는다. */
+    @Modifying
+    @Query(value = """
+            UPDATE tb_v2_shop SET ai_review_summary = :summary, ai_summary_keywords = CAST(:keywordsJson AS JSON),
+                ai_summary_generated_at = :generatedAt, updated_at = :generatedAt
+            WHERE id = :id AND deleted_at IS NULL
+            """, nativeQuery = true)
+    int updateAiSummary(Long id, String summary, String keywordsJson, Instant generatedAt);
+
+    @Query("""
+            select shop.id from MobileShop shop
+            where shop.published = true and shop.deletedAt is null and shop.aiSummaryGeneratedAt is null
+            order by shop.id
+            """)
+    List<Long> findPublishedIdsWithoutAiSummary();
 
 }
