@@ -19,10 +19,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
@@ -52,10 +52,11 @@ public class MobileRecommendationService {
 
     private static final double SIMILARITY_THRESHOLD = 0.35;
 
-    /** 서버 한 대에서 동시에 도는 검색 수 상한이다. 시간 초과로 응답을 끊어도 외부 호출이 끝날 때까지 자리를 차지한다. */
+    /**
+     * 서버 한 대에서 동시에 도는 검색 수 상한이다. 시간 초과로 응답을 끊어도 외부 호출이 끝날 때까지 스레드를 차지한다. 대기열 없이 빈 스레드가
+     * 없으면 바로 거절한다.
+     */
     static final int MAX_CONCURRENT_SEARCHES = 8;
-
-    private final Semaphore running = new Semaphore(MAX_CONCURRENT_SEARCHES);
 
     private final AiRamenShopSearchQueryParser parser;
 
@@ -71,7 +72,11 @@ public class MobileRecommendationService {
 
     private final Duration timeout;
 
-    private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+    /** JDBC·HTTP 블로킹 호출이라 가상 스레드 대신 크기가 정해진 플랫폼 스레드를 쓴다. */
+    private final ThreadPoolExecutor executor = new ThreadPoolExecutor(MAX_CONCURRENT_SEARCHES, MAX_CONCURRENT_SEARCHES,
+            60, TimeUnit.SECONDS, new SynchronousQueue<>(),
+            Thread.ofPlatform().name("ai-recommendation-", 0).daemon(true).factory(),
+            new ThreadPoolExecutor.AbortPolicy());
 
     public MobileRecommendationService(AiRamenShopSearchQueryParser parser, RamenShopSearchDocumentPort documents,
             AiRamenShopSearchReranker reranker, MobileShopAgentFacade shops,
@@ -130,26 +135,17 @@ public class MobileRecommendationService {
             topK = LOCATION_CANDIDATE_DOCUMENTS;
         }
         int candidates = topK;
-        if (!running.tryAcquire()) {
-            log.warn("AI 추천 동시 검색 상한 초과: limit={}", MAX_CONCURRENT_SEARCHES);
-            throw unavailable();
-        }
         Future<List<AiRamenShopSearchHit>> future;
         try {
             future = executor.submit(() -> {
-                try {
-                    ParsedAiRamenShopSearchQuery parsed = parser.parse(query);
-                    return reranker.rerank(
-                            documents.searchShopDocuments(parsed.expandedQuery(), candidates, SIMILARITY_THRESHOLD),
-                            parsed, candidates);
-                }
-                finally {
-                    running.release();
-                }
+                ParsedAiRamenShopSearchQuery parsed = parser.parse(query);
+                return reranker.rerank(
+                        documents.searchShopDocuments(parsed.expandedQuery(), candidates, SIMILARITY_THRESHOLD), parsed,
+                        candidates);
             });
         }
-        catch (RuntimeException exception) {
-            running.release();
+        catch (RejectedExecutionException exception) {
+            log.warn("AI 추천 동시 검색 상한 초과: limit={}", MAX_CONCURRENT_SEARCHES);
             throw unavailable();
         }
         try {
