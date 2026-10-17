@@ -30,7 +30,6 @@ import java.math.RoundingMode;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -211,15 +210,11 @@ public class MobileShopQueryService {
 
     /**
      * 추천해도 되는 매장 중 라멘 종류가 {@code ramenType}인 매장, 종류가 없으면 태그에 {@code tagKeyword}가 들어간 매장에서
-     * 조회수가 가장 많은 매장을 고른다. 조회수가 같으면 ID가 큰 매장이다.
+     * 조회수가 가장 많은 매장을 고른다. 조회수가 같으면 ID가 큰 매장이다. 공개 API라 DB에서 1건만 읽는다.
      */
     @Transactional(readOnly = true)
     public Optional<MobileShopSummary> mostPopular(Long userId, String ramenType, String tagKeyword) {
-        Optional<MobileShop> best = shops.findByPublishedTrueAndDeletedAtIsNull()
-            .stream()
-            .filter(this::isRecommendable)
-            .filter(shop -> matches(shop, ramenType, tagKeyword))
-            .max(Comparator.comparingInt(MobileShop::getViewCount).thenComparing(MobileShop::getId));
+        Optional<MobileShop> best = shops.findMostViewedRecommendableId(ramenType, tagKeyword).flatMap(shops::findById);
         if (best.isEmpty()) {
             return Optional.empty();
         }
@@ -228,16 +223,6 @@ public class MobileShopQueryService {
         return Optional
             .of(summary(shop, images(ids).get(shop.getId()), hours(ids).getOrDefault(shop.getId(), List.of()), null,
                     bookmarks.bookmarkedShopIds(userId, ids).contains(shop.getId())));
-    }
-
-    private boolean matches(MobileShop shop, String ramenType, String tagKeyword) {
-        if (ramenType != null) {
-            return shop.getRamenTypes().contains(ramenType);
-        }
-        if (tagKeyword == null) {
-            return false;
-        }
-        return shop.getTags().stream().anyMatch(tag -> tag.replace(" ", "").contains(tagKeyword));
     }
 
     private boolean isRecommendable(MobileShop shop) {

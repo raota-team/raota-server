@@ -67,4 +67,20 @@ public interface MobileShopRepository extends JpaRepository<MobileShop, Long> {
             """)
     List<Long> findPublishedIdsWithoutAiSummary();
 
+    /**
+     * 추천해도 되는 매장(공개·미삭제·폐업과 휴업 제외) 중 라멘 종류가 {@code ramenType}인 매장, 종류가 없으면 공백을 뺀 태그에
+     * {@code tagKeyword}가 들어간 매장에서 조회수 1위의 ID다.
+     */
+    @Query(value = """
+            SELECT id FROM tb_v2_shop
+            WHERE is_published = TRUE AND deleted_at IS NULL
+                AND business_status NOT IN ('CLOSED', 'TEMPORARILY_CLOSED')
+                AND ((:ramenType IS NOT NULL AND JSON_CONTAINS(ramen_types, JSON_QUOTE(:ramenType)))
+                    OR (:ramenType IS NULL AND :tagKeyword IS NOT NULL
+                        AND REPLACE(CAST(tags AS CHAR), ' ', '') LIKE CONCAT('%', :tagKeyword, '%')))
+            ORDER BY view_count DESC, id DESC
+            LIMIT 1
+            """, nativeQuery = true)
+    Optional<Long> findMostViewedRecommendableId(String ramenType, String tagKeyword);
+
 }

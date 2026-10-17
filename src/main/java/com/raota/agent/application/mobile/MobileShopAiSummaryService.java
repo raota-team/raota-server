@@ -25,7 +25,8 @@ import org.springframework.stereotype.Service;
  *
  * <p>
  * 요약은 v1 매장 정보와 RAG 색인을 쓴다(매장 ID는 v1·v2가 같다). 근거 리뷰가 없으면 저장하지 않는다. 전체 생성은 매장마다 LLM을 부르므로
- * 요약이 없는 공개 매장만 백그라운드에서 하나씩 처리하고, 서버가 2대여도 한 번만 돌도록 Redis 락을 잡는다.
+ * 요약이 없는 공개 매장을 한 번에 최대 {@value #MAX_BULK_SHOPS}곳까지만 백그라운드에서 하나씩 처리한다. 매장당 수 초가 걸려도 락
+ * TTL(2시간) 안에 끝나도록 크기를 제한하고, 남은 매장은 다시 실행해 이어서 처리한다. 서버가 2대여도 한 번만 돌도록 Redis 락을 잡는다.
  * </p>
  */
 @Slf4j
@@ -35,6 +36,8 @@ public class MobileShopAiSummaryService {
     static final String BULK_LOCK_KEY = "lock:v2:shop-ai-summary";
 
     private static final Duration BULK_LOCK_TTL = Duration.ofHours(2);
+
+    static final int MAX_BULK_SHOPS = 100;
 
     private static final String FOCUS = "전반적인 맛과 메뉴";
 
@@ -83,20 +86,21 @@ public class MobileShopAiSummaryService {
         return new Result(shopId, Outcome.SAVED);
     }
 
-    /** 요약이 없는 공개 매장을 백그라운드에서 처리하고 대상 수를 바로 돌려준다. 이미 실행 중이면 거절한다. */
+    /** 요약이 없는 공개 매장을 최대 100곳 백그라운드에서 처리하고 대상·남은 수를 바로 돌려준다. 이미 실행 중이면 거절한다. */
     public BulkStart summarizeMissing() {
         LockToken lock = locks.tryAcquire(BULK_LOCK_KEY, BULK_LOCK_TTL)
             .orElseThrow(() -> new IllegalStateException("매장 AI 요약 전체 생성이 이미 실행 중입니다."));
-        List<Long> shopIds;
+        List<Long> missing;
         try {
-            shopIds = shops.publishedShopIdsWithoutAiSummary();
+            missing = shops.publishedShopIdsWithoutAiSummary();
         }
         catch (RuntimeException exception) {
             locks.release(lock);
             throw exception;
         }
-        executor.submit(() -> runBulk(shopIds, lock));
-        return new BulkStart(shopIds.size());
+        List<Long> batch = missing.subList(0, Math.min(missing.size(), MAX_BULK_SHOPS));
+        executor.submit(() -> runBulk(List.copyOf(batch), lock));
+        return new BulkStart(batch.size(), missing.size() - batch.size());
     }
 
     private void runBulk(List<Long> shopIds, LockToken lock) {
@@ -149,7 +153,8 @@ public class MobileShopAiSummaryService {
     public record Result(Long shopId, Outcome outcome) {
     }
 
-    public record BulkStart(int queued) {
+    /** 이번에 처리할 매장 수와 다음 실행에 남은 매장 수다. */
+    public record BulkStart(int queued, int remaining) {
     }
 
 }

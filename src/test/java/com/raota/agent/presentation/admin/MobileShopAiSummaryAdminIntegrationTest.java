@@ -147,7 +147,8 @@ class MobileShopAiSummaryAdminIntegrationTest extends BaseIntegrationTest {
         redis.delete("lock:v2:shop-ai-summary");
 
         summarizeMissing().andExpect(status().isAccepted())
-            .andExpect(jsonPath("$.data.queued").value(greaterThanOrEqualTo(2)));
+            .andExpect(jsonPath("$.data.queued").value(greaterThanOrEqualTo(2)))
+            .andExpect(jsonPath("$.data.remaining").value(0));
 
         await().atMost(Duration.ofSeconds(10))
             .until(() -> !Boolean.TRUE.equals(redis.hasKey("lock:v2:shop-ai-summary")));
