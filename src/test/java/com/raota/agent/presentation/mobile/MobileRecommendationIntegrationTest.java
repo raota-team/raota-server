@@ -1,7 +1,9 @@
 package com.raota.agent.presentation.mobile;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -9,12 +11,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.raota.agent.domain.recommendation.repository.MobileRecommendationRunRepository;
 import com.raota.global.presentation.common.RequestIdFilter;
+import com.raota.mobile.account.application.service.MobileWithdrawalPurgeService;
 import com.raota.mobile.account.domain.model.MobileUser;
 import com.raota.mobile.account.domain.model.Nickname;
 import com.raota.mobile.account.domain.repository.MobileUserRepository;
 import com.raota.mobile.account.infrastructure.auth.MobileAccessTokenService;
 import com.raota.support.BaseIntegrationTest;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +35,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -72,6 +78,12 @@ class MobileRecommendationIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private ObjectMapper mapper;
 
+    @Autowired
+    private MobileWithdrawalPurgeService purges;
+
+    @MockitoSpyBean
+    private MobileRecommendationRunRepository runs;
+
     private MockMvc mvc;
 
     private final List<Long> created = new ArrayList<>();
@@ -91,6 +103,9 @@ class MobileRecommendationIntegrationTest extends BaseIntegrationTest {
     void cleanUp() {
         jdbc.update("DELETE FROM tb_v2_shop_bookmark WHERE shop_id BETWEEN ? AND ?", NEAR, NO_COORDINATES);
         jdbc.update("DELETE FROM tb_v2_shop WHERE id BETWEEN ? AND ?", NEAR, NO_COORDINATES);
+        for (Long userId : created) {
+            runs.deleteByUserId(userId);
+        }
         created.forEach(users::deleteById);
     }
 
@@ -127,6 +142,76 @@ class MobileRecommendationIntegrationTest extends BaseIntegrationTest {
         assertThat(ids(byPoint)).containsExactly(String.valueOf(NEAR));
         assertThat(byPoint.get("shops").get(0).get("distanceMeters").asInt()).isZero();
         assertThat(byPoint.get("appliedConditions").toString()).isEqualTo("[\"쇼유\",\"3km 이내\"]");
+    }
+
+    @Test
+    void 보여준_매장과_조건을_노출_기록으로_남기고_기록_id를_응답한다() throws Exception {
+        Long member = active();
+        searchReturns(FAR, NEAR, HIDDEN);
+
+        JsonNode data = data(recommend(member,
+                "{\"soup\":\"쇼유\",\"text\":\" \",\"latitude\":37.556789,\"longitude\":126.923456,\"region\":\"마포구\"}")
+            .andExpect(status().isOk()));
+
+        String runId = data.get("recommendationId").asString();
+        Map<String, Object> run = jdbc.queryForMap("SELECT * FROM tb_v2_recommendation_run WHERE id = ?",
+                Long.valueOf(runId));
+        assertThat(run).containsEntry("user_id", member)
+            .containsEntry("candidate_count", 3)
+            .containsEntry("algorithm_version", "rag-rerank-v1+v2-location-filter");
+        assertThat(run.get("latitude").toString()).isEqualTo("37.56");
+        assertThat(run.get("longitude").toString()).isEqualTo("126.92");
+        assertThat(mapper.readTree(run.get("conditions").toString()).toString())
+            .isEqualTo("{\"soup\":\"쇼유\",\"region\":\"마포구\"}");
+        assertThat(jdbc.queryForList(
+                "SELECT CONCAT(item_rank, ':', shop_id) FROM tb_v2_recommendation_item WHERE run_id = ? ORDER BY item_rank",
+                String.class, Long.valueOf(runId)))
+            .containsExactly("1:" + NEAR);
+    }
+
+    @Test
+    void 노출_기록을_남기지_못해도_추천은_성공하고_기록_id만_비운다() throws Exception {
+        searchReturns(NEAR);
+        doThrow(new IllegalStateException("log down")).when(runs).save(any());
+
+        recommend(active(), "{\"text\":\"돈코츠\"}").andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.recommendationId").value(nullValue()))
+            .andExpect(jsonPath("$.data.shops[0].id").value(String.valueOf(NEAR)));
+    }
+
+    @Test
+    void 탈퇴_정리_때_그_회원의_노출_기록만_지운다() throws Exception {
+        MobileUser leaving = MobileUser.onboarding("recommend-" + UUID.randomUUID() + "@example.com");
+        leaving.completeOnboarding(Nickname.of("R" + UUID.randomUUID().toString().substring(0, 8)), Instant.now());
+        Long leavingId = users.saveAndFlush(leaving).getId();
+        created.add(leavingId);
+        Long staying = active();
+        searchReturns(NEAR);
+        recommend(leavingId, "{\"text\":\"돈코츠\"}").andExpect(status().isOk());
+        recommend(staying, "{\"text\":\"돈코츠\"}").andExpect(status().isOk());
+        Instant requestedAt = Instant.parse("2026-09-01T00:00:00Z");
+        MobileUser pending = users.findById(leavingId).orElseThrow();
+        pending.requestWithdrawal(requestedAt, Duration.ofDays(30));
+        users.saveAndFlush(pending);
+
+        purges.purgeExpired(requestedAt.plus(Duration.ofDays(30)));
+
+        assertThat(runCount(leavingId)).isZero();
+        assertThat(itemCount(leavingId)).isZero();
+        assertThat(runCount(staying)).isEqualTo(1);
+        assertThat(itemCount(staying)).isEqualTo(1);
+    }
+
+    private int runCount(Long userId) {
+        return jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_recommendation_run WHERE user_id = ?", Integer.class,
+                userId);
+    }
+
+    private int itemCount(Long userId) {
+        return jdbc.queryForObject("""
+                SELECT COUNT(*) FROM tb_v2_recommendation_item item
+                JOIN tb_v2_recommendation_run run ON run.id = item.run_id WHERE run.user_id = ?
+                """, Integer.class, userId);
     }
 
     @Test

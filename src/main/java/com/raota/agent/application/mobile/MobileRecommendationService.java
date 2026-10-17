@@ -7,6 +7,7 @@ import com.raota.agent.application.ramenshop.query.ParsedAiRamenShopSearchQuery;
 import com.raota.agent.application.ramenshop.result.AiRamenShopSearchHit;
 import com.raota.agent.application.ramenshop.search.AiRamenShopSearchQueryParser;
 import com.raota.agent.application.ramenshop.search.AiRamenShopSearchReranker;
+import com.raota.agent.domain.recommendation.model.MobileRecommendationRun;
 import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
 import com.raota.mobile.shop.application.facade.MobileShopAgentFacade;
@@ -14,7 +15,9 @@ import com.raota.mobile.shop.application.result.MobileShopSummary;
 import jakarta.annotation.PreDestroy;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -58,19 +61,22 @@ public class MobileRecommendationService {
 
     private final MobileRecommendationRateLimiter rateLimiter;
 
+    private final MobileRecommendationLogger logger;
+
     private final Duration timeout;
 
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
     public MobileRecommendationService(AiRamenShopSearchQueryParser parser, RamenShopSearchDocumentPort documents,
             AiRamenShopSearchReranker reranker, MobileShopAgentFacade shops,
-            MobileRecommendationRateLimiter rateLimiter,
+            MobileRecommendationRateLimiter rateLimiter, MobileRecommendationLogger logger,
             @Value("${app.mobile.recommendation.timeout:15s}") Duration timeout) {
         this.parser = parser;
         this.documents = documents;
         this.reranker = reranker;
         this.shops = shops;
         this.rateLimiter = rateLimiter;
+        this.logger = logger;
         this.timeout = timeout;
     }
 
@@ -84,11 +90,28 @@ public class MobileRecommendationService {
         }
         String region = trimToNull(command.region());
         rateLimiter.acquire(userId);
+        long startedAt = System.nanoTime();
         boolean located = region != null || command.latitude() != null;
-        List<Long> ranked = search(query, located).stream().map(AiRamenShopSearchHit::shopId).toList();
-        List<MobileShopSummary> picked = shops.recommendable(userId, ranked, region, command.latitude(),
+        List<AiRamenShopSearchHit> hits = search(query, located);
+        List<MobileShopSummary> picked = shops.recommendable(userId,
+                hits.stream().map(AiRamenShopSearchHit::shopId).toList(), region, command.latitude(),
                 command.longitude(), RADIUS_METERS, MAX_SHOPS);
-        return new MobileRecommendationResult(picked, appliedConditions(command, region));
+        long latencyMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt);
+        String recommendationId = logger.record(userId, command, hits.size(), shown(picked, hits), latencyMs);
+        return new MobileRecommendationResult(recommendationId, picked, appliedConditions(command, region));
+    }
+
+    private List<MobileRecommendationRun.Item> shown(List<MobileShopSummary> picked, List<AiRamenShopSearchHit> hits) {
+        Map<Long, Double> scores = new HashMap<>();
+        for (AiRamenShopSearchHit hit : hits) {
+            scores.putIfAbsent(hit.shopId(), hit.finalScore());
+        }
+        List<MobileRecommendationRun.Item> items = new ArrayList<>(picked.size());
+        for (int index = 0; index < picked.size(); index++) {
+            Long shopId = Long.valueOf(picked.get(index).id());
+            items.add(new MobileRecommendationRun.Item(index + 1, shopId, scores.get(shopId)));
+        }
+        return items;
     }
 
     /** 검색 장애와 시간 초과는 503으로 알린다. 앱은 이때 인기·거리순 목록으로 대신 보여준다. */
