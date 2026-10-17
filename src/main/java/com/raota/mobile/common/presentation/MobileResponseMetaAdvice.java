@@ -16,10 +16,11 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
  * v2 응답({@link MobileApiResponse})이 직렬화되기 직전에 {@code meta.requestId}를 채운다.
  *
  * <p>
- * v2 controller와 예외 처리기에만 적용되도록 {@code com.raota.mobile} 패키지로 범위를 제한한다.
+ * v2 controller와 예외 처리기에만 적용되도록 {@code com.raota.mobile} 패키지와 agent의 v2 컨트롤러 패키지
+ * ({@code com.raota.agent.presentation.mobile})로 범위를 제한한다.
  * </p>
  */
-@RestControllerAdvice(basePackages = "com.raota.mobile")
+@RestControllerAdvice(basePackages = { "com.raota.mobile", "com.raota.agent.presentation.mobile" })
 public class MobileResponseMetaAdvice implements ResponseBodyAdvice<Object> {
 
     // 선언된 반환 타입은 ResponseEntity<...>일 수 있어 여기서는 거르지 않고 실제 본문으로 판단한다.

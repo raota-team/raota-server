@@ -31,9 +31,13 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.exc.MismatchedInputException;
 
+/**
+ * 컨트롤러가 결정된 뒤의 v2 오류를 v2 형식으로 응답한다. v2 도메인 모듈과 agent의 v2
+ * 컨트롤러({@code agent.presentation.mobile}, AI 추천·큐레이션)에만 적용한다.
+ */
 @Slf4j
 @Order(Ordered.HIGHEST_PRECEDENCE)
-@RestControllerAdvice(basePackages = "com.raota.mobile")
+@RestControllerAdvice(basePackages = { "com.raota.mobile", "com.raota.agent.presentation.mobile" })
 public class MobileExceptionAdvice {
 
     private static final String VALIDATION_MESSAGE = "입력값을 확인해 주세요.";
