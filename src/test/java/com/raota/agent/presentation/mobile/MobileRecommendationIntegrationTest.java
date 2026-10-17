@@ -57,7 +57,8 @@ class MobileRecommendationIntegrationTest extends BaseIntegrationTest {
 
     private static final long NO_COORDINATES = 900004606L;
 
-    private static final String NEAR_POINT = "\"latitude\":37.5563,\"longitude\":126.9236";
+    /** 기기 GPS처럼 소수점이 긴 좌표다. 매장 좌표 정밀도(8자리)로 반올림하면 NEAR와 같은 지점이다. */
+    private static final String NEAR_POINT = "\"latitude\":37.55630000412345,\"longitude\":126.92359999876543";
 
     @Autowired
     private WebApplicationContext context;
