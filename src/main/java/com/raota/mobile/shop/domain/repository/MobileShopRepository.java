@@ -1,6 +1,7 @@
 package com.raota.mobile.shop.domain.repository;
 
 import com.raota.mobile.shop.domain.model.MobileShop;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -49,5 +50,39 @@ public interface MobileShopRepository extends JpaRepository<MobileShop, Long> {
     @Modifying
     @Query("update MobileShop shop set shop.viewCount = shop.viewCount + 1 where shop.id = :id")
     void incrementViewCount(Long id);
+
+    /** 요약 생성에 시간이 걸리므로 엔티티를 저장하지 않고 요약 컬럼만 바꿔 그 사이 바뀐 집계 컬럼을 덮어쓰지 않는다. */
+    @Modifying
+    @Query(value = """
+            UPDATE tb_v2_shop SET ai_review_summary = :summary, ai_summary_keywords = CAST(:keywordsJson AS JSON),
+                ai_summary_generated_at = :generatedAt, updated_at = :generatedAt
+            WHERE id = :id AND deleted_at IS NULL
+            """, nativeQuery = true)
+    int updateAiSummary(Long id, String summary, String keywordsJson, Instant generatedAt);
+
+    /** 요약이 없는 공개 매장 ID를 {@code afterId} 다음부터 ID 순으로 읽는다. */
+    @Query("""
+            select shop.id from MobileShop shop
+            where shop.published = true and shop.deletedAt is null and shop.aiSummaryGeneratedAt is null
+                and shop.id > :afterId
+            order by shop.id
+            """)
+    List<Long> findPublishedIdsWithoutAiSummaryAfter(Long afterId);
+
+    /**
+     * 추천해도 되는 매장(공개·미삭제·폐업과 휴업 제외) 중 라멘 종류가 {@code ramenType}인 매장, 종류가 없으면 공백을 뺀 태그에
+     * {@code tagKeyword}가 들어간 매장에서 조회수 1위의 ID다.
+     */
+    @Query(value = """
+            SELECT id FROM tb_v2_shop
+            WHERE is_published = TRUE AND deleted_at IS NULL
+                AND business_status NOT IN ('CLOSED', 'TEMPORARILY_CLOSED')
+                AND ((:ramenType IS NOT NULL AND JSON_CONTAINS(ramen_types, JSON_QUOTE(:ramenType)))
+                    OR (:ramenType IS NULL AND :tagKeyword IS NOT NULL
+                        AND REPLACE(CAST(tags AS CHAR), ' ', '') LIKE CONCAT('%', :tagKeyword, '%')))
+            ORDER BY view_count DESC, id DESC
+            LIMIT 1
+            """, nativeQuery = true)
+    Optional<Long> findMostViewedRecommendableId(String ramenType, String tagKeyword);
 
 }

@@ -17,6 +17,7 @@ import com.raota.mobile.shop.application.result.MobileShopMapPin;
 import com.raota.mobile.shop.application.result.MobileShopSummary;
 import com.raota.mobile.shop.domain.model.MobileShop;
 import com.raota.mobile.shop.domain.model.MobileShopBusinessHour;
+import com.raota.mobile.shop.domain.model.MobileShopBusinessStatus;
 import com.raota.mobile.shop.domain.model.MobileShopImage;
 import com.raota.mobile.shop.domain.repository.MobileShopBusinessHourRepository;
 import com.raota.mobile.shop.domain.repository.MobileShopImageRepository;
@@ -32,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -164,6 +166,87 @@ public class MobileShopQueryService {
                     byHours.getOrDefault(row.shopId(), List.of()), null, true))
             .toList();
         return new CursorPage<>(items, page.nextCursor(), page.hasNext());
+    }
+
+    /**
+     * 추천 순위대로 받은 매장 중 지금 추천해도 되는 매장을 최대 {@code limit}개 고른다. 숨김·삭제·폐업·휴업 매장은 빼고, 지역이 오면
+     * 지역(구·시)이나 주소에 그 지역이 들어간 매장만, 좌표가 오면 반경 안의 매장만 남긴다. 순서는 받은 순위를 따른다.
+     */
+    @Transactional(readOnly = true)
+    public List<MobileShopSummary> recommendable(Long userId, List<Long> rankedIds, String region, BigDecimal latitude,
+            BigDecimal longitude, int radiusMeters, int limit) {
+        Map<Long, MobileShop> byId = byId(rankedIds);
+        List<MobileShop> picked = new ArrayList<>(limit);
+        Map<Long, BigDecimal> distances = new HashMap<>();
+        for (Long id : rankedIds) {
+            MobileShop shop = byId.get(id);
+            if (shop == null || !isRecommendable(shop) || !inRegion(shop, region)) {
+                continue;
+            }
+            if (latitude != null) {
+                if (shop.getLatitude() == null || shop.getLongitude() == null) {
+                    continue;
+                }
+                double meters = distanceMeters(latitude, longitude, shop.getLatitude(), shop.getLongitude());
+                if (meters > radiusMeters) {
+                    continue;
+                }
+                distances.put(id, BigDecimal.valueOf(meters));
+            }
+            picked.add(shop);
+            if (picked.size() == limit) {
+                break;
+            }
+        }
+        List<Long> ids = picked.stream().map(MobileShop::getId).toList();
+        Map<Long, String> firstImages = images(ids);
+        Map<Long, List<Hours>> byHours = hours(ids);
+        var bookmarkedIds = bookmarks.bookmarkedShopIds(userId, ids);
+        return picked.stream()
+            .map(shop -> summary(shop, firstImages.get(shop.getId()), byHours.getOrDefault(shop.getId(), List.of()),
+                    distances.get(shop.getId()), bookmarkedIds.contains(shop.getId())))
+            .toList();
+    }
+
+    /**
+     * 추천해도 되는 매장 중 라멘 종류가 {@code ramenType}인 매장, 종류가 없으면 태그에 {@code tagKeyword}가 들어간 매장에서
+     * 조회수가 가장 많은 매장을 고른다. 조회수가 같으면 ID가 큰 매장이다. 공개 API라 DB에서 1건만 읽는다.
+     */
+    @Transactional(readOnly = true)
+    public Optional<MobileShopSummary> mostPopular(Long userId, String ramenType, String tagKeyword) {
+        Optional<MobileShop> best = shops.findMostViewedRecommendableId(ramenType, tagKeyword).flatMap(shops::findById);
+        if (best.isEmpty()) {
+            return Optional.empty();
+        }
+        MobileShop shop = best.get();
+        List<Long> ids = List.of(shop.getId());
+        return Optional
+            .of(summary(shop, images(ids).get(shop.getId()), hours(ids).getOrDefault(shop.getId(), List.of()), null,
+                    bookmarks.bookmarkedShopIds(userId, ids).contains(shop.getId())));
+    }
+
+    private boolean isRecommendable(MobileShop shop) {
+        return shop.isPublished() && shop.getDeletedAt() == null
+                && shop.getBusinessStatus() != MobileShopBusinessStatus.CLOSED
+                && shop.getBusinessStatus() != MobileShopBusinessStatus.TEMPORARILY_CLOSED;
+    }
+
+    private boolean inRegion(MobileShop shop, String region) {
+        if (region == null) {
+            return true;
+        }
+        return region.equals(shop.getRegion()) || (shop.getAddress() != null && shop.getAddress().contains(region));
+    }
+
+    /** 매장 목록 거리순 SQL과 같은 하버사인 거리(지구 반지름 6,371km)다. */
+    private static double distanceMeters(BigDecimal fromLatitude, BigDecimal fromLongitude, BigDecimal toLatitude,
+            BigDecimal toLongitude) {
+        double lat1 = Math.toRadians(fromLatitude.doubleValue());
+        double lat2 = Math.toRadians(toLatitude.doubleValue());
+        double dLat = lat2 - lat1;
+        double dLng = Math.toRadians(toLongitude.doubleValue() - fromLongitude.doubleValue());
+        double a = Math.pow(Math.sin(dLat / 2), 2) + Math.cos(lat1) * Math.cos(lat2) * Math.pow(Math.sin(dLng / 2), 2);
+        return 6371000 * 2 * Math.asin(Math.min(1, Math.sqrt(a)));
     }
 
     private Hours toHours(MobileShopBusinessHour hour) {
