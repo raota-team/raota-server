@@ -263,6 +263,9 @@ class MobileRecommendationIntegrationTest extends BaseIntegrationTest {
             }
             recommend(member, "{\"text\":\"돈코츠\"}").andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.error.code").value("RECOMMENDATION_UNAVAILABLE"));
+            // 시간 초과된 검색도 자리를 잡은 채 늦게 시작할 수 있어 8개가 모두 시작할 때까지 기다린 뒤, 9번째는 시작하지 않았음을 본다.
+            await().atMost(Duration.ofSeconds(5)).until(() -> started.get() == 8);
+            Thread.sleep(300);
             assertThat(started.get()).isEqualTo(8);
         }
         finally {
