@@ -60,12 +60,14 @@ public interface MobileShopRepository extends JpaRepository<MobileShop, Long> {
             """, nativeQuery = true)
     int updateAiSummary(Long id, String summary, String keywordsJson, Instant generatedAt);
 
+    /** 요약이 없는 공개 매장 ID를 {@code afterId} 다음부터 ID 순으로 읽는다. */
     @Query("""
             select shop.id from MobileShop shop
             where shop.published = true and shop.deletedAt is null and shop.aiSummaryGeneratedAt is null
+                and shop.id > :afterId
             order by shop.id
             """)
-    List<Long> findPublishedIdsWithoutAiSummary();
+    List<Long> findPublishedIdsWithoutAiSummaryAfter(Long afterId);
 
     /**
      * 추천해도 되는 매장(공개·미삭제·폐업과 휴업 제외) 중 라멘 종류가 {@code ramenType}인 매장, 종류가 없으면 공백을 뺀 태그에

@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import lombok.extern.slf4j.Slf4j;
@@ -25,8 +26,9 @@ import org.springframework.stereotype.Service;
  *
  * <p>
  * 요약은 v1 매장 정보와 RAG 색인을 쓴다(매장 ID는 v1·v2가 같다). 근거 리뷰가 없으면 저장하지 않는다. 전체 생성은 매장마다 LLM을 부르므로
- * 요약이 없는 공개 매장을 한 번에 최대 {@value #MAX_BULK_SHOPS}곳까지만 백그라운드에서 하나씩 처리한다. 매장당 수 초가 걸려도 락
- * TTL(2시간) 안에 끝나도록 크기를 제한하고, 남은 매장은 다시 실행해 이어서 처리한다. 서버가 2대여도 한 번만 돌도록 Redis 락을 잡는다.
+ * 요약이 없는 공개 매장을 ID 순으로 한 번에 최대 {@value #MAX_BULK_SHOPS}곳까지만 백그라운드에서 하나씩 처리한다. 매장당 수 초가
+ * 걸려도 락 TTL(2시간) 안에 끝나도록 크기를 제한한다. 리뷰가 없어 건너뛴 매장이 다음 실행 앞자리를 계속 차지하지 않도록, 다음 실행은 응답의
+ * {@code nextAfterId}부터 이어서 읽는다. 서버가 2대여도 한 번만 돌도록 Redis 락을 잡는다.
  * </p>
  */
 @Slf4j
@@ -40,6 +42,9 @@ public class MobileShopAiSummaryService {
     static final int MAX_BULK_SHOPS = 100;
 
     private static final String FOCUS = "전반적인 맛과 메뉴";
+
+    /** 리뷰 요약이 근거 부족 때 넣는 대체 문구의 제목이다. 실제 단점("좌석 부족" 등)은 거르지 않도록 정확히 같을 때만 뺀다. */
+    private static final Set<String> FALLBACK_TITLES = Set.of("리뷰 데이터 부족", "장점 정보 부족", "단점 정보 부족", "추천 메뉴 정보 부족");
 
     private final ReviewSummaryService summaries;
 
@@ -86,21 +91,28 @@ public class MobileShopAiSummaryService {
         return new Result(shopId, Outcome.SAVED);
     }
 
-    /** 요약이 없는 공개 매장을 최대 100곳 백그라운드에서 처리하고 대상·남은 수를 바로 돌려준다. 이미 실행 중이면 거절한다. */
-    public BulkStart summarizeMissing() {
+    /**
+     * {@code afterId} 다음부터 요약이 없는 공개 매장을 최대 100곳 백그라운드에서 처리하고, 대상·남은 수와 다음 실행의 시작 위치를 바로
+     * 돌려준다. 이미 실행 중이면 거절한다.
+     */
+    public BulkStart summarizeMissing(long afterId) {
         LockToken lock = locks.tryAcquire(BULK_LOCK_KEY, BULK_LOCK_TTL)
             .orElseThrow(() -> new IllegalStateException("매장 AI 요약 전체 생성이 이미 실행 중입니다."));
         List<Long> missing;
         try {
-            missing = shops.publishedShopIdsWithoutAiSummary();
+            missing = shops.publishedShopIdsWithoutAiSummary(afterId);
         }
         catch (RuntimeException exception) {
             locks.release(lock);
             throw exception;
         }
-        List<Long> batch = missing.subList(0, Math.min(missing.size(), MAX_BULK_SHOPS));
-        executor.submit(() -> runBulk(List.copyOf(batch), lock));
-        return new BulkStart(batch.size(), missing.size() - batch.size());
+        List<Long> batch = List.copyOf(missing.subList(0, Math.min(missing.size(), MAX_BULK_SHOPS)));
+        executor.submit(() -> runBulk(batch, lock));
+        Long nextAfterId = null;
+        if (!batch.isEmpty()) {
+            nextAfterId = batch.getLast();
+        }
+        return new BulkStart(batch.size(), missing.size() - batch.size(), nextAfterId);
     }
 
     private void runBulk(List<Long> shopIds, LockToken lock) {
@@ -130,9 +142,8 @@ public class MobileShopAiSummaryService {
         }
     }
 
-    /** 리뷰가 부족할 때 넣는 대체 문구(제목이 "~부족")는 저장하지 않는다. */
     private static void add(List<String> lines, List<String> keywords, String label, SummaryDetail detail) {
-        if (detail == null || detail.title() == null || detail.title().endsWith("부족")) {
+        if (detail == null || detail.title() == null || FALLBACK_TITLES.contains(detail.title())) {
             return;
         }
         lines.add(label + ": " + detail.body());
@@ -153,8 +164,10 @@ public class MobileShopAiSummaryService {
     public record Result(Long shopId, Outcome outcome) {
     }
 
-    /** 이번에 처리할 매장 수와 다음 실행에 남은 매장 수다. */
-    public record BulkStart(int queued, int remaining) {
+    /**
+     * 이번에 처리할 매장 수, 그 뒤에 남은 매장 수, 다음 실행에 넘길 {@code afterId}(처리할 매장이 없으면 {@code null})다.
+     */
+    public record BulkStart(int queued, int remaining, Long nextAfterId) {
     }
 
 }

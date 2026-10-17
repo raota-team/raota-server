@@ -90,10 +90,9 @@ class MobileShopAiSummaryAdminIntegrationTest extends BaseIntegrationTest {
         insertShop(NO_REVIEWS, true, null);
         insertShop(ALREADY, true, "2026-09-01 00:00:00");
         insertShop(HIDDEN, false, null);
-        when(reviewSummaries.summarizeReviews(forShop(SUMMARIZED)))
-            .thenReturn(summary(3, new SummaryDetail("진한 국물", "국물이 진하다는 리뷰가 많습니다."),
-                    new SummaryDetail("단점 정보 부족", "단점을 판단할 수 있는 리뷰 데이터가 충분하지 않습니다."),
-                    new SummaryDetail("차슈 라멘", "차슈 라멘을 추천하는 리뷰가 있습니다.")));
+        when(reviewSummaries.summarizeReviews(forShop(SUMMARIZED))).thenReturn(summary(3,
+                new SummaryDetail("진한 국물", "국물이 진하다는 리뷰가 많습니다."), new SummaryDetail("좌석 부족", "좌석이 적어 기다린다는 리뷰가 있습니다."),
+                new SummaryDetail("추천 메뉴 정보 부족", "추천 메뉴를 판단할 수 있는 리뷰 데이터가 충분하지 않습니다.")));
         when(reviewSummaries.summarizeReviews(forShop(NO_REVIEWS)))
             .thenReturn(summary(0, new SummaryDetail("리뷰 데이터 부족", "없음"), new SummaryDetail("리뷰 데이터 부족", "없음"),
                     new SummaryDetail("추천 메뉴 정보 부족", "없음")));
@@ -113,7 +112,7 @@ class MobileShopAiSummaryAdminIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void 근거_리뷰가_있으면_요약과_키워드를_v2_매장에_저장하고_대체_문구는_빼다() throws Exception {
+    void 근거_리뷰가_있으면_요약과_키워드를_v2_매장에_저장하고_대체_문구만_뺀다() throws Exception {
         summarize(SUMMARIZED).andExpect(status().isOk())
             .andExpect(jsonPath("$.data.shopId").value(SUMMARIZED))
             .andExpect(jsonPath("$.data.outcome").value("SAVED"));
@@ -121,8 +120,8 @@ class MobileShopAiSummaryAdminIntegrationTest extends BaseIntegrationTest {
         Map<String, Object> row = jdbc.queryForMap(
                 "SELECT ai_review_summary, ai_summary_keywords, ai_summary_generated_at FROM tb_v2_shop WHERE id = ?",
                 SUMMARIZED);
-        assertThat(row.get("ai_review_summary")).isEqualTo("장점: 국물이 진하다는 리뷰가 많습니다.\n추천 메뉴: 차슈 라멘을 추천하는 리뷰가 있습니다.");
-        assertThat(row.get("ai_summary_keywords").toString()).isEqualTo("[\"진한 국물\", \"차슈 라멘\"]");
+        assertThat(row.get("ai_review_summary")).isEqualTo("장점: 국물이 진하다는 리뷰가 많습니다.\n아쉬운 점: 좌석이 적어 기다린다는 리뷰가 있습니다.");
+        assertThat(row.get("ai_summary_keywords").toString()).isEqualTo("[\"진한 국물\", \"좌석 부족\"]");
         assertThat(row.get("ai_summary_generated_at")).isNotNull();
         mvc.perform(get("/api/v2/shops/{id}", SUMMARIZED))
             .andExpect(jsonPath("$.data.aiReviewSummary").value(row.get("ai_review_summary")))
@@ -141,24 +140,34 @@ class MobileShopAiSummaryAdminIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void 전체_생성은_요약이_없는_공개_매장만_백그라운드로_처리하고_실행_중에는_거절한다() throws Exception {
+    void 전체_생성은_커서_다음의_요약이_없는_공개_매장만_백그라운드로_처리하고_실행_중에는_거절한다() throws Exception {
         redis.opsForValue().set("lock:v2:shop-ai-summary", "other-server", Duration.ofMinutes(1));
-        summarizeMissing().andExpect(status().isBadRequest());
+        summarizeMissing(0).andExpect(status().isBadRequest());
         redis.delete("lock:v2:shop-ai-summary");
 
-        summarizeMissing().andExpect(status().isAccepted())
+        summarizeMissing(SUMMARIZED).andExpect(status().isAccepted())
+            .andExpect(jsonPath("$.data.nextAfterId").value(greaterThanOrEqualTo(Math.toIntExact(NO_REVIEWS))));
+        awaitBulkFinished();
+        assertThat(summarizedIds()).isEmpty();
+
+        summarizeMissing(0).andExpect(status().isAccepted())
             .andExpect(jsonPath("$.data.queued").value(greaterThanOrEqualTo(2)))
             .andExpect(jsonPath("$.data.remaining").value(0));
-
-        await().atMost(Duration.ofSeconds(10))
-            .until(() -> !Boolean.TRUE.equals(redis.hasKey("lock:v2:shop-ai-summary")));
-        assertThat(jdbc.queryForList(
-                "SELECT id FROM tb_v2_shop WHERE id BETWEEN ? AND ? AND ai_review_summary IS NOT NULL", Long.class,
-                SUMMARIZED, V1_ONLY))
-            .containsExactly(SUMMARIZED);
+        awaitBulkFinished();
+        assertThat(summarizedIds()).containsExactly(SUMMARIZED);
         assertThat(jdbc.queryForObject("SELECT ai_summary_generated_at FROM tb_v2_shop WHERE id = ?", String.class,
                 ALREADY))
             .startsWith("2026-09-01");
+    }
+
+    private void awaitBulkFinished() {
+        await().atMost(Duration.ofSeconds(10))
+            .until(() -> !Boolean.TRUE.equals(redis.hasKey("lock:v2:shop-ai-summary")));
+    }
+
+    private List<Long> summarizedIds() {
+        return jdbc.queryForList("SELECT id FROM tb_v2_shop WHERE id BETWEEN ? AND ? AND ai_review_summary IS NOT NULL",
+                Long.class, SUMMARIZED, V1_ONLY);
     }
 
     @Test
@@ -186,9 +195,9 @@ class MobileShopAiSummaryAdminIntegrationTest extends BaseIntegrationTest {
                 "Bearer " + webToken(MemberRole.ADMIN)));
     }
 
-    private ResultActions summarizeMissing() throws Exception {
-        return mvc.perform(post("/admin/api/v2/shops/ai-summary").header(HttpHeaders.AUTHORIZATION,
-                "Bearer " + webToken(MemberRole.ADMIN)));
+    private ResultActions summarizeMissing(long afterId) throws Exception {
+        return mvc.perform(post("/admin/api/v2/shops/ai-summary").param("afterId", String.valueOf(afterId))
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + webToken(MemberRole.ADMIN)));
     }
 
     private String webToken(MemberRole role) {

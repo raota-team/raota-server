@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** 관리자 웹에서 v2 매장 AI 요약을 만든다. 웹 관리자 인증(`/admin/**` ADMIN)과 v1 응답 형식을 쓴다. */
@@ -25,10 +26,14 @@ public class MobileShopAiSummaryAdminController {
         return ResponseEntity.ok(ApiResponse.success(summaries.summarize(shopId)));
     }
 
+    /**
+     * {@code afterId}를 주면 그 다음 매장부터 처리한다. 이전 응답의 {@code nextAfterId}를 넘기면 건너뛴 매장을 다시 읽지
+     * 않는다.
+     */
     @PostMapping("/ai-summary")
-    public ResponseEntity<ApiResponse<BulkStart>> summarizeMissing() {
+    public ResponseEntity<ApiResponse<BulkStart>> summarizeMissing(@RequestParam(defaultValue = "0") long afterId) {
         return ResponseEntity.status(HttpStatus.ACCEPTED)
-            .body(ApiResponse.success("AI 요약이 없는 공개 매장의 요약 생성을 시작했습니다.", summaries.summarizeMissing()));
+            .body(ApiResponse.success("AI 요약이 없는 공개 매장의 요약 생성을 시작했습니다.", summaries.summarizeMissing(afterId)));
     }
 
 }

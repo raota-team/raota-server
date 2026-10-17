@@ -40,9 +40,9 @@ public class MobileShopAgentFacade {
         return shops.mostPopular(viewerId, ramenType, tagKeyword);
     }
 
-    /** AI 요약이 아직 없는 공개 매장 ID다. */
-    public List<Long> publishedShopIdsWithoutAiSummary() {
-        return repository.findPublishedIdsWithoutAiSummary();
+    /** AI 요약이 아직 없는 공개 매장 ID를 {@code afterId} 다음부터 ID 순으로 돌려준다. */
+    public List<Long> publishedShopIdsWithoutAiSummary(long afterId) {
+        return repository.findPublishedIdsWithoutAiSummaryAfter(afterId);
     }
 
     /** 삭제되지 않은 매장의 AI 요약을 바꾼다. 그런 매장이 없으면 {@code false}다. */
