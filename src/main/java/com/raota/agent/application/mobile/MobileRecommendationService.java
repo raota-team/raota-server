@@ -19,6 +19,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +48,11 @@ public class MobileRecommendationService {
     private static final int LOCATION_CANDIDATE_DOCUMENTS = 100;
 
     private static final double SIMILARITY_THRESHOLD = 0.35;
+
+    /** 서버 한 대에서 동시에 도는 검색 수 상한이다. 시간 초과로 응답을 끊어도 외부 호출이 끝날 때까지 자리를 차지한다. */
+    static final int MAX_CONCURRENT_SEARCHES = 8;
+
+    private final Semaphore running = new Semaphore(MAX_CONCURRENT_SEARCHES);
 
     private final AiRamenShopSearchQueryParser parser;
 
@@ -91,19 +97,38 @@ public class MobileRecommendationService {
         return new MobileRecommendationResult(picked, appliedConditions(command, region));
     }
 
-    /** 검색 장애와 시간 초과는 503으로 알린다. 앱은 이때 인기·거리순 목록으로 대신 보여준다. */
+    /**
+     * 검색 장애와 시간 초과는 503으로 알린다. 앱은 이때 인기·거리순 목록으로 대신 보여준다. 동시 검색이 상한에 닿아도 기다리지 않고 바로
+     * 503이다.
+     */
     private List<AiRamenShopSearchHit> search(String query, boolean located) {
         int topK = CANDIDATE_DOCUMENTS;
         if (located) {
             topK = LOCATION_CANDIDATE_DOCUMENTS;
         }
         int candidates = topK;
-        Future<List<AiRamenShopSearchHit>> future = executor.submit(() -> {
-            ParsedAiRamenShopSearchQuery parsed = parser.parse(query);
-            return reranker.rerank(
-                    documents.searchShopDocuments(parsed.expandedQuery(), candidates, SIMILARITY_THRESHOLD), parsed,
-                    candidates);
-        });
+        if (!running.tryAcquire()) {
+            log.warn("AI 추천 동시 검색 상한 초과: limit={}", MAX_CONCURRENT_SEARCHES);
+            throw unavailable();
+        }
+        Future<List<AiRamenShopSearchHit>> future;
+        try {
+            future = executor.submit(() -> {
+                try {
+                    ParsedAiRamenShopSearchQuery parsed = parser.parse(query);
+                    return reranker.rerank(
+                            documents.searchShopDocuments(parsed.expandedQuery(), candidates, SIMILARITY_THRESHOLD),
+                            parsed, candidates);
+                }
+                finally {
+                    running.release();
+                }
+            });
+        }
+        catch (RuntimeException exception) {
+            running.release();
+            throw unavailable();
+        }
         try {
             return future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         }
