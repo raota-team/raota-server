@@ -1,6 +1,7 @@
 package com.raota.agent.presentation.mobile;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -25,6 +26,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -238,6 +242,36 @@ class MobileRecommendationIntegrationTest extends BaseIntegrationTest {
         });
         recommend(member, "{\"text\":\"돈코츠\"}").andExpect(status().isServiceUnavailable())
             .andExpect(jsonPath("$.error.code").value("RECOMMENDATION_UNAVAILABLE"));
+    }
+
+    @Test
+    void 동시_검색이_상한에_닿으면_검색을_시작하지_않고_503이다() throws Exception {
+        Long member = active();
+        AtomicBoolean released = new AtomicBoolean(false);
+        AtomicInteger started = new AtomicInteger();
+        when(vectorStore.similaritySearch(any(SearchRequest.class))).thenAnswer(invocation -> {
+            started.incrementAndGet();
+            // 시간 초과 인터럽트를 무시하고 외부 호출이 늦게 끝나는 상황을 만든다.
+            while (!released.get()) {
+                LockSupport.parkNanos(10_000_000L);
+            }
+            return List.of();
+        });
+        try {
+            for (int attempt = 0; attempt < 8; attempt++) {
+                recommend(member, "{\"text\":\"돈코츠\"}").andExpect(status().isServiceUnavailable());
+            }
+            recommend(member, "{\"text\":\"돈코츠\"}").andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.error.code").value("RECOMMENDATION_UNAVAILABLE"));
+            assertThat(started.get()).isEqualTo(8);
+        }
+        finally {
+            released.set(true);
+        }
+        searchReturns(NEAR);
+        Long other = active();
+        await().atMost(Duration.ofSeconds(5))
+            .untilAsserted(() -> recommend(other, "{\"text\":\"돈코츠\"}").andExpect(status().isOk()));
     }
 
     @Test
