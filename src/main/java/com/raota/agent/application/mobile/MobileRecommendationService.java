@@ -112,6 +112,18 @@ public class MobileRecommendationService {
         return new MobileRecommendationResult(recommendationId, picked, appliedConditions(command, region));
     }
 
+    /**
+     * 일회용 위치 필터 평가({@link MobileRecommendationLocationEvaluation})용이다. 추천과 같은 검색·v2 매장
+     * 필터를 쓰되 회원 횟수 제한과 노출 기록은 남기지 않는다.
+     */
+    List<Long> rankForEvaluation(String query, String region) {
+        List<Long> ranked = search(query, region != null).stream().map(AiRamenShopSearchHit::shopId).toList();
+        return shops.recommendable(null, ranked, region, null, null, RADIUS_METERS, MAX_SHOPS)
+            .stream()
+            .map(shop -> Long.valueOf(shop.id()))
+            .toList();
+    }
+
     private List<MobileRecommendationRun.Item> shown(List<MobileShopSummary> picked, List<AiRamenShopSearchHit> hits) {
         Map<Long, Double> scores = new HashMap<>();
         for (AiRamenShopSearchHit hit : hits) {
