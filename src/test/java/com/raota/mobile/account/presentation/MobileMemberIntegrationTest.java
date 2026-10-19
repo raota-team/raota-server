@@ -86,7 +86,9 @@ class MobileMemberIntegrationTest extends BaseIntegrationTest {
             .andExpect(jsonPath("$.data.id").value(userId.toString()))
             .andExpect(jsonPath("$.data.status").value("ONBOARDING"))
             .andExpect(jsonPath("$.data.nickname").value(nullValue()))
-            .andExpect(jsonPath("$.data.email").value("member@example.com"));
+            .andExpect(jsonPath("$.data.email").value("member@example.com"))
+            .andExpect(jsonPath("$.data.logCount").value(0))
+            .andExpect(jsonPath("$.data.onboardingCompletedAt").value(nullValue()));
     }
 
     @Test
@@ -215,7 +217,8 @@ class MobileMemberIntegrationTest extends BaseIntegrationTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.id").value(userId.toString()))
             .andExpect(jsonPath("$.data.status").value("ACTIVE"))
-            .andExpect(jsonPath("$.data.nickname").value("RaMeN_9"));
+            .andExpect(jsonPath("$.data.nickname").value("RaMeN_9"))
+            .andExpect(jsonPath("$.data.onboardingCompletedAt").isNotEmpty());
 
         var user = users.findById(userId).orElseThrow();
         assertThat(user.getNicknameNormalized()).isEqualTo("ramen_9");
