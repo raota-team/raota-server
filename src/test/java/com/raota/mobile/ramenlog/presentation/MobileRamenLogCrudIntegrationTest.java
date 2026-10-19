@@ -292,6 +292,30 @@ class MobileRamenLogCrudIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
+    void 수정할_때_이미_붙어_있던_외부_사진은_유지하고_새로_붙이는_사진만_검사한다() throws Exception {
+        String id = create(owner, "copied-image", valid()).get("id").asString();
+        String copied = "https://res.cloudinary.com/raota/image/upload/v1/log.jpg";
+        jdbc.update("UPDATE tb_v2_ramen_log_image SET url = ? WHERE ramen_log_id = ?", copied, Long.valueOf(id));
+
+        JsonNode updated = mapper.readTree(mvc
+            .perform(patch("/api/v2/ramen-logs/{logId}", id).header(HttpHeaders.AUTHORIZATION, auth(owner))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"imageUrls\":[\"" + copied + "\",\"" + IMAGE + "\"]}"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsByteArray()).get("data");
+        assertThat(updated.get("imageUrls").get(0).asString()).isEqualTo(copied);
+        assertThat(updated.get("imageUrls").get(1).asString()).isEqualTo(IMAGE);
+
+        mvc.perform(patch("/api/v2/ramen-logs/{logId}", id).header(HttpHeaders.AUTHORIZATION, auth(owner))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"imageUrls\":[\"" + copied + "\",\"https://elsewhere.example/new.png\"]}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
     void 온보딩_회원은_작성할_수_없다() throws Exception {
         mvc.perform(post("/api/v2/ramen-logs").header(HttpHeaders.AUTHORIZATION, auth(onboarding))
             .header("Idempotency-Key", "onboarding")
