@@ -121,6 +121,18 @@ public class MobileRamenLogCommentService {
         log.removeComment();
     }
 
+    /** 관리자가 신고된 댓글을 지운다. 기록 공개 범위와 작성자를 보지 않고, 이미 지워진 댓글이면 아무것도 하지 않는다. 잠금 순서는 삭제와 같다. */
+    @Transactional
+    public void removeByModerator(Long commentId) {
+        Long logId = comments.findRamenLogIdById(commentId).orElseThrow(this::notFound);
+        MobileRamenLog log = logs.findByIdForUpdate(logId).orElseThrow(this::notFound);
+        MobileRamenLogComment comment = comments.findByIdForUpdate(commentId).orElseThrow(this::notFound);
+        if (comment.getDeletedAt() == null) {
+            comment.softDelete(Instant.now(clock).truncatedTo(ChronoUnit.MICROS));
+            log.removeComment();
+        }
+    }
+
     /**
      * 같은 키의 재시도는 처음 만든 댓글을 돌려준다. 다른 기록에 쓰였거나 이미 지운 댓글의 키는 409이고, 그 사이 기록을 볼 수 없게 됐으면 새
      * 작성과 같이 404다.

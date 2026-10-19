@@ -1,7 +1,13 @@
 package com.raota.mobile.ramenlog.domain.repository;
 
 import com.raota.mobile.ramenlog.domain.model.MobileContentReport;
+import com.raota.mobile.ramenlog.domain.model.ReportStatus;
+import com.raota.mobile.ramenlog.domain.model.ReportTargetType;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -15,6 +21,26 @@ public interface MobileContentReportRepository extends JpaRepository<MobileConte
             VALUES (:reporterId, :targetType, :targetId, :reason, 'OPEN', :createdAt)
             """, nativeQuery = true)
     int insertIfAbsent(Long reporterId, String targetType, Long targetId, String reason, Instant createdAt);
+
+    Page<MobileContentReport> findByStatus(ReportStatus status, Pageable pageable);
+
+    /** 대상별 열린 신고 수다. 각 행은 {@code [targetId, count]}다. */
+    @Query("""
+            select report.targetId, count(report) from MobileContentReport report
+            where report.status = com.raota.mobile.ramenlog.domain.model.ReportStatus.OPEN
+                and report.targetType = :targetType and report.targetId in :targetIds
+            group by report.targetId
+            """)
+    List<Object[]> countOpenByTarget(ReportTargetType targetType, Collection<Long> targetIds);
+
+    /** 대상의 열린 신고를 모두 닫고 닫은 수를 돌려준다. 이미 다른 관리자가 닫았으면 0이다. */
+    @Modifying(flushAutomatically = true)
+    @Query("""
+            update MobileContentReport report set report.status = :status, report.resolvedAt = :resolvedAt
+            where report.targetType = :targetType and report.targetId = :targetId
+                and report.status = com.raota.mobile.ramenlog.domain.model.ReportStatus.OPEN
+            """)
+    int closeOpen(ReportTargetType targetType, Long targetId, ReportStatus status, Instant resolvedAt);
 
     @Modifying
     @Query("delete from MobileContentReport report where report.reporterId = :userId")

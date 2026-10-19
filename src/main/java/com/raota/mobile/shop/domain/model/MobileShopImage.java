@@ -36,4 +36,13 @@ public class MobileShopImage {
     @Column(name = "sort_order", nullable = false)
     private int sortOrder;
 
+    public static MobileShopImage of(Long shopId, String url, ShopImageSource source, int sortOrder) {
+        MobileShopImage image = new MobileShopImage();
+        image.shopId = shopId;
+        image.url = url;
+        image.source = source;
+        image.sortOrder = sortOrder;
+        return image;
+    }
+
 }

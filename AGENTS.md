@@ -34,6 +34,8 @@ MySQL 8 + Flyway, Redis, Spring Security(OAuth2 + JWT), Spring AI(Oracle Vector 
 - v2 오류는 `mobile.common.error.MobileException(MobileErrorCode, message)`으로 던진다. `ResponseStatusException`, `IllegalArgumentException`, `EntityNotFoundException` 등은 v2에서 500 `INTERNAL_ERROR`로 처리된다.
 - v2 오류 응답은 발생 단계별로 이미 처리된다: 보안 필터(401·403)는 `MobileSecurityErrorResponder`, 컨트롤러 결정 전(없는 경로·405)은 `MobileFallbackExceptionResolver`, 컨트롤러 결정 후는 `MobileExceptionAdvice`. v2 도메인 코드는 새 advice나 resolver를 만들지 않고 `MobileException`만 던진다.
 - agent가 제공하는 v2 API(AI 추천, 오늘의 큐레이션)의 컨트롤러는 `agent.presentation.mobile`에 둔다. v2 응답·오류 advice가 이 패키지까지만 적용되므로 다른 agent 패키지에 두면 v1 형식으로 응답한다. 접근 규칙은 같은 패키지의 `MobileAgentAccessRules`에 등록한다.
+- v2 데이터의 관리자 API는 `/admin/api/v2/**`이고 데이터를 소유한 모듈의 `presentation.admin`에 둔다(`mobile.shop`의 `MobileShopAdminController`, `mobile.ramenlog`의 `MobileContentReportAdminController`). 관리자 웹(raota-front)이 웹 관리자 로그인으로 부르므로 인증·권한은 v1 `EndpointAccessPolicy`의 `/admin/**` ADMIN 규칙이 맡아 따로 등록하지 않는다(401·403은 v1 형식). 성공·오류 응답은 v2 형식이고, 번호 페이지 목록은 `mobile.common.page.OffsetPage`를 쓴다.
+- `tb_v2_shop` ID는 v1 매장 ID와 같다(V29 복사). 관리자가 새로 만드는 v2 매장은 V36부터 10,000,000번대에서 시작해 이후 v1 매장 ID와 겹치지 않는다. AI 추천은 v1 RAG 색인의 매장 ID를 v2 매장으로 읽으므로 이 간격을 줄이지 않는다.
 - v2 응답 JSON: ID 필드는 `String`, 시각은 `Instant`(UTC ISO-8601, 끝에 `Z`), 날짜는 `LocalDate`(`YYYY-MM-DD`). v2 응답에 `LocalDateTime`은 쓰지 않는다(운영 JVM이 `Asia/Seoul`이라 KST 표시 없는 값이 나간다). null 필드는 생략하지 않는다. 전역 Jackson·JVM 타임존 설정은 v1에 영향을 주므로 바꾸지 않는다.
 - v2 코드(`com.raota.mobile`, 테스트 포함)에서는 삼항 연산자(`a ? b : c`)를 쓰지 않는다. `if` 문, `switch` 식 또는 작은 메서드로 쓴다. Checkstyle `AvoidInlineConditionals`(`config/checkstyle/checkstyle.xml`)가 `mobile` 패키지만 검사한다.
 

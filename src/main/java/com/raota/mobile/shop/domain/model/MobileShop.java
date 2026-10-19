@@ -14,11 +14,19 @@ import java.util.List;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-/** 앱이 직접 관리하는 매장 원본이다. v1 매장과 ID만 공유한다. */
+/**
+ * 앱이 직접 관리하는 매장 원본이다. v1 매장과 ID만 공유한다.
+ *
+ * <p>
+ * 집계 컬럼(조회·기록·북마크 수)은 DB에서 원자적으로 바뀐다. 관리자 편집이 읽어 둔 낡은 집계를 덮어쓰지 않도록 바뀐 컬럼만 UPDATE한다.
+ * </p>
+ */
 @Entity
+@DynamicUpdate
 @Table(name = "tb_v2_shop")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
@@ -130,5 +138,54 @@ public class MobileShop {
 
     @Column(name = "deleted_at")
     private Instant deletedAt;
+
+    /** 관리자가 만든 매장은 숨김으로 시작한다. 영업시간 등을 채운 뒤 공개한다. */
+    public static MobileShop create(MobileShopProfile profile, Instant now) {
+        MobileShop shop = new MobileShop();
+        shop.apply(profile);
+        shop.aiSummaryKeywords = List.of();
+        shop.published = false;
+        shop.createdAt = now;
+        shop.updatedAt = now;
+        return shop;
+    }
+
+    public void update(MobileShopProfile profile, Instant now) {
+        apply(profile);
+        this.updatedAt = now;
+    }
+
+    public void changeVisibility(boolean published, Instant now) {
+        this.published = published;
+        this.updatedAt = now;
+    }
+
+    public void markHoursVerified(Instant now) {
+        this.hoursVerifiedAt = now;
+        this.updatedAt = now;
+    }
+
+    private void apply(MobileShopProfile profile) {
+        this.name = profile.name();
+        this.branchName = profile.branchName();
+        this.address = profile.address();
+        this.region = profile.region();
+        this.latitude = profile.latitude();
+        this.longitude = profile.longitude();
+        this.phone = profile.phone();
+        this.tagline = profile.tagline();
+        this.description = profile.description();
+        this.ramenTypes = profile.ramenTypes();
+        this.tags = profile.tags();
+        this.instagramUrl = profile.instagramUrl();
+        this.reservationUrl = profile.reservationUrl();
+        this.websiteUrl = profile.websiteUrl();
+        this.naverPlaceId = profile.naverPlaceId();
+        this.kakaoPlaceId = profile.kakaoPlaceId();
+        this.priceMin = profile.priceMin();
+        this.priceMax = profile.priceMax();
+        this.businessStatus = profile.businessStatus();
+        this.closedDaysText = profile.closedDaysText();
+    }
 
 }
