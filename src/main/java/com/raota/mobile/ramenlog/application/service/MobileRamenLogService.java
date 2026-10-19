@@ -37,8 +37,7 @@ public class MobileRamenLogService {
 
     private static final ZoneId SEOUL = ZoneId.of("Asia/Seoul");
 
-    private static final Set<String> RAMEN_TYPES = Set.of("쇼유", "돈코츠", "이에케", "시오", "미소", "츠케멘", "탄탄멘", "마제소바", "아부라소바",
-            "기타");
+    static final Set<String> RAMEN_TYPES = Set.of("쇼유", "돈코츠", "이에케", "시오", "미소", "츠케멘", "탄탄멘", "마제소바", "아부라소바", "기타");
 
     private final MobileRamenLogRepository logs;
 
