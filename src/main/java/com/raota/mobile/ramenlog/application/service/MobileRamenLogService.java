@@ -132,7 +132,7 @@ public class MobileRamenLogService {
             validateTasteCodes(command.tasteNoteCodes());
         }
         if (command.imageUrls() != null) {
-            validateImageUrls(command.imageUrls());
+            validateAddedImageUrls(logId, command.imageUrls());
         }
         Integer before = log.satisfaction();
         log.edit(command.toEdit(), now());
@@ -263,6 +263,15 @@ public class MobileRamenLogService {
                 throw invalid();
             }
         }
+    }
+
+    /** 이미 붙어 있던 사진(v1에서 복사한 기록의 외부 주소 포함)은 그대로 둘 수 있고, 새로 붙이는 주소만 업로드 정책으로 검사한다. */
+    private void validateAddedImageUrls(Long logId, List<String> urls) {
+        Set<String> attached = new HashSet<>();
+        for (MobileRamenLogImage image : images.findByRamenLogIdInOrderByRamenLogIdAscSortOrderAsc(List.of(logId))) {
+            attached.add(image.getUrl());
+        }
+        validateImageUrls(urls.stream().filter(url -> !attached.contains(url)).toList());
     }
 
     private Long parseId(String value) {
