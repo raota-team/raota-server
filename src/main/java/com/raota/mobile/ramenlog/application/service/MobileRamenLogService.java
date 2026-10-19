@@ -149,8 +149,21 @@ public class MobileRamenLogService {
     public void delete(Long logId, Long userId) {
         MobileRamenLog log = existingForUpdate(logId);
         requireAuthor(log, userId);
+        remove(log);
+    }
+
+    /** 관리자가 신고된 기록을 지운다. 이미 지워진 기록이면 아무것도 하지 않는다. 작성자가 지울 때와 같이 회원·매장 집계를 줄인다. */
+    @Transactional
+    public void removeByModerator(Long logId) {
+        MobileRamenLog log = logs.findByIdForUpdate(logId).orElseThrow(this::notFound);
+        if (log.getDeletedAt() == null) {
+            remove(log);
+        }
+    }
+
+    private void remove(MobileRamenLog log) {
         log.softDelete(now());
-        accounts.decrementLogCount(userId);
+        accounts.decrementLogCount(log.getUserId());
         shops.recordLogRemoved(log.getShopId(), log.satisfaction());
     }
 

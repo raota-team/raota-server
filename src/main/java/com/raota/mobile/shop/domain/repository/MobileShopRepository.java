@@ -1,19 +1,43 @@
 package com.raota.mobile.shop.domain.repository;
 
 import com.raota.mobile.shop.domain.model.MobileShop;
+import jakarta.persistence.LockModeType;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
-/** 공개 상태의 매장만 외부 조회에 내보낸다. */
+/**
+ * 공개 상태의 매장만 외부 조회에 내보낸다. 숨김 매장은 관리자용 조회({@code findLive*},
+ * {@code findByIdAndDeletedAtIsNull})로만 읽는다.
+ */
 public interface MobileShopRepository extends JpaRepository<MobileShop, Long> {
 
     Optional<MobileShop> findByIdAndPublishedTrueAndDeletedAtIsNull(Long id);
 
     List<MobileShop> findByPublishedTrueAndDeletedAtIsNull();
+
+    Optional<MobileShop> findByIdAndDeletedAtIsNull(Long id);
+
+    /** 영업시간·혜택·사진을 통째로 바꿀 때 같은 매장의 동시 교체를 줄 세운다. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select shop from MobileShop shop where shop.id = :id and shop.deletedAt is null")
+    Optional<MobileShop> findLiveForUpdate(Long id);
+
+    /** 관리자 목록. {@code keyword}는 이름·지점명·주소 부분 일치, {@code published}가 null이면 공개·숨김 모두다. */
+    @Query("""
+            select shop from MobileShop shop
+            where shop.deletedAt is null
+                and (:published is null or shop.published = :published)
+                and (:keyword is null or shop.name like concat('%', :keyword, '%')
+                    or shop.branchName like concat('%', :keyword, '%') or shop.address like concat('%', :keyword, '%'))
+            """)
+    Page<MobileShop> findLiveForAdmin(String keyword, Boolean published, Pageable pageable);
 
     @Modifying
     @Query("""
