@@ -1,6 +1,8 @@
 package com.raota.global.config;
 
+import com.raota.global.file.PresignedPostSigner;
 import java.net.URI;
+import java.time.Clock;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,7 +13,7 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import tools.jackson.databind.ObjectMapper;
 
 @Configuration
 @Profile("prod")
@@ -23,6 +25,9 @@ public class ObjectStorageConfig {
     @Value("${oci.storage.region}")
     private String region;
 
+    @Value("${oci.storage.bucket}")
+    private String bucket;
+
     @Value("${oci.storage.access-key}")
     private String accessKey;
 
@@ -30,13 +35,10 @@ public class ObjectStorageConfig {
     private String secretKey;
 
     @Bean
-    public S3Presigner s3Presigner() {
-        return S3Presigner.builder()
-            .endpointOverride(URI.create(compatEndpoint()))
-            .region(Region.of(required("oci.storage.region", region)))
-            .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
-            .credentialsProvider(credentialsProvider())
-            .build();
+    public PresignedPostSigner presignedPostSigner(ObjectMapper objectMapper, Clock clock) {
+        return new PresignedPostSigner(compatEndpoint(), required("oci.storage.bucket", bucket),
+                required("oci.storage.region", region), required("oci.storage.access-key", accessKey),
+                required("oci.storage.secret-key", secretKey), objectMapper, clock);
     }
 
     @Bean

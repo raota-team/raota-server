@@ -4,6 +4,9 @@ import com.raota.global.presentation.file.response.PresignedUrlResponse;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
@@ -13,9 +16,6 @@ import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
-import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
-import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 @Component("imageBucketFileUploader")
 @Profile("prod")
@@ -23,7 +23,15 @@ public class ImageBucketFileUploader implements FileUploader {
 
     private static final String CLOUDFLARE_IMAGE_DOMAIN = "https://images.raota.net/";
 
-    private final S3Presigner s3Presigner;
+    /** 사진 한 장 상한. 앱도 같은 값으로 미리 거른다. */
+    public static final long MAX_IMAGE_BYTES = 10L * 1024 * 1024;
+
+    private static final Duration UPLOAD_VALIDITY = Duration.ofMinutes(5);
+
+    private static final Map<String, String> IMAGE_TYPES = Map.of("jpg", "image/jpeg", "jpeg", "image/jpeg", "png",
+            "image/png", "webp", "image/webp", "gif", "image/gif");
+
+    private final PresignedPostSigner postSigner;
 
     private final S3Client s3Client;
 
@@ -36,8 +44,8 @@ public class ImageBucketFileUploader implements FileUploader {
     @Value("${oci.storage.region}")
     private String region;
 
-    public ImageBucketFileUploader(S3Presigner s3Presigner, S3Client s3Client) {
-        this.s3Presigner = s3Presigner;
+    public ImageBucketFileUploader(PresignedPostSigner postSigner, S3Client s3Client) {
+        this.postSigner = postSigner;
         this.s3Client = s3Client;
     }
 
@@ -60,27 +68,31 @@ public class ImageBucketFileUploader implements FileUploader {
         return toImageUrl(objectKey);
     }
 
+    /**
+     * PUT 대신 POST 업로드 서명을 준다(#84). 저장소가 크기({@link #MAX_IMAGE_BYTES} 이하)와 서명한
+     * Content-Type·객체 키를 직접 검사하므로, 티켓을 받은 뒤 큰 파일이나 이미지가 아닌 파일로 바꿔 올리면 거절된다. 클라이언트는
+     * {@code upload_params}를 form 필드로 먼저 보내고 파일을 마지막 {@code file} 필드로 보낸다.
+     */
     @Override
     public PresignedUrlResponse getPresignedUrl(String dirName, String extension, String contentType) {
-        String uniqueFilename = createObjectKey(dirName, extension);
+        String imageType = imageType(extension, contentType);
+        String objectKey = createObjectKey(dirName, extension);
+        PresignedPostSigner.PresignedPost post = postSigner.sign(objectKey, imageType, MAX_IMAGE_BYTES,
+                UPLOAD_VALIDITY);
+        return new PresignedUrlResponse(post.url(), toImageUrl(objectKey), new LinkedHashMap<>(post.fields()));
+    }
 
-        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-            .bucket(bucketName)
-            .key(uniqueFilename)
-            .contentType(StringUtils.hasText(contentType) ? contentType : null)
-            .build();
-
-        PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
-            .signatureDuration(Duration.ofMinutes(5))
-            .putObjectRequest(putObjectRequest)
-            .build();
-
-        PresignedPutObjectRequest presignedRequest = s3Presigner.presignPutObject(presignRequest);
-
-        String uploadUrl = presignedRequest.url().toString();
-        String imageUrl = toImageUrl(uniqueFilename);
-
-        return PresignedUrlResponse.of(uploadUrl, imageUrl);
+    /** 확장자가 이미지가 아니거나 요청한 Content-Type과 맞지 않으면 거절한다. Content-Type이 없으면 확장자로 정한다. */
+    private static String imageType(String extension, String contentType) {
+        String normalized = extension == null ? "" : extension.strip().toLowerCase(Locale.ROOT);
+        if (normalized.startsWith(".")) {
+            normalized = normalized.substring(1);
+        }
+        String expected = IMAGE_TYPES.get(normalized);
+        if (expected == null || (StringUtils.hasText(contentType) && !expected.equals(contentType.strip()))) {
+            throw new IllegalArgumentException("jpg·png·webp·gif 이미지만 올릴 수 있습니다.");
+        }
+        return expected;
     }
 
     @Override

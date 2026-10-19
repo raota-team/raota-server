@@ -15,6 +15,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -40,6 +41,9 @@ class MobileUploadTicketIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private ObjectMapper mapper;
 
+    @Autowired
+    private StringRedisTemplate redis;
+
     private MockMvc mvc;
 
     private Long userId;
@@ -52,6 +56,7 @@ class MobileUploadTicketIntegrationTest extends BaseIntegrationTest {
 
     @AfterEach
     void cleanUp() {
+        redis.delete(redis.keys("upload-ticket:v2:" + userId + ":*"));
         users.deleteById(userId);
     }
 
@@ -97,6 +102,30 @@ class MobileUploadTicketIntegrationTest extends BaseIntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
         }
+    }
+
+    @Test
+    void 회원마다_한_시간에_30장까지_발급하고_형식이_틀린_요청은_세지_않는다() throws Exception {
+        String threeFiles = """
+                {"purpose":"RAMEN_LOG","files":[{"contentType":"image/jpeg","extension":"jpg"},
+                {"contentType":"image/jpeg","extension":"jpg"},{"contentType":"image/jpeg","extension":"jpg"}]}
+                """;
+        mvc.perform(post("/api/v2/files/upload-tickets").header(HttpHeaders.AUTHORIZATION, authorization())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                    {"purpose":"RAMEN_LOG","files":[{"contentType":"application/pdf","extension":"pdf"}]}
+                    """)).andExpect(status().isBadRequest());
+        for (int request = 0; request < 10; request++) {
+            assertThat(ticket(threeFiles).size()).isEqualTo(3);
+        }
+
+        mvc.perform(post("/api/v2/files/upload-tickets").header(HttpHeaders.AUTHORIZATION, authorization())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                    {"purpose":"PROFILE","files":[{"contentType":"image/png","extension":"png"}]}
+                    """))
+            .andExpect(status().isTooManyRequests())
+            .andExpect(jsonPath("$.error.code").value("RATE_LIMITED"));
     }
 
     @Test

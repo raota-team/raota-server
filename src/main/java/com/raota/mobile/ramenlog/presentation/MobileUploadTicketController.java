@@ -1,5 +1,6 @@
 package com.raota.mobile.ramenlog.presentation;
 
+import com.raota.mobile.common.presentation.LoginUser;
 import com.raota.mobile.common.presentation.response.MobileApiResponse;
 import com.raota.mobile.ramenlog.application.result.MobileUploadTickets;
 import com.raota.mobile.ramenlog.application.service.MobileUploadTicketService;
@@ -19,8 +20,9 @@ public class MobileUploadTicketController {
     private final MobileUploadTicketService tickets;
 
     @PostMapping
-    public MobileApiResponse<MobileUploadTickets> issue(@Valid @RequestBody MobileUploadTicketRequest request) {
-        return MobileApiResponse.success(tickets.issue(request.toCommand()));
+    public MobileApiResponse<MobileUploadTickets> issue(@LoginUser Long userId,
+            @Valid @RequestBody MobileUploadTicketRequest request) {
+        return MobileApiResponse.success(tickets.issue(userId, request.toCommand()));
     }
 
 }

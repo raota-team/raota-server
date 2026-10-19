@@ -1,5 +1,6 @@
 package com.raota.global.presentation.common;
 
+import com.raota.global.file.UploadTicketLimitExceededException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +27,13 @@ public class GlobalExceptionHandler {
         log.warn("Access denied. method={}, uri={}, message={}", request.getMethod(), request.getRequestURI(),
                 exception.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.fail(exception.getMessage()));
+    }
+
+    @ExceptionHandler(UploadTicketLimitExceededException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUploadTicketLimit(UploadTicketLimitExceededException exception,
+            HttpServletRequest request) {
+        log.warn("Upload ticket limit exceeded. uri={}", request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(ApiResponse.fail(exception.getMessage()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
