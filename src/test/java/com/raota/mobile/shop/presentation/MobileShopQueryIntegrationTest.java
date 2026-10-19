@@ -96,19 +96,26 @@ class MobileShopQueryIntegrationTest extends BaseIntegrationTest {
         assertThat(page.get("items").get(2).get("isOpen").isNull()).isTrue();
         assertThat(page.get("items").get(2).get("imageUrl").isNull()).isTrue();
 
-        JsonNode pins = data("/api/v2/shops/map-pins");
-        assertThat(ids(pins)).containsExactlyInAnyOrder(id(FIRST), id(SECOND), id(THIRD));
-        assertThat(pins.get(0).get("latitude").isNumber()).isTrue();
+        JsonNode map = data("/api/v2/shops/map");
+        assertThat(ids(map)).containsExactly(id(FIRST), id(THIRD), id(SECOND));
+        assertThat(map.get(0).get("imageUrl").asString()).isEqualTo("https://first");
         assertThat(mapper.readValue(first.toString(),
                 new tools.jackson.core.type.TypeReference<java.util.Map<String, Object>>() {
                 }))
             .containsOnlyKeys("id", "name", "branchName", "address", "region", "latitude", "longitude", "imageUrl",
                     "tagline", "ramenTypes", "tags", "logCount", "bookmarkCount", "isBookmarked", "businessStatus",
                     "isOpen", "distanceMeters");
-        assertThat(mapper.readValue(pins.get(0).toString(),
-                new tools.jackson.core.type.TypeReference<java.util.Map<String, Object>>() {
-                }))
-            .containsOnlyKeys("id", "name", "branchName", "latitude", "longitude", "ramenTypes", "isOpen");
+    }
+
+    @Test
+    void 지도는_목록과_같은_조건으로_맞는_매장을_페이지_없이_모두_준다() throws Exception {
+        JsonNode near = data("/api/v2/shops/map?sort=DISTANCE&latitude=37&longitude=127");
+        assertThat(ids(near)).containsExactly(id(FIRST), id(SECOND), id(THIRD));
+        assertThat(near.get(0).get("distanceMeters").asInt()).isZero();
+
+        assertThat(ids(data("/api/v2/shops/map?ramenType=쇼유"))).containsExactly(id(FIRST), id(THIRD));
+        assertThat(ids(data("/api/v2/shops/map?openNow=true"))).containsExactly(id(FIRST));
+        mvc.perform(get("/api/v2/shops/map?sort=DISTANCE")).andExpect(status().isBadRequest());
     }
 
     @Test

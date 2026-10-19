@@ -13,7 +13,6 @@ import com.raota.mobile.shop.application.result.MobileShopBusinessHourResult;
 import com.raota.mobile.shop.application.result.MobileShopDetail;
 import com.raota.mobile.shop.application.result.MobileShopImageResult;
 import com.raota.mobile.shop.application.result.MobileShopServicePerkResult;
-import com.raota.mobile.shop.application.result.MobileShopMapPin;
 import com.raota.mobile.shop.application.result.MobileShopSummary;
 import com.raota.mobile.shop.domain.model.MobileShop;
 import com.raota.mobile.shop.domain.model.MobileShopBusinessHour;
@@ -65,8 +64,6 @@ public class MobileShopQueryService {
     public CursorPage<MobileShopSummary> list(Long userId, MobileShopSort sort, String query, String region,
             String ramenType, boolean openNow, BigDecimal latitude, BigDecimal longitude, String rawCursor, int size) {
         validate(sort, latitude, longitude);
-        BigDecimal searchLatitude = coordinate(latitude, 90);
-        BigDecimal searchLongitude = coordinate(longitude, 180);
         Cursor cursor = Cursor.parse(rawCursor).orElse(null);
         // 확인된 영업시간은 요일·휴식에 따라 달라져 SQL 정렬 이후 일괄 계산한다.
         // 매장은 약 550개라 openNow 요청만 후보 전체를 읽어 필터링한 뒤 페이지를 만든다.
@@ -74,39 +71,52 @@ public class MobileShopQueryService {
         if (openNow) {
             limit = null;
         }
-        List<RankedShop> ranked = search.search(sort, query, region, ramenType, searchLatitude, searchLongitude, cursor,
-                limit);
-        List<Long> ids = ranked.stream().map(RankedShop::id).toList();
+        Ranked ranked = rank(sort, query, region, ramenType, openNow, latitude, longitude, cursor, limit);
+        CursorPage<RankedShop> page = CursorPage.of(ranked.rows().stream().limit(size + 1L).toList(), size,
+                RankedShop::position);
+        return new CursorPage<>(summaries(userId, page.items(), ranked), page.nextCursor(), page.hasNext());
+    }
+
+    /**
+     * 지도 탭은 목록과 핀을 같은 매장 집합으로 그리므로 조건에 맞는 공개 매장을 페이지 없이 모두 준다. 정렬·필터는 {@link #list}와 같다.
+     * 공개 매장이 수백 곳이라 한 번에 보낸다.
+     */
+    @Transactional(readOnly = true)
+    public List<MobileShopSummary> all(Long userId, MobileShopSort sort, String query, String region, String ramenType,
+            boolean openNow, BigDecimal latitude, BigDecimal longitude) {
+        validate(sort, latitude, longitude);
+        Ranked ranked = rank(sort, query, region, ramenType, openNow, latitude, longitude, null, null);
+        return summaries(userId, ranked.rows(), ranked);
+    }
+
+    private Ranked rank(MobileShopSort sort, String query, String region, String ramenType, boolean openNow,
+            BigDecimal latitude, BigDecimal longitude, Cursor cursor, Integer limit) {
+        List<RankedShop> rows = search.search(sort, query, region, ramenType, coordinate(latitude, 90),
+                coordinate(longitude, 180), cursor, limit);
+        List<Long> ids = rows.stream().map(RankedShop::id).toList();
         Map<Long, MobileShop> byId = byId(ids);
         Map<Long, List<Hours>> byHours = hours(ids);
         if (openNow) {
-            ranked = ranked.stream()
+            rows = rows.stream()
                 .filter(row -> Boolean.TRUE.equals(openStatus.isOpen(byId.get(row.id()).getHoursVerifiedAt(),
                         byHours.getOrDefault(row.id(), List.of()))))
-                .limit(size + 1L)
                 .toList();
         }
-        CursorPage<RankedShop> page = CursorPage.of(ranked, size, RankedShop::position);
-        List<Long> pageIds = page.items().stream().map(RankedShop::id).toList();
-        Map<Long, String> firstImages = images(pageIds);
-        var bookmarkedIds = bookmarks.bookmarkedShopIds(userId, pageIds);
-        List<MobileShopSummary> items = page.items()
-            .stream()
-            .map(row -> summary(byId.get(row.id()), firstImages.get(row.id()),
-                    byHours.getOrDefault(row.id(), List.of()), row.distance(), bookmarkedIds.contains(row.id())))
-            .toList();
-        return new CursorPage<>(items, page.nextCursor(), page.hasNext());
+        return new Ranked(rows, byId, byHours);
     }
 
-    @Transactional(readOnly = true)
-    public List<MobileShopMapPin> mapPins() {
-        List<MobileShop> visible = shops.findByPublishedTrueAndDeletedAtIsNull();
-        Map<Long, List<Hours>> byHours = hours(visible.stream().map(MobileShop::getId).toList());
-        return visible.stream()
-            .map(shop -> new MobileShopMapPin(shop.getId().toString(), shop.getName(), shop.getBranchName(),
-                    shop.getLatitude(), shop.getLongitude(), shop.getRamenTypes(),
-                    openStatus.isOpen(shop.getHoursVerifiedAt(), byHours.getOrDefault(shop.getId(), List.of()))))
+    private List<MobileShopSummary> summaries(Long userId, List<RankedShop> rows, Ranked ranked) {
+        List<Long> ids = rows.stream().map(RankedShop::id).toList();
+        Map<Long, String> firstImages = images(ids);
+        var bookmarkedIds = bookmarks.bookmarkedShopIds(userId, ids);
+        return rows.stream()
+            .map(row -> summary(ranked.byId().get(row.id()), firstImages.get(row.id()),
+                    ranked.byHours().getOrDefault(row.id(), List.of()), row.distance(),
+                    bookmarkedIds.contains(row.id())))
             .toList();
+    }
+
+    private record Ranked(List<RankedShop> rows, Map<Long, MobileShop> byId, Map<Long, List<Hours>> byHours) {
     }
 
     @Transactional

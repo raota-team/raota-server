@@ -5,7 +5,6 @@ import com.raota.mobile.common.presentation.LoginUser;
 import com.raota.mobile.common.presentation.response.MobileApiResponse;
 import com.raota.mobile.shop.application.query.MobileShopSort;
 import com.raota.mobile.shop.application.result.MobileShopDetail;
-import com.raota.mobile.shop.application.result.MobileShopMapPin;
 import com.raota.mobile.shop.application.result.MobileShopSummary;
 import com.raota.mobile.shop.application.service.MobileShopQueryService;
 import jakarta.validation.constraints.Max;
@@ -38,9 +37,15 @@ public class MobileShopController {
             .success(shops.list(userId, sort, query, region, ramenType, openNow, latitude, longitude, cursor, size));
     }
 
-    @GetMapping("/map-pins")
-    public MobileApiResponse<List<MobileShopMapPin>> mapPins() {
-        return MobileApiResponse.success(shops.mapPins());
+    /** 지도 탭의 핀과 목록. 조건은 목록과 같고 페이지 없이 맞는 매장을 모두 준다. */
+    @GetMapping("/map")
+    public MobileApiResponse<List<MobileShopSummary>> map(@LoginUser(required = false) Long userId,
+            @RequestParam(defaultValue = "POPULAR") MobileShopSort sort, @RequestParam(required = false) String query,
+            @RequestParam(required = false) String region, @RequestParam(required = false) String ramenType,
+            @RequestParam(defaultValue = "false") boolean openNow, @RequestParam(required = false) BigDecimal latitude,
+            @RequestParam(required = false) BigDecimal longitude) {
+        return MobileApiResponse
+            .success(shops.all(userId, sort, query, region, ramenType, openNow, latitude, longitude));
     }
 
     @GetMapping("/{shopId:[0-9]+}")
