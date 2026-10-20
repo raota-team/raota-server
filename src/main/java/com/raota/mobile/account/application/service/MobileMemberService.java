@@ -39,22 +39,25 @@ public class MobileMemberService {
 
     private final MobileAccountProperties accountProperties;
 
+    private final MobileConsentPolicy consentPolicy;
+
     private final TransactionTemplate accountTransaction;
 
     public MobileMemberService(MobileUserRepository users, MobileUserConsentRepository consents,
             PlatformTransactionManager transactionManager, RefreshTokenStore refreshTokens,
-            MobileAccountProperties accountProperties) {
+            MobileAccountProperties accountProperties, MobileConsentPolicy consentPolicy) {
         this.users = users;
         this.consents = consents;
         this.refreshTokens = refreshTokens;
         this.accountProperties = accountProperties;
+        this.consentPolicy = consentPolicy;
         this.accountTransaction = new TransactionTemplate(transactionManager);
         this.accountTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
 
     @Transactional(readOnly = true)
     public MobileMemberResult me(Long userId) {
-        return MobileMemberResult.from(availableUser(userId));
+        return result(availableUser(userId));
     }
 
     @Transactional
@@ -62,7 +65,7 @@ public class MobileMemberService {
             String favoriteRamenType) {
         MobileUser user = availableUser(users.findByIdForUpdate(userId));
         user.updateProfile(email, avatarUrl, bio, favoriteRamenType);
-        return MobileMemberResult.from(user);
+        return result(user);
     }
 
     @Transactional(readOnly = true)
@@ -94,7 +97,7 @@ public class MobileMemberService {
                     .map(decision -> MobileUserConsent.decide(userId, decision.type(), decision.documentVersion(),
                             decision.granted(), now))
                     .toList());
-                return MobileMemberResult.from(user);
+                return result(user);
             });
         }
         catch (DataIntegrityViolationException exception) {
@@ -104,6 +107,31 @@ public class MobileMemberService {
             }
             throw exception;
         }
+    }
+
+    /**
+     * 이용약관·개인정보처리방침·마케팅 동의 결정을 이력으로 남긴다. v1에서 옮긴 회원과 문서 개정 뒤 다시 동의가 필요한 회원이 쓴다. 필수
+     * 문서(약관·처리방침)는 철회할 수 없다(철회는 탈퇴로 한다).
+     */
+    @Transactional
+    public MobileMemberResult decideConsents(Long userId, List<MobileOnboardingCommand.ConsentDecision> decisions) {
+        MobileUser user = availableUser(users.findByIdForUpdate(userId));
+        EnumSet<ConsentType> seen = EnumSet.noneOf(ConsentType.class);
+        for (MobileOnboardingCommand.ConsentDecision decision : decisions) {
+            if (!seen.add(decision.type())) {
+                throw new MobileException(MobileErrorCode.VALIDATION_ERROR, "동의 유형은 한 번만 제출할 수 있습니다.");
+            }
+            if (consentPolicy.isRequiredType(decision.type()) && !decision.granted()) {
+                throw new MobileException(MobileErrorCode.VALIDATION_ERROR,
+                        "이용약관과 개인정보 처리방침 동의는 철회할 수 없습니다. 탈퇴로 진행해 주세요.");
+            }
+        }
+        Instant now = Instant.now().truncatedTo(ChronoUnit.MICROS);
+        consents.saveAll(decisions.stream()
+            .map(decision -> MobileUserConsent.decide(userId, decision.type(), decision.documentVersion(),
+                    decision.granted(), now))
+            .toList());
+        return result(user);
     }
 
     public MobileWithdrawalResult requestWithdrawal(Long userId) {
@@ -137,6 +165,10 @@ public class MobileMemberService {
 
     private MobileUser availableUser(Long userId) {
         return availableUser(users.findById(userId));
+    }
+
+    private MobileMemberResult result(MobileUser user) {
+        return MobileMemberResult.from(user, consentPolicy.required(user.getId()));
     }
 
     private MobileUser availableUser(Optional<MobileUser> found) {

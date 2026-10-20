@@ -41,14 +41,17 @@ public class MobileAuthService {
 
     private final TransactionTemplate accountTransaction;
 
+    private final MobileConsentPolicy consentPolicy;
+
     public MobileAuthService(List<SocialTokenVerifier> verifiers, MobileUserOAuthAccountRepository accounts,
             MobileUserRepository users, AccessTokenIssuer accessTokens, RefreshTokenStore refreshTokens,
-            PlatformTransactionManager transactionManager) {
+            PlatformTransactionManager transactionManager, MobileConsentPolicy consentPolicy) {
         this.verifiers = List.copyOf(verifiers);
         this.accounts = accounts;
         this.users = users;
         this.accessTokens = accessTokens;
         this.refreshTokens = refreshTokens;
+        this.consentPolicy = consentPolicy;
         this.accountTransaction = new TransactionTemplate(transactionManager);
         this.accountTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
@@ -90,7 +93,8 @@ public class MobileAuthService {
                 .map(account -> {
                     MobileUser user = availableUser(account.getUserId());
                     account.recordLogin(now);
-                    return new LoginMember(user.getId(), false, MobileMemberResult.from(user));
+                    return new LoginMember(user.getId(), false,
+                            MobileMemberResult.from(user, consentPolicy.required(user.getId())));
                 }));
     }
 
@@ -100,7 +104,8 @@ public class MobileAuthService {
                 MobileUser user = users.saveAndFlush(MobileUser.onboarding(identity.email()));
                 accounts.saveAndFlush(MobileUserOAuthAccount.link(user.getId(), identity.provider(), identity.subject(),
                         identity.email(), now));
-                return new LoginMember(user.getId(), true, MobileMemberResult.from(user));
+                // 방금 만든 회원은 동의 기록이 없다. 온보딩에서 동의를 받는다.
+                return new LoginMember(user.getId(), true, MobileMemberResult.from(user, true));
             });
         }
         catch (DataIntegrityViolationException exception) {

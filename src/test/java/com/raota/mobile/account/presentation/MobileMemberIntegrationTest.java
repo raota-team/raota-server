@@ -14,6 +14,7 @@ import com.raota.global.security.AccessLevel;
 import com.raota.global.security.AccessRule;
 import com.raota.global.security.AccessRuleContributor;
 import com.raota.mobile.account.domain.model.MobileUser;
+import com.raota.mobile.account.domain.model.Nickname;
 import com.raota.mobile.account.domain.repository.MobileUserRepository;
 import com.raota.mobile.account.infrastructure.auth.MobileAccessTokenService;
 import com.raota.support.BaseIntegrationTest;
@@ -405,6 +406,58 @@ class MobileMemberIntegrationTest extends BaseIntegrationTest {
         mvc.perform(get("/api/v2/test/active-only").header(HttpHeaders.AUTHORIZATION, authorization(onboardingId)))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+    }
+
+    @Test
+    void 현재_버전에_동의하지_않은_활성_회원은_동의가_필요하고_동의하면_풀린다() throws Exception {
+        Long userId = createUser();
+        MobileUser user = users.findById(userId).orElseThrow();
+        user.completeOnboarding(Nickname.of("옮긴회원"), java.time.Instant.now());
+        users.saveAndFlush(user);
+
+        mvc.perform(get("/api/v2/members/me").header(HttpHeaders.AUTHORIZATION, authorization(userId)))
+            .andExpect(jsonPath("$.data.status").value("ACTIVE"))
+            .andExpect(jsonPath("$.data.consentRequired").value(true));
+
+        consents(userId, """
+                {"consents":[{"type":"TERMS","documentVersion":"2026-06-11","granted":true},
+                {"type":"PRIVACY","documentVersion":"2026-06-11","granted":true}]}
+                """).andExpect(status().isOk()).andExpect(jsonPath("$.data.consentRequired").value(true));
+
+        consents(userId, """
+                {"consents":[{"type":"PRIVACY","documentVersion":"2026-10-27","granted":true},
+                {"type":"MARKETING","documentVersion":"2026-10-27","granted":false}]}
+                """).andExpect(status().isOk()).andExpect(jsonPath("$.data.consentRequired").value(false));
+
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM tb_v2_user_consent WHERE user_id = ?",
+                Integer.class, userId))
+            .isEqualTo(4);
+    }
+
+    @Test
+    void 필수_동의_철회와_같은_유형을_두_번_보내는_요청은_거절한다() throws Exception {
+        Long userId = createUser();
+
+        consents(userId, """
+                {"consents":[{"type":"PRIVACY","documentVersion":"2026-10-27","granted":false}]}
+                """).andExpect(status().isBadRequest()).andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+        consents(userId, """
+                {"consents":[{"type":"MARKETING","documentVersion":"2026-10-27","granted":true},
+                {"type":"MARKETING","documentVersion":"2026-10-27","granted":false}]}
+                """).andExpect(status().isBadRequest());
+        consents(userId, """
+                {"consents":[{"type":"TERMS","documentVersion":"2026.06.11","granted":true}]}
+                """).andExpect(status().isBadRequest());
+
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM tb_v2_user_consent WHERE user_id = ?",
+                Integer.class, userId))
+            .isZero();
+    }
+
+    private org.springframework.test.web.servlet.ResultActions consents(Long userId, String body) throws Exception {
+        return mvc.perform(put("/api/v2/members/me/consents").header(HttpHeaders.AUTHORIZATION, authorization(userId))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(body));
     }
 
     @TestConfiguration

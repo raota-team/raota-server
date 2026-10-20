@@ -4,6 +4,7 @@ import com.raota.mobile.account.application.result.MobileMemberResult;
 import com.raota.mobile.account.application.result.MobileNicknameAvailabilityResult;
 import com.raota.mobile.account.application.result.MobileWithdrawalResult;
 import com.raota.mobile.account.application.service.MobileMemberService;
+import com.raota.mobile.account.presentation.request.MobileConsentsRequest;
 import com.raota.mobile.account.presentation.request.MobileOnboardingRequest;
 import com.raota.mobile.account.presentation.request.MobileProfileUpdateRequest;
 import com.raota.mobile.account.presentation.request.MobileWithdrawalRequest;
@@ -50,6 +51,13 @@ public class MobileMemberController {
     public MobileApiResponse<MobileMemberResult> onboard(@LoginUser Long userId,
             @Valid @RequestBody MobileOnboardingRequest request) {
         return MobileApiResponse.success(members.onboard(userId, request.toCommand()));
+    }
+
+    /** v1에서 옮긴 회원이나 문서 개정 뒤 {@code consentRequired}인 회원이 현재 약관·처리방침에 동의한다. */
+    @PutMapping("/me/consents")
+    public MobileApiResponse<MobileMemberResult> decideConsents(@LoginUser Long userId,
+            @Valid @RequestBody MobileConsentsRequest request) {
+        return MobileApiResponse.success(members.decideConsents(userId, request.toDecisions()));
     }
 
     @PostMapping("/me/withdrawal")
