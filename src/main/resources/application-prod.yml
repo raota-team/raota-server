@@ -169,6 +169,12 @@ app:
         app-id: ${APP_MOBILE_OAUTH_KAKAO_APP_ID:1422344}
     account:
       withdrawal-grace-period: ${APP_MOBILE_ACCOUNT_WITHDRAWAL_GRACE_PERIOD:30d}
+  file:
+    # 앱이 올렸지만 기록·프로필 어디에도 연결되지 않은 v2 사진을 매일 05:10(KST)에 지운다.
+    orphan-cleanup:
+      enabled: ${APP_FILE_ORPHAN_CLEANUP_ENABLED:true}
+      retention: ${APP_FILE_ORPHAN_CLEANUP_RETENTION:P7D}
+      max-deletes: ${APP_FILE_ORPHAN_CLEANUP_MAX_DELETES:500}
   redis:
     auth:
       refresh-token-key-prefix: "${APP_REDIS_AUTH_REFRESH_TOKEN_KEY_PREFIX:auth:refresh:token:}"
