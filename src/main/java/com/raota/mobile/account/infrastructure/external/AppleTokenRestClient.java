@@ -82,7 +82,10 @@ public class AppleTokenRestClient implements AppleTokenClient {
                 .body(form)
                 .retrieve()
                 .body(JsonNode.class);
-            JsonNode refreshNode = response == null ? null : response.get("refresh_token");
+            JsonNode refreshNode = null;
+            if (response != null) {
+                refreshNode = response.get("refresh_token");
+            }
             if (refreshNode == null || refreshNode.isNull() || refreshNode.asString().isBlank()) {
                 throw invalidCredential();
             }
@@ -121,8 +124,10 @@ public class AppleTokenRestClient implements AppleTokenClient {
     }
 
     private static OAuth2TokenValidatorResult validate(boolean valid) {
-        return valid ? OAuth2TokenValidatorResult.success()
-                : OAuth2TokenValidatorResult.failure(new OAuth2Error("invalid_token"));
+        if (valid) {
+            return OAuth2TokenValidatorResult.success();
+        }
+        return OAuth2TokenValidatorResult.failure(new OAuth2Error("invalid_token"));
     }
 
     @Override

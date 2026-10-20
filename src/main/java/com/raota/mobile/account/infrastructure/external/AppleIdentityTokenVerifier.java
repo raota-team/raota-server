@@ -63,8 +63,10 @@ public class AppleIdentityTokenVerifier implements SocialTokenVerifier {
                 throw invalidCredential();
             }
             Object emailVerified = jwt.getClaim("email_verified");
-            String email = Boolean.TRUE.equals(emailVerified) || "true".equals(emailVerified)
-                    ? jwt.getClaimAsString("email") : null;
+            String email = null;
+            if (Boolean.TRUE.equals(emailVerified) || "true".equals(emailVerified)) {
+                email = jwt.getClaimAsString("email");
+            }
             return new SocialIdentity(provider(), jwt.getSubject(), email);
         }
         catch (JwtException exception) {
@@ -87,8 +89,10 @@ public class AppleIdentityTokenVerifier implements SocialTokenVerifier {
     }
 
     private static OAuth2TokenValidatorResult validate(boolean valid) {
-        return valid ? OAuth2TokenValidatorResult.success()
-                : OAuth2TokenValidatorResult.failure(new OAuth2Error("invalid_token"));
+        if (valid) {
+            return OAuth2TokenValidatorResult.success();
+        }
+        return OAuth2TokenValidatorResult.failure(new OAuth2Error("invalid_token"));
     }
 
     private static MobileException invalidCredential() {
