@@ -21,7 +21,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 @Profile("prod")
 public class ImageBucketFileUploader implements FileUploader {
 
-    private static final String CLOUDFLARE_IMAGE_DOMAIN = "https://images.raota.net/";
+    static final String CLOUDFLARE_IMAGE_DOMAIN = "https://images.raota.net/";
 
     /** 사진 한 장 상한. 앱도 같은 값으로 미리 거른다. */
     public static final long MAX_IMAGE_BYTES = 10L * 1024 * 1024;
