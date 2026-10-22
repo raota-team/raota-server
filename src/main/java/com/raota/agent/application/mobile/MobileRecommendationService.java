@@ -81,7 +81,7 @@ public class MobileRecommendationService {
     public MobileRecommendationService(AiRamenShopSearchQueryParser parser, RamenShopSearchDocumentPort documents,
             AiRamenShopSearchReranker reranker, MobileShopAgentFacade shops,
             MobileRecommendationRateLimiter rateLimiter, MobileRecommendationLogger logger,
-            @Value("${app.mobile.recommendation.timeout:10s}") Duration timeout) {
+            @Value("${app.mobile.recommendation.timeout:20s}") Duration timeout) {
         this.parser = parser;
         this.documents = documents;
         this.reranker = reranker;
