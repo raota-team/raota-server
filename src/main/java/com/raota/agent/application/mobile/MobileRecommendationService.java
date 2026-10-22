@@ -3,10 +3,6 @@ package com.raota.agent.application.mobile;
 import com.raota.agent.application.mobile.command.MobileRecommendationCommand;
 import com.raota.agent.application.mobile.result.MobileRecommendationResult;
 import com.raota.agent.application.ramenshop.port.RamenShopSearchDocumentPort;
-import com.raota.agent.application.ramenshop.query.ParsedAiRamenShopSearchQuery;
-import com.raota.agent.application.ramenshop.result.AiRamenShopSearchHit;
-import com.raota.agent.application.ramenshop.search.AiRamenShopSearchQueryParser;
-import com.raota.agent.application.ramenshop.search.AiRamenShopSearchReranker;
 import com.raota.agent.domain.recommendation.model.MobileRecommendationRun;
 import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
@@ -15,6 +11,7 @@ import com.raota.mobile.shop.application.result.MobileShopSummary;
 import jakarta.annotation.PreDestroy;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,12 +27,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 /**
- * 앱 AI 큐레이터의 조건을 기존 검색 문장으로 바꿔 기존 RAG(쿼리 파서 → 벡터 검색 → 리랭커)로 매장을 고르고, 같은 ID의 v2 매장으로 다시
- * 확인해 돌려준다.
+ * 앱 AI 큐레이터 추천이다. 고른 국물은 필수 조건이라 그 라멘 종류의 v2 매장만 후보로 삼는다.
  *
  * <p>
- * 위치 조건(지역, 좌표)은 리랭커 가산점이 아니라 v2 매장 기준의 hard filter로 쓴다. 걸러낸 뒤에도 6곳을 채우도록 위치 조건이 있으면 벡터
- * 후보를 더 많이 읽는다.
+ * 좌표가 오면 반경 없이 가장 가까운 {@value #NEAREST_CANDIDATES}곳, 없으면 조회수 순 최대
+ * {@value #MAX_CANDIDATES}곳이 후보다. 지역이 오면 그 지역 매장만 남긴다. 후보를 상황·우선순위·자유 입력과 매장 문서(소개·리뷰)의
+ * 벡터 유사도로 줄 세우고, 좌표가 있으면 가까운 순위만큼 최대 {@value #PROXIMITY_WEIGHT}점을 더한다. 문장이 없으면 벡터 검색 없이
+ * 후보 순서(가까운 순·조회수 순) 그대로다.
  * </p>
  */
 @Slf4j
@@ -44,13 +42,12 @@ public class MobileRecommendationService {
 
     static final int MAX_SHOPS = 6;
 
-    static final int RADIUS_METERS = 3_000;
+    static final int NEAREST_CANDIDATES = 10;
 
-    private static final int CANDIDATE_DOCUMENTS = 30;
+    static final int MAX_CANDIDATES = 200;
 
-    private static final int LOCATION_CANDIDATE_DOCUMENTS = 100;
-
-    private static final double SIMILARITY_THRESHOLD = 0.35;
+    /** 유사도는 매장끼리 0.1 안팎으로 갈려 거리가 순위를 뒤집을 수 있되 유사도를 덮지 않는 크기로 둔다. */
+    static final double PROXIMITY_WEIGHT = 0.1;
 
     /**
      * 서버 한 대에서 동시에 도는 검색 수 상한이다. 시간 초과로 응답을 끊어도 외부 호출이 끝날 때까지 스레드를 차지한다. 대기열 없이 빈 스레드가
@@ -58,11 +55,7 @@ public class MobileRecommendationService {
      */
     static final int MAX_CONCURRENT_SEARCHES = 8;
 
-    private final AiRamenShopSearchQueryParser parser;
-
     private final RamenShopSearchDocumentPort documents;
-
-    private final AiRamenShopSearchReranker reranker;
 
     private final MobileShopAgentFacade shops;
 
@@ -78,13 +71,10 @@ public class MobileRecommendationService {
             Thread.ofPlatform().name("ai-recommendation-", 0).daemon(true).factory(),
             new ThreadPoolExecutor.AbortPolicy());
 
-    public MobileRecommendationService(AiRamenShopSearchQueryParser parser, RamenShopSearchDocumentPort documents,
-            AiRamenShopSearchReranker reranker, MobileShopAgentFacade shops,
+    public MobileRecommendationService(RamenShopSearchDocumentPort documents, MobileShopAgentFacade shops,
             MobileRecommendationRateLimiter rateLimiter, MobileRecommendationLogger logger,
             @Value("${app.mobile.recommendation.timeout:20s}") Duration timeout) {
-        this.parser = parser;
         this.documents = documents;
-        this.reranker = reranker;
         this.shops = shops;
         this.rateLimiter = rateLimiter;
         this.logger = logger;
@@ -92,8 +82,7 @@ public class MobileRecommendationService {
     }
 
     public MobileRecommendationResult recommend(Long userId, MobileRecommendationCommand command) {
-        String query = command.query();
-        if (query.isEmpty()) {
+        if (!command.hasCondition()) {
             throw new MobileException(MobileErrorCode.VALIDATION_ERROR, "추천 조건을 하나 이상 골라 주세요.");
         }
         if ((command.latitude() == null) != (command.longitude() == null)) {
@@ -102,20 +91,40 @@ public class MobileRecommendationService {
         String region = trimToNull(command.region());
         rateLimiter.acquire(userId);
         long startedAt = System.nanoTime();
-        boolean located = region != null || command.latitude() != null;
-        List<AiRamenShopSearchHit> hits = search(query, located);
-        List<MobileShopSummary> picked = shops.recommendable(userId,
-                hits.stream().map(AiRamenShopSearchHit::shopId).toList(), region, command.latitude(),
-                command.longitude(), RADIUS_METERS, MAX_SHOPS);
+        boolean located = command.latitude() != null;
+        int limit = MAX_CANDIDATES;
+        if (located) {
+            limit = NEAREST_CANDIDATES;
+        }
+        List<Long> candidates = shops.recommendationCandidates(command.soupType(), region, command.latitude(),
+                command.longitude(), limit);
+        List<Scored> ranked = rank(candidates, similarities(command.similarityQuery(), candidates), located);
+        List<MobileShopSummary> picked = shops.recommendable(userId, ranked.stream().map(Scored::shopId).toList(),
+                command.latitude(), command.longitude(), MAX_SHOPS);
         long latencyMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt);
-        String recommendationId = logger.record(userId, command, hits.size(), shown(picked, hits), latencyMs);
+        String recommendationId = logger.record(userId, command, candidates.size(), shown(picked, ranked), latencyMs);
         return new MobileRecommendationResult(recommendationId, picked, appliedConditions(command, region));
     }
 
-    private List<MobileRecommendationRun.Item> shown(List<MobileShopSummary> picked, List<AiRamenShopSearchHit> hits) {
+    /** 후보 순서(가까운 순·조회수 순)를 동점 기준으로 두고 점수가 높은 순으로 세운다. */
+    private static List<Scored> rank(List<Long> candidates, Map<Long, Double> similarities, boolean located) {
+        List<Scored> scored = new ArrayList<>(candidates.size());
+        for (int index = 0; index < candidates.size(); index++) {
+            Long shopId = candidates.get(index);
+            double score = similarities.getOrDefault(shopId, 0.0);
+            if (located) {
+                score += PROXIMITY_WEIGHT * (candidates.size() - index) / candidates.size();
+            }
+            scored.add(new Scored(shopId, score, index));
+        }
+        scored.sort(Comparator.comparingDouble(Scored::score).reversed().thenComparingInt(Scored::order));
+        return scored;
+    }
+
+    private static List<MobileRecommendationRun.Item> shown(List<MobileShopSummary> picked, List<Scored> ranked) {
         Map<Long, Double> scores = new HashMap<>();
-        for (AiRamenShopSearchHit hit : hits) {
-            scores.putIfAbsent(hit.shopId(), hit.finalScore());
+        for (Scored scored : ranked) {
+            scores.put(scored.shopId(), scored.score());
         }
         List<MobileRecommendationRun.Item> items = new ArrayList<>(picked.size());
         for (int index = 0; index < picked.size(); index++) {
@@ -129,20 +138,13 @@ public class MobileRecommendationService {
      * 검색 장애와 시간 초과는 503으로 알린다. 앱은 이때 인기·거리순 목록으로 대신 보여준다. 동시 검색이 상한에 닿아도 기다리지 않고 바로
      * 503이다.
      */
-    private List<AiRamenShopSearchHit> search(String query, boolean located) {
-        int topK = CANDIDATE_DOCUMENTS;
-        if (located) {
-            topK = LOCATION_CANDIDATE_DOCUMENTS;
+    private Map<Long, Double> similarities(String query, List<Long> candidates) {
+        if (query.isEmpty() || candidates.isEmpty()) {
+            return Map.of();
         }
-        int candidates = topK;
-        Future<List<AiRamenShopSearchHit>> future;
+        Future<Map<Long, Double>> future;
         try {
-            future = executor.submit(() -> {
-                ParsedAiRamenShopSearchQuery parsed = parser.parse(query);
-                return reranker.rerank(
-                        documents.searchShopDocuments(parsed.expandedQuery(), candidates, SIMILARITY_THRESHOLD), parsed,
-                        candidates);
-            });
+            future = executor.submit(() -> documents.shopSimilarities(query, candidates));
         }
         catch (RejectedExecutionException exception) {
             log.warn("AI 추천 동시 검색 상한 초과: limit={}", MAX_CONCURRENT_SEARCHES);
@@ -166,13 +168,13 @@ public class MobileRecommendationService {
         }
     }
 
-    private List<String> appliedConditions(MobileRecommendationCommand command, String region) {
+    private static List<String> appliedConditions(MobileRecommendationCommand command, String region) {
         List<String> conditions = new ArrayList<>(command.preferenceLabels());
         if (region != null) {
             conditions.add(region);
         }
         if (command.latitude() != null) {
-            conditions.add(RADIUS_METERS / 1000 + "km 이내");
+            conditions.add("가까운 순");
         }
         return conditions;
     }
@@ -191,6 +193,9 @@ public class MobileRecommendationService {
     @PreDestroy
     void shutdown() {
         executor.shutdownNow();
+    }
+
+    private record Scored(Long shopId, double score, int order) {
     }
 
 }

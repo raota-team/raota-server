@@ -23,7 +23,7 @@ import tools.jackson.databind.ObjectMapper;
 @Component
 class MobileRecommendationLogger {
 
-    static final String ALGORITHM_VERSION = "rag-rerank-v1+v2-location-filter";
+    static final String ALGORITHM_VERSION = "soup-filter+nearest10+vector-similarity";
 
     private final MobileRecommendationRunRepository runs;
 

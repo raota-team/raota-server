@@ -20,6 +20,7 @@ import com.raota.mobile.account.domain.model.Nickname;
 import com.raota.mobile.account.domain.repository.MobileUserRepository;
 import com.raota.mobile.account.infrastructure.auth.MobileAccessTokenService;
 import com.raota.support.BaseIntegrationTest;
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -62,6 +63,13 @@ class MobileRecommendationIntegrationTest extends BaseIntegrationTest {
 
     private static final long NO_COORDINATES = 900004606L;
 
+    private static final long NIBOSHI = 900004607L;
+
+    /** 좌표 순위 확인용 쇼유 매장 10곳의 첫 ID다. NEAR에서 북쪽으로 약 111m씩 떨어진다. */
+    private static final long NEARBY_FIRST = 900004611L;
+
+    private static final long LAST = NEARBY_FIRST + 9;
+
     /** 기기 GPS처럼 소수점이 긴 좌표다. 매장 좌표 정밀도(8자리)로 반올림하면 NEAR와 같은 지점이다. */
     private static final String NEAR_POINT = "\"latitude\":37.55630000412345,\"longitude\":126.92359999876543";
 
@@ -96,18 +104,22 @@ class MobileRecommendationIntegrationTest extends BaseIntegrationTest {
     @BeforeEach
     void setUp() {
         mvc = MockMvcBuilders.webAppContextSetup(context).addFilters(requestIdFilter).apply(springSecurity()).build();
-        insertShop(NEAR, "마포구", "서울 마포구 와우산로 1", "37.55630000", "126.92360000", "OPERATIONAL", true, false);
-        insertShop(HIDDEN, "마포구", "서울 마포구 와우산로 2", "37.55630000", "126.92360000", "UNKNOWN", false, false);
-        insertShop(DELETED, "마포구", "서울 마포구 와우산로 3", "37.55630000", "126.92360000", "OPERATIONAL", true, true);
-        insertShop(CLOSED, "마포구", "서울 마포구 와우산로 4", "37.55630000", "126.92360000", "CLOSED", true, false);
-        insertShop(FAR, "강남구", "서울 강남구 테헤란로 1", "37.49790000", "127.02760000", "OPERATIONAL", true, false);
-        insertShop(NO_COORDINATES, "망원동", "서울 마포구 망원로 1", null, null, "TEMPORARILY_CLOSED", true, false);
+        insertShop(NEAR, "마포구", "서울 마포구 와우산로 1", "37.55630000", "126.92360000", "OPERATIONAL", true, false, "[\"쇼유\"]");
+        insertShop(HIDDEN, "마포구", "서울 마포구 와우산로 2", "37.55630000", "126.92360000", "UNKNOWN", false, false, "[\"쇼유\"]");
+        insertShop(DELETED, "마포구", "서울 마포구 와우산로 3", "37.55630000", "126.92360000", "OPERATIONAL", true, true,
+                "[\"쇼유\"]");
+        insertShop(CLOSED, "마포구", "서울 마포구 와우산로 4", "37.55630000", "126.92360000", "CLOSED", true, false, "[\"쇼유\"]");
+        insertShop(FAR, "강남구", "서울 강남구 테헤란로 1", "37.49790000", "127.02760000", "OPERATIONAL", true, false,
+                "[\"쇼유\", \"시오\"]");
+        insertShop(NO_COORDINATES, "망원동", "서울 마포구 망원로 1", null, null, "TEMPORARILY_CLOSED", true, false, "[\"쇼유\"]");
+        insertShop(NIBOSHI, "마포구", "서울 마포구 와우산로 5", "37.55640000", "126.92360000", "OPERATIONAL", true, false,
+                "[\"니보시\"]");
     }
 
     @AfterEach
     void cleanUp() {
-        jdbc.update("DELETE FROM tb_v2_shop_bookmark WHERE shop_id BETWEEN ? AND ?", NEAR, NO_COORDINATES);
-        jdbc.update("DELETE FROM tb_v2_shop WHERE id BETWEEN ? AND ?", NEAR, NO_COORDINATES);
+        jdbc.update("DELETE FROM tb_v2_shop_bookmark WHERE shop_id BETWEEN ? AND ?", NEAR, LAST);
+        jdbc.update("DELETE FROM tb_v2_shop WHERE id BETWEEN ? AND ?", NEAR, LAST);
         for (Long userId : created) {
             runs.deleteByUserId(userId);
         }
@@ -115,38 +127,68 @@ class MobileRecommendationIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void 공개되고_영업하는_v2_매장만_순위대로_한_번씩_돌려주고_v2_북마크와_상세로_이어진다() throws Exception {
+    void 고른_국물의_공개되고_영업하는_매장만_유사도_순으로_돌려주고_v2_북마크와_상세로_이어진다() throws Exception {
         Long member = active();
         jdbc.update(
                 "INSERT INTO tb_v2_shop_bookmark (user_id, shop_id, created_at) VALUES (?, ?, CURRENT_TIMESTAMP(6))",
                 member, FAR);
-        searchReturns(FAR, NEAR, HIDDEN, DELETED, CLOSED, NO_COORDINATES, NEAR);
+        searchReturns(NIBOSHI, FAR, NEAR, HIDDEN, DELETED, CLOSED, NO_COORDINATES);
 
-        JsonNode data = data(recommend(member, "{\"soup\":\"진한 돈코츠\",\"mood\":\"혼밥\",\"text\":\"차슈 많은 곳\"}")
-            .andExpect(status().isOk()));
+        JsonNode data = data(
+                recommend(member, "{\"soup\":\"쇼유\",\"mood\":\"혼밥\",\"text\":\"차슈 많은 곳\"}").andExpect(status().isOk()));
 
         assertThat(ids(data)).containsExactly(String.valueOf(FAR), String.valueOf(NEAR));
         assertThat(data.get("shops").get(0).get("isBookmarked").asBoolean()).isTrue();
         assertThat(data.get("shops").get(1).get("isBookmarked").asBoolean()).isFalse();
         assertThat(data.get("shops").get(1).get("distanceMeters").isNull()).isTrue();
-        assertThat(data.get("appliedConditions").toString()).isEqualTo("[\"진한 돈코츠\",\"혼밥\"]");
+        assertThat(data.get("appliedConditions").toString()).isEqualTo("[\"쇼유\",\"혼밥\"]");
         mvc.perform(get("/api/v2/shops/{shopId}", data.get("shops").get(0).get("id").asString()))
             .andExpect(status().isOk());
     }
 
     @Test
-    void 지역이나_좌표가_오면_그_안의_매장만_남기고_조건에_표시한다() throws Exception {
+    void 검색에_걸리지_않아도_고른_국물의_매장이면_추천한다() throws Exception {
+        searchReturns(FAR, NEAR);
+
+        JsonNode data = data(recommend(active(), "{\"soup\":\"니보시\",\"mood\":\"혼밥\"}").andExpect(status().isOk()));
+
+        assertThat(ids(data)).containsExactly(String.valueOf(NIBOSHI));
+    }
+
+    @Test
+    void 지역은_그_안의_매장만_남기고_좌표는_반경_없이_가까운_순으로_조건에_표시한다() throws Exception {
         Long member = active();
-        searchReturns(FAR, NEAR, NO_COORDINATES);
+        searchReturns();
 
         JsonNode byRegion = data(recommend(member, "{\"soup\":\"쇼유\",\"region\":\"마포구\"}").andExpect(status().isOk()));
         assertThat(ids(byRegion)).containsExactly(String.valueOf(NEAR));
         assertThat(byRegion.get("appliedConditions").toString()).isEqualTo("[\"쇼유\",\"마포구\"]");
 
         JsonNode byPoint = data(recommend(member, "{\"soup\":\"쇼유\"," + NEAR_POINT + "}").andExpect(status().isOk()));
-        assertThat(ids(byPoint)).containsExactly(String.valueOf(NEAR));
+        assertThat(ids(byPoint)).containsExactly(String.valueOf(NEAR), String.valueOf(FAR));
         assertThat(byPoint.get("shops").get(0).get("distanceMeters").asInt()).isZero();
-        assertThat(byPoint.get("appliedConditions").toString()).isEqualTo("[\"쇼유\",\"3km 이내\"]");
+        assertThat(byPoint.get("shops").get(1).get("distanceMeters").asInt()).isGreaterThan(3_000);
+        assertThat(byPoint.get("appliedConditions").toString()).isEqualTo("[\"쇼유\",\"가까운 순\"]");
+    }
+
+    @Test
+    void 좌표가_오면_가까운_10곳만_후보이고_유사도에_가까운_순위만큼_점수를_더한다() throws Exception {
+        for (int index = 0; index < 10; index++) {
+            String latitude = new BigDecimal("37.55630000")
+                .add(new BigDecimal("0.001").multiply(BigDecimal.valueOf(index + 1)))
+                .toPlainString();
+            insertShop(NEARBY_FIRST + index, "마포구", "서울 마포구 근처로 " + index, latitude, "126.92360000", "OPERATIONAL",
+                    true, false, "[\"쇼유\"]");
+        }
+        // 후보는 NEAR와 근처 9곳(가까운 순)이다. 가장 먼 근처 매장과 FAR는 유사도가 높아도 후보 밖이다.
+        searchReturns(FAR, NEARBY_FIRST + 9, NEARBY_FIRST + 8);
+
+        JsonNode data = data(
+                recommend(active(), "{\"soup\":\"쇼유\",\"mood\":\"혼밥\"," + NEAR_POINT + "}").andExpect(status().isOk()));
+
+        assertThat(ids(data)).containsExactly(String.valueOf(NEARBY_FIRST + 8), String.valueOf(NEAR),
+                String.valueOf(NEARBY_FIRST), String.valueOf(NEARBY_FIRST + 1), String.valueOf(NEARBY_FIRST + 2),
+                String.valueOf(NEARBY_FIRST + 3));
     }
 
     @Test
@@ -162,8 +204,8 @@ class MobileRecommendationIntegrationTest extends BaseIntegrationTest {
         Map<String, Object> run = jdbc.queryForMap("SELECT * FROM tb_v2_recommendation_run WHERE id = ?",
                 Long.valueOf(runId));
         assertThat(run).containsEntry("user_id", member)
-            .containsEntry("candidate_count", 3)
-            .containsEntry("algorithm_version", "rag-rerank-v1+v2-location-filter");
+            .containsEntry("candidate_count", 1)
+            .containsEntry("algorithm_version", "soup-filter+nearest10+vector-similarity");
         assertThat(run.get("latitude").toString()).isEqualTo("37.56");
         assertThat(run.get("longitude").toString()).isEqualTo("126.92");
         assertThat(mapper.readTree(run.get("conditions").toString()).toString())
@@ -192,8 +234,8 @@ class MobileRecommendationIntegrationTest extends BaseIntegrationTest {
         created.add(leavingId);
         Long staying = active();
         searchReturns(NEAR);
-        recommend(leavingId, "{\"text\":\"돈코츠\"}").andExpect(status().isOk());
-        recommend(staying, "{\"text\":\"돈코츠\"}").andExpect(status().isOk());
+        recommend(leavingId, "{\"soup\":\"니보시\"}").andExpect(status().isOk());
+        recommend(staying, "{\"soup\":\"니보시\"}").andExpect(status().isOk());
         Instant requestedAt = Instant.parse("2026-09-01T00:00:00Z");
         MobileUser pending = users.findById(leavingId).orElseThrow();
         pending.requestWithdrawal(requestedAt, Duration.ofDays(30));
@@ -220,9 +262,9 @@ class MobileRecommendationIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void 모두_걸러지면_200_빈_배열이다() throws Exception {
-        searchReturns(HIDDEN, DELETED, CLOSED);
-        recommend(active(), "{\"text\":\"아무 라멘\"}").andExpect(status().isOk())
+    void 고른_국물의_추천할_매장이_없으면_200_빈_배열이다() throws Exception {
+        searchReturns(NEAR);
+        recommend(active(), "{\"soup\":\"지로\",\"mood\":\"혼밥\"}").andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
             .andExpect(jsonPath("$.data.shops.length()").value(0));
     }
@@ -334,7 +376,7 @@ class MobileRecommendationIntegrationTest extends BaseIntegrationTest {
     }
 
     private void insertShop(long id, String region, String address, String latitude, String longitude, String status,
-            boolean published, boolean deleted) {
+            boolean published, boolean deleted, String ramenTypes) {
         String deletedAt = null;
         if (deleted) {
             deletedAt = "2026-09-02 00:00:00";
@@ -342,9 +384,9 @@ class MobileRecommendationIntegrationTest extends BaseIntegrationTest {
         jdbc.update("""
                 INSERT INTO tb_v2_shop (id, name, branch_name, address, region, latitude, longitude, ramen_types, tags,
                     business_status, ai_summary_keywords, is_published, created_at, updated_at, deleted_at)
-                VALUES (?, '추천 매장', '본점', ?, ?, ?, ?, '[]', '[]', ?, '[]', ?, '2026-09-01 00:00:00',
+                VALUES (?, '추천 매장', '본점', ?, ?, ?, ?, ?, '[]', ?, '[]', ?, '2026-09-01 00:00:00',
                     '2026-09-01 00:00:00', ?)
-                """, id, address, region, latitude, longitude, status, published, deletedAt);
+                """, id, address, region, latitude, longitude, ramenTypes, status, published, deletedAt);
     }
 
     private Long active() {

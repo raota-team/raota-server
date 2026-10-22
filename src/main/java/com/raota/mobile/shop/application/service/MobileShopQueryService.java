@@ -29,6 +29,7 @@ import java.math.RoundingMode;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -179,29 +180,50 @@ public class MobileShopQueryService {
     }
 
     /**
-     * 추천 순위대로 받은 매장 중 지금 추천해도 되는 매장을 최대 {@code limit}개 고른다. 숨김·삭제·폐업·휴업 매장은 빼고, 지역이 오면
-     * 지역(구·시)이나 주소에 그 지역이 들어간 매장만, 좌표가 오면 반경 안의 매장만 남긴다. 순서는 받은 순위를 따른다.
+     * 추천 후보 ID다. 추천해도 되는 매장 중 라멘 종류가 {@code ramenType}인 매장(null이면 전부)이고, 지역이 오면 지역(구·시)이나
+     * 주소에 그 지역이 들어간 매장만 남긴다. 좌표가 오면 좌표가 있는 매장을 가까운 순으로, 없으면 조회수 순으로 최대 {@code limit}곳이다.
+     * 반경은 없다.
      */
     @Transactional(readOnly = true)
-    public List<MobileShopSummary> recommendable(Long userId, List<Long> rankedIds, String region, BigDecimal latitude,
-            BigDecimal longitude, int radiusMeters, int limit) {
+    public List<Long> recommendationCandidates(String ramenType, String region, BigDecimal latitude,
+            BigDecimal longitude, int limit) {
+        List<Long> ids = shops.findRecommendableIds(ramenType);
+        Map<Long, MobileShop> byId = byId(ids);
+        List<MobileShop> candidates = ids.stream()
+            .map(byId::get)
+            .filter(shop -> shop != null && inRegion(shop, region))
+            .toList();
+        if (latitude == null) {
+            return candidates.stream().limit(limit).map(MobileShop::getId).toList();
+        }
+        return candidates.stream()
+            .filter(shop -> shop.getLatitude() != null && shop.getLongitude() != null)
+            .sorted(Comparator.comparingDouble(
+                    (MobileShop shop) -> distanceMeters(latitude, longitude, shop.getLatitude(), shop.getLongitude()))
+                .thenComparing(MobileShop::getId))
+            .limit(limit)
+            .map(MobileShop::getId)
+            .toList();
+    }
+
+    /**
+     * 순위대로 받은 매장 중 지금 추천해도 되는 매장을 최대 {@code limit}개 요약한다. 숨김·삭제·폐업·휴업 매장은 빼고 순서는 받은 순위를
+     * 따른다. 좌표가 오면 거리를 채운다.
+     */
+    @Transactional(readOnly = true)
+    public List<MobileShopSummary> recommendable(Long userId, List<Long> rankedIds, BigDecimal latitude,
+            BigDecimal longitude, int limit) {
         Map<Long, MobileShop> byId = byId(rankedIds);
         List<MobileShop> picked = new ArrayList<>(limit);
         Map<Long, BigDecimal> distances = new HashMap<>();
         for (Long id : rankedIds) {
             MobileShop shop = byId.get(id);
-            if (shop == null || !isRecommendable(shop) || !inRegion(shop, region)) {
+            if (shop == null || !isRecommendable(shop)) {
                 continue;
             }
-            if (latitude != null) {
-                if (shop.getLatitude() == null || shop.getLongitude() == null) {
-                    continue;
-                }
-                double meters = distanceMeters(latitude, longitude, shop.getLatitude(), shop.getLongitude());
-                if (meters > radiusMeters) {
-                    continue;
-                }
-                distances.put(id, BigDecimal.valueOf(meters));
+            if (latitude != null && shop.getLatitude() != null && shop.getLongitude() != null) {
+                distances.put(id, BigDecimal
+                    .valueOf(distanceMeters(latitude, longitude, shop.getLatitude(), shop.getLongitude())));
             }
             picked.add(shop);
             if (picked.size() == limit) {
