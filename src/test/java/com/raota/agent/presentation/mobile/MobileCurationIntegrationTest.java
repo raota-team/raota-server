@@ -68,7 +68,7 @@ class MobileCurationIntegrationTest extends BaseIntegrationTest {
         insertShop(LESS_POPULAR, "[\"돈코츠\", \"쇼유\"]", "[]", 5, "OPERATIONAL", true);
         insertShop(HIDDEN, "[\"돈코츠\"]", "[]", 99, "UNKNOWN", false);
         insertShop(CLOSED, "[\"돈코츠\"]", "[]", 50, "CLOSED", true);
-        insertShop(TAGGED, "[\"기타\"]", "[\"토리 파이탄\", \"닭\"]", 1, "OPERATIONAL", true);
+        insertShop(TAGGED, "[\"기타\"]", "[\"차슈 멘\", \"닭\"]", 1, "OPERATIONAL", true);
         MobileUser user = MobileUser.onboarding("curation-" + UUID.randomUUID() + "@example.com");
         user.completeOnboarding(Nickname.of("C" + UUID.randomUUID().toString().substring(0, 8)), Instant.now());
         member = users.saveAndFlush(user).getId();
@@ -104,7 +104,7 @@ class MobileCurationIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void 앱_종류에_없는_종류는_매장_태그로_찾는다() throws Exception {
-        insertCuration("토리파이탄");
+        insertCuration("차슈멘");
 
         mvc.perform(get("/api/v2/curations/today"))
             .andExpect(status().isOk())

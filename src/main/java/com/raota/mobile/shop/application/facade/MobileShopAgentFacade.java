@@ -35,7 +35,7 @@ public class MobileShopAgentFacade {
         return shops.recommendable(viewerId, rankedShopIds, region, latitude, longitude, radiusMeters, limit);
     }
 
-    /** 라멘 종류(앱 값 10개 중 하나), 없으면 태그 키워드로 추천해도 되는 매장 중 조회수 1위를 고른다. */
+    /** 라멘 종류(앱 종류 값 중 하나), 없으면 태그 키워드로 추천해도 되는 매장 중 조회수 1위를 고른다. */
     public Optional<MobileShopSummary> mostPopular(Long viewerId, String ramenType, String tagKeyword) {
         return shops.mostPopular(viewerId, ramenType, tagKeyword);
     }
