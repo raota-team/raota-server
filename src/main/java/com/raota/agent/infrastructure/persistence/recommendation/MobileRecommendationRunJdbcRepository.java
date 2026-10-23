@@ -1,10 +1,16 @@
 package com.raota.agent.infrastructure.persistence.recommendation;
 
 import com.raota.agent.domain.recommendation.model.MobileRecommendationRun;
+import com.raota.agent.domain.recommendation.model.ShownRecommendation;
 import com.raota.agent.domain.recommendation.repository.MobileRecommendationRunRepository;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -12,7 +18,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-/** 쓰기만 하는 노출 기록이라 엔티티 없이 JDBC로 저장한다. */
+/** 노출 기록은 엔티티 없이 JDBC로 저장하고, 앱 식권(매장을 보여준 기록)만 다시 읽는다. */
 @Repository
 @RequiredArgsConstructor
 public class MobileRecommendationRunJdbcRepository implements MobileRecommendationRunRepository {
@@ -43,12 +49,13 @@ public class MobileRecommendationRunJdbcRepository implements MobileRecommendati
         }, key);
         long runId = key.getKey().longValue();
         jdbc.batchUpdate(
-                "INSERT INTO tb_v2_recommendation_item (run_id, item_rank, shop_id, score) VALUES (?, ?, ?, ?)",
+                "INSERT INTO tb_v2_recommendation_item (run_id, item_rank, shop_id, score, reason) VALUES (?, ?, ?, ?, ?)",
                 run.items(), run.items().size(), (statement, item) -> {
                     statement.setLong(1, runId);
                     statement.setInt(2, item.rank());
                     statement.setLong(3, item.shopId());
                     statement.setDouble(4, item.score());
+                    statement.setString(5, item.reason());
                 });
         return runId;
     }
@@ -61,6 +68,44 @@ public class MobileRecommendationRunJdbcRepository implements MobileRecommendati
                 WHERE run.user_id = ?
                 """, userId);
         jdbc.update("DELETE FROM tb_v2_recommendation_run WHERE user_id = ?", userId);
+    }
+
+    @Override
+    public int countShownSince(Long userId, Instant since) {
+        Integer count = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM tb_v2_recommendation_run run
+                WHERE run.user_id = ? AND run.created_at >= ?
+                  AND EXISTS (SELECT 1 FROM tb_v2_recommendation_item item WHERE item.run_id = run.id)
+                """, Integer.class, userId, Timestamp.from(since));
+        if (count == null) {
+            return 0;
+        }
+        return count;
+    }
+
+    @Override
+    public List<ShownRecommendation> findShownSince(Long userId, Instant since) {
+        Map<Long, ShownRecommendation> runs = new LinkedHashMap<>();
+        jdbc.query("""
+                SELECT run.id, run.conditions, run.latitude, run.created_at,
+                    item.item_rank, item.shop_id, item.score, item.reason
+                FROM tb_v2_recommendation_run run
+                JOIN tb_v2_recommendation_item item ON item.run_id = run.id
+                WHERE run.user_id = ? AND run.created_at >= ?
+                ORDER BY run.created_at DESC, run.id DESC, item.item_rank
+                """, row -> {
+            long runId = row.getLong("id");
+            ShownRecommendation shown = runs.get(runId);
+            if (shown == null) {
+                shown = new ShownRecommendation(runId, row.getString("conditions"), row.getObject("latitude") != null,
+                        row.getTimestamp("created_at").toInstant(), new ArrayList<>());
+                runs.put(runId, shown);
+            }
+            shown.items()
+                .add(new MobileRecommendationRun.Item(row.getInt("item_rank"), row.getLong("shop_id"),
+                        row.getDouble("score"), row.getString("reason")));
+        }, userId, Timestamp.from(since));
+        return List.copyOf(runs.values());
     }
 
 }

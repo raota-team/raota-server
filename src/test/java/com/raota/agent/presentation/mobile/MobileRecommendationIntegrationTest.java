@@ -52,7 +52,9 @@ import org.springframework.web.context.WebApplicationContext;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-@TestPropertySource(properties = "app.mobile.recommendation.timeout=500ms")
+// 1분 상한(10번)을 확인하려고 같은 회원으로 여러 번 추천받으므로 하루 식권 상한은 따로(MobileRecommendationTicketsIntegrationTest) 본다
+@TestPropertySource(
+        properties = { "app.mobile.recommendation.timeout=500ms", "app.mobile.recommendation.daily-limit=1000" })
 class MobileRecommendationIntegrationTest extends BaseIntegrationTest {
 
     private static final long NEAR = 900004601L;

@@ -3,8 +3,10 @@ package com.raota.agent.application.mobile;
 import com.raota.agent.application.mobile.command.MobileRecommendationCommand;
 import com.raota.agent.application.mobile.port.MobileRecommendationReasonPort;
 import com.raota.agent.application.mobile.result.MobileRecommendationResult;
+import com.raota.agent.application.mobile.result.MobileTodayRecommendationsResult;
 import com.raota.agent.application.ramenshop.port.RamenShopSearchDocumentPort;
 import com.raota.agent.domain.recommendation.model.MobileRecommendationRun;
+import com.raota.agent.domain.recommendation.model.ShownRecommendation;
 import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
 import com.raota.mobile.shop.application.facade.MobileShopAgentFacade;
@@ -28,6 +30,8 @@ import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * 앱 AI 큐레이터 추천이다. 고른 국물은 필수 조건이라 그 라멘 종류의 v2 매장만 후보로 삼는다.
@@ -85,6 +89,10 @@ public class MobileRecommendationService {
 
     private final MobileRecommendationLogger logger;
 
+    private final MobileRecommendationTickets tickets;
+
+    private final ObjectMapper mapper;
+
     private final Duration timeout;
 
     /** JDBC·HTTP 블로킹 호출이라 가상 스레드 대신 크기가 정해진 플랫폼 스레드를 쓴다. */
@@ -95,12 +103,15 @@ public class MobileRecommendationService {
 
     public MobileRecommendationService(RamenShopSearchDocumentPort documents, MobileShopAgentFacade shops,
             MobileRecommendationReasonPort reasonWriter, MobileRecommendationRateLimiter rateLimiter,
-            MobileRecommendationLogger logger, @Value("${app.mobile.recommendation.timeout:20s}") Duration timeout) {
+            MobileRecommendationLogger logger, MobileRecommendationTickets tickets, ObjectMapper mapper,
+            @Value("${app.mobile.recommendation.timeout:20s}") Duration timeout) {
         this.documents = documents;
         this.shops = shops;
         this.reasonWriter = reasonWriter;
         this.rateLimiter = rateLimiter;
         this.logger = logger;
+        this.tickets = tickets;
+        this.mapper = mapper;
         this.timeout = timeout;
     }
 
@@ -113,6 +124,10 @@ public class MobileRecommendationService {
         }
         String region = trimToNull(command.region());
         rateLimiter.acquire(userId);
+        if (tickets.remaining(userId) == 0) {
+            throw new MobileException(MobileErrorCode.DAILY_LIMIT_EXCEEDED,
+                    "오늘 식권 " + tickets.dailyLimit() + "장을 모두 뽑았어요. 내일 다시 뽑을 수 있어요.");
+        }
         long startedAt = System.nanoTime();
         boolean located = command.latitude() != null;
         int limit = MAX_CANDIDATES;
@@ -126,9 +141,35 @@ public class MobileRecommendationService {
                 command.latitude(), command.longitude(), MAX_SHOPS);
         Map<String, String> reasonByShop = reasons(command, region, picked, startedAt);
         long latencyMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt);
-        String recommendationId = logger.record(userId, command, candidates.size(), shown(picked, ranked), latencyMs);
-        return new MobileRecommendationResult(recommendationId, picked, appliedConditions(command, region),
-                reasonByShop);
+        String recommendationId = logger.record(userId, command, candidates.size(), shown(picked, ranked, reasonByShop),
+                latencyMs);
+        return new MobileRecommendationResult(recommendationId, picked,
+                appliedConditions(command.preferenceLabels(), region, located), reasonByShop);
+    }
+
+    /** 오늘 뽑은 식권과 남은 장수다. 식권마다 그때 보여준 순서대로, 지금도 추천해도 되는 매장만 다시 요약한다. */
+    public MobileTodayRecommendationsResult today(Long userId) {
+        List<ShownRecommendation> shown = tickets.today(userId);
+        List<MobileTodayRecommendationsResult.Ticket> today = new ArrayList<>(shown.size());
+        for (ShownRecommendation run : shown) {
+            List<Long> shopIds = run.items().stream().map(MobileRecommendationRun.Item::shopId).toList();
+            List<MobileShopSummary> picked = shops.recommendable(userId, shopIds, null, null, MAX_SHOPS);
+            Map<String, String> reasons = new LinkedHashMap<>();
+            for (MobileRecommendationRun.Item item : run.items()) {
+                if (item.reason() != null) {
+                    reasons.put(String.valueOf(item.shopId()), item.reason());
+                }
+            }
+            Map<String, String> conditions = mapper.readValue(run.conditionsJson(), new TypeReference<>() {
+            });
+            MobileRecommendationCommand asked = new MobileRecommendationCommand(conditions.get("soup"),
+                    conditions.get("mood"), conditions.get("priority"), conditions.get("text"), null, null,
+                    conditions.get("region"));
+            today.add(new MobileTodayRecommendationsResult.Ticket(String.valueOf(run.id()), run.createdAt(), picked,
+                    appliedConditions(asked.preferenceLabels(), trimToNull(asked.region()), run.located()), reasons));
+        }
+        return new MobileTodayRecommendationsResult(tickets.dailyLimit(),
+                Math.max(0, tickets.dailyLimit() - shown.size()), today);
     }
 
     /**
@@ -270,15 +311,17 @@ public class MobileRecommendationService {
         return scored;
     }
 
-    private static List<MobileRecommendationRun.Item> shown(List<MobileShopSummary> picked, List<Scored> ranked) {
+    private static List<MobileRecommendationRun.Item> shown(List<MobileShopSummary> picked, List<Scored> ranked,
+            Map<String, String> reasons) {
         Map<Long, Double> scores = new HashMap<>();
         for (Scored scored : ranked) {
             scores.put(scored.shopId(), scored.score());
         }
         List<MobileRecommendationRun.Item> items = new ArrayList<>(picked.size());
         for (int index = 0; index < picked.size(); index++) {
-            Long shopId = Long.valueOf(picked.get(index).id());
-            items.add(new MobileRecommendationRun.Item(index + 1, shopId, scores.get(shopId)));
+            String shopId = picked.get(index).id();
+            items.add(new MobileRecommendationRun.Item(index + 1, Long.valueOf(shopId),
+                    scores.get(Long.valueOf(shopId)), reasons.get(shopId)));
         }
         return items;
     }
@@ -317,12 +360,12 @@ public class MobileRecommendationService {
         }
     }
 
-    private static List<String> appliedConditions(MobileRecommendationCommand command, String region) {
-        List<String> conditions = new ArrayList<>(command.preferenceLabels());
+    private static List<String> appliedConditions(List<String> preferenceLabels, String region, boolean located) {
+        List<String> conditions = new ArrayList<>(preferenceLabels);
         if (region != null) {
             conditions.add(region);
         }
-        if (command.latitude() != null) {
+        if (located) {
             conditions.add("가까운 순");
         }
         return conditions;
