@@ -1,5 +1,6 @@
 package com.raota.agent.presentation.mobile;
 
+import com.raota.agent.application.mobile.MobileRecommendationFeedbackService;
 import com.raota.agent.application.mobile.MobileRecommendationService;
 import com.raota.agent.application.mobile.result.MobileRecommendationResult;
 import com.raota.agent.application.mobile.result.MobileTodayRecommendationsResult;
@@ -8,7 +9,9 @@ import com.raota.mobile.common.presentation.LoginUser;
 import com.raota.mobile.common.presentation.response.MobileApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,6 +25,8 @@ public class MobileRecommendationController {
 
     private final MobileRecommendationService recommendations;
 
+    private final MobileRecommendationFeedbackService feedback;
+
     @PostMapping("/recommendations")
     public MobileApiResponse<MobileRecommendationResult> recommend(@LoginUser Long userId,
             @Valid @RequestBody MobileRecommendationRequest request) {
@@ -32,6 +37,14 @@ public class MobileRecommendationController {
     @GetMapping("/recommendations/today")
     public MobileApiResponse<MobileTodayRecommendationsResult> today(@LoginUser Long userId) {
         return MobileApiResponse.success(recommendations.today(userId));
+    }
+
+    /** 추천 결과에서 매장을 연 것을 남긴다. 처음 연 시각만 남고, 같은 매장을 다시 열어도 204다. */
+    @PostMapping("/recommendations/{recommendationId:[0-9]+}/shops/{shopId:[0-9]+}/open")
+    public ResponseEntity<Void> open(@LoginUser Long userId, @PathVariable Long recommendationId,
+            @PathVariable Long shopId) {
+        feedback.markOpened(userId, recommendationId, shopId);
+        return ResponseEntity.noContent().build();
     }
 
 }

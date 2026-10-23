@@ -5,6 +5,7 @@ import com.raota.mobile.ramenlog.domain.model.MobileRamenLog;
 import jakarta.persistence.LockModeType;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +17,13 @@ import org.springframework.data.jpa.repository.Query;
 public interface MobileRamenLogRepository extends JpaRepository<MobileRamenLog, Long> {
 
     Optional<MobileRamenLog> findByUserIdAndIdempotencyKey(Long userId, String key);
+
+    /** 이 회원들이 {@code [from, to)} 사이에 쓰고 지우지 않은 기록이다. */
+    @Query("""
+            select log from MobileRamenLog log
+            where log.userId in :userIds and log.deletedAt is null and log.createdAt >= :from and log.createdAt < :to
+            """)
+    List<MobileRamenLog> findLiveCreatedBetween(Collection<Long> userIds, Instant from, Instant to);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select log from MobileRamenLog log where log.id = :id")

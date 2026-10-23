@@ -7,6 +7,7 @@ import com.raota.mobile.shop.application.port.MobileShopBookmarkPort;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +89,19 @@ public class MobileShopJdbcBookmarks implements MobileShopBookmarkPort {
         }
         return jdbc.query(sql.toString(), (rs, index) -> new SavedShop(rs.getLong("shop_id"),
                 Cursor.of(rs.getTimestamp("created_at").toInstant(), rs.getLong("shop_id"))), args);
+    }
+
+    @Override
+    public List<CreatedBookmark> createdBetween(Collection<Long> userIds, Instant from, Instant to) {
+        if (userIds.isEmpty()) {
+            return List.of();
+        }
+        return namedJdbc.query("""
+                SELECT user_id, shop_id, created_at FROM tb_v2_shop_bookmark
+                WHERE user_id IN (:userIds) AND created_at >= :from AND created_at < :to
+                """, Map.of("userIds", userIds, "from", Timestamp.from(from), "to", Timestamp.from(to)),
+                (rs, index) -> new CreatedBookmark(rs.getLong("user_id"), rs.getLong("shop_id"),
+                        rs.getTimestamp("created_at").toInstant()));
     }
 
 }

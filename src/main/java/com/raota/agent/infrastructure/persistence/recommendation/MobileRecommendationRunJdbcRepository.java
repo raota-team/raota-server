@@ -1,6 +1,7 @@
 package com.raota.agent.infrastructure.persistence.recommendation;
 
 import com.raota.agent.domain.recommendation.model.MobileRecommendationRun;
+import com.raota.agent.domain.recommendation.model.RecommendationImpression;
 import com.raota.agent.domain.recommendation.model.ShownRecommendation;
 import com.raota.agent.domain.recommendation.repository.MobileRecommendationRunRepository;
 import java.sql.PreparedStatement;
@@ -106,6 +107,46 @@ public class MobileRecommendationRunJdbcRepository implements MobileRecommendati
                         row.getDouble("score"), row.getString("reason")));
         }, userId, Timestamp.from(since));
         return List.copyOf(runs.values());
+    }
+
+    @Override
+    public boolean markOpened(Long userId, Long runId, Long shopId, Instant openedAt) {
+        int updated = jdbc.update("""
+                UPDATE tb_v2_recommendation_item item
+                JOIN tb_v2_recommendation_run run ON run.id = item.run_id
+                SET item.opened_at = ?
+                WHERE run.id = ? AND run.user_id = ? AND item.shop_id = ? AND item.opened_at IS NULL
+                """, Timestamp.from(openedAt), runId, userId, shopId);
+        if (updated > 0) {
+            return true;
+        }
+        Integer existing = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM tb_v2_recommendation_item item
+                JOIN tb_v2_recommendation_run run ON run.id = item.run_id
+                WHERE run.id = ? AND run.user_id = ? AND item.shop_id = ?
+                """, Integer.class, runId, userId, shopId);
+        return existing != null && existing > 0;
+    }
+
+    @Override
+    public List<RecommendationImpression> findImpressions(Instant from, Instant to) {
+        return jdbc.query("""
+                SELECT run.id, run.user_id, run.created_at, run.algorithm_version, run.conditions,
+                    item.item_rank, item.shop_id, item.opened_at
+                FROM tb_v2_recommendation_run run
+                JOIN tb_v2_recommendation_item item ON item.run_id = run.id
+                WHERE run.created_at >= ? AND run.created_at < ?
+                ORDER BY run.id, item.item_rank
+                """, (row, index) -> {
+            Timestamp opened = row.getTimestamp("opened_at");
+            Instant openedAt = null;
+            if (opened != null) {
+                openedAt = opened.toInstant();
+            }
+            return new RecommendationImpression(row.getLong("id"), row.getLong("user_id"),
+                    row.getTimestamp("created_at").toInstant(), row.getString("algorithm_version"),
+                    row.getString("conditions"), row.getInt("item_rank"), row.getLong("shop_id"), openedAt);
+        }, Timestamp.from(from), Timestamp.from(to));
     }
 
 }

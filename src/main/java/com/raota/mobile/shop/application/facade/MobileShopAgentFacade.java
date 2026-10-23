@@ -1,5 +1,6 @@
 package com.raota.mobile.shop.application.facade;
 
+import com.raota.mobile.shop.application.port.MobileShopBookmarkPort;
 import com.raota.mobile.shop.application.result.MobileShopSummary;
 import com.raota.mobile.shop.application.service.MobileShopQueryService;
 import com.raota.mobile.shop.domain.model.MobileShop;
@@ -30,6 +31,8 @@ public class MobileShopAgentFacade {
 
     private final MobileShopServicePerkRepository perks;
 
+    private final MobileShopBookmarkPort bookmarks;
+
     private final ObjectMapper mapper;
 
     /**
@@ -53,6 +56,15 @@ public class MobileShopAgentFacade {
     /** 라멘 종류(앱 종류 값 중 하나), 없으면 태그 키워드로 추천해도 되는 매장 중 조회수 1위를 고른다. */
     public Optional<MobileShopSummary> mostPopular(Long viewerId, String ramenType, String tagKeyword) {
         return shops.mostPopular(viewerId, ramenType, tagKeyword);
+    }
+
+    /** 추천 성과 집계용으로 이 회원들이 {@code [from, to)} 사이에 만든 북마크다. 해제한 북마크는 빠진다. */
+    @Transactional(readOnly = true)
+    public List<MobileShopActivity> bookmarksCreatedBetween(Collection<Long> userIds, Instant from, Instant to) {
+        return bookmarks.createdBetween(userIds, from, to)
+            .stream()
+            .map(bookmark -> new MobileShopActivity(bookmark.userId(), bookmark.shopId(), bookmark.createdAt()))
+            .toList();
     }
 
     /**
@@ -124,6 +136,10 @@ public class MobileShopAgentFacade {
     /** 추천 이유를 쓸 때 근거로 삼는 매장 정보다. 값이 없으면 {@code null}이다. */
     public record MobileShopReasonFacts(String aiReviewSummary, String description, Integer priceMin, Integer priceMax,
             List<String> perks) {
+    }
+
+    /** 회원이 매장에 남긴 행동(북마크)과 그 시각이다. */
+    public record MobileShopActivity(Long userId, Long shopId, Instant createdAt) {
     }
 
 }
