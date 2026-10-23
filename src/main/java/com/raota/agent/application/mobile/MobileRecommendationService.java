@@ -8,6 +8,7 @@ import com.raota.agent.domain.recommendation.model.MobileRecommendationRun;
 import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
 import com.raota.mobile.shop.application.facade.MobileShopAgentFacade;
+import com.raota.mobile.shop.application.facade.MobileShopAgentFacade.MobileShopReasonFacts;
 import com.raota.mobile.shop.application.result.MobileShopSummary;
 import jakarta.annotation.PreDestroy;
 import java.time.Duration;
@@ -39,8 +40,8 @@ import org.springframework.stereotype.Service;
  * </p>
  *
  * <p>
- * 고른 매장마다 LLM이 조건에 맞는 이유를 한 문장씩 쓴다. 이유는 덤이라 검색과 같은 시간 예산 안에서만 기다리고, 실패하거나 시간이 모자라면 이유 없이
- * 매장만 돌려준다.
+ * 고른 매장마다 LLM이 조건에 맞는 이유를 2~3문장으로 쓴다. 근거는 라멘 종류·태그·리뷰 요약·매장 설명·가격대·서비스·거리·영업 여부·기록 수다.
+ * 이유는 덤이라 검색과 같은 시간 예산 안에서만 기다리고, 실패하거나 시간이 모자라면 이유 없이 매장만 돌려준다.
  * </p>
  */
 @Slf4j
@@ -56,17 +57,17 @@ public class MobileRecommendationService {
     /** 유사도는 매장끼리 0.1 안팎으로 갈려 거리가 순위를 뒤집을 수 있되 유사도를 덮지 않는 크기로 둔다. */
     static final double PROXIMITY_WEIGHT = 0.1;
 
-    /** 추천 이유를 기다리는 최대 시간이다. 남은 시간 예산이 더 짧으면 그만큼만 기다린다. */
-    static final Duration REASON_TIMEOUT = Duration.ofSeconds(8);
+    /** 추천 이유를 기다리는 최대 시간이다. 매장 6곳의 이유를 2~3문장씩 쓰므로 넉넉히 두고, 남은 시간 예산이 더 짧으면 그만큼만 기다린다. */
+    static final Duration REASON_TIMEOUT = Duration.ofSeconds(12);
 
     /** 남은 시간이 이보다 짧으면 LLM을 부르지 않는다. */
     static final long MIN_REASON_BUDGET_MS = 100;
 
-    /** 프롬프트가 길어지지 않게 매장 소개는 이만큼만 넘긴다. */
-    static final int MAX_INTRODUCTION_LENGTH = 400;
+    /** 프롬프트가 길어지지 않게 리뷰 요약·매장 설명은 각각 이만큼만 넘긴다. */
+    static final int MAX_INTRODUCTION_LENGTH = 500;
 
-    /** 모델이 규칙을 어기고 길게 써도 화면이 밀리지 않게 자른다. */
-    static final int MAX_REASON_LENGTH = 120;
+    /** 모델이 규칙을 어기고 길게 써도 화면이 밀리지 않게 자른다. 프롬프트가 바라는 길이(200자 안팎)보다 조금 넉넉하다. */
+    static final int MAX_REASON_LENGTH = 260;
 
     /**
      * 서버 한 대에서 동시에 도는 검색 수 상한이다. 시간 초과로 응답을 끊어도 외부 호출이 끝날 때까지 스레드를 차지한다. 대기열 없이 빈 스레드가
@@ -131,7 +132,7 @@ public class MobileRecommendationService {
     }
 
     /**
-     * 고른 매장마다 추천 이유 한 문장이다. 보여주는 매장의 이유만 남기고, LLM 장애·시간 초과·동시 실행 상한이면 빈 결과다.
+     * 고른 매장마다 추천 이유(2~3문장)다. 보여주는 매장의 이유만 남기고, LLM 장애·시간 초과·동시 실행 상한이면 빈 결과다.
      */
     private Map<String, String> reasons(MobileRecommendationCommand command, String region,
             List<MobileShopSummary> picked, long startedAt) {
@@ -183,20 +184,46 @@ public class MobileRecommendationService {
     }
 
     private String reasonContext(List<MobileShopSummary> picked) {
-        Map<Long, String> introductions = shops
-            .introductions(picked.stream().map(shop -> Long.valueOf(shop.id())).toList());
+        Map<Long, MobileShopReasonFacts> facts = shops
+            .reasonFacts(picked.stream().map(shop -> Long.valueOf(shop.id())).toList());
         StringBuilder context = new StringBuilder();
         for (MobileShopSummary shop : picked) {
             context.append("- 매장 ID: ").append(shop.id()).append('\n');
             appendLine(context, "  라멘 종류", String.join(", ", shop.ramenTypes()));
             appendLine(context, "  태그", String.join(", ", shop.tags()));
             appendLine(context, "  한 줄 소개", shop.tagline());
-            appendLine(context, "  소개", truncate(introductions.get(Long.valueOf(shop.id())), MAX_INTRODUCTION_LENGTH));
+            MobileShopReasonFacts fact = facts.get(Long.valueOf(shop.id()));
+            if (fact != null) {
+                appendLine(context, "  리뷰 요약", truncate(fact.aiReviewSummary(), MAX_INTRODUCTION_LENGTH));
+                appendLine(context, "  매장 설명", truncate(fact.description(), MAX_INTRODUCTION_LENGTH));
+                appendLine(context, "  가격대", priceRange(fact.priceMin(), fact.priceMax()));
+                appendLine(context, "  서비스", String.join(", ", fact.perks()));
+            }
             if (shop.distanceMeters() != null) {
                 appendLine(context, "  거리", shop.distanceMeters() + "m");
             }
+            if (Boolean.TRUE.equals(shop.isOpen())) {
+                appendLine(context, "  영업", "지금 영업 중");
+            }
+            if (shop.logCount() > 0) {
+                appendLine(context, "  라오타 기록", shop.logCount() + "개");
+            }
         }
         return context.toString().trim();
+    }
+
+    private static String priceRange(Integer min, Integer max) {
+        if (min == null && max == null) {
+            return null;
+        }
+        if (min == null || max == null || min.equals(max)) {
+            Integer price = min;
+            if (price == null) {
+                price = max;
+            }
+            return price + "원";
+        }
+        return min + "~" + max + "원";
     }
 
     /** 모델이 지어낸 ID나 빈 문장은 버리고, 한 줄로 다듬어 길이를 자른다. */

@@ -3,9 +3,12 @@ package com.raota.mobile.shop.application.facade;
 import com.raota.mobile.shop.application.result.MobileShopSummary;
 import com.raota.mobile.shop.application.service.MobileShopQueryService;
 import com.raota.mobile.shop.domain.model.MobileShop;
+import com.raota.mobile.shop.domain.model.MobileShopServicePerk;
 import com.raota.mobile.shop.domain.repository.MobileShopRepository;
+import com.raota.mobile.shop.domain.repository.MobileShopServicePerkRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -24,6 +27,8 @@ public class MobileShopAgentFacade {
     private final MobileShopQueryService shops;
 
     private final MobileShopRepository repository;
+
+    private final MobileShopServicePerkRepository perks;
 
     private final ObjectMapper mapper;
 
@@ -51,18 +56,25 @@ public class MobileShopAgentFacade {
     }
 
     /**
-     * 추천 이유의 근거로 넘길 매장 소개다. 리뷰 AI 요약이 있으면 그것을, 없으면 매장 설명을 쓴다. 소개가 없는 매장은 빠진다.
+     * 추천 이유의 근거로 넘길 매장 정보다. 리뷰 AI 요약·매장 설명·가격대와, 무료·유료로 확인된 서비스(면 추가 등)를 담는다. 없는 매장은 빠진다.
      */
     @Transactional(readOnly = true)
-    public Map<Long, String> introductions(Collection<Long> shopIds) {
-        Map<Long, String> introductions = new HashMap<>();
-        for (MobileShop shop : repository.findAllById(shopIds)) {
-            String introduction = firstText(shop.getAiReviewSummary(), shop.getDescription());
-            if (introduction != null) {
-                introductions.put(shop.getId(), introduction);
+    public Map<Long, MobileShopReasonFacts> reasonFacts(Collection<Long> shopIds) {
+        Map<Long, List<String>> perksByShop = new HashMap<>();
+        for (MobileShopServicePerk perk : perks.findByShopIdInOrderByIdAsc(shopIds)) {
+            String label = perkLabel(perk);
+            if (label != null) {
+                perksByShop.computeIfAbsent(perk.getShopId(), id -> new ArrayList<>()).add(label);
             }
         }
-        return introductions;
+        Map<Long, MobileShopReasonFacts> facts = new HashMap<>();
+        for (MobileShop shop : repository.findAllById(shopIds)) {
+            facts.put(shop.getId(),
+                    new MobileShopReasonFacts(text(shop.getAiReviewSummary()), text(shop.getDescription()),
+                            shop.getPriceMin(), shop.getPriceMax(),
+                            List.copyOf(perksByShop.getOrDefault(shop.getId(), List.of()))));
+        }
+        return facts;
     }
 
     /** AI 요약이 아직 없는 공개 매장 ID를 {@code afterId} 다음부터 ID 순으로 돌려준다. */
@@ -76,14 +88,42 @@ public class MobileShopAgentFacade {
         return repository.updateAiSummary(shopId, summary, mapper.writeValueAsString(keywords), generatedAt) == 1;
     }
 
-    private static String firstText(String preferred, String fallback) {
-        if (preferred != null && !preferred.isBlank()) {
-            return preferred.trim();
+    private static String text(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
         }
-        if (fallback != null && !fallback.isBlank()) {
-            return fallback.trim();
+        return value.trim();
+    }
+
+    /** 제공 여부를 모르거나 제공하지 않는 서비스는 근거가 아니라서 뺀다. */
+    private static String perkLabel(MobileShopServicePerk perk) {
+        String name = switch (perk.getPerkType()) {
+            case NOODLE_REFILL -> "면 추가";
+            case RICE_REFILL -> "공깃밥";
+            case SOUP_REFILL -> "국물 추가";
+            case CONDIMENT -> "추가 양념";
+        };
+        String label = switch (perk.getStatus()) {
+            case FREE -> name + " 무료";
+            case PAID -> paidLabel(name, perk.getPrice());
+            case NOT_OFFERED, UNKNOWN -> null;
+        };
+        if (label == null || perk.getConditionText() == null || perk.getConditionText().isBlank()) {
+            return label;
         }
-        return null;
+        return label + "(" + perk.getConditionText().trim() + ")";
+    }
+
+    private static String paidLabel(String name, Integer price) {
+        if (price == null) {
+            return name + " 유료";
+        }
+        return name + " " + price + "원";
+    }
+
+    /** 추천 이유를 쓸 때 근거로 삼는 매장 정보다. 값이 없으면 {@code null}이다. */
+    public record MobileShopReasonFacts(String aiReviewSummary, String description, Integer priceMin, Integer priceMax,
+            List<String> perks) {
     }
 
 }

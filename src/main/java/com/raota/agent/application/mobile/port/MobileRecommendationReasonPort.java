@@ -2,7 +2,7 @@ package com.raota.agent.application.mobile.port;
 
 import java.util.Map;
 
-/** 앱 AI 큐레이터가 고른 매장마다 왜 이 조건에 맞는지 한 문장을 쓰는 LLM이다. */
+/** 앱 AI 큐레이터가 고른 매장마다 왜 이 조건에 맞는지 2~3문장으로 쓰는 LLM이다. */
 public interface MobileRecommendationReasonPort {
 
     /**

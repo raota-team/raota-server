@@ -127,6 +127,7 @@ class MobileRecommendationIntegrationTest extends BaseIntegrationTest {
     @AfterEach
     void cleanUp() {
         jdbc.update("DELETE FROM tb_v2_shop_bookmark WHERE shop_id BETWEEN ? AND ?", NEAR, LAST);
+        jdbc.update("DELETE FROM tb_v2_shop_service_perk WHERE shop_id BETWEEN ? AND ?", NEAR, LAST);
         jdbc.update("DELETE FROM tb_v2_shop WHERE id BETWEEN ? AND ?", NEAR, LAST);
         for (Long userId : created) {
             runs.deleteByUserId(userId);
@@ -157,6 +158,13 @@ class MobileRecommendationIntegrationTest extends BaseIntegrationTest {
     @Test
     void 보여주는_매장마다_LLM이_쓴_추천_이유를_한_줄로_돌려주고_지어낸_매장_이유는_버린다() throws Exception {
         searchReturns(FAR, NEAR);
+        jdbc.update("UPDATE tb_v2_shop SET ai_review_summary = '맑은 간장 국물과 얇은 면', price_min = 9000, price_max = 11000 "
+                + "WHERE id = ?", FAR);
+        jdbc.update("""
+                INSERT INTO tb_v2_shop_service_perk (shop_id, perk_type, status, price, condition_text) VALUES
+                (?, 'NOODLE_REFILL', 'FREE', NULL, '1회'), (?, 'RICE_REFILL', 'PAID', 1000, NULL),
+                (?, 'SOUP_REFILL', 'UNKNOWN', NULL, NULL)
+                """, FAR, FAR, FAR);
         when(reasonWriter.reasons(any(), any()))
             .thenReturn(Map.of(String.valueOf(FAR), "  진한 쇼유를\n 하는 곳이에요 ", "999", "목록에 없는 매장"));
 
@@ -168,7 +176,10 @@ class MobileRecommendationIntegrationTest extends BaseIntegrationTest {
         ArgumentCaptor<String> context = ArgumentCaptor.forClass(String.class);
         verify(reasonWriter).reasons(conditions.capture(), context.capture());
         assertThat(conditions.getValue()).contains("국물: 쇼유", "상황: 혼밥");
-        assertThat(context.getValue()).contains("매장 ID: " + FAR, "매장 ID: " + NEAR);
+        assertThat(context.getValue())
+            .contains("매장 ID: " + FAR, "매장 ID: " + NEAR, "리뷰 요약: 맑은 간장 국물과 얇은 면", "가격대: 9000~11000원",
+                    "서비스: 면 추가 무료(1회), 공깃밥 1000원")
+            .doesNotContain("국물 추가");
     }
 
     @Test
