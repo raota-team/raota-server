@@ -5,9 +5,15 @@ import org.springframework.boot.context.config.ConfigDataLocation;
 import org.springframework.boot.context.config.ConfigDataLocationResolver;
 import org.springframework.boot.context.config.ConfigDataLocationResolverContext;
 
+/**
+ * {@code oci-vault:<region>/<vault-id>} import를 읽는다. {@code app.oci-vault.enabled=false}면
+ * Vault를 읽지 않는다. OCI 인증이 없는 CI에서 운영 설정으로 서버를 띄워 볼 때 쓴다.
+ */
 public class OciVaultConfigDataLocationResolver implements ConfigDataLocationResolver<OciVaultConfigDataResource> {
 
     private static final String PREFIX = "oci-vault:";
+
+    static final String ENABLED_PROPERTY = "app.oci-vault.enabled";
 
     @Override
     public boolean isResolvable(ConfigDataLocationResolverContext context, ConfigDataLocation location) {
@@ -17,6 +23,9 @@ public class OciVaultConfigDataLocationResolver implements ConfigDataLocationRes
     @Override
     public List<OciVaultConfigDataResource> resolve(ConfigDataLocationResolverContext context,
             ConfigDataLocation location) {
+        if (!context.getBinder().bind(ENABLED_PROPERTY, Boolean.class).orElse(true)) {
+            return List.of();
+        }
         String value = location.getNonPrefixedValue(PREFIX);
         int delimiterIndex = value.indexOf('/');
 
