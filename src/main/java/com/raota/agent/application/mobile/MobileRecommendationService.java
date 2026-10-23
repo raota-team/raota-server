@@ -1,6 +1,7 @@
 package com.raota.agent.application.mobile;
 
 import com.raota.agent.application.mobile.command.MobileRecommendationCommand;
+import com.raota.agent.application.mobile.port.MobileRecommendationReasonPort;
 import com.raota.agent.application.mobile.result.MobileRecommendationResult;
 import com.raota.agent.application.ramenshop.port.RamenShopSearchDocumentPort;
 import com.raota.agent.domain.recommendation.model.MobileRecommendationRun;
@@ -13,6 +14,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -35,6 +37,11 @@ import org.springframework.stereotype.Service;
  * 벡터 유사도로 줄 세우고, 좌표가 있으면 가까운 순위만큼 최대 {@value #PROXIMITY_WEIGHT}점을 더한다. 문장이 없으면 벡터 검색 없이
  * 후보 순서(가까운 순·조회수 순) 그대로다.
  * </p>
+ *
+ * <p>
+ * 고른 매장마다 LLM이 조건에 맞는 이유를 한 문장씩 쓴다. 이유는 덤이라 검색과 같은 시간 예산 안에서만 기다리고, 실패하거나 시간이 모자라면 이유 없이
+ * 매장만 돌려준다.
+ * </p>
  */
 @Slf4j
 @Service
@@ -49,6 +56,18 @@ public class MobileRecommendationService {
     /** 유사도는 매장끼리 0.1 안팎으로 갈려 거리가 순위를 뒤집을 수 있되 유사도를 덮지 않는 크기로 둔다. */
     static final double PROXIMITY_WEIGHT = 0.1;
 
+    /** 추천 이유를 기다리는 최대 시간이다. 남은 시간 예산이 더 짧으면 그만큼만 기다린다. */
+    static final Duration REASON_TIMEOUT = Duration.ofSeconds(8);
+
+    /** 남은 시간이 이보다 짧으면 LLM을 부르지 않는다. */
+    static final long MIN_REASON_BUDGET_MS = 100;
+
+    /** 프롬프트가 길어지지 않게 매장 소개는 이만큼만 넘긴다. */
+    static final int MAX_INTRODUCTION_LENGTH = 400;
+
+    /** 모델이 규칙을 어기고 길게 써도 화면이 밀리지 않게 자른다. */
+    static final int MAX_REASON_LENGTH = 120;
+
     /**
      * 서버 한 대에서 동시에 도는 검색 수 상한이다. 시간 초과로 응답을 끊어도 외부 호출이 끝날 때까지 스레드를 차지한다. 대기열 없이 빈 스레드가
      * 없으면 바로 거절한다.
@@ -58,6 +77,8 @@ public class MobileRecommendationService {
     private final RamenShopSearchDocumentPort documents;
 
     private final MobileShopAgentFacade shops;
+
+    private final MobileRecommendationReasonPort reasonWriter;
 
     private final MobileRecommendationRateLimiter rateLimiter;
 
@@ -72,10 +93,11 @@ public class MobileRecommendationService {
             new ThreadPoolExecutor.AbortPolicy());
 
     public MobileRecommendationService(RamenShopSearchDocumentPort documents, MobileShopAgentFacade shops,
-            MobileRecommendationRateLimiter rateLimiter, MobileRecommendationLogger logger,
-            @Value("${app.mobile.recommendation.timeout:20s}") Duration timeout) {
+            MobileRecommendationReasonPort reasonWriter, MobileRecommendationRateLimiter rateLimiter,
+            MobileRecommendationLogger logger, @Value("${app.mobile.recommendation.timeout:20s}") Duration timeout) {
         this.documents = documents;
         this.shops = shops;
+        this.reasonWriter = reasonWriter;
         this.rateLimiter = rateLimiter;
         this.logger = logger;
         this.timeout = timeout;
@@ -101,9 +123,109 @@ public class MobileRecommendationService {
         List<Scored> ranked = rank(candidates, similarities(command.similarityQuery(), candidates), located);
         List<MobileShopSummary> picked = shops.recommendable(userId, ranked.stream().map(Scored::shopId).toList(),
                 command.latitude(), command.longitude(), MAX_SHOPS);
+        Map<String, String> reasonByShop = reasons(command, region, picked, startedAt);
         long latencyMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt);
         String recommendationId = logger.record(userId, command, candidates.size(), shown(picked, ranked), latencyMs);
-        return new MobileRecommendationResult(recommendationId, picked, appliedConditions(command, region));
+        return new MobileRecommendationResult(recommendationId, picked, appliedConditions(command, region),
+                reasonByShop);
+    }
+
+    /**
+     * 고른 매장마다 추천 이유 한 문장이다. 보여주는 매장의 이유만 남기고, LLM 장애·시간 초과·동시 실행 상한이면 빈 결과다.
+     */
+    private Map<String, String> reasons(MobileRecommendationCommand command, String region,
+            List<MobileShopSummary> picked, long startedAt) {
+        if (picked.isEmpty()) {
+            return Map.of();
+        }
+        long elapsedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt);
+        long budgetMs = Math.min(REASON_TIMEOUT.toMillis(), timeout.toMillis() - elapsedMs);
+        if (budgetMs < MIN_REASON_BUDGET_MS) {
+            return Map.of();
+        }
+        String conditions = reasonConditions(command, region);
+        String context = reasonContext(picked);
+        Future<Map<String, String>> future;
+        try {
+            future = executor.submit(() -> reasonWriter.reasons(conditions, context));
+        }
+        catch (RejectedExecutionException exception) {
+            log.warn("AI 추천 이유 동시 실행 상한 초과: limit={}", MAX_CONCURRENT_SEARCHES);
+            return Map.of();
+        }
+        try {
+            return shownReasons(future.get(budgetMs, TimeUnit.MILLISECONDS), picked);
+        }
+        catch (TimeoutException exception) {
+            future.cancel(true);
+            log.warn("AI 추천 이유 시간 초과: budgetMs={}", budgetMs);
+        }
+        catch (ExecutionException exception) {
+            log.warn("AI 추천 이유 생성 실패", exception.getCause());
+        }
+        catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+        }
+        return Map.of();
+    }
+
+    private static String reasonConditions(MobileRecommendationCommand command, String region) {
+        StringBuilder conditions = new StringBuilder();
+        appendLine(conditions, "국물", command.soup());
+        appendLine(conditions, "상황", command.mood());
+        appendLine(conditions, "중요한 점", command.priority());
+        appendLine(conditions, "더 바라는 점", command.text());
+        appendLine(conditions, "지역", region);
+        if (command.latitude() != null) {
+            appendLine(conditions, "위치", "가까운 곳");
+        }
+        return conditions.toString().trim();
+    }
+
+    private String reasonContext(List<MobileShopSummary> picked) {
+        Map<Long, String> introductions = shops
+            .introductions(picked.stream().map(shop -> Long.valueOf(shop.id())).toList());
+        StringBuilder context = new StringBuilder();
+        for (MobileShopSummary shop : picked) {
+            context.append("- 매장 ID: ").append(shop.id()).append('\n');
+            appendLine(context, "  라멘 종류", String.join(", ", shop.ramenTypes()));
+            appendLine(context, "  태그", String.join(", ", shop.tags()));
+            appendLine(context, "  한 줄 소개", shop.tagline());
+            appendLine(context, "  소개", truncate(introductions.get(Long.valueOf(shop.id())), MAX_INTRODUCTION_LENGTH));
+            if (shop.distanceMeters() != null) {
+                appendLine(context, "  거리", shop.distanceMeters() + "m");
+            }
+        }
+        return context.toString().trim();
+    }
+
+    /** 모델이 지어낸 ID나 빈 문장은 버리고, 한 줄로 다듬어 길이를 자른다. */
+    private static Map<String, String> shownReasons(Map<String, String> generated, List<MobileShopSummary> picked) {
+        Map<String, String> shown = new LinkedHashMap<>();
+        for (MobileShopSummary shop : picked) {
+            String reason = generated.get(shop.id());
+            if (reason == null) {
+                continue;
+            }
+            String oneLine = reason.replaceAll("\\s+", " ").trim();
+            if (!oneLine.isEmpty()) {
+                shown.put(shop.id(), truncate(oneLine, MAX_REASON_LENGTH));
+            }
+        }
+        return shown;
+    }
+
+    private static void appendLine(StringBuilder builder, String label, String value) {
+        if (value != null && !value.isBlank()) {
+            builder.append(label).append(": ").append(value.trim()).append('\n');
+        }
+    }
+
+    private static String truncate(String value, int maxLength) {
+        if (value == null || value.length() <= maxLength) {
+            return value;
+        }
+        return value.substring(0, maxLength).trim() + "…";
     }
 
     /** 후보 순서(가까운 순·조회수 순)를 동점 기준으로 두고 점수가 높은 순으로 세운다. */

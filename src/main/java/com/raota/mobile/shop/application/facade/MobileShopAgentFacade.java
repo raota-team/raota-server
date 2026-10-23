@@ -2,10 +2,14 @@ package com.raota.mobile.shop.application.facade;
 
 import com.raota.mobile.shop.application.result.MobileShopSummary;
 import com.raota.mobile.shop.application.service.MobileShopQueryService;
+import com.raota.mobile.shop.domain.model.MobileShop;
 import com.raota.mobile.shop.domain.repository.MobileShopRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -46,6 +50,21 @@ public class MobileShopAgentFacade {
         return shops.mostPopular(viewerId, ramenType, tagKeyword);
     }
 
+    /**
+     * 추천 이유의 근거로 넘길 매장 소개다. 리뷰 AI 요약이 있으면 그것을, 없으면 매장 설명을 쓴다. 소개가 없는 매장은 빠진다.
+     */
+    @Transactional(readOnly = true)
+    public Map<Long, String> introductions(Collection<Long> shopIds) {
+        Map<Long, String> introductions = new HashMap<>();
+        for (MobileShop shop : repository.findAllById(shopIds)) {
+            String introduction = firstText(shop.getAiReviewSummary(), shop.getDescription());
+            if (introduction != null) {
+                introductions.put(shop.getId(), introduction);
+            }
+        }
+        return introductions;
+    }
+
     /** AI 요약이 아직 없는 공개 매장 ID를 {@code afterId} 다음부터 ID 순으로 돌려준다. */
     public List<Long> publishedShopIdsWithoutAiSummary(long afterId) {
         return repository.findPublishedIdsWithoutAiSummaryAfter(afterId);
@@ -55,6 +74,16 @@ public class MobileShopAgentFacade {
     @Transactional
     public boolean saveAiSummary(Long shopId, String summary, List<String> keywords, Instant generatedAt) {
         return repository.updateAiSummary(shopId, summary, mapper.writeValueAsString(keywords), generatedAt) == 1;
+    }
+
+    private static String firstText(String preferred, String fallback) {
+        if (preferred != null && !preferred.isBlank()) {
+            return preferred.trim();
+        }
+        if (fallback != null && !fallback.isBlank()) {
+            return fallback.trim();
+        }
+        return null;
     }
 
 }

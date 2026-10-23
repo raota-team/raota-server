@@ -5,6 +5,7 @@ import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -12,6 +13,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.raota.agent.application.mobile.port.MobileRecommendationReasonPort;
 import com.raota.agent.domain.recommendation.repository.MobileRecommendationRunRepository;
 import com.raota.global.presentation.common.RequestIdFilter;
 import com.raota.mobile.account.application.service.MobileWithdrawalPurgeService;
@@ -33,6 +35,7 @@ import java.util.concurrent.locks.LockSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +43,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -97,6 +101,10 @@ class MobileRecommendationIntegrationTest extends BaseIntegrationTest {
     @MockitoSpyBean
     private MobileRecommendationRunRepository runs;
 
+    /** 실제 LLM을 부르지 않는다. 따로 정하지 않으면 빈 결과(이유 없음)다. */
+    @MockitoBean
+    private MobileRecommendationReasonPort reasonWriter;
+
     private MockMvc mvc;
 
     private final List<Long> created = new ArrayList<>();
@@ -144,6 +152,33 @@ class MobileRecommendationIntegrationTest extends BaseIntegrationTest {
         assertThat(data.get("appliedConditions").toString()).isEqualTo("[\"쇼유\",\"혼밥\"]");
         mvc.perform(get("/api/v2/shops/{shopId}", data.get("shops").get(0).get("id").asString()))
             .andExpect(status().isOk());
+    }
+
+    @Test
+    void 보여주는_매장마다_LLM이_쓴_추천_이유를_한_줄로_돌려주고_지어낸_매장_이유는_버린다() throws Exception {
+        searchReturns(FAR, NEAR);
+        when(reasonWriter.reasons(any(), any()))
+            .thenReturn(Map.of(String.valueOf(FAR), "  진한 쇼유를\n 하는 곳이에요 ", "999", "목록에 없는 매장"));
+
+        JsonNode data = data(recommend(active(), "{\"soup\":\"쇼유\",\"mood\":\"혼밥\"}").andExpect(status().isOk()));
+
+        assertThat(ids(data)).containsExactly(String.valueOf(FAR), String.valueOf(NEAR));
+        assertThat(data.get("reasons").toString()).isEqualTo("{\"" + FAR + "\":\"진한 쇼유를 하는 곳이에요\"}");
+        ArgumentCaptor<String> conditions = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> context = ArgumentCaptor.forClass(String.class);
+        verify(reasonWriter).reasons(conditions.capture(), context.capture());
+        assertThat(conditions.getValue()).contains("국물: 쇼유", "상황: 혼밥");
+        assertThat(context.getValue()).contains("매장 ID: " + FAR, "매장 ID: " + NEAR);
+    }
+
+    @Test
+    void 추천_이유를_만들지_못해도_매장은_그대로_추천한다() throws Exception {
+        searchReturns(NEAR);
+        when(reasonWriter.reasons(any(), any())).thenThrow(new IllegalStateException("llm down"));
+
+        recommend(active(), "{\"soup\":\"쇼유\",\"mood\":\"혼밥\"}").andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.shops[0].id").value(String.valueOf(NEAR)))
+            .andExpect(jsonPath("$.data.reasons").isEmpty());
     }
 
     @Test
