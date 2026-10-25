@@ -107,7 +107,6 @@ dependencies {
      * File / Cloud
      */
     implementation 'software.amazon.awssdk:s3:2.42.8'
-    implementation 'com.oracle.oci.sdk:oci-java-sdk-shaded-full:3.63.1'
     implementation 'com.cloudinary:cloudinary-http5:2.0.0'
 
     /*

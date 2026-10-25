@@ -19,13 +19,12 @@ import org.springframework.web.client.RestClient;
  * {@code application-prod.yml}의 오타·누락, 설정 검증 실패를 배포 전에 잡는다.
  *
  * <p>
- * 바꾸는 값은 외부 연결 정보뿐이다. OCI Vault는 CI에 인증이 없어 끄고, Vault·환경변수로 받던 비밀값은 형식만 맞춘 가짜 값이다.
- * MySQL·Redis는 {@link BaseIntegrationTest}의 Testcontainers, 벡터 스토어는 같은 곳의 목이다. 관리 포트(운영
- * 9090)만 겹치지 않게 임의 포트로 띄운다.
+ * 바꾸는 값은 외부 연결 정보뿐이다. 운영에서 비밀값 파일(configtree)로 받던 값은 형식만 맞춘 가짜 값이다. MySQL·Redis는
+ * {@link BaseIntegrationTest}의 Testcontainers, 벡터 스토어는 같은 곳의 목이다. 관리 포트(운영 9090)만 겹치지 않게
+ * 임의 포트로 띄운다.
  * </p>
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
-        "app.oci-vault.enabled=false", "management.server.port=0",
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = { "management.server.port=0",
         // OAuth2·외부 API 자격 증명
         "GOOGLE_CLIENT_ID=ci-google-client-id", "GOOGLE_CLIENT_SECRET=ci-google-client-secret",
         "KAKAO_CLIENT_ID=ci-kakao-client-id", "KAKAO_CLIENT_SECRET=ci-kakao-client-secret", "GROQ_API_KEY=ci-groq-key",

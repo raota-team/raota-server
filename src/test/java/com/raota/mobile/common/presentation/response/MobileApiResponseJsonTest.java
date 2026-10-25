@@ -16,8 +16,8 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * 앱과 맺은 v2 응답 형식 계약을 Spring Boot 자동 구성 JsonMapper 기준으로 확인한다. 운영 설정 파일은 OCI Vault 로더 때문에
- * 테스트에서 읽을 수 없으므로 Boot 기본 설정 기준으로 확인한다. 앱이 키 존재를 전제로 파싱하므로 null 필드도 생략하지 않아야 한다.
+ * 앱과 맺은 v2 응답 형식 계약을 Spring Boot 자동 구성 JsonMapper 기준으로 확인한다. 운영 설정 파일은 비밀값 등 외부 설정이 있어야
+ * 읽을 수 있으므로 Boot 기본 설정 기준으로 확인한다. 앱이 키 존재를 전제로 파싱하므로 null 필드도 생략하지 않아야 한다.
  */
 class MobileApiResponseJsonTest {
 
