@@ -372,6 +372,7 @@ class MobileRecommendationIntegrationTest extends BaseIntegrationTest {
     void 회원당_1분에_10번까지이고_11번째는_429다() throws Exception {
         Long member = active();
         searchReturns(NEAR);
+        awaitFreshMinuteWindow();
         for (int attempt = 0; attempt < 10; attempt++) {
             recommend(member, "{\"text\":\"돈코츠\"}").andExpect(status().isOk());
         }
@@ -397,6 +398,17 @@ class MobileRecommendationIntegrationTest extends BaseIntegrationTest {
         return mvc.perform(post("/api/v2/ai/recommendations").header(HttpHeaders.AUTHORIZATION, auth(userId))
             .contentType(MediaType.APPLICATION_JSON)
             .content(body));
+    }
+
+    /**
+     * 횟수 제한은 분 단위 구간(epoch 분)마다 센다. 11번의 요청이 구간 경계를 넘으면 새 구간에서 다시 세어 11번째가 통과하므로, 경계에
+     * 가까우면 다음 구간이 시작될 때까지 기다린다.
+     */
+    private static void awaitFreshMinuteWindow() throws InterruptedException {
+        long elapsedInMinute = System.currentTimeMillis() % 60_000;
+        if (elapsedInMinute > 45_000) {
+            Thread.sleep(60_000 - elapsedInMinute + 100);
+        }
     }
 
     private void searchReturns(long... shopIds) {
