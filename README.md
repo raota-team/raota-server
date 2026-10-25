@@ -76,7 +76,7 @@ src/main/java/com/raota
 `main` 브랜치에 push되면 GitHub Actions가 다음 순서로 운영 배포를 진행합니다.
 
 1. JDK 25 환경에서 `./gradlew clean bootJar -x test` 실행
-2. Docker 이미지 빌드
+2. `scripts/build-image.sh`로 Docker 이미지 빌드: 임시 MySQL·Redis로 서버를 한 번 띄워 Java AOT 캐시를 학습하고 이미지에 얹음. 로컬에서 캐시 없는 이미지가 필요하면 `docker build --target app .`
 3. OCIR(Oracle Cloud Infrastructure Registry)에 이미지 push
 4. `raota-team/raota-infra` 저장소의 배포 워크플로 dispatch
 5. canary 또는 full 배포 진행 상태 확인
