@@ -21,8 +21,10 @@ jobs:
     permissions:
       contents: read
 
+  # 이미지 빌드는 GitHub 호스팅 arm64 러너에서 한다(public 저장소 무료). 운영 노드(spring_1)의 CPU·메모리·디스크를 쓰지 않고,
+  # 매번 새 머신이라 로컬 이미지 정리도 필요 없다. 운영 서버와 같은 arm64라 이미지 아키텍처가 그대로다.
   build-image:
-    runs-on: [self-hosted, linux, arm64]
+    runs-on: ubuntu-24.04-arm
 
     environment:
       name: raota-prod-server
@@ -42,6 +44,7 @@ jobs:
         with:
           distribution: temurin
           java-version: "25"
+          cache: gradle
 
       - name: Build jar (tests run in the test job)
         run: ./gradlew clean bootJar -x test
@@ -49,19 +52,6 @@ jobs:
       - name: Docker login to OCIR
         run: |
           echo "${{ secrets.OCIR_AUTH_TOKEN }}" | docker login "${{ secrets.OCIR_REGISTRY }}" -u "${{ secrets.OCIR_USERNAME }}" --password-stdin
-
-      # self-hosted 러너는 커밋마다 만든 이미지가 쌓여 디스크가 찬다. 운영 중인 latest만 남기고(다음 빌드의 레이어 캐시)
-      # 이 저장소의 예전 커밋 이미지와 이름 없는 중간 이미지를 지운다. 다른 저장소 이미지와 실행 중인 컨테이너의 이미지는 건드리지 않는다.
-      - name: Remove old commit images
-        env:
-          IMAGE_URI: ${{ secrets.OCIR_REGISTRY }}/${{ secrets.OCIR_NAMESPACE }}/${{ secrets.OCIR_REPOSITORY }}
-        run: |
-          df -h /
-          docker images "${IMAGE_URI}" --format '{{.Tag}}' | grep -vx 'latest' | while read -r tag; do
-            docker rmi "${IMAGE_URI}:${tag}" >/dev/null || true
-          done
-          docker image prune -f
-          df -h /
 
       - name: Build and push commit image
         env:
