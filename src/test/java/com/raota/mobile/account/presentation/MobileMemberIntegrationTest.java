@@ -419,14 +419,15 @@ class MobileMemberIntegrationTest extends BaseIntegrationTest {
             .andExpect(jsonPath("$.data.status").value("ACTIVE"))
             .andExpect(jsonPath("$.data.consentRequired").value(true));
 
+        // 처리방침만 예전 버전이면 아직 동의가 필요하다
         consents(userId, """
-                {"consents":[{"type":"TERMS","documentVersion":"2026-06-11","granted":true},
-                {"type":"PRIVACY","documentVersion":"2026-06-11","granted":true}]}
+                {"consents":[{"type":"TERMS","documentVersion":"2026-11-03","granted":true},
+                {"type":"PRIVACY","documentVersion":"2026-10-27","granted":true}]}
                 """).andExpect(status().isOk()).andExpect(jsonPath("$.data.consentRequired").value(true));
 
         consents(userId, """
-                {"consents":[{"type":"PRIVACY","documentVersion":"2026-10-27","granted":true},
-                {"type":"MARKETING","documentVersion":"2026-10-27","granted":false}]}
+                {"consents":[{"type":"PRIVACY","documentVersion":"2026-11-03","granted":true},
+                {"type":"MARKETING","documentVersion":"2026-11-03","granted":false}]}
                 """).andExpect(status().isOk()).andExpect(jsonPath("$.data.consentRequired").value(false));
 
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM tb_v2_user_consent WHERE user_id = ?",

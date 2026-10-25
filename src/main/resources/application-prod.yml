@@ -177,8 +177,8 @@ app:
     account:
       withdrawal-grace-period: ${APP_MOBILE_ACCOUNT_WITHDRAWAL_GRACE_PERIOD:30d}
       # 회원이 동의해야 하는 약관·처리방침 시행일. 문서를 개정하면 올려서 기존 회원에게 다시 동의를 받는다.
-      required-terms-version: ${APP_MOBILE_ACCOUNT_REQUIRED_TERMS_VERSION:2026-06-11}
-      required-privacy-version: ${APP_MOBILE_ACCOUNT_REQUIRED_PRIVACY_VERSION:2026-10-27}
+      required-terms-version: ${APP_MOBILE_ACCOUNT_REQUIRED_TERMS_VERSION:2026-11-03}
+      required-privacy-version: ${APP_MOBILE_ACCOUNT_REQUIRED_PRIVACY_VERSION:2026-11-03}
   file:
     # 앱이 올렸지만 기록·프로필 어디에도 연결되지 않은 v2 사진을 매일 05:10(KST)에 지운다.
     orphan-cleanup:
