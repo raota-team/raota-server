@@ -89,12 +89,22 @@ jobs:
         run: |
           echo "${{ secrets.OCIR_AUTH_TOKEN }}" | docker login "${{ secrets.OCIR_REGISTRY }}" -u "${{ secrets.OCIR_USERNAME }}" --password-stdin
 
+      # 운영 중이던 latest를 previous로 남긴 뒤 latest를 옮긴다. previous는 롤백 대상이고, 아래 레지스트리 정리에서 지우지 않는다.
       - name: Tag verified image as latest
         env:
           IMAGE_URI: ${{ secrets.OCIR_REGISTRY }}/${{ secrets.OCIR_NAMESPACE }}/${{ secrets.OCIR_REPOSITORY }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
           docker pull "${IMAGE_URI}:${IMAGE_TAG}"
+          if docker pull "${IMAGE_URI}:latest"; then
+            current_id="$(docker image inspect -f '{{.Id}}' "${IMAGE_URI}:latest")"
+            new_id="$(docker image inspect -f '{{.Id}}' "${IMAGE_URI}:${IMAGE_TAG}")"
+            # 같은 커밋을 다시 배포하면 previous를 덮어쓰지 않는다.
+            if [[ "${current_id}" != "${new_id}" ]]; then
+              docker tag "${IMAGE_URI}:latest" "${IMAGE_URI}:previous"
+              docker push "${IMAGE_URI}:previous"
+            fi
+          fi
           docker tag "${IMAGE_URI}:${IMAGE_TAG}" "${IMAGE_URI}:latest"
           docker push "${IMAGE_URI}:latest"
 
@@ -213,3 +223,31 @@ jobs:
 
           raise TimeoutError("Timed out waiting for infra deploy workflow to complete.")
           PY
+
+      # 배포가 끝난 뒤 OCIR에는 latest(운영 중)와 previous(롤백 대상)만 남긴다. OCIR 자체 보존 정책은 일수 기준이라
+      # "최근 N개"를 지정할 수 없어 직접 지운다. 러너(spring_1)의 instance principal에 repos 관리 권한이 필요하다(raota-infra iam.tf).
+      - name: Remove old registry images
+        env:
+          OCI_CLI_AUTH: instance_principal
+          OCIR_COMPARTMENT_ID: ocid1.tenancy.oc1..aaaaaaaamunwqadhaq2kcjn4ygihnhaaat2dvc2plliklmqzfhaf27sqlsbq
+          OCIR_REPOSITORY: ${{ secrets.OCIR_REPOSITORY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          oci="${HOME}/bin/oci"
+          list() {
+            "${oci}" artifacts container image list --compartment-id "${OCIR_COMPARTMENT_ID}" \
+              --repository-name "${OCIR_REPOSITORY}" --all --raw-output --query "$1"
+          }
+          # 태그마다 한 줄이 나오고, 같은 이미지(digest)의 태그는 같은 id를 가진다.
+          keep="$(list "join(' ', data.items[?version=='latest' || version=='previous'].id)" | tr ' ' '\n' | sort -u)"
+          if [[ -z "${keep}" ]]; then
+            echo "latest image not found in ${OCIR_REPOSITORY}; skip cleanup" >&2
+            exit 1
+          fi
+          all="$(list "join(' ', data.items[].id)" | tr ' ' '\n' | sort -u)"
+          stale="$(comm -23 <(printf '%s\n' "${all}") <(printf '%s\n' "${keep}"))"
+          echo "keep $(printf '%s\n' "${keep}" | wc -l) image(s), delete $(printf '%s' "${stale}" | grep -c . || true) image(s)"
+          if [[ -n "${stale}" ]]; then
+            printf '%s\n' "${stale}" | xargs -P 4 -I{} "${oci}" artifacts container image delete --image-id {} --force
+          fi
