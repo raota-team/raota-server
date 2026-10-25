@@ -46,7 +46,8 @@ public class DiscordAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     }
 
     private void sendDiscordWebhook(ILoggingEvent event) {
-        if (webHookUrl == null || webHookUrl.isBlank() || webHookUrl.contains("${")) {
+        // none은 logback-spring.xml·application-prod.yml의 기본값으로, Discord 전송을 끈다는 뜻이다.
+        if (webHookUrl == null || webHookUrl.isBlank() || webHookUrl.contains("${") || "none".equals(webHookUrl)) {
             return;
         }
 
