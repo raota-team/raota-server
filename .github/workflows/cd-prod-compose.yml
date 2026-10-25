@@ -50,6 +50,19 @@ jobs:
         run: |
           echo "${{ secrets.OCIR_AUTH_TOKEN }}" | docker login "${{ secrets.OCIR_REGISTRY }}" -u "${{ secrets.OCIR_USERNAME }}" --password-stdin
 
+      # self-hosted 러너는 커밋마다 만든 이미지가 쌓여 디스크가 찬다. 운영 중인 latest만 남기고(다음 빌드의 레이어 캐시)
+      # 이 저장소의 예전 커밋 이미지와 이름 없는 중간 이미지를 지운다. 다른 저장소 이미지와 실행 중인 컨테이너의 이미지는 건드리지 않는다.
+      - name: Remove old commit images
+        env:
+          IMAGE_URI: ${{ secrets.OCIR_REGISTRY }}/${{ secrets.OCIR_NAMESPACE }}/${{ secrets.OCIR_REPOSITORY }}
+        run: |
+          df -h /
+          docker images "${IMAGE_URI}" --format '{{.Tag}}' | grep -vx 'latest' | while read -r tag; do
+            docker rmi "${IMAGE_URI}:${tag}" >/dev/null || true
+          done
+          docker image prune -f
+          df -h /
+
       - name: Build and push commit image
         env:
           IMAGE_URI: ${{ secrets.OCIR_REGISTRY }}/${{ secrets.OCIR_NAMESPACE }}/${{ secrets.OCIR_REPOSITORY }}
