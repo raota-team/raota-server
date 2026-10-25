@@ -15,7 +15,8 @@ spring:
   modulith:
     detection-strategy: explicitly-annotated
   config:
-    import: "optional:oci-vault:ap-chuncheon-1/ocid1.vault.oc1.ap-chuncheon-1.gju25j3taaark.ab4w4ljrvayyfb3dk5dp2yu45i7aw5u6jvl73tfjxaqfxgeq3do6izft5szq"
+    # 배포 워크플로(raota-infra)가 OCI Vault 비밀값을 이름별 파일로 받아 이 경로에 마운트한다. 파일 이름이 곧 속성 이름이다.
+    import: "optional:configtree:/run/secrets/raota/"
   autoconfigure:
     exclude:
       - org.springframework.ai.vectorstore.oracle.autoconfigure.OracleVectorStoreAutoConfiguration
