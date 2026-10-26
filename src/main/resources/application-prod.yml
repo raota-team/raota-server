@@ -118,8 +118,7 @@ cloudinary:
 external-api:
   kma:
     auth-key: ${KMA_AUTH_KEY:${KMA_SERVICE_KEY}}
-    base-url: https://apihub.kma.go.kr/api/typ02/openApi/MidFcstInfoService
-    stn-id: "108"
+    base-url: https://apihub.kma.go.kr/api/typ02/openApi/VilageFcstInfoService_2.0
 
 management:
   server:
