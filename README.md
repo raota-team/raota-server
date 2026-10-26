@@ -76,7 +76,7 @@ src/main/java/com/raota
 `main` 브랜치에 push되면 GitHub Actions가 다음 순서로 운영 배포를 진행합니다.
 
 1. JDK 25 환경에서 `./gradlew clean bootJar -x test` 실행
-2. `scripts/build-image.sh`로 Docker 이미지 빌드: 임시 MySQL·Redis로 서버를 한 번 띄워 Java AOT 캐시를 학습하고 이미지에 얹음. 로컬에서 캐시 없는 이미지가 필요하면 `docker build --target app .`
+2. Docker 이미지 빌드(`docker build`)
 3. OCIR(Oracle Cloud Infrastructure Registry)에 이미지 push
 4. `raota-team/raota-infra` 저장소의 배포 워크플로 dispatch
 5. canary 또는 full 배포 진행 상태 확인
@@ -85,7 +85,7 @@ src/main/java/com/raota
 
 비밀값의 원본은 OCI Vault입니다. 배포 워크플로(raota-infra)가 Vault의 비밀값을 이름별 파일로 각 서버에 넣고, 앱은 Spring `configtree`(`/run/secrets/raota`)로 읽습니다. 앱은 Vault를 직접 부르지 않습니다.
 
-1. 추가: `application-prod.yml`에서 `${이름}`으로 참조하고 `ProdProfileStartupTest`·`scripts/aot-training.env`에 가짜 값을 넣은 뒤, OCI 콘솔의 Vault에 같은 이름으로 비밀값을 만들고 머지합니다.
+1. 추가: `application-prod.yml`에서 `${이름}`으로 참조하고 `ProdProfileStartupTest`에 가짜 값을 넣은 뒤, OCI 콘솔의 Vault에 같은 이름으로 비밀값을 만들고 머지합니다.
 2. 값 변경: Vault에서 새 버전을 만든 뒤 다시 배포합니다(raota-infra `Deploy Prod App Nodes`를 `image_tag=latest`로 실행).
 3. 삭제: 참조를 지워 배포한 뒤 Vault에서 지웁니다.
 

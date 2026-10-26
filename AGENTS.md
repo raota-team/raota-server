@@ -64,7 +64,7 @@ endpoint를 추가하거나 메서드·경로를 바꾸면 함께 처리한다.
 ## 운영 비밀값
 
 - 운영 비밀값의 원본은 OCI Vault다. 앱은 Vault를 부르지 않는다. 배포(raota-infra)가 Vault의 ACTIVE 비밀값을 이름별 파일로 노드에 넣고, 앱은 `application-prod.yml`의 `spring.config.import: optional:configtree:/run/secrets/raota/`로 읽는다.
-- 새 비밀값은 `application-prod.yml`에서 `${이름}`으로 참조하고(이름은 `^[A-Z][A-Z0-9_]*$`, 파일 이름이 그대로 속성 이름), 같은 이름의 가짜 값을 `ProdProfileStartupTest`와 `scripts/aot-training.env`에 넣는다. 빠뜨리면 CI와 AOT 학습 실행이 기동에 실패한다. Vault에 실제 값을 만드는 일은 사용자에게 요청한다.
+- 새 비밀값은 `application-prod.yml`에서 `${이름}`으로 참조하고(이름은 `^[A-Z][A-Z0-9_]*$`, 파일 이름이 그대로 속성 이름), 같은 이름의 가짜 값을 `ProdProfileStartupTest`에 넣는다. 빠뜨리면 CI가 기동에 실패한다. Vault에 실제 값을 만드는 일은 사용자에게 요청한다.
 - 비밀값을 지울 때는 참조를 먼저 지워 배포한 뒤 Vault에서 지운다. 참조하는 비밀값이 없으면 운영 서버가 뜨지 않는다.
 
 ## 작업 원칙

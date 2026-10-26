@@ -53,13 +53,12 @@ jobs:
         run: |
           echo "${{ secrets.OCIR_AUTH_TOKEN }}" | docker login "${{ secrets.OCIR_REGISTRY }}" -u "${{ secrets.OCIR_USERNAME }}" --password-stdin
 
-      # 임시 MySQL·Redis로 학습 실행해 AOT 캐시를 얹은 이미지를 만든다(scripts/build-image.sh).
       - name: Build and push commit image
         env:
           IMAGE_URI: ${{ secrets.OCIR_REGISTRY }}/${{ secrets.OCIR_NAMESPACE }}/${{ secrets.OCIR_REPOSITORY }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          scripts/build-image.sh "${IMAGE_URI}:${IMAGE_TAG}" "${IMAGE_TAG}"
+          docker build --build-arg GIT_COMMIT="${IMAGE_TAG}" -t "${IMAGE_URI}:${IMAGE_TAG}" .
           docker push "${IMAGE_URI}:${IMAGE_TAG}"
 
   deploy:
