@@ -57,8 +57,9 @@ public class MobileRamenLogQueryService {
 
     private final MobileRamenLogLikeRepository likes;
 
+    /** 내 기록(비공개 포함)을 방문일·ID 역순으로 읽는다. {@code ramenType}이 오면 그 종류만이다. */
     @Transactional(readOnly = true)
-    public CursorPage<MobileRamenLogSummary> list(Long userId, String rawCursor, int size) {
+    public CursorPage<MobileRamenLogSummary> list(Long userId, String ramenType, String rawCursor, int size) {
         Cursor cursor = Cursor.parse(rawCursor).orElse(null);
         LocalDate afterDate = null;
         Long afterId = null;
@@ -66,7 +67,8 @@ public class MobileRamenLogQueryService {
             afterDate = parseDate(cursor);
             afterId = cursor.id();
         }
-        List<MobileRamenLog> fetched = logs.findMine(userId, afterDate, afterId, PageRequest.of(0, size + 1));
+        List<MobileRamenLog> fetched = logs.findMine(userId, ramenType, afterDate, afterId,
+                PageRequest.of(0, size + 1));
         CursorPage<MobileRamenLog> page = CursorPage.of(fetched, size,
                 log -> Cursor.of(log.getVisitedAt(), log.getId()));
         return summaries(page, accounts.authors(List.of(userId)), userId);
@@ -110,7 +112,7 @@ public class MobileRamenLogQueryService {
 
     @Transactional(readOnly = true)
     public List<MobileRamenLogSummaryItem> summary(Long userId) {
-        List<MobileRamenLog> newest = logs.findMine(userId, null, null, PageRequest.of(0, SUMMARY_LIMIT));
+        List<MobileRamenLog> newest = logs.findMine(userId, null, null, null, PageRequest.of(0, SUMMARY_LIMIT));
         if (newest.isEmpty()) {
             return List.of();
         }

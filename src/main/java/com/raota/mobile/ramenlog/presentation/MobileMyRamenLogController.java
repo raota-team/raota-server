@@ -24,9 +24,9 @@ public class MobileMyRamenLogController {
 
     @GetMapping
     public MobileApiResponse<CursorPage<MobileRamenLogSummary>> list(@LoginUser Long userId,
-            @RequestParam(required = false) String cursor,
+            @RequestParam(required = false) String ramenType, @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "20") @Min(1) @Max(CursorPage.MAX_SIZE) int size) {
-        return MobileApiResponse.success(logs.list(userId, cursor, size));
+        return MobileApiResponse.success(logs.list(userId, ramenType, cursor, size));
     }
 
     @GetMapping("/summary")

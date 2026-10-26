@@ -143,6 +143,19 @@ class MobileMyRamenLogIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
+    void 종류를_주면_그_종류의_내_기록만_비공개까지_포함해_페이지를_잇는다() throws Exception {
+        String olderShoyu = create(owner, "shoyu-1", "2026-09-01", "PRIVATE", "쇼유");
+        String miso = create(owner, "miso", "2026-09-02", "PUBLIC", "미소");
+        String newerShoyu = create(owner, "shoyu-2", "2026-09-03", "PUBLIC", "쇼유");
+        String strangerShoyu = create(other, "other-shoyu", "2026-09-04", "PUBLIC", "쇼유");
+
+        assertThat(ids("쇼유")).containsExactly(newerShoyu, olderShoyu).doesNotContain(miso, strangerShoyu);
+        assertThat(ids("미소")).containsExactly(miso);
+        assertThat(ids("지로")).isEmpty();
+        assertThat(ids(null)).containsExactly(newerShoyu, miso, olderShoyu);
+    }
+
+    @Test
     void 맛_태그_정의는_네_그룹에_각_다섯_개씩_앱_순서대로_제공한다() throws Exception {
         JsonNode definitions = mapper
             .readTree(mvc.perform(get("/api/v2/taste-note-definitions"))
@@ -183,12 +196,16 @@ class MobileMyRamenLogIntegrationTest extends BaseIntegrationTest {
     }
 
     private String create(Long userId, String key, String date, String visibility) throws Exception {
+        return create(userId, key, date, visibility, "쇼유");
+    }
+
+    private String create(Long userId, String key, String date, String visibility, String ramenType) throws Exception {
         String body = """
-                {"shopId":"%d","visitedAt":"%s","menuName":"라멘","ramenType":"쇼유",
+                {"shopId":"%d","visitedAt":"%s","menuName":"라멘","ramenType":"%s",
                 "scores":{"satisfaction":4,"brothDensity":2,"noodleFirmness":3,"topping":4},
                 "revisitIntention":"SOMETIMES","note":"방문했어요","tasteNoteCodes":[],
                 "visibility":"%s","imageUrls":["https://mock.cdn.com/v2/ramen-logs/photo.png"]}
-                """.formatted(SHOP, date, visibility);
+                """.formatted(SHOP, date, ramenType, visibility);
         return mapper
             .readTree(mvc.perform(post("/api/v2/ramen-logs").header(HttpHeaders.AUTHORIZATION, auth(userId))
                 .header("Idempotency-Key", key)
@@ -199,11 +216,36 @@ class MobileMyRamenLogIntegrationTest extends BaseIntegrationTest {
             .asString();
     }
 
+    /** 한 쪽에 하나씩 끝까지 읽어 커서가 종류 조건을 유지하는지도 함께 본다. */
+    private List<String> ids(String ramenType) throws Exception {
+        List<String> ids = new ArrayList<>();
+        String cursor = null;
+        do {
+            JsonNode page = page(cursor, 1, ramenType);
+            for (JsonNode item : page.get("items")) {
+                ids.add(item.get("id").asString());
+            }
+            cursor = null;
+            if (!page.get("nextCursor").isNull()) {
+                cursor = page.get("nextCursor").asString();
+            }
+        }
+        while (cursor != null);
+        return ids;
+    }
+
     private JsonNode page(String cursor, int size) throws Exception {
+        return page(cursor, size, null);
+    }
+
+    private JsonNode page(String cursor, int size, String ramenType) throws Exception {
         var request = get("/api/v2/members/me/ramen-logs").header(HttpHeaders.AUTHORIZATION, auth(owner))
             .param("size", Integer.toString(size));
         if (cursor != null) {
             request.param("cursor", cursor);
+        }
+        if (ramenType != null) {
+            request.param("ramenType", ramenType);
         }
         return mapper
             .readTree(mvc.perform(request).andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray())

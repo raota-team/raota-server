@@ -29,14 +29,16 @@ public interface MobileRamenLogRepository extends JpaRepository<MobileRamenLog, 
     @Query("select log from MobileRamenLog log where log.id = :id")
     Optional<MobileRamenLog> findByIdForUpdate(Long id);
 
+    /** {@code ramenType}이 null이면 종류를 보지 않는다. 비공개 기록도 포함한다. */
     @Query("""
             select log from MobileRamenLog log
             where log.userId = :userId and log.deletedAt is null
+                and (:ramenType is null or log.ramenType = :ramenType)
                 and (:afterDate is null or log.visitedAt < :afterDate
                      or (log.visitedAt = :afterDate and log.id < :afterId))
             order by log.visitedAt desc, log.id desc
             """)
-    List<MobileRamenLog> findMine(Long userId, LocalDate afterDate, Long afterId, Pageable limit);
+    List<MobileRamenLog> findMine(Long userId, String ramenType, LocalDate afterDate, Long afterId, Pageable limit);
 
     /** 로그인한 회원에게는 그 회원이 차단한 작성자의 기록과 그 회원이 신고한 기록을 빼고 보여준다. */
     @Query("""
