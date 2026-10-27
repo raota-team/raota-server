@@ -7,5 +7,4 @@ public class JwtAuthenticationException extends BearerTokenAuthenticationExcepti
     public JwtAuthenticationException(String message, Throwable cause) {
         super(message, cause);
     }
-
 }

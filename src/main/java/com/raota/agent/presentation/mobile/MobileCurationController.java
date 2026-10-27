@@ -21,5 +21,4 @@ public class MobileCurationController {
     public MobileApiResponse<MobileCurationResult> today(@LoginUser(required = false) Long userId) {
         return MobileApiResponse.success(curations.today(userId).orElse(null));
     }
-
 }

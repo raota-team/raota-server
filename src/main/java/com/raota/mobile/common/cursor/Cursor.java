@@ -61,8 +61,7 @@ public record Cursor(String sortValue, long id) {
         String decoded;
         try {
             decoded = new String(Base64.getUrlDecoder().decode(raw), StandardCharsets.UTF_8);
-        }
-        catch (IllegalArgumentException exception) {
+        } catch (IllegalArgumentException exception) {
             throw invalidCursor();
         }
 
@@ -72,10 +71,9 @@ public record Cursor(String sortValue, long id) {
         }
 
         try {
-            return Optional
-                .of(new Cursor(decoded.substring(0, delimiter), Long.parseLong(decoded.substring(delimiter + 1))));
-        }
-        catch (NumberFormatException exception) {
+            return Optional.of(
+                    new Cursor(decoded.substring(0, delimiter), Long.parseLong(decoded.substring(delimiter + 1))));
+        } catch (NumberFormatException exception) {
             throw invalidCursor();
         }
     }

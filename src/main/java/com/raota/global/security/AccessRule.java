@@ -22,5 +22,4 @@ public record AccessRule(AccessLevel level, HttpMethod method, String pattern) {
     public String toString() {
         return "%s %s -> %s".formatted(method == null ? "*" : method, pattern, level);
     }
-
 }

@@ -9,6 +9,5 @@ import lombok.Builder;
  */
 public record AiRamenRecommendationResponse(String ramenTypeName, String title, String reason) {
     @Builder
-    public AiRamenRecommendationResponse {
-    }
+    public AiRamenRecommendationResponse {}
 }

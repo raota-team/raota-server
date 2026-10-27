@@ -19,25 +19,25 @@ import com.raota.mobile.account.domain.repository.MobileUserRepository;
 import com.raota.mobile.account.infrastructure.auth.MobileAccessTokenService;
 import com.raota.support.BaseIntegrationTest;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.context.WebApplicationContext;
 
 class MobileMemberIntegrationTest extends BaseIntegrationTest {
@@ -66,7 +66,10 @@ class MobileMemberIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mvc = MockMvcBuilders.webAppContextSetup(context).addFilters(requestIdFilter).apply(springSecurity()).build();
+        mvc = MockMvcBuilders.webAppContextSetup(context)
+                .addFilters(requestIdFilter)
+                .apply(springSecurity())
+                .build();
     }
 
     @AfterEach
@@ -83,43 +86,44 @@ class MobileMemberIntegrationTest extends BaseIntegrationTest {
         Long userId = createUser();
 
         mvc.perform(get("/api/v2/members/me").header(HttpHeaders.AUTHORIZATION, authorization(userId)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.id").value(userId.toString()))
-            .andExpect(jsonPath("$.data.status").value("ONBOARDING"))
-            .andExpect(jsonPath("$.data.nickname").value(nullValue()))
-            .andExpect(jsonPath("$.data.email").value("member@example.com"))
-            .andExpect(jsonPath("$.data.logCount").value(0))
-            .andExpect(jsonPath("$.data.onboardingCompletedAt").value(nullValue()));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(userId.toString()))
+                .andExpect(jsonPath("$.data.status").value("ONBOARDING"))
+                .andExpect(jsonPath("$.data.nickname").value(nullValue()))
+                .andExpect(jsonPath("$.data.email").value("member@example.com"))
+                .andExpect(jsonPath("$.data.logCount").value(0))
+                .andExpect(jsonPath("$.data.onboardingCompletedAt").value(nullValue()));
     }
 
     @Test
     void 프로필의_네_필드만_수정하고_빈_문자열은_비우며_누락한_필드는_유지한다() throws Exception {
         Long userId = createUser();
 
-        mvc.perform(patch("/api/v2/members/me").header(HttpHeaders.AUTHORIZATION, authorization(userId))
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(
-                    """
+        mvc.perform(patch("/api/v2/members/me")
+                        .header(HttpHeaders.AUTHORIZATION, authorization(userId))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
                             {"email":"updated@example.com","avatarUrl":"https://example.com/a.png","bio":"좋은 라멘","favoriteRamenType":"돈코츠","status":"ACTIVE","nickname":"몰래변경"}
                             """))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.email").value("updated@example.com"))
-            .andExpect(jsonPath("$.data.avatarUrl").value("https://example.com/a.png"))
-            .andExpect(jsonPath("$.data.bio").value("좋은 라멘"))
-            .andExpect(jsonPath("$.data.favoriteRamenType").value("돈코츠"))
-            .andExpect(jsonPath("$.data.status").value("ONBOARDING"))
-            .andExpect(jsonPath("$.data.nickname").value(nullValue()));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.email").value("updated@example.com"))
+                .andExpect(jsonPath("$.data.avatarUrl").value("https://example.com/a.png"))
+                .andExpect(jsonPath("$.data.bio").value("좋은 라멘"))
+                .andExpect(jsonPath("$.data.favoriteRamenType").value("돈코츠"))
+                .andExpect(jsonPath("$.data.status").value("ONBOARDING"))
+                .andExpect(jsonPath("$.data.nickname").value(nullValue()));
 
-        mvc.perform(patch("/api/v2/members/me").header(HttpHeaders.AUTHORIZATION, authorization(userId))
-            .contentType(MediaType.APPLICATION_JSON)
-            .content("""
+        mvc.perform(patch("/api/v2/members/me")
+                        .header(HttpHeaders.AUTHORIZATION, authorization(userId))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
                     {"email":"","avatarUrl":"","bio":""}
                     """))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.email").value(nullValue()))
-            .andExpect(jsonPath("$.data.avatarUrl").value(nullValue()))
-            .andExpect(jsonPath("$.data.bio").value(nullValue()))
-            .andExpect(jsonPath("$.data.favoriteRamenType").value("돈코츠"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.email").value(nullValue()))
+                .andExpect(jsonPath("$.data.avatarUrl").value(nullValue()))
+                .andExpect(jsonPath("$.data.bio").value(nullValue()))
+                .andExpect(jsonPath("$.data.favoriteRamenType").value("돈코츠"));
 
         assertThat(users.findById(userId).orElseThrow().getStatus().name()).isEqualTo("ONBOARDING");
     }
@@ -128,16 +132,19 @@ class MobileMemberIntegrationTest extends BaseIntegrationTest {
     void 잘못된_프로필_필드는_필드_오류와_함께_400이다() throws Exception {
         Long userId = createUser();
 
-        for (String[] invalidField : new String[][] { { "email", "\"email\":\"invalid\"" },
-                { "avatarUrl", "\"avatarUrl\":\"http://example.com/a.png\"" },
-                { "avatarUrl", "\"avatarUrl\":\"https://example.com:abc/a.png\"" },
-                { "bio", "\"bio\":\"" + "a".repeat(501) + "\"" } }) {
-            mvc.perform(patch("/api/v2/members/me").header(HttpHeaders.AUTHORIZATION, authorization(userId))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{" + invalidField[1] + "}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
-                .andExpect(jsonPath("$.error.fields[0].field").value(invalidField[0]));
+        for (String[] invalidField : new String[][] {
+            {"email", "\"email\":\"invalid\""},
+            {"avatarUrl", "\"avatarUrl\":\"http://example.com/a.png\""},
+            {"avatarUrl", "\"avatarUrl\":\"https://example.com:abc/a.png\""},
+            {"bio", "\"bio\":\"" + "a".repeat(501) + "\""}
+        }) {
+            mvc.perform(patch("/api/v2/members/me")
+                            .header(HttpHeaders.AUTHORIZATION, authorization(userId))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{" + invalidField[1] + "}"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
+                    .andExpect(jsonPath("$.error.fields[0].field").value(invalidField[0]));
         }
     }
 
@@ -147,59 +154,66 @@ class MobileMemberIntegrationTest extends BaseIntegrationTest {
         jdbcTemplate.update("UPDATE tb_v2_user SET status = 'SUSPENDED' WHERE id = ?", userId);
 
         mvc.perform(get("/api/v2/members/me").header(HttpHeaders.AUTHORIZATION, authorization(userId)))
-            .andExpect(status().isUnauthorized())
-            .andExpect(jsonPath("$.error.message").value("사용할 수 없는 계정입니다."));
-        mvc.perform(patch("/api/v2/members/me").header(HttpHeaders.AUTHORIZATION, authorization(userId))
-            .contentType(MediaType.APPLICATION_JSON)
-            .content("{}"))
-            .andExpect(status().isUnauthorized())
-            .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.message").value("사용할 수 없는 계정입니다."));
+        mvc.perform(patch("/api/v2/members/me")
+                        .header(HttpHeaders.AUTHORIZATION, authorization(userId))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
     }
 
     @Test
     void 인증하지_않은_프로필_요청은_v2_401_응답이다() throws Exception {
         mvc.perform(get("/api/v2/members/me"))
-            .andExpect(status().isUnauthorized())
-            .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
-        mvc.perform(patch("/api/v2/members/me").contentType(MediaType.APPLICATION_JSON).content("{}"))
-            .andExpect(status().isUnauthorized())
-            .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
+        mvc.perform(patch("/api/v2/members/me")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
     }
 
     @Test
     void 닉네임_중복_확인은_표시값을_돌려주며_내_닉네임은_사용_가능하다() throws Exception {
         Long userId = createUser();
         Long otherId = createUser();
-        jdbcTemplate.update("UPDATE tb_v2_user SET nickname = 'Ramen', nickname_normalized = 'ramen' WHERE id = ?",
-                otherId);
+        jdbcTemplate.update(
+                "UPDATE tb_v2_user SET nickname = 'Ramen', nickname_normalized = 'ramen' WHERE id = ?", otherId);
 
-        mvc.perform(get("/api/v2/members/nickname-availability").param("nickname", "  Ｎｅｗ_９  ")
-            .header(HttpHeaders.AUTHORIZATION, authorization(userId)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.nickname").value("New_9"))
-            .andExpect(jsonPath("$.data.available").value(true));
-        mvc.perform(get("/api/v2/members/nickname-availability").param("nickname", "rAmEn")
-            .header(HttpHeaders.AUTHORIZATION, authorization(userId)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.available").value(false));
-        mvc.perform(get("/api/v2/members/nickname-availability").param("nickname", "ＲＡＭＥＮ")
-            .header(HttpHeaders.AUTHORIZATION, authorization(otherId)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.available").value(true));
+        mvc.perform(get("/api/v2/members/nickname-availability")
+                        .param("nickname", "  Ｎｅｗ_９  ")
+                        .header(HttpHeaders.AUTHORIZATION, authorization(userId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.nickname").value("New_9"))
+                .andExpect(jsonPath("$.data.available").value(true));
+        mvc.perform(get("/api/v2/members/nickname-availability")
+                        .param("nickname", "rAmEn")
+                        .header(HttpHeaders.AUTHORIZATION, authorization(userId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.available").value(false));
+        mvc.perform(get("/api/v2/members/nickname-availability")
+                        .param("nickname", "ＲＡＭＥＮ")
+                        .header(HttpHeaders.AUTHORIZATION, authorization(otherId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.available").value(true));
     }
 
     @Test
     void 유효하지_않은_닉네임은_400이고_익명_중복_조회는_401이다() throws Exception {
         Long userId = createUser();
 
-        mvc.perform(get("/api/v2/members/nickname-availability").param("nickname", "라멘🍜")
-            .header(HttpHeaders.AUTHORIZATION, authorization(userId)))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
-            .andExpect(jsonPath("$.error.message").value("닉네임은 2~12자의 한글·영문·숫자·밑줄만 쓸 수 있습니다."));
+        mvc.perform(get("/api/v2/members/nickname-availability")
+                        .param("nickname", "라멘🍜")
+                        .header(HttpHeaders.AUTHORIZATION, authorization(userId)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.error.message").value("닉네임은 2~12자의 한글·영문·숫자·밑줄만 쓸 수 있습니다."));
         mvc.perform(get("/api/v2/members/nickname-availability").param("nickname", "라멘"))
-            .andExpect(status().isUnauthorized())
-            .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
     }
 
     @Test
@@ -212,106 +226,116 @@ class MobileMemberIntegrationTest extends BaseIntegrationTest {
                 {"type":"MARKETING","documentVersion":"2026-09-01","granted":false}]}
                 """;
 
-        mvc.perform(put("/api/v2/members/me/onboarding").header(HttpHeaders.AUTHORIZATION, authorization(userId))
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(body))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.id").value(userId.toString()))
-            .andExpect(jsonPath("$.data.status").value("ACTIVE"))
-            .andExpect(jsonPath("$.data.nickname").value("RaMeN_9"))
-            .andExpect(jsonPath("$.data.onboardingCompletedAt").isNotEmpty());
+        mvc.perform(put("/api/v2/members/me/onboarding")
+                        .header(HttpHeaders.AUTHORIZATION, authorization(userId))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(userId.toString()))
+                .andExpect(jsonPath("$.data.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.data.nickname").value("RaMeN_9"))
+                .andExpect(jsonPath("$.data.onboardingCompletedAt").isNotEmpty());
 
         var user = users.findById(userId).orElseThrow();
         assertThat(user.getNicknameNormalized()).isEqualTo("ramen_9");
         assertThat(user.getOnboardingCompletedAt()).isNotNull();
-        assertThat(jdbcTemplate.queryForList("SELECT consent_type FROM tb_v2_user_consent WHERE user_id = ?",
-                String.class, userId))
-            .containsExactlyInAnyOrder("TERMS", "PRIVACY", "MARKETING");
+        assertThat(jdbcTemplate.queryForList(
+                        "SELECT consent_type FROM tb_v2_user_consent WHERE user_id = ?", String.class, userId))
+                .containsExactlyInAnyOrder("TERMS", "PRIVACY", "MARKETING");
         assertThat(jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM tb_v2_user_consent WHERE user_id = ? AND document_version = '2026-09-01' AND decided_at IS NOT NULL",
-                Integer.class, userId))
-            .isEqualTo(3);
+                        "SELECT COUNT(*) FROM tb_v2_user_consent WHERE user_id = ? AND document_version = '2026-09-01' AND decided_at IS NOT NULL",
+                        Integer.class,
+                        userId))
+                .isEqualTo(3);
         assertThat(jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM tb_v2_user_consent WHERE user_id = ? AND consent_type = 'MARKETING' AND granted = FALSE",
-                Integer.class, userId))
-            .isEqualTo(1);
+                        "SELECT COUNT(*) FROM tb_v2_user_consent WHERE user_id = ? AND consent_type = 'MARKETING' AND granted = FALSE",
+                        Integer.class,
+                        userId))
+                .isEqualTo(1);
 
-        mvc.perform(put("/api/v2/members/me/onboarding").header(HttpHeaders.AUTHORIZATION, authorization(userId))
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(body))
-            .andExpect(status().isConflict())
-            .andExpect(jsonPath("$.error.code").value("CONFLICT"))
-            .andExpect(jsonPath("$.error.message").value("이미 온보딩을 마쳤습니다."));
+        mvc.perform(put("/api/v2/members/me/onboarding")
+                        .header(HttpHeaders.AUTHORIZATION, authorization(userId))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("CONFLICT"))
+                .andExpect(jsonPath("$.error.message").value("이미 온보딩을 마쳤습니다."));
     }
 
     @Test
     void 필수_동의가_빠지거나_거절되면_온보딩_상태와_동의_내역은_유지된다() throws Exception {
         Long userId = createUser();
-        for (String body : new String[] { """
+        for (String body : new String[] {"""
                 {"nickname":"라멘왕","consents":[{"type":"TERMS","documentVersion":"2026-09-01","granted":true}]}
                 """, """
                 {"nickname":"라멘왕","consents":[
                 {"type":"TERMS","documentVersion":"2026-09-01","granted":false},
                 {"type":"PRIVACY","documentVersion":"2026-09-01","granted":true}]}
-                """ }) {
-            mvc.perform(put("/api/v2/members/me/onboarding").header(HttpHeaders.AUTHORIZATION, authorization(userId))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+                """}) {
+            mvc.perform(put("/api/v2/members/me/onboarding")
+                            .header(HttpHeaders.AUTHORIZATION, authorization(userId))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
         }
 
         assertThat(users.findById(userId).orElseThrow().getStatus().name()).isEqualTo("ONBOARDING");
-        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM tb_v2_user_consent WHERE user_id = ?",
-                Integer.class, userId))
-            .isZero();
+        assertThat(jdbcTemplate.queryForObject(
+                        "SELECT COUNT(*) FROM tb_v2_user_consent WHERE user_id = ?", Integer.class, userId))
+                .isZero();
     }
 
     @Test
     void 중복된_동의_유형과_잘못된_문서_버전은_온보딩을_거절한다() throws Exception {
         Long userId = createUser();
-        mvc.perform(put("/api/v2/members/me/onboarding").header(HttpHeaders.AUTHORIZATION, authorization(userId))
-            .contentType(MediaType.APPLICATION_JSON)
-            .content("""
+        mvc.perform(put("/api/v2/members/me/onboarding")
+                        .header(HttpHeaders.AUTHORIZATION, authorization(userId))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
                     {"nickname":"라멘왕","consents":[
                     {"type":"TERMS","documentVersion":"2026-09-01","granted":true},
                     {"type":"TERMS","documentVersion":"2026-09-01","granted":true},
                     {"type":"PRIVACY","documentVersion":"2026-09-01","granted":true}]}
                     """))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
 
-        mvc.perform(put("/api/v2/members/me/onboarding").header(HttpHeaders.AUTHORIZATION, authorization(userId))
-            .contentType(MediaType.APPLICATION_JSON)
-            .content("""
+        mvc.perform(put("/api/v2/members/me/onboarding")
+                        .header(HttpHeaders.AUTHORIZATION, authorization(userId))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
                     {"nickname":"라멘왕","consents":[
                     {"type":"TERMS","documentVersion":"v1","granted":true},
                     {"type":"PRIVACY","documentVersion":"2026-09-01","granted":true}]}
                     """))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
-            .andExpect(jsonPath("$.error.fields[0].field").exists());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.error.fields[0].field").exists());
     }
 
     @Test
     void 다른_회원의_닉네임과_겹치면_409이고_익명_온보딩은_401이다() throws Exception {
         Long userId = createUser();
         Long otherId = createUser();
-        jdbcTemplate.update("UPDATE tb_v2_user SET nickname = 'Ramen', nickname_normalized = 'ramen' WHERE id = ?",
-                otherId);
+        jdbcTemplate.update(
+                "UPDATE tb_v2_user SET nickname = 'Ramen', nickname_normalized = 'ramen' WHERE id = ?", otherId);
         String body = """
                 {"nickname":"  ＲＡＭＥＮ  ","consents":[
                 {"type":"TERMS","documentVersion":"2026-09-01","granted":true},
                 {"type":"PRIVACY","documentVersion":"2026-09-01","granted":true}]}
                 """;
-        mvc.perform(put("/api/v2/members/me/onboarding").header(HttpHeaders.AUTHORIZATION, authorization(userId))
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(body))
-            .andExpect(status().isConflict())
-            .andExpect(jsonPath("$.error.message").value("이미 사용 중인 닉네임입니다."));
-        mvc.perform(put("/api/v2/members/me/onboarding").contentType(MediaType.APPLICATION_JSON).content(body))
-            .andExpect(status().isUnauthorized())
-            .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
+        mvc.perform(put("/api/v2/members/me/onboarding")
+                        .header(HttpHeaders.AUTHORIZATION, authorization(userId))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.message").value("이미 사용 중인 닉네임입니다."));
+        mvc.perform(put("/api/v2/members/me/onboarding")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
     }
 
     @Test
@@ -336,8 +360,7 @@ class MobileMemberIntegrationTest extends BaseIntegrationTest {
                     if (!commitReservation.await(15, TimeUnit.SECONDS)) {
                         throw new AssertionError("선점한 닉네임을 확정할 때까지 기다려야 합니다.");
                     }
-                }
-                catch (InterruptedException exception) {
+                } catch (InterruptedException exception) {
                     Thread.currentThread().interrupt();
                     throw new AssertionError(exception);
                 }
@@ -345,25 +368,24 @@ class MobileMemberIntegrationTest extends BaseIntegrationTest {
             }));
             assertThat(nicknameReserved.await(10, TimeUnit.SECONDS)).isTrue();
 
-            var onboarding = executor.submit(
-                    () -> mvc
-                        .perform(put("/api/v2/members/me/onboarding")
+            var onboarding = executor.submit(() -> mvc.perform(put("/api/v2/members/me/onboarding")
                             .header(HttpHeaders.AUTHORIZATION, authorization(userId))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(body))
-                        .andReturn()
-                        .getResponse());
+                    .andReturn()
+                    .getResponse());
             try {
                 long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
-                while (System.nanoTime() < deadline && jdbcTemplate
-                    .queryForObject("SELECT COUNT(*) FROM performance_schema.data_lock_waits", Integer.class) == 0) {
+                while (System.nanoTime() < deadline
+                        && jdbcTemplate.queryForObject(
+                                        "SELECT COUNT(*) FROM performance_schema.data_lock_waits", Integer.class)
+                                == 0) {
                     TimeUnit.MILLISECONDS.sleep(20);
                 }
-                assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM performance_schema.data_lock_waits",
-                        Integer.class))
-                    .isPositive();
-            }
-            finally {
+                assertThat(jdbcTemplate.queryForObject(
+                                "SELECT COUNT(*) FROM performance_schema.data_lock_waits", Integer.class))
+                        .isPositive();
+            } finally {
                 commitReservation.countDown();
             }
             reservation.get(10, TimeUnit.SECONDS);
@@ -372,9 +394,9 @@ class MobileMemberIntegrationTest extends BaseIntegrationTest {
             assertThat(response.getContentAsString()).contains("\"code\":\"CONFLICT\"", "이미 사용 중인 닉네임입니다.");
         }
         assertThat(users.findById(userId).orElseThrow().getStatus().name()).isEqualTo("ONBOARDING");
-        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM tb_v2_user_consent WHERE user_id = ?",
-                Integer.class, userId))
-            .isZero();
+        assertThat(jdbcTemplate.queryForObject(
+                        "SELECT COUNT(*) FROM tb_v2_user_consent WHERE user_id = ?", Integer.class, userId))
+                .isZero();
     }
 
     @Test
@@ -386,26 +408,28 @@ class MobileMemberIntegrationTest extends BaseIntegrationTest {
                 activeId);
 
         mvc.perform(get("/api/v2/test/active-only"))
-            .andExpect(status().isUnauthorized())
-            .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
         mvc.perform(get("/api/v2/test/active-only").header(HttpHeaders.AUTHORIZATION, authorization(onboardingId)))
-            .andExpect(status().isForbidden())
-            .andExpect(jsonPath("$.error.code").value("ONBOARDING_REQUIRED"))
-            .andExpect(jsonPath("$.error.message").value("온보딩을 먼저 완료해 주세요."));
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("ONBOARDING_REQUIRED"))
+                .andExpect(jsonPath("$.error.message").value("온보딩을 먼저 완료해 주세요."));
         mvc.perform(get("/api/v2/test/active-only").header(HttpHeaders.AUTHORIZATION, authorization(activeId)))
-            .andExpect(status().isNotFound())
-            .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
 
-        mvc.perform(put("/api/v2/members/me/onboarding").header(HttpHeaders.AUTHORIZATION, authorization(onboardingId))
-            .contentType(MediaType.APPLICATION_JSON)
-            .content("""
+        mvc.perform(put("/api/v2/members/me/onboarding")
+                        .header(HttpHeaders.AUTHORIZATION, authorization(onboardingId))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
                     {"nickname":"NewActive","consents":[
                     {"type":"TERMS","documentVersion":"2026-09-01","granted":true},
                     {"type":"PRIVACY","documentVersion":"2026-09-01","granted":true}]}
-                    """)).andExpect(status().isOk());
+                    """))
+                .andExpect(status().isOk());
         mvc.perform(get("/api/v2/test/active-only").header(HttpHeaders.AUTHORIZATION, authorization(onboardingId)))
-            .andExpect(status().isNotFound())
-            .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
     }
 
     @Test
@@ -416,23 +440,27 @@ class MobileMemberIntegrationTest extends BaseIntegrationTest {
         users.saveAndFlush(user);
 
         mvc.perform(get("/api/v2/members/me").header(HttpHeaders.AUTHORIZATION, authorization(userId)))
-            .andExpect(jsonPath("$.data.status").value("ACTIVE"))
-            .andExpect(jsonPath("$.data.consentRequired").value(true));
+                .andExpect(jsonPath("$.data.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.data.consentRequired").value(true));
 
         // 처리방침만 예전 버전이면 아직 동의가 필요하다
         consents(userId, """
                 {"consents":[{"type":"TERMS","documentVersion":"2026-11-03","granted":true},
                 {"type":"PRIVACY","documentVersion":"2026-10-27","granted":true}]}
-                """).andExpect(status().isOk()).andExpect(jsonPath("$.data.consentRequired").value(true));
+                """)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.consentRequired").value(true));
 
         consents(userId, """
                 {"consents":[{"type":"PRIVACY","documentVersion":"2026-11-03","granted":true},
                 {"type":"MARKETING","documentVersion":"2026-11-03","granted":false}]}
-                """).andExpect(status().isOk()).andExpect(jsonPath("$.data.consentRequired").value(false));
+                """)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.consentRequired").value(false));
 
-        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM tb_v2_user_consent WHERE user_id = ?",
-                Integer.class, userId))
-            .isEqualTo(4);
+        assertThat(jdbcTemplate.queryForObject(
+                        "SELECT COUNT(*) FROM tb_v2_user_consent WHERE user_id = ?", Integer.class, userId))
+                .isEqualTo(4);
     }
 
     @Test
@@ -441,7 +469,9 @@ class MobileMemberIntegrationTest extends BaseIntegrationTest {
 
         consents(userId, """
                 {"consents":[{"type":"PRIVACY","documentVersion":"2026-10-27","granted":false}]}
-                """).andExpect(status().isBadRequest()).andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+                """)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
         consents(userId, """
                 {"consents":[{"type":"MARKETING","documentVersion":"2026-10-27","granted":true},
                 {"type":"MARKETING","documentVersion":"2026-10-27","granted":false}]}
@@ -450,15 +480,16 @@ class MobileMemberIntegrationTest extends BaseIntegrationTest {
                 {"consents":[{"type":"TERMS","documentVersion":"2026.06.11","granted":true}]}
                 """).andExpect(status().isBadRequest());
 
-        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM tb_v2_user_consent WHERE user_id = ?",
-                Integer.class, userId))
-            .isZero();
+        assertThat(jdbcTemplate.queryForObject(
+                        "SELECT COUNT(*) FROM tb_v2_user_consent WHERE user_id = ?", Integer.class, userId))
+                .isZero();
     }
 
     private org.springframework.test.web.servlet.ResultActions consents(Long userId, String body) throws Exception {
-        return mvc.perform(put("/api/v2/members/me/consents").header(HttpHeaders.AUTHORIZATION, authorization(userId))
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(body));
+        return mvc.perform(put("/api/v2/members/me/consents")
+                .header(HttpHeaders.AUTHORIZATION, authorization(userId))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body));
     }
 
     @TestConfiguration
@@ -468,11 +499,11 @@ class MobileMemberIntegrationTest extends BaseIntegrationTest {
         AccessRuleContributor activeMemberOnlyAccessRule() {
             return () -> List.of(new AccessRule(AccessLevel.ACTIVE_MEMBER, HttpMethod.GET, "/api/v2/test/active-only"));
         }
-
     }
 
     private Long createUser() {
-        Long userId = users.saveAndFlush(MobileUser.onboarding("member@example.com")).getId();
+        Long userId =
+                users.saveAndFlush(MobileUser.onboarding("member@example.com")).getId();
         createdUserIds.add(userId);
         return userId;
     }
@@ -480,5 +511,4 @@ class MobileMemberIntegrationTest extends BaseIntegrationTest {
     private String authorization(Long userId) {
         return "Bearer " + accessTokens.issue(userId);
     }
-
 }

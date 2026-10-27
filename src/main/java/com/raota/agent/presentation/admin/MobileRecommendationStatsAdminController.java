@@ -27,5 +27,4 @@ public class MobileRecommendationStatsAdminController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         return ResponseEntity.ok(ApiResponse.success(stats.stats(from, to)));
     }
-
 }

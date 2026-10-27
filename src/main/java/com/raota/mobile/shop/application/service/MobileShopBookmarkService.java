@@ -34,5 +34,4 @@ public class MobileShopBookmarkService {
     public void remove(Long userId, Long shopId) {
         bookmarks.remove(userId, shopId);
     }
-
 }

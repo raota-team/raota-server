@@ -17,5 +17,4 @@ public interface SocialAccountRepository extends JpaRepository<SocialAccount, Lo
     List<SocialAccount> findAllByMemberIdOrderByProviderAsc(Long memberId);
 
     void deleteByMemberId(Long memberId);
-
 }

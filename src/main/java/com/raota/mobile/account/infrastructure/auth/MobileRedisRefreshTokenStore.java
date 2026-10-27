@@ -75,7 +75,9 @@ public class MobileRedisRefreshTokenStore implements RefreshTokenStore {
         String userKey = userKey(userId);
         Set<String> hashes = redis.opsForSet().members(userKey);
         if (hashes != null && !hashes.isEmpty()) {
-            redis.delete(hashes.stream().map(hash -> properties.refreshTokenKeyPrefix() + hash).toList());
+            redis.delete(hashes.stream()
+                    .map(hash -> properties.refreshTokenKeyPrefix() + hash)
+                    .toList());
         }
         redis.delete(userKey);
     }
@@ -88,10 +90,8 @@ public class MobileRedisRefreshTokenStore implements RefreshTokenStore {
         try {
             byte[] hash = MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8));
             return HexFormat.of().formatHex(hash);
-        }
-        catch (NoSuchAlgorithmException exception) {
+        } catch (NoSuchAlgorithmException exception) {
             throw new IllegalStateException("SHA-256 알고리즘을 사용할 수 없습니다.", exception);
         }
     }
-
 }

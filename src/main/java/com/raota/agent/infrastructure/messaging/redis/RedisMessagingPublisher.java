@@ -23,5 +23,4 @@ public class RedisMessagingPublisher implements MessagePublisher {
         redisTemplate.opsForStream().add(topic, Collections.singletonMap("payload", jsonPayload));
         redisTemplate.opsForStream().trim(topic, 1000);
     }
-
 }

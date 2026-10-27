@@ -29,5 +29,4 @@ public class MobileShopBookmarkController {
         bookmarks.remove(userId, shopId);
         return ResponseEntity.noContent().build();
     }
-
 }

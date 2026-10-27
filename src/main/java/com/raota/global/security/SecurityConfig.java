@@ -30,31 +30,31 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.cors(Customizer.withDefaults())
-            .csrf(AbstractHttpConfigurer::disable)
-            .formLogin(AbstractHttpConfigurer::disable)
-            .httpBasic(AbstractHttpConfigurer::disable)
-            .logout(AbstractHttpConfigurer::disable)
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .exceptionHandling(exception -> exception.authenticationEntryPoint(entryPoint)
-                .accessDeniedHandler(accessDeniedHandler));
+                .csrf(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .logout(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(exception ->
+                        exception.authenticationEntryPoint(entryPoint).accessDeniedHandler(accessDeniedHandler));
 
         for (SecurityHttpCustomizer customizer : customizers) {
             customizer.customize(http);
         }
 
         http.authorizeHttpRequests(auth -> auth.dispatcherTypeMatchers(DispatcherType.ERROR)
-            .permitAll()
-            .requestMatchers(accessRuleRegistry.matchersFor(AccessLevel.PUBLIC))
-            .permitAll()
-            .requestMatchers(accessRuleRegistry.matchersFor(AccessLevel.ADMIN))
-            .hasRole("ADMIN")
-            .requestMatchers(accessRuleRegistry.matchersFor(AccessLevel.ACTIVE_MEMBER))
-            .hasAuthority(AccessLevel.ACTIVE_MEMBER_AUTHORITY)
-            .requestMatchers(accessRuleRegistry.matchersFor(AccessLevel.AUTHENTICATED))
-            .authenticated()
-            .anyRequest()
-            .authenticated())
-            .addFilterBefore(bearerTokenAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                        .permitAll()
+                        .requestMatchers(accessRuleRegistry.matchersFor(AccessLevel.PUBLIC))
+                        .permitAll()
+                        .requestMatchers(accessRuleRegistry.matchersFor(AccessLevel.ADMIN))
+                        .hasRole("ADMIN")
+                        .requestMatchers(accessRuleRegistry.matchersFor(AccessLevel.ACTIVE_MEMBER))
+                        .hasAuthority(AccessLevel.ACTIVE_MEMBER_AUTHORITY)
+                        .requestMatchers(accessRuleRegistry.matchersFor(AccessLevel.AUTHENTICATED))
+                        .authenticated()
+                        .anyRequest()
+                        .authenticated())
+                .addFilterBefore(bearerTokenAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -67,5 +67,4 @@ public class SecurityConfig {
         registration.setEnabled(false);
         return registration;
     }
-
 }

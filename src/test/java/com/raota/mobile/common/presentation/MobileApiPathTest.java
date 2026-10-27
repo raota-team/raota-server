@@ -30,5 +30,4 @@ class MobileApiPathTest {
     private static MockHttpServletRequest request(String requestUri) {
         return new MockHttpServletRequest("GET", requestUri);
     }
-
 }

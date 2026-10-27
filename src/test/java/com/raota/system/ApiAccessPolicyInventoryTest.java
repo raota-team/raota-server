@@ -39,16 +39,18 @@ class ApiAccessPolicyInventoryTest extends BaseIntegrationTest {
             Set<AccessLevel> accessLevels = matchingAccessLevels(endpoint);
 
             assertThat(accessLevels)
-                .withFailMessage("접근 정책을 하나만 명시해야 합니다. endpoint=%s, matches=%s", endpoint, accessLevels)
-                .hasSize(1);
+                    .withFailMessage("접근 정책을 하나만 명시해야 합니다. endpoint=%s, matches=%s", endpoint, accessLevels)
+                    .hasSize(1);
         });
     }
 
     @Test
     void 동적_경로는_숫자_ID만_기존_접근_정책에_포함한다() {
         assertThat(matchingAccessLevels("GET", "/community/posts/drafts")).isEmpty();
-        assertThat(matchingAccessLevels("GET", "/community/posts/drafts/comments")).isEmpty();
-        assertThat(matchingAccessLevels("POST", "/community/posts/drafts/views")).isEmpty();
+        assertThat(matchingAccessLevels("GET", "/community/posts/drafts/comments"))
+                .isEmpty();
+        assertThat(matchingAccessLevels("POST", "/community/posts/drafts/views"))
+                .isEmpty();
         assertThat(matchingAccessLevels("GET", "/ramen-shops/internal")).isEmpty();
         assertThat(matchingAccessLevels("GET", "/ramen-shops/internal/menus")).isEmpty();
         assertThat(matchingAccessLevels("GET", "/ramen-logs/moderation")).isEmpty();
@@ -68,17 +70,16 @@ class ApiAccessPolicyInventoryTest extends BaseIntegrationTest {
         assertThat(matchingAccessLevels("HEAD", "/")).containsExactly(AccessLevel.PUBLIC);
         assertThat(matchingAccessLevels("HEAD", "/community/posts/1")).containsExactly(AccessLevel.PUBLIC);
         assertThat(matchingAccessLevels("HEAD", "/actuator/health")).contains(AccessLevel.PUBLIC);
-        assertThat(matchingAccessLevels("HEAD", "/security-policy-unclassified")).isEmpty();
+        assertThat(matchingAccessLevels("HEAD", "/security-policy-unclassified"))
+                .isEmpty();
     }
 
     private List<Endpoint> applicationEndpoints() {
-        return requestMappingHandlerMapping.getHandlerMethods()
-            .entrySet()
-            .stream()
-            .filter(entry -> isApplicationController(entry.getValue()))
-            .flatMap(entry -> endpoints(entry.getKey()).stream())
-            .sorted(Comparator.comparing(Endpoint::path).thenComparing(Endpoint::method))
-            .toList();
+        return requestMappingHandlerMapping.getHandlerMethods().entrySet().stream()
+                .filter(entry -> isApplicationController(entry.getValue()))
+                .flatMap(entry -> endpoints(entry.getKey()).stream())
+                .sorted(Comparator.comparing(Endpoint::path).thenComparing(Endpoint::method))
+                .toList();
     }
 
     private boolean isApplicationController(HandlerMethod handlerMethod) {
@@ -94,8 +95,8 @@ class ApiAccessPolicyInventoryTest extends BaseIntegrationTest {
         assertThat(paths).as("경로가 없는 매핑: %s", requestMappingInfo).isNotEmpty();
 
         return paths.stream()
-            .flatMap(path -> methods.stream().map(method -> new Endpoint(method.name(), path)))
-            .toList();
+                .flatMap(path -> methods.stream().map(method -> new Endpoint(method.name(), path)))
+                .toList();
     }
 
     private Set<AccessLevel> matchingAccessLevels(Endpoint endpoint) {
@@ -114,5 +115,4 @@ class ApiAccessPolicyInventoryTest extends BaseIntegrationTest {
             HttpMethod.valueOf(method);
         }
     }
-
 }

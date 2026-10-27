@@ -13,5 +13,4 @@ public class CommunityCommentUpdateRequest {
     public UpdateCommentCommand toCommand(Long commentId, Long authorId) {
         return new UpdateCommentCommand(commentId, authorId, content);
     }
-
 }

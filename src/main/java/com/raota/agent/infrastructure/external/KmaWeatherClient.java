@@ -66,16 +66,16 @@ public class KmaWeatherClient {
             baseTime = "2300";
         }
         URI uri = UriComponentsBuilder.fromUriString(kmaProperties.baseUrl() + "/getVilageFcst")
-            .queryParam("authKey", kmaProperties.resolvedAuthKey())
-            .queryParam("pageNo", 1)
-            .queryParam("numOfRows", 1000)
-            .queryParam("dataType", "JSON")
-            .queryParam("base_date", baseDate.format(DateTimeFormatter.BASIC_ISO_DATE))
-            .queryParam("base_time", baseTime)
-            .queryParam("nx", NX)
-            .queryParam("ny", NY)
-            .build(true)
-            .toUri();
+                .queryParam("authKey", kmaProperties.resolvedAuthKey())
+                .queryParam("pageNo", 1)
+                .queryParam("numOfRows", 1000)
+                .queryParam("dataType", "JSON")
+                .queryParam("base_date", baseDate.format(DateTimeFormatter.BASIC_ISO_DATE))
+                .queryParam("base_time", baseTime)
+                .queryParam("nx", NX)
+                .queryParam("ny", NY)
+                .build(true)
+                .toUri();
 
         try {
             String outlook = summarize(today, items(restTemplate.getForObject(uri, KmaResponse.class)));
@@ -84,8 +84,7 @@ public class KmaWeatherClient {
                 return outlook;
             }
             log.warn("KMA 단기예보에 오늘 예보가 없음: base={} {}", baseDate, baseTime);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.error("Failed to fetch weather forecast from KMA", e);
         }
         return UNAVAILABLE;
@@ -94,7 +93,8 @@ public class KmaWeatherClient {
     /** 오늘 예보 항목만 골라 문장으로 만든다. 오늘 항목이 없으면 {@code null}이다. */
     static String summarize(LocalDate today, List<KmaResponse.Item> items) {
         String date = today.format(DateTimeFormatter.BASIC_ISO_DATE);
-        List<KmaResponse.Item> todays = items.stream().filter(item -> date.equals(item.getFcstDate())).toList();
+        List<KmaResponse.Item> todays =
+                items.stream().filter(item -> date.equals(item.getFcstDate())).toList();
         if (todays.isEmpty()) {
             return null;
         }
@@ -105,21 +105,24 @@ public class KmaWeatherClient {
         first(todays, "SKY", "1500").map(KmaWeatherClient::sky).ifPresent(sky -> parts.add("오후 하늘 " + sky));
         parts.add(precipitation(todays));
         values(todays, "POP").stream()
-            .max(BigDecimal::compareTo)
-            .ifPresent(pop -> parts.add("강수확률 최대 " + pop.toPlainString() + "%"));
+                .max(BigDecimal::compareTo)
+                .ifPresent(pop -> parts.add("강수확률 최대 " + pop.toPlainString() + "%"));
         List<BigDecimal> humidity = values(todays, "REH");
         if (!humidity.isEmpty()) {
             BigDecimal sum = humidity.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
             parts.add("평균 습도 " + sum.divide(BigDecimal.valueOf(humidity.size()), 0, RoundingMode.HALF_UP) + "%");
         }
         values(todays, "WSD").stream()
-            .max(BigDecimal::compareTo)
-            .ifPresent(wind -> parts.add("최대 풍속 " + wind.stripTrailingZeros().toPlainString() + "m/s"));
+                .max(BigDecimal::compareTo)
+                .ifPresent(
+                        wind -> parts.add("최대 풍속 " + wind.stripTrailingZeros().toPlainString() + "m/s"));
         return today.format(DISPLAY_DATE) + " " + PLACE + " 날씨 예보: " + String.join(", ", parts) + ".";
     }
 
     private static List<KmaResponse.Item> items(KmaResponse response) {
-        if (response == null || response.getResponse() == null || response.getResponse().getBody() == null
+        if (response == null
+                || response.getResponse() == null
+                || response.getResponse().getBody() == null
                 || response.getResponse().getBody().getItems() == null
                 || response.getResponse().getBody().getItems().getItem() == null) {
             return List.of();
@@ -130,11 +133,11 @@ public class KmaWeatherClient {
     /** {@code fcstTime}이 {@code null}이면 시각을 보지 않는다. */
     private static Optional<String> first(List<KmaResponse.Item> items, String category, String fcstTime) {
         return items.stream()
-            .filter(item -> category.equals(item.getCategory()))
-            .filter(item -> fcstTime == null || fcstTime.equals(item.getFcstTime()))
-            .map(KmaResponse.Item::getFcstValue)
-            .filter(value -> value != null && !value.isBlank())
-            .findFirst();
+                .filter(item -> category.equals(item.getCategory()))
+                .filter(item -> fcstTime == null || fcstTime.equals(item.getFcstTime()))
+                .map(KmaResponse.Item::getFcstValue)
+                .filter(value -> value != null && !value.isBlank())
+                .findFirst();
     }
 
     private static List<BigDecimal> values(List<KmaResponse.Item> items, String category) {
@@ -143,8 +146,7 @@ public class KmaWeatherClient {
             if (category.equals(item.getCategory())) {
                 try {
                     values.add(new BigDecimal(item.getFcstValue().trim()));
-                }
-                catch (RuntimeException ignored) {
+                } catch (RuntimeException ignored) {
                     // 결측값(빈 문자열 등)은 건너뛴다
                 }
             }
@@ -175,8 +177,7 @@ public class KmaWeatherClient {
                     case "2" -> kinds.add("비/눈");
                     case "3" -> kinds.add("눈");
                     case "4" -> kinds.add("소나기");
-                    default -> {
-                    }
+                    default -> {}
                 }
             }
         }
@@ -196,21 +197,18 @@ public class KmaWeatherClient {
         public static class Response {
 
             private Body body;
-
         }
 
         @lombok.Data
         public static class Body {
 
             private Items items;
-
         }
 
         @lombok.Data
         public static class Items {
 
             private List<Item> item;
-
         }
 
         @lombok.Data
@@ -223,9 +221,6 @@ public class KmaWeatherClient {
             private String fcstTime;
 
             private String fcstValue;
-
         }
-
     }
-
 }

@@ -51,5 +51,4 @@ public class MobileLoungeSafetyController {
     public MobileApiResponse<List<MobileBlockedMemberResult>> blocked(@LoginUser Long userId) {
         return MobileApiResponse.success(blocks.blocked(userId));
     }
-
 }

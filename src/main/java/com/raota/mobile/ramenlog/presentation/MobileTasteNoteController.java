@@ -19,5 +19,4 @@ public class MobileTasteNoteController {
     public MobileApiResponse<MobileTasteNoteDefinitions> definitions() {
         return MobileApiResponse.success(logs.definitions());
     }
-
 }

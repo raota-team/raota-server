@@ -26,7 +26,5 @@ public final class RetrievalMetadataKeys {
 
     public static final String CHUNK_ID = "chunkId";
 
-    private RetrievalMetadataKeys() {
-    }
-
+    private RetrievalMetadataKeys() {}
 }

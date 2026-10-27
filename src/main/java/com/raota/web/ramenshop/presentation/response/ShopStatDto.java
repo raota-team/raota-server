@@ -28,5 +28,4 @@ public class ShopStatDto {
     public ShopStatDto withViewCount(int viewCount) {
         return new ShopStatDto(viewCount, visit_count, bookmark_count);
     }
-
 }

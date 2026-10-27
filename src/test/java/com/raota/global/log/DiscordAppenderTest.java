@@ -31,5 +31,4 @@ class DiscordAppenderTest {
 
         assertThat(context.getStatusManager().getCopyOfStatusList()).noneMatch(s -> s.getLevel() == Status.ERROR);
     }
-
 }

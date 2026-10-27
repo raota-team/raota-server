@@ -21,5 +21,4 @@ public class RamenType {
         this.subTitle = subTitle;
         this.imageUrl = imageUrl;
     }
-
 }

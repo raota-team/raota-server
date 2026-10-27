@@ -33,12 +33,12 @@ public class Comment {
     public static Comment create(Long postId, Long authorId, Long parentId, String content) {
         validate(postId, authorId, content);
         return Comment.builder()
-            .postId(postId)
-            .authorId(authorId)
-            .parentId(parentId)
-            .content(content)
-            .createdAt(LocalDateTime.now())
-            .build();
+                .postId(postId)
+                .authorId(authorId)
+                .parentId(parentId)
+                .content(content)
+                .createdAt(LocalDateTime.now())
+                .build();
     }
 
     /**
@@ -48,16 +48,16 @@ public class Comment {
         return of(id, postId, authorId, null, content, createdAt);
     }
 
-    public static Comment of(Long id, Long postId, Long authorId, Long parentId, String content,
-            LocalDateTime createdAt) {
+    public static Comment of(
+            Long id, Long postId, Long authorId, Long parentId, String content, LocalDateTime createdAt) {
         return Comment.builder()
-            .id(id)
-            .postId(postId)
-            .authorId(authorId)
-            .parentId(parentId)
-            .content(content)
-            .createdAt(createdAt)
-            .build();
+                .id(id)
+                .postId(postId)
+                .authorId(authorId)
+                .parentId(parentId)
+                .content(content)
+                .createdAt(createdAt)
+                .build();
     }
 
     private static void validate(Long postId, Long authorId, String content) {
@@ -78,13 +78,12 @@ public class Comment {
     public Comment update(String content) {
         validate(this.postId, this.authorId, content);
         return Comment.builder()
-            .id(this.id)
-            .postId(this.postId)
-            .authorId(this.authorId)
-            .parentId(this.parentId)
-            .content(content)
-            .createdAt(this.createdAt)
-            .build();
+                .id(this.id)
+                .postId(this.postId)
+                .authorId(this.authorId)
+                .parentId(this.parentId)
+                .content(content)
+                .createdAt(this.createdAt)
+                .build();
     }
-
 }

@@ -10,5 +10,4 @@ import java.lang.annotation.Target;
 public @interface LoginMember {
 
     boolean required() default true;
-
 }

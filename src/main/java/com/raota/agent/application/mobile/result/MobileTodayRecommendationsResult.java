@@ -11,8 +11,10 @@ import java.util.Map;
  */
 public record MobileTodayRecommendationsResult(int dailyLimit, int remaining, List<Ticket> tickets) {
 
-    public record Ticket(String recommendationId, Instant createdAt, List<MobileShopSummary> shops,
-            List<String> appliedConditions, Map<String, String> reasons) {
-    }
-
+    public record Ticket(
+            String recommendationId,
+            Instant createdAt,
+            List<MobileShopSummary> shops,
+            List<String> appliedConditions,
+            Map<String, String> reasons) {}
 }

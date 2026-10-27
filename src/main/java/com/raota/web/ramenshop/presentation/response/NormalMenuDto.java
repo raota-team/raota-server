@@ -17,8 +17,7 @@ public class NormalMenuDto {
     private boolean signature;
 
     public static NormalMenuDto from(NormalMenu normalMenu) {
-        return new NormalMenuDto(normalMenu.getId(), normalMenu.getName(), normalMenu.getPrice(),
-                normalMenu.getIsSignature());
+        return new NormalMenuDto(
+                normalMenu.getId(), normalMenu.getName(), normalMenu.getPrice(), normalMenu.getIsSignature());
     }
-
 }

@@ -20,5 +20,4 @@ public class CommunityCommentCreateRequest {
     public CreateCommentCommand toCommand(Long postId, Long authorId) {
         return new CreateCommentCommand(postId, authorId, parentCommentId, content);
     }
-
 }

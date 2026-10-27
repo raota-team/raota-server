@@ -34,17 +34,18 @@ public class RetrievalAdminApiController {
     @PostMapping("/shops/{shopId}/reindex")
     public ResponseEntity<ApiResponse<Map<String, Object>>> reindexShop(@PathVariable Long shopId) {
         retrievalIndexingService.indexShop(shopId);
-        return ResponseEntity
-            .ok(ApiResponse.success("매장 프로필 색인이 완료되었습니다.", Map.of("scope", "single", "shopId", shopId)));
+        return ResponseEntity.ok(
+                ApiResponse.success("매장 프로필 색인이 완료되었습니다.", Map.of("scope", "single", "shopId", shopId)));
     }
 
     @GetMapping("/shops/{shopId}/review-documents")
-    public ResponseEntity<ApiResponse<List<RetrievalDocumentResult>>> getShopReviewDocuments(@PathVariable Long shopId,
+    public ResponseEntity<ApiResponse<List<RetrievalDocumentResult>>> getShopReviewDocuments(
+            @PathVariable Long shopId,
             @RequestParam(defaultValue = "라멘 리뷰 맛 국물 면 메뉴 분위기") String query,
             @RequestParam(defaultValue = "12") int topK,
             @RequestParam(defaultValue = "0.2") double similarityThreshold) {
-        return ResponseEntity.ok(ApiResponse
-            .success(retrievalIndexingService.searchShopReviewDocuments(shopId, query, topK, similarityThreshold)));
+        return ResponseEntity.ok(ApiResponse.success(
+                retrievalIndexingService.searchShopReviewDocuments(shopId, query, topK, similarityThreshold)));
     }
 
     @PostMapping("/external-reviews/catchtable/reindex")
@@ -53,5 +54,4 @@ public class RetrievalAdminApiController {
         ExternalReviewIndexResult result = retrievalIndexingService.reindexCatchtableReviews(Path.of(request.path()));
         return ResponseEntity.ok(ApiResponse.success("캐치테이블 외부 리뷰 색인이 완료되었습니다.", result));
     }
-
 }

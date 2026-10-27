@@ -3,10 +3,10 @@ package com.raota.web.account.application.auth;
 import com.raota.web.account.domain.auth.model.SocialAccount;
 import com.raota.web.account.domain.auth.repository.SocialAccountRepository;
 import com.raota.web.account.domain.member.repository.MemberRepository;
-import com.raota.web.account.infrastructure.persistence.auth.RefreshTokenStore;
-import com.raota.web.account.infrastructure.persistence.auth.StoredRefreshToken;
 import com.raota.web.account.infrastructure.auth.AuthProperties;
 import com.raota.web.account.infrastructure.auth.AuthenticationRequiredException;
+import com.raota.web.account.infrastructure.persistence.auth.RefreshTokenStore;
+import com.raota.web.account.infrastructure.persistence.auth.StoredRefreshToken;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -33,18 +33,22 @@ public class AuthAccountService {
 
     @Transactional
     public String login(OAuth2UserInfo userInfo, String normalizedNickname, Long memberId) {
-        socialAccountRepository.findByProviderAndProviderUserId(userInfo.provider(), userInfo.providerUserId())
-            .ifPresentOrElse(socialAccount -> {
-                socialAccount.updateProfile(userInfo.email(), normalizedNickname, userInfo.profileImageUrl());
-                socialAccount.updateMemberId(memberId);
-            }, () -> socialAccountRepository.save(SocialAccount.builder()
-                .provider(userInfo.provider())
-                .providerUserId(userInfo.providerUserId())
-                .email(userInfo.email())
-                .nickname(normalizedNickname)
-                .profileImageUrl(userInfo.profileImageUrl())
-                .memberId(memberId)
-                .build()));
+        socialAccountRepository
+                .findByProviderAndProviderUserId(userInfo.provider(), userInfo.providerUserId())
+                .ifPresentOrElse(
+                        socialAccount -> {
+                            socialAccount.updateProfile(
+                                    userInfo.email(), normalizedNickname, userInfo.profileImageUrl());
+                            socialAccount.updateMemberId(memberId);
+                        },
+                        () -> socialAccountRepository.save(SocialAccount.builder()
+                                .provider(userInfo.provider())
+                                .providerUserId(userInfo.providerUserId())
+                                .email(userInfo.email())
+                                .nickname(normalizedNickname)
+                                .profileImageUrl(userInfo.profileImageUrl())
+                                .memberId(memberId)
+                                .build()));
 
         String refreshTokenValue = generateRefreshToken();
         Instant refreshTokenExpiry = Instant.now().plusSeconds(authProperties.refreshTokenExpirySeconds());
@@ -58,8 +62,9 @@ public class AuthAccountService {
             throw new AuthenticationRequiredException("리프레시 토큰이 없습니다.");
         }
 
-        StoredRefreshToken refreshToken = refreshTokenStore.findByToken(refreshTokenValue)
-            .orElseThrow(() -> new AuthenticationRequiredException("유효하지 않은 리프레시 토큰입니다."));
+        StoredRefreshToken refreshToken = refreshTokenStore
+                .findByToken(refreshTokenValue)
+                .orElseThrow(() -> new AuthenticationRequiredException("유효하지 않은 리프레시 토큰입니다."));
 
         if (!memberRepository.existsByIdAndDeletedAtIsNull(refreshToken.memberId())) {
             refreshTokenStore.deleteByToken(refreshTokenValue);
@@ -74,7 +79,9 @@ public class AuthAccountService {
 
         // [복구] Token Rotation: 보안을 위해 리프레시 시마다 토큰을 새로 교체한다.
         String rotatedRefreshToken = generateRefreshToken();
-        refreshTokenStore.save(refreshToken.memberId(), rotatedRefreshToken,
+        refreshTokenStore.save(
+                refreshToken.memberId(),
+                rotatedRefreshToken,
                 Instant.now().plusSeconds(authProperties.refreshTokenExpirySeconds()));
         return new AuthRefreshSession(refreshToken.memberId(), rotatedRefreshToken);
     }
@@ -89,8 +96,9 @@ public class AuthAccountService {
 
     @Transactional
     public void logoutByMemberId(Long memberId) {
-        refreshTokenStore.findByMemberId(memberId)
-            .ifPresent(refreshToken -> refreshTokenStore.deleteByToken(refreshToken.token()));
+        refreshTokenStore
+                .findByMemberId(memberId)
+                .ifPresent(refreshToken -> refreshTokenStore.deleteByToken(refreshToken.token()));
     }
 
     private void upsertRefreshToken(Long memberId, String token, Instant expiresAt) {
@@ -100,5 +108,4 @@ public class AuthAccountService {
     private String generateRefreshToken() {
         return UUID.randomUUID() + UUID.randomUUID().toString().replace("-", "");
     }
-
 }

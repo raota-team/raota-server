@@ -1,6 +1,9 @@
 package com.raota.agent.application.recommendation;
 
 import com.raota.agent.application.recommendation.dto.AiRamenRecommendationResponse;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -10,10 +13,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
-
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Slf4j
 @Service
@@ -33,8 +32,9 @@ public class RamenRecommendationAiService {
     @Value("classpath:/prompts/today-ramen-recommendation.st")
     private Resource promptResource;
 
-    private static final List<String> RAMEN_NAMES = List.of("시오라멘", "쇼유라멘", "아부라소바", "마제소바", "츠케멘", "이에케라멘", "돈코츠라멘",
-            "토리파이탄", "미소라멘", "쇼유파이탄", "토마토라멘", "차슈멘", "탄탄멘", "중화소바");
+    private static final List<String> RAMEN_NAMES = List.of(
+            "시오라멘", "쇼유라멘", "아부라소바", "마제소바", "츠케멘", "이에케라멘", "돈코츠라멘", "토리파이탄", "미소라멘", "쇼유파이탄", "토마토라멘", "차슈멘", "탄탄멘",
+            "중화소바");
 
     public AiRamenRecommendationResponse getRecommendation(String weatherOutlook) {
         PromptTemplate template = new PromptTemplate(promptResource);
@@ -42,11 +42,13 @@ public class RamenRecommendationAiService {
         template.add("ramenNames", String.join(", ", RAMEN_NAMES));
 
         try {
-            String responseJson = ChatClient.create(chatModel).prompt(template.create()).call().content();
+            String responseJson = ChatClient.create(chatModel)
+                    .prompt(template.create())
+                    .call()
+                    .content();
 
             return parseResponse(responseJson);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.error("Failed to get AI recommendation", e);
             return fallback();
         }
@@ -56,8 +58,7 @@ public class RamenRecommendationAiService {
         try {
             String cleanedJson = extractJsonPayload(json);
             return redisObjectMapper.readValue(cleanedJson, AiRamenRecommendationResponse.class);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.error("JSON Parsing Error. Raw response: {}", json, e);
             return fallback();
         }
@@ -68,7 +69,8 @@ public class RamenRecommendationAiService {
             return "";
         }
 
-        String withoutThink = THINK_BLOCK_PATTERN.matcher(response).replaceAll("").trim();
+        String withoutThink =
+                THINK_BLOCK_PATTERN.matcher(response).replaceAll("").trim();
 
         Matcher jsonCodeBlockMatcher = JSON_CODE_BLOCK_PATTERN.matcher(withoutThink);
         if (jsonCodeBlockMatcher.find()) {
@@ -85,10 +87,9 @@ public class RamenRecommendationAiService {
 
     private AiRamenRecommendationResponse fallback() {
         return AiRamenRecommendationResponse.builder()
-            .ramenTypeName("돈코츠라멘")
-            .title("언제나 든든한 돈코츠 라멘")
-            .reason("기상 정보를 분석하는 중 문제가 발생했지만, 든든한 돈코츠 라멘은 언제나 최고의 선택입니다.")
-            .build();
+                .ramenTypeName("돈코츠라멘")
+                .title("언제나 든든한 돈코츠 라멘")
+                .reason("기상 정보를 분석하는 중 문제가 발생했지만, 든든한 돈코츠 라멘은 언제나 최고의 선택입니다.")
+                .build();
     }
-
 }

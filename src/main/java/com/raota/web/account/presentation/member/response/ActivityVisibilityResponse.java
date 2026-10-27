@@ -7,8 +7,11 @@ public record ActivityVisibilityResponse(boolean logs, boolean visits, boolean p
         if (visibility == null) {
             return allPublic();
         }
-        return new ActivityVisibilityResponse(visibility.isLogsPublic(), visibility.isVisitsPublic(),
-                visibility.isPostsPublic(), visibility.isCommentsPublic());
+        return new ActivityVisibilityResponse(
+                visibility.isLogsPublic(),
+                visibility.isVisitsPublic(),
+                visibility.isPostsPublic(),
+                visibility.isCommentsPublic());
     }
 
     public static ActivityVisibilityResponse allPublic() {

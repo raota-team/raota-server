@@ -3,12 +3,11 @@ package com.raota.web.community.application.service;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.raota.web.account.domain.member.model.MemberProfile;
+import com.raota.web.account.domain.member.repository.MemberRepository;
 import com.raota.web.community.application.command.CreateCommentCommand;
 import com.raota.web.community.domain.repository.CommentRepository;
 import com.raota.web.community.domain.repository.PostRepository;
-import com.raota.web.community.application.service.CommentService;
-import com.raota.web.account.domain.member.model.MemberProfile;
-import com.raota.web.account.domain.member.repository.MemberRepository;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,15 +40,17 @@ class CommentServiceTest {
         Long memberId = 1L;
 
         when(postRepository.findById(postId))
-            .thenReturn(Optional.of(mock(com.raota.web.community.domain.model.Post.class)));
-        doThrow(new IllegalArgumentException("답글에는 답글을 달 수 없습니다. (최대 Depth 1)")).when(commentRepository)
-            .validateReplyTarget(parentId);
+                .thenReturn(Optional.of(mock(com.raota.web.community.domain.model.Post.class)));
+        doThrow(new IllegalArgumentException("답글에는 답글을 달 수 없습니다. (최대 Depth 1)"))
+                .when(commentRepository)
+                .validateReplyTarget(parentId);
 
         CreateCommentCommand command = new CreateCommentCommand(postId, memberId, parentId, "답글의 답글");
 
         // when & then
-        assertThatThrownBy(() -> commentService.createComment(command)).isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("답글에는 답글을 달 수 없습니다.");
+        assertThatThrownBy(() -> commentService.createComment(command))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("답글에는 답글을 달 수 없습니다.");
     }
 
     @Test
@@ -69,5 +70,4 @@ class CommentServiceTest {
         verify(commentRepository).softDelete(commentId, authorId);
         verify(author).decreaseCommentCount();
     }
-
 }

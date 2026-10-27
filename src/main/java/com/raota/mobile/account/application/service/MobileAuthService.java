@@ -49,10 +49,16 @@ public class MobileAuthService {
 
     private final MobileConsentPolicy consentPolicy;
 
-    public MobileAuthService(List<SocialTokenVerifier> verifiers, MobileUserOAuthAccountRepository accounts,
-            MobileUserRepository users, AccessTokenIssuer accessTokens, RefreshTokenStore refreshTokens,
-            PlatformTransactionManager transactionManager, AppleTokenClient appleTokens,
-            ProviderTokenCipher tokenCipher, MobileConsentPolicy consentPolicy) {
+    public MobileAuthService(
+            List<SocialTokenVerifier> verifiers,
+            MobileUserOAuthAccountRepository accounts,
+            MobileUserRepository users,
+            AccessTokenIssuer accessTokens,
+            RefreshTokenStore refreshTokens,
+            PlatformTransactionManager transactionManager,
+            AppleTokenClient appleTokens,
+            ProviderTokenCipher tokenCipher,
+            MobileConsentPolicy consentPolicy) {
         this.verifiers = List.copyOf(verifiers);
         this.accounts = accounts;
         this.users = users;
@@ -71,25 +77,30 @@ public class MobileAuthService {
         String encryptedAppleToken = null;
         if (identity.provider() == OAuthProvider.APPLE) {
             accounts.findByProviderAndProviderSubject(identity.provider(), identity.subject())
-                .ifPresent(account -> availableUser(account.getUserId()));
-            encryptedAppleToken = tokenCipher
-                .encrypt(appleTokens.exchange(command.credential().authorizationCode(), identity.subject()));
+                    .ifPresent(account -> availableUser(account.getUserId()));
+            encryptedAppleToken = tokenCipher.encrypt(
+                    appleTokens.exchange(command.credential().authorizationCode(), identity.subject()));
         }
         String storedAppleToken = encryptedAppleToken;
         Instant now = Instant.now();
         LoginMember loginMember = existingMember(identity, now, storedAppleToken)
-            .orElseGet(() -> createOrReadMember(identity, now, storedAppleToken));
+                .orElseGet(() -> createOrReadMember(identity, now, storedAppleToken));
         Long userId = loginMember.userId();
-        return new MobileLoginResult(accessTokens.issue(userId), refreshTokens.issue(userId),
-                accessTokens.expiresInSeconds(), loginMember.isNewMember(), loginMember.member());
+        return new MobileLoginResult(
+                accessTokens.issue(userId),
+                refreshTokens.issue(userId),
+                accessTokens.expiresInSeconds(),
+                loginMember.isNewMember(),
+                loginMember.member());
     }
 
     public MobileTokenResult reissue(String refreshToken) {
-        Long userId = refreshTokens.consume(refreshToken)
-            .orElseThrow(() -> new MobileException(MobileErrorCode.UNAUTHORIZED, "유효하지 않은 리프레시 토큰입니다."));
+        Long userId = refreshTokens
+                .consume(refreshToken)
+                .orElseThrow(() -> new MobileException(MobileErrorCode.UNAUTHORIZED, "유효하지 않은 리프레시 토큰입니다."));
         availableUser(userId);
-        return new MobileTokenResult(accessTokens.issue(userId), refreshTokens.issue(userId),
-                accessTokens.expiresInSeconds());
+        return new MobileTokenResult(
+                accessTokens.issue(userId), refreshTokens.issue(userId), accessTokens.expiresInSeconds());
     }
 
     public void logout(String refreshToken, Long userId) {
@@ -106,16 +117,16 @@ public class MobileAuthService {
     }
 
     private Optional<LoginMember> existingMember(SocialIdentity identity, Instant now, String encryptedAppleToken) {
-        return accountTransaction
-            .execute(status -> accounts.findByProviderAndProviderSubject(identity.provider(), identity.subject())
+        return accountTransaction.execute(status -> accounts.findByProviderAndProviderSubject(
+                        identity.provider(), identity.subject())
                 .map(account -> {
                     MobileUser user = availableUser(account.getUserId());
                     account.recordLogin(now);
                     if (encryptedAppleToken != null) {
                         account.storeAppleRefreshToken(encryptedAppleToken);
                     }
-                    return new LoginMember(user.getId(), false,
-                            MobileMemberResult.from(user, consentPolicy.required(user.getId())));
+                    return new LoginMember(
+                            user.getId(), false, MobileMemberResult.from(user, consentPolicy.required(user.getId())));
                 }));
     }
 
@@ -123,8 +134,8 @@ public class MobileAuthService {
         try {
             return accountTransaction.execute(status -> {
                 MobileUser user = users.saveAndFlush(MobileUser.onboarding(identity.email()));
-                MobileUserOAuthAccount account = MobileUserOAuthAccount.link(user.getId(), identity.provider(),
-                        identity.subject(), identity.email(), now);
+                MobileUserOAuthAccount account = MobileUserOAuthAccount.link(
+                        user.getId(), identity.provider(), identity.subject(), identity.email(), now);
                 if (encryptedAppleToken != null) {
                     account.storeAppleRefreshToken(encryptedAppleToken);
                 }
@@ -132,22 +143,19 @@ public class MobileAuthService {
                 // 방금 만든 회원은 동의 기록이 없다. 온보딩에서 동의를 받는다.
                 return new LoginMember(user.getId(), true, MobileMemberResult.from(user, true));
             });
-        }
-        catch (DataIntegrityViolationException exception) {
+        } catch (DataIntegrityViolationException exception) {
             return existingMember(identity, now, encryptedAppleToken).orElseThrow(() -> exception);
         }
     }
 
     private MobileUser availableUser(Long userId) {
         MobileUser user = users.findById(userId)
-            .orElseThrow(() -> new MobileException(MobileErrorCode.UNAUTHORIZED, "사용할 수 없는 계정입니다."));
+                .orElseThrow(() -> new MobileException(MobileErrorCode.UNAUTHORIZED, "사용할 수 없는 계정입니다."));
         if (user.getStatus() != MobileUserStatus.ONBOARDING && user.getStatus() != MobileUserStatus.ACTIVE) {
             throw new MobileException(MobileErrorCode.UNAUTHORIZED, "사용할 수 없는 계정입니다.");
         }
         return user;
     }
 
-    private record LoginMember(Long userId, boolean isNewMember, MobileMemberResult member) {
-    }
-
+    private record LoginMember(Long userId, boolean isNewMember, MobileMemberResult member) {}
 }

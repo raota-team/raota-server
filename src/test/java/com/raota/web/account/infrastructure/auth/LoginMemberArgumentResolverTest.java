@@ -5,10 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 import com.raota.web.account.domain.member.model.MemberRole;
-import com.raota.web.account.infrastructure.auth.AuthenticatedMember;
-import com.raota.web.account.infrastructure.auth.AuthenticationRequiredException;
-import com.raota.web.account.infrastructure.auth.LoginMember;
-import com.raota.web.account.infrastructure.auth.LoginMemberArgumentResolver;
 import java.lang.reflect.Method;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -91,25 +87,21 @@ public class LoginMemberArgumentResolverTest {
     void 인증된_사용자가_아닐경우_에러발생() throws NoSuchMethodException {
         MethodParameter parameter = getMethodParameter("supportedMethod", Long.class);
         SecurityContextHolder.getContext()
-            .setAuthentication(new UsernamePasswordAuthenticationToken("anonymous", null, null));
+                .setAuthentication(new UsernamePasswordAuthenticationToken("anonymous", null, null));
 
         assertThatThrownBy(() -> resolver.resolveArgument(parameter, mavContainer, webRequest, binderFactory))
-            .isInstanceOf(AuthenticationRequiredException.class);
+                .isInstanceOf(AuthenticationRequiredException.class);
     }
 
     // 가짜 메소드 생성
-    private void supportedMethod(@LoginMember Long memberId) {
-    }
+    private void supportedMethod(@LoginMember Long memberId) {}
 
-    private void unsupportedMethodNoAnnotation(Long memberId) {
-    }
+    private void unsupportedMethodNoAnnotation(Long memberId) {}
 
-    private void unsupportedMethodWrongType(@LoginMember String memberId) {
-    }
+    private void unsupportedMethodWrongType(@LoginMember String memberId) {}
 
     private MethodParameter getMethodParameter(String methodName, Class<?> parameterType) throws NoSuchMethodException {
         Method method = this.getClass().getDeclaredMethod(methodName, parameterType);
         return new MethodParameter(method, 0); // 첫 번째 파라미터를 가져옴
     }
-
 }

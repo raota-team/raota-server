@@ -88,9 +88,19 @@ public class MobileRamenLog {
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
-    public static MobileRamenLog create(Long userId, Long shopId, LocalDate visitedAt, String menuName,
-            String ramenType, MobileRamenLogScores scores, RevisitIntention revisitIntention, String note,
-            List<String> tasteNoteCodes, LogVisibility visibility, String idempotencyKey, Instant now) {
+    public static MobileRamenLog create(
+            Long userId,
+            Long shopId,
+            LocalDate visitedAt,
+            String menuName,
+            String ramenType,
+            MobileRamenLogScores scores,
+            RevisitIntention revisitIntention,
+            String note,
+            List<String> tasteNoteCodes,
+            LogVisibility visibility,
+            String idempotencyKey,
+            Instant now) {
         MobileRamenLog log = new MobileRamenLog();
         log.userId = userId;
         log.shopId = shopId;
@@ -176,5 +186,4 @@ public class MobileRamenLog {
         this.deletedAt = now;
         this.updatedAt = now;
     }
-
 }

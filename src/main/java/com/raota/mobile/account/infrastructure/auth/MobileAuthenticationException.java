@@ -7,5 +7,4 @@ public class MobileAuthenticationException extends BearerTokenAuthenticationExce
     public MobileAuthenticationException(String message, Throwable cause) {
         super(message, cause);
     }
-
 }

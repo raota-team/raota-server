@@ -41,7 +41,8 @@ class OrphanImageCleanerTest {
         store.put("v2/profiles/used.png", old());
         store.put("v2/profiles/orphan.png", old());
 
-        List<PrefixResult> results = cleaner(500, references("v2/profiles/", CDN + "v2/profiles/used.png")).clean(NOW);
+        List<PrefixResult> results = cleaner(500, references("v2/profiles/", CDN + "v2/profiles/used.png"))
+                .clean(NOW);
 
         assertThat(store.deleted).containsExactly("v2/profiles/orphan.png");
         assertThat(results).containsExactly(new PrefixResult("v2/profiles/", Status.DONE, 2, 1, 1, 0, 0));
@@ -63,11 +64,12 @@ class OrphanImageCleanerTest {
             }
         };
 
-        List<PrefixResult> results = cleaner(500, failing, references("v2/profiles/")).clean(NOW);
+        List<PrefixResult> results =
+                cleaner(500, failing, references("v2/profiles/")).clean(NOW);
 
         assertThat(store.deleted).containsExactly("v2/profiles/b.png");
         assertThat(results.getFirst())
-            .isEqualTo(PrefixResult.skipped("v2/ramen-logs/", Status.REFERENCE_CHECK_FAILED, 1));
+                .isEqualTo(PrefixResult.skipped("v2/ramen-logs/", Status.REFERENCE_CHECK_FAILED, 1));
     }
 
     @Test
@@ -87,11 +89,14 @@ class OrphanImageCleanerTest {
             store.put("v2/profiles/" + index + ".png", old());
         }
 
-        List<PrefixResult> results = cleaner(4, references("v2/ramen-logs/"), references("v2/profiles/")).clean(NOW);
+        List<PrefixResult> results = cleaner(4, references("v2/ramen-logs/"), references("v2/profiles/"))
+                .clean(NOW);
 
         assertThat(store.deleted).hasSize(4);
-        assertThat(results).containsExactly(new PrefixResult("v2/ramen-logs/", Status.DONE, 3, 0, 3, 0, 0),
-                new PrefixResult("v2/profiles/", Status.DONE, 3, 0, 1, 0, 2));
+        assertThat(results)
+                .containsExactly(
+                        new PrefixResult("v2/ramen-logs/", Status.DONE, 3, 0, 3, 0, 0),
+                        new PrefixResult("v2/profiles/", Status.DONE, 3, 0, 1, 0, 2));
     }
 
     @Test
@@ -112,9 +117,14 @@ class OrphanImageCleanerTest {
         store.put("ramenshop/a.jpg", old());
         store.put("v2/a.jpg", old());
 
-        List<PrefixResult> results = cleaner(500, references("ramenshop/"), references(""), references("v2/"),
-                references("v2/../shops/"), references("v2/profiles"))
-            .clean(NOW);
+        List<PrefixResult> results = cleaner(
+                        500,
+                        references("ramenshop/"),
+                        references(""),
+                        references("v2/"),
+                        references("v2/../shops/"),
+                        references("v2/profiles"))
+                .clean(NOW);
 
         assertThat(store.deleted).isEmpty();
         assertThat(store.listedPrefixes).isEmpty();
@@ -181,7 +191,9 @@ class OrphanImageCleanerTest {
             if (failListing) {
                 throw new IllegalStateException("storage down");
             }
-            return objects.stream().filter(object -> ignorePrefix || object.key().startsWith(prefix)).toList();
+            return objects.stream()
+                    .filter(object -> ignorePrefix || object.key().startsWith(prefix))
+                    .toList();
         }
 
         @Override
@@ -191,7 +203,5 @@ class OrphanImageCleanerTest {
             }
             deleted.add(key);
         }
-
     }
-
 }

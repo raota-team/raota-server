@@ -6,5 +6,4 @@ public interface AccessTokenIssuer {
     String issue(Long userId);
 
     long expiresInSeconds();
-
 }

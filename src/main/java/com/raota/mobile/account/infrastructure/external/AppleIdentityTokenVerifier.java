@@ -35,14 +35,18 @@ public class AppleIdentityTokenVerifier implements SocialTokenVerifier {
 
     @Autowired
     public AppleIdentityTokenVerifier(MobileOAuthProperties properties) {
-        this(properties, NimbusJwtDecoder.withJwkSetUri(properties.apple().jwkSetUri()).build());
+        this(
+                properties,
+                NimbusJwtDecoder.withJwkSetUri(properties.apple().jwkSetUri()).build());
     }
 
     AppleIdentityTokenVerifier(MobileOAuthProperties properties, JwtDecoder decoder) {
         this.decoder = decoder;
-        this.validator = new DelegatingOAuth2TokenValidator<>(new JwtTimestampValidator(Duration.ZERO),
+        this.validator = new DelegatingOAuth2TokenValidator<>(
+                new JwtTimestampValidator(Duration.ZERO),
                 jwt -> validate(properties.apple().issuer().equals(jwt.getClaimAsString("iss"))),
-                jwt -> validate(jwt.getAudience() != null && jwt.getAudience().contains(properties.apple().bundleId())),
+                jwt -> validate(jwt.getAudience() != null
+                        && jwt.getAudience().contains(properties.apple().bundleId())),
                 jwt -> validate(jwt.getSubject() != null && !jwt.getSubject().isBlank()));
     }
 
@@ -53,7 +57,9 @@ public class AppleIdentityTokenVerifier implements SocialTokenVerifier {
 
     @Override
     public SocialIdentity verify(SocialCredential credential) {
-        if (credential.idToken() == null || credential.idToken().isBlank() || credential.nonce() == null
+        if (credential.idToken() == null
+                || credential.idToken().isBlank()
+                || credential.nonce() == null
                 || credential.nonce().isBlank()) {
             throw invalidCredential();
         }
@@ -68,8 +74,7 @@ public class AppleIdentityTokenVerifier implements SocialTokenVerifier {
                 email = jwt.getClaimAsString("email");
             }
             return new SocialIdentity(provider(), jwt.getSubject(), email);
-        }
-        catch (JwtException exception) {
+        } catch (JwtException exception) {
             throw invalidCredential();
         }
     }
@@ -82,8 +87,7 @@ public class AppleIdentityTokenVerifier implements SocialTokenVerifier {
             byte[] digest = MessageDigest.getInstance("SHA-256").digest(rawNonce.getBytes(StandardCharsets.UTF_8));
             byte[] expected = HexFormat.of().formatHex(digest).getBytes(StandardCharsets.US_ASCII);
             return MessageDigest.isEqual(expected, claim.getBytes(StandardCharsets.UTF_8));
-        }
-        catch (NoSuchAlgorithmException exception) {
+        } catch (NoSuchAlgorithmException exception) {
             throw new IllegalStateException("SHA-256 알고리즘을 사용할 수 없습니다.", exception);
         }
     }
@@ -98,5 +102,4 @@ public class AppleIdentityTokenVerifier implements SocialTokenVerifier {
     private static MobileException invalidCredential() {
         return new MobileException(MobileErrorCode.OAUTH_CREDENTIAL_INVALID, INVALID_CREDENTIAL_MESSAGE);
     }
-
 }

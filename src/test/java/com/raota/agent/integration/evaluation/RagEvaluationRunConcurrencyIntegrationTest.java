@@ -99,8 +99,10 @@ class RagEvaluationRunConcurrencyIntegrationTest extends BaseIntegrationTest {
         List<Outcome> outcomes = concurrently(10, index -> key);
 
         assertThat(outcomes).allMatch(Outcome::started);
-        assertThat(outcomes.stream().map(outcome -> outcome.start().runId()).distinct()).hasSize(1);
-        assertThat(outcomes.stream().filter(outcome -> !outcome.start().idempotentReplay())).hasSize(1);
+        assertThat(outcomes.stream().map(outcome -> outcome.start().runId()).distinct())
+                .hasSize(1);
+        assertThat(outcomes.stream().filter(outcome -> !outcome.start().idempotentReplay()))
+                .hasSize(1);
         assertThat(runRepository.count()).isEqualTo(1);
         verify(runner, times(1)).execute(anyString(), any(), any());
     }
@@ -108,8 +110,9 @@ class RagEvaluationRunConcurrencyIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Redis 락이 모두에게 획득된 것처럼 동작해도 DB 활성 슬롯이 하나만 허용한다")
     void databaseGuardHoldsWhenRedisLockDoesNotExclude() throws Exception {
-        doReturn(Optional.of(new LockToken(LOCK_KEY, "broken"))).when(lockClient)
-            .tryAcquire(anyString(), any(Duration.class));
+        doReturn(Optional.of(new LockToken(LOCK_KEY, "broken")))
+                .when(lockClient)
+                .tryAcquire(anyString(), any(Duration.class));
         doReturn(false).when(lockClient).release(any());
 
         List<Outcome> outcomes = concurrently(20, index -> UUID.randomUUID().toString());
@@ -122,14 +125,15 @@ class RagEvaluationRunConcurrencyIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Redis에 접근할 수 없어도 DB 제약만으로 예약하고 중복은 거절한다")
     void reservesWithDatabaseGuardWhenRedisUnavailable() {
-        doThrow(new RedisLockUnavailableException("down", new RuntimeException())).when(lockClient)
-            .tryAcquire(anyString(), any(Duration.class));
+        doThrow(new RedisLockUnavailableException("down", new RuntimeException()))
+                .when(lockClient)
+                .tryAcquire(anyString(), any(Duration.class));
 
         RunStart first = start(UUID.randomUUID().toString());
 
         assertThat(first.idempotentReplay()).isFalse();
         assertThatThrownBy(() -> start(UUID.randomUUID().toString()))
-            .isInstanceOf(RagEvaluationAlreadyRunningException.class);
+                .isInstanceOf(RagEvaluationAlreadyRunningException.class);
     }
 
     @Test
@@ -138,7 +142,7 @@ class RagEvaluationRunConcurrencyIntegrationTest extends BaseIntegrationTest {
         redisTemplate.opsForValue().set(LOCK_KEY, "other-server", Duration.ofSeconds(30));
 
         assertThatThrownBy(() -> start(UUID.randomUUID().toString()))
-            .isInstanceOf(RagEvaluationAlreadyRunningException.class);
+                .isInstanceOf(RagEvaluationAlreadyRunningException.class);
         assertThat(runRepository.count()).isZero();
         assertThat(redisTemplate.opsForValue().get(LOCK_KEY)).isEqualTo("other-server");
     }
@@ -148,11 +152,11 @@ class RagEvaluationRunConcurrencyIntegrationTest extends BaseIntegrationTest {
     void canReserveAgainAfterActiveRunFinishes() {
         RunStart first = start(UUID.randomUUID().toString());
         assertThatThrownBy(() -> start(UUID.randomUUID().toString()))
-            .isInstanceOf(RagEvaluationAlreadyRunningException.class);
+                .isInstanceOf(RagEvaluationAlreadyRunningException.class);
 
         transactionTemplate.execute(status -> runRepository.markRunning(first.runId(), LocalDateTime.now()));
-        transactionTemplate
-            .execute(status -> runRepository.markReviewRequired(first.runId(), "{}", LocalDateTime.now()));
+        transactionTemplate.execute(
+                status -> runRepository.markReviewRequired(first.runId(), "{}", LocalDateTime.now()));
 
         RunStart second = start(UUID.randomUUID().toString());
         assertThat(second.runId()).isNotEqualTo(first.runId());
@@ -165,7 +169,7 @@ class RagEvaluationRunConcurrencyIntegrationTest extends BaseIntegrationTest {
         start(key);
 
         assertThatThrownBy(() -> runService.start(null, RagEvaluationSplit.HOLDOUT, key))
-            .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     private RunStart start(String key) {
@@ -182,8 +186,7 @@ class RagEvaluationRunConcurrencyIntegrationTest extends BaseIntegrationTest {
                     ready.await();
                     try {
                         return new Outcome(start(key), null);
-                    }
-                    catch (RuntimeException exception) {
+                    } catch (RuntimeException exception) {
                         return new Outcome(null, exception);
                     }
                 };
@@ -201,8 +204,7 @@ class RagEvaluationRunConcurrencyIntegrationTest extends BaseIntegrationTest {
     private static Outcome get(Future<Outcome> future) throws InterruptedException {
         try {
             return future.get();
-        }
-        catch (ExecutionException exception) {
+        } catch (ExecutionException exception) {
             throw new IllegalStateException(exception.getCause());
         }
     }
@@ -216,5 +218,4 @@ class RagEvaluationRunConcurrencyIntegrationTest extends BaseIntegrationTest {
             return error instanceof RagEvaluationAlreadyRunningException;
         }
     }
-
 }

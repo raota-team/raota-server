@@ -1,9 +1,8 @@
 package com.raota.mobile.common.presentation.response;
 
-import com.raota.mobile.common.error.MobileErrorCode;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.raota.mobile.common.error.MobileErrorCode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -25,8 +24,9 @@ class MobileApiResponseJsonTest {
 
     @BeforeAll
     static void setUp() {
-        new ApplicationContextRunner().withConfiguration(AutoConfigurations.of(JacksonAutoConfiguration.class))
-            .run(context -> jsonMapper = context.getBean(JsonMapper.class));
+        new ApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(JacksonAutoConfiguration.class))
+                .run(context -> jsonMapper = context.getBean(JsonMapper.class));
     }
 
     @Test
@@ -56,9 +56,14 @@ class MobileApiResponseJsonTest {
 
     @Test
     void 필드_오류는_field_code_message로_직렬화된다() {
-        MobileError error = MobileError.of(MobileErrorCode.VALIDATION_ERROR, "입력값을 확인해 주세요.",
+        MobileError error = MobileError.of(
+                MobileErrorCode.VALIDATION_ERROR,
+                "입력값을 확인해 주세요.",
                 List.of(new MobileFieldError("nickname", "NotBlank", "닉네임을 입력해 주세요.")));
-        JsonNode field = toJson(MobileApiResponse.failure(error)).get("error").get("fields").get(0);
+        JsonNode field = toJson(MobileApiResponse.failure(error))
+                .get("error")
+                .get("fields")
+                .get(0);
 
         assertThat(fieldNames(field)).containsExactly("field", "code", "message");
         assertThat(field.get("field").asString()).isEqualTo("nickname");
@@ -66,8 +71,8 @@ class MobileApiResponseJsonTest {
 
     @Test
     void ID는_문자열_시각은_UTC_ISO_8601_날짜는_YYYY_MM_DD로_직렬화된다() {
-        V2Sample sample = new V2Sample("9007199254740993", Instant.parse("2026-09-23T02:00:00.123456Z"),
-                LocalDate.parse("2026-09-23"));
+        V2Sample sample = new V2Sample(
+                "9007199254740993", Instant.parse("2026-09-23T02:00:00.123456Z"), LocalDate.parse("2026-09-23"));
         JsonNode data = toJson(MobileApiResponse.success(sample)).get("data");
 
         assertThat(data.get("id").isString()).isTrue();
@@ -78,8 +83,7 @@ class MobileApiResponseJsonTest {
     }
 
     /** v2 응답 DTO 규칙 예시: ID는 String, 시각은 Instant, 날짜는 LocalDate. */
-    record V2Sample(String id, Instant createdAt, LocalDate visitedOn) {
-    }
+    record V2Sample(String id, Instant createdAt, LocalDate visitedOn) {}
 
     private JsonNode toJson(MobileApiResponse<?> response) {
         return jsonMapper.readTree(jsonMapper.writeValueAsString(response));
@@ -88,5 +92,4 @@ class MobileApiResponseJsonTest {
     private static List<String> fieldNames(JsonNode node) {
         return node.propertyNames().stream().toList();
     }
-
 }

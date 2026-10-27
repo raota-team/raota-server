@@ -1,10 +1,10 @@
 package com.raota.web.ramenshop.presentation.admin;
 
+import com.raota.global.presentation.common.ApiResponse;
+import com.raota.global.presentation.common.PageResponse;
 import com.raota.web.ramenshop.application.admin.RamenShopReportAdminService;
 import com.raota.web.ramenshop.domain.model.RamenShopReportType;
 import com.raota.web.ramenshop.presentation.admin.response.RamenShopReportAdminResponse;
-import com.raota.global.presentation.common.ApiResponse;
-import com.raota.global.presentation.common.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -23,11 +23,11 @@ public class RamenShopReportAdminController {
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<RamenShopReportAdminResponse>>> reports(
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) RamenShopReportType reportType, @RequestParam(defaultValue = "0") int page,
+            @RequestParam(required = false) RamenShopReportType reportType,
+            @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "30") int size) {
-        Page<RamenShopReportAdminResponse> reports = ramenShopReportAdminService.getReports(keyword, reportType, page,
-                size);
+        Page<RamenShopReportAdminResponse> reports =
+                ramenShopReportAdminService.getReports(keyword, reportType, page, size);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(reports)));
     }
-
 }

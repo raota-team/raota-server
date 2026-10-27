@@ -13,7 +13,8 @@ public class MobileRamenLogAccessRules implements AccessRuleContributor {
 
     @Override
     public List<AccessRule> accessRules() {
-        return List.of(new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/api/v2/files/upload-tickets"),
+        return List.of(
+                new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/api/v2/files/upload-tickets"),
                 new AccessRule(AccessLevel.ACTIVE_MEMBER, HttpMethod.POST, "/api/v2/ramen-logs"),
                 new AccessRule(AccessLevel.PUBLIC, HttpMethod.GET, "/api/v2/ramen-logs"),
                 new AccessRule(AccessLevel.PUBLIC, HttpMethod.GET, "/api/v2/ramen-logs/{logId}"),
@@ -32,5 +33,4 @@ public class MobileRamenLogAccessRules implements AccessRuleContributor {
                 new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.GET, "/api/v2/members/me/ramen-logs/summary"),
                 new AccessRule(AccessLevel.PUBLIC, HttpMethod.GET, "/api/v2/taste-note-definitions"));
     }
-
 }

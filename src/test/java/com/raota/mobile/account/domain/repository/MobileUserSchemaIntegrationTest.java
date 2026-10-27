@@ -35,7 +35,9 @@ class MobileUserSchemaIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void 온보딩_회원은_생성_수정_시각과_초기_상태가_저장된다() {
-        Long userId = userRepository.saveAndFlush(MobileUser.onboarding("onboarding@example.com")).getId();
+        Long userId = userRepository
+                .saveAndFlush(MobileUser.onboarding("onboarding@example.com"))
+                .getId();
         entityManager.clear();
 
         MobileUser saved = userRepository.findById(userId).orElseThrow();
@@ -48,29 +50,35 @@ class MobileUserSchemaIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void 동일한_제공자와_제공자_사용자_ID로_계정을_중복_연결할_수_없다() {
-        Long firstUserId = userRepository.saveAndFlush(MobileUser.onboarding("first@example.com")).getId();
-        Long secondUserId = userRepository.saveAndFlush(MobileUser.onboarding("second@example.com")).getId();
+        Long firstUserId = userRepository
+                .saveAndFlush(MobileUser.onboarding("first@example.com"))
+                .getId();
+        Long secondUserId = userRepository
+                .saveAndFlush(MobileUser.onboarding("second@example.com"))
+                .getId();
         Instant now = Instant.parse("2026-09-25T10:00:00Z");
 
-        oauthAccountRepository
-            .saveAndFlush(MobileUserOAuthAccount.link(firstUserId, OAuthProvider.KAKAO, "same-subject", null, now));
+        oauthAccountRepository.saveAndFlush(
+                MobileUserOAuthAccount.link(firstUserId, OAuthProvider.KAKAO, "same-subject", null, now));
 
-        assertThatThrownBy(() -> oauthAccountRepository
-            .saveAndFlush(MobileUserOAuthAccount.link(secondUserId, OAuthProvider.KAKAO, "same-subject", null, now)))
-            .isInstanceOf(DataIntegrityViolationException.class);
+        assertThatThrownBy(() -> oauthAccountRepository.saveAndFlush(
+                        MobileUserOAuthAccount.link(secondUserId, OAuthProvider.KAKAO, "same-subject", null, now)))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 
     @Test
     void 한_회원은_같은_제공자를_두_번_연결할_수_없다() {
-        Long userId = userRepository.saveAndFlush(MobileUser.onboarding("linked@example.com")).getId();
+        Long userId = userRepository
+                .saveAndFlush(MobileUser.onboarding("linked@example.com"))
+                .getId();
         Instant now = Instant.parse("2026-09-25T10:00:00Z");
 
-        oauthAccountRepository
-            .saveAndFlush(MobileUserOAuthAccount.link(userId, OAuthProvider.GOOGLE, "first-subject", null, now));
+        oauthAccountRepository.saveAndFlush(
+                MobileUserOAuthAccount.link(userId, OAuthProvider.GOOGLE, "first-subject", null, now));
 
-        assertThatThrownBy(() -> oauthAccountRepository
-            .saveAndFlush(MobileUserOAuthAccount.link(userId, OAuthProvider.GOOGLE, "second-subject", null, now)))
-            .isInstanceOf(DataIntegrityViolationException.class);
+        assertThatThrownBy(() -> oauthAccountRepository.saveAndFlush(
+                        MobileUserOAuthAccount.link(userId, OAuthProvider.GOOGLE, "second-subject", null, now)))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 
     @Test
@@ -88,7 +96,9 @@ class MobileUserSchemaIntegrationTest extends BaseIntegrationTest {
         assertThatThrownBy(() -> jdbcTemplate.update("""
                 INSERT INTO tb_v2_user (role, status, log_count, created_at, updated_at)
                 VALUES ('USER', 'INVALID', 0, NOW(6), NOW(6))
-                """)).isInstanceOf(DataAccessException.class).hasMessageContaining("chk_v2_user_status");
+                """))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("chk_v2_user_status");
     }
 
     private void insertUserWithNickname(String nicknameNormalized) {
@@ -97,5 +107,4 @@ class MobileUserSchemaIntegrationTest extends BaseIntegrationTest {
                 VALUES (?, ?, 'USER', 'ACTIVE', 0, NOW(6), NOW(6))
                 """, nicknameNormalized, nicknameNormalized);
     }
-
 }

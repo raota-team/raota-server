@@ -28,11 +28,10 @@ class RagExpectedErrorTest {
 
     @Test
     void classifiesPublishedShopNotFoundAsResourceNotFound() {
-        RagExecutionResult actual = RagExecutionResult.error(0,
-                new EntityNotFoundException("라멘샵을 찾을 수 없습니다. id=999999"));
+        RagExecutionResult actual =
+                RagExecutionResult.error(0, new EntityNotFoundException("라멘샵을 찾을 수 없습니다. id=999999"));
         RagExpectedError expected = new RagExpectedError("RESOURCE_NOT_FOUND", 404, "라멘샵을 찾을 수 없습니다.");
 
         assertThat(expected.matches(actual)).isTrue();
     }
-
 }

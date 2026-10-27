@@ -1,8 +1,8 @@
 package com.raota.web.ramenshop.domain.repository;
 
-import com.raota.web.ramenshop.presentation.response.RamenShopResponse;
-import com.raota.web.ramenshop.domain.model.RamenShop;
 import com.raota.web.ramenshop.application.result.TodayPopularRamenShopResponse;
+import com.raota.web.ramenshop.domain.model.RamenShop;
+import com.raota.web.ramenshop.presentation.response.RamenShopResponse;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -60,8 +60,12 @@ public interface RamenShopRepository extends JpaRepository<RamenShop, Long> {
                   )
               )
             """)
-    Page<RamenShopResponse> searchStores(@Param("city") String city, @Param("district") String district,
-            @Param("keyword") String keyword, @Param("tag") String tag, Pageable pageable);
+    Page<RamenShopResponse> searchStores(
+            @Param("city") String city,
+            @Param("district") String district,
+            @Param("keyword") String keyword,
+            @Param("tag") String tag,
+            Pageable pageable);
 
     @Query("""
             select new com.raota.web.ramenshop.application.result.TodayPopularRamenShopResponse(
@@ -73,5 +77,4 @@ public interface RamenShopRepository extends JpaRepository<RamenShop, Long> {
               and s.published = true
             """)
     List<TodayPopularRamenShopResponse> findPopularTodayShops(@Param("shopIds") Collection<Long> shopIds);
-
 }

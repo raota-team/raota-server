@@ -17,5 +17,4 @@ public class UpdateProfileRequest {
 
     @Schema(description = "자기소개")
     private String bio;
-
 }

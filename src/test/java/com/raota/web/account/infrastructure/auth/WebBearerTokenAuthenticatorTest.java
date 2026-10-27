@@ -27,8 +27,9 @@ class WebBearerTokenAuthenticatorTest {
         var authentication = authenticator.authenticate("valid-token");
 
         assertThat(authentication.getPrincipal()).isInstanceOf(AuthenticatedMember.class);
-        assertThat(authentication.getAuthorities()).extracting(authority -> authority.getAuthority())
-            .containsExactly("ROLE_USER", "ROLE_ADMIN");
+        assertThat(authentication.getAuthorities())
+                .extracting(authority -> authority.getAuthority())
+                .containsExactly("ROLE_USER", "ROLE_ADMIN");
     }
 
     @Test
@@ -37,8 +38,7 @@ class WebBearerTokenAuthenticatorTest {
         when(members.findActiveMemberRole(1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> authenticator.authenticate("withdrawn-token"))
-            .isInstanceOf(JwtAuthenticationException.class)
-            .hasMessage(MemberLifecycleService.WITHDRAWN_MEMBER_MESSAGE);
+                .isInstanceOf(JwtAuthenticationException.class)
+                .hasMessage(MemberLifecycleService.WITHDRAWN_MEMBER_MESSAGE);
     }
-
 }

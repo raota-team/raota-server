@@ -3,14 +3,13 @@ package com.raota.web.account.infrastructure.auth.repository;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.Base64;
+import java.util.Optional;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.util.SerializationUtils;
 import org.springframework.util.StringUtils;
-
-import java.util.Base64;
-import java.util.Optional;
 
 @Component
 public class HttpCookieOAuth2AuthorizationRequestRepository
@@ -25,19 +24,22 @@ public class HttpCookieOAuth2AuthorizationRequestRepository
     @Override
     public OAuth2AuthorizationRequest loadAuthorizationRequest(HttpServletRequest request) {
         return getCookie(request, OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME)
-            .map(cookie -> deserialize(cookie, OAuth2AuthorizationRequest.class))
-            .orElse(null);
+                .map(cookie -> deserialize(cookie, OAuth2AuthorizationRequest.class))
+                .orElse(null);
     }
 
     @Override
-    public void saveAuthorizationRequest(OAuth2AuthorizationRequest authorizationRequest, HttpServletRequest request,
-            HttpServletResponse response) {
+    public void saveAuthorizationRequest(
+            OAuth2AuthorizationRequest authorizationRequest, HttpServletRequest request, HttpServletResponse response) {
         if (authorizationRequest == null) {
             removeAuthorizationRequestCookies(request, response);
             return;
         }
 
-        addCookie(response, OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME, serialize(authorizationRequest),
+        addCookie(
+                response,
+                OAUTH2_AUTHORIZATION_REQUEST_COOKIE_NAME,
+                serialize(authorizationRequest),
                 cookieExpireSeconds);
         String redirectUriAfterLogin = request.getParameter(REDIRECT_URI_PARAM_COOKIE_NAME);
         if (StringUtils.hasText(redirectUriAfterLogin)) {
@@ -46,8 +48,8 @@ public class HttpCookieOAuth2AuthorizationRequestRepository
     }
 
     @Override
-    public OAuth2AuthorizationRequest removeAuthorizationRequest(HttpServletRequest request,
-            HttpServletResponse response) {
+    public OAuth2AuthorizationRequest removeAuthorizationRequest(
+            HttpServletRequest request, HttpServletResponse response) {
         return this.loadAuthorizationRequest(request);
     }
 
@@ -97,5 +99,4 @@ public class HttpCookieOAuth2AuthorizationRequestRepository
             }
         }
     }
-
 }

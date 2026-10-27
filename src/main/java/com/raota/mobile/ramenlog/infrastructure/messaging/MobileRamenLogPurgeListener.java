@@ -17,5 +17,4 @@ public class MobileRamenLogPurgeListener {
     public void onMemberPurged(MobileMemberPurgedEvent event) {
         purges.removeForPurgedUser(event.userId());
     }
-
 }

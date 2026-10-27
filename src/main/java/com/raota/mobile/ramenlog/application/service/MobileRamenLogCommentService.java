@@ -50,8 +50,12 @@ public class MobileRamenLogCommentService {
 
     private final TransactionTemplate createTransaction;
 
-    public MobileRamenLogCommentService(MobileRamenLogCommentRepository comments, MobileRamenLogRepository logs,
-            MobileRamenLogVisibility visibility, MobileAccountRamenLogFacade accounts, Clock clock,
+    public MobileRamenLogCommentService(
+            MobileRamenLogCommentRepository comments,
+            MobileRamenLogRepository logs,
+            MobileRamenLogVisibility visibility,
+            MobileAccountRamenLogFacade accounts,
+            Clock clock,
             PlatformTransactionManager transactionManager) {
         this.comments = comments;
         this.logs = logs;
@@ -78,7 +82,8 @@ public class MobileRamenLogCommentService {
     }
 
     public MobileRamenLogCommentResult create(Long logId, Long userId, String key, String content) {
-        MobileRamenLogComment previous = comments.findByUserIdAndIdempotencyKey(userId, key).orElse(null);
+        MobileRamenLogComment previous =
+                comments.findByUserIdAndIdempotencyKey(userId, key).orElse(null);
         if (previous != null) {
             return replay(previous, logId, userId);
         }
@@ -88,15 +93,14 @@ public class MobileRamenLogCommentService {
             // UNIQUE 충돌은 이 트랜잭션만 되돌린 뒤 별도 읽기로 먼저 커밋된 댓글을 조회한다.
             id = createTransaction.execute(status -> {
                 MobileRamenLog log = visibility.visibleForUpdate(logId, userId);
-                MobileRamenLogComment comment = comments
-                    .saveAndFlush(MobileRamenLogComment.create(logId, userId, content, key, now));
+                MobileRamenLogComment comment =
+                        comments.saveAndFlush(MobileRamenLogComment.create(logId, userId, content, key, now));
                 log.addComment();
                 return comment.getId();
             });
-        }
-        catch (DataIntegrityViolationException exception) {
-            MobileRamenLogComment replayed = comments.findByUserIdAndIdempotencyKey(userId, key)
-                .orElseThrow(() -> exception);
+        } catch (DataIntegrityViolationException exception) {
+            MobileRamenLogComment replayed =
+                    comments.findByUserIdAndIdempotencyKey(userId, key).orElseThrow(() -> exception);
             return replay(replayed, logId, userId);
         }
         return view(comments.findById(id).orElseThrow(this::notFound), userId);
@@ -112,8 +116,8 @@ public class MobileRamenLogCommentService {
         Long logId = comments.findRamenLogIdById(commentId).orElseThrow(this::notFound);
         MobileRamenLog log = visibility.visibleForUpdate(logId, userId);
         MobileRamenLogComment comment = comments.findByIdForUpdate(commentId)
-            .filter(found -> found.getDeletedAt() == null)
-            .orElseThrow(this::notFound);
+                .filter(found -> found.getDeletedAt() == null)
+                .orElseThrow(this::notFound);
         if (!comment.getUserId().equals(userId)) {
             throw new MobileException(MobileErrorCode.FORBIDDEN, "작성자만 댓글을 삭제할 수 있습니다.");
         }
@@ -149,17 +153,17 @@ public class MobileRamenLogCommentService {
      * 로그인한 회원이 차단한 작성자와 신고한 댓글은 쿼리에서 빼고, 활성 회원이 아닌 작성자(탈퇴 유예·정지)의 댓글은 건너뛴 뒤 걸러낸 만큼 다음 묶음을
      * 더 읽어 페이지를 채운다. 묶음 상한에 닿으면 요청 크기보다 짧은 페이지와 마지막으로 읽은 위치의 커서를 돌려준다.
      */
-    private CursorPage<MobileRamenLogCommentResult> page(Long logId, Long viewerId, Instant afterAt, Long afterId,
-            int size) {
+    private CursorPage<MobileRamenLogCommentResult> page(
+            Long logId, Long viewerId, Instant afterAt, Long afterId, int size) {
         List<MobileRamenLogComment> visible = new ArrayList<>();
         Map<Long, MobileAuthor> authors = new HashMap<>();
-        for (int batches = 1;; batches++) {
-            List<MobileRamenLogComment> batch = comments.findPage(logId, viewerId, afterAt, afterId,
-                    PageRequest.of(0, size + 1));
+        for (int batches = 1; ; batches++) {
+            List<MobileRamenLogComment> batch =
+                    comments.findPage(logId, viewerId, afterAt, afterId, PageRequest.of(0, size + 1));
             Set<Long> unknown = batch.stream()
-                .map(MobileRamenLogComment::getUserId)
-                .filter(id -> !authors.containsKey(id))
-                .collect(Collectors.toSet());
+                    .map(MobileRamenLogComment::getUserId)
+                    .filter(id -> !authors.containsKey(id))
+                    .collect(Collectors.toSet());
             authors.putAll(accounts.authors(unknown));
             for (MobileRamenLogComment comment : batch) {
                 MobileAuthor author = authors.get(comment.getUserId());
@@ -173,20 +177,21 @@ public class MobileRamenLogCommentService {
             afterAt = batch.getLast().getCreatedAt();
             afterId = batch.getLast().getId();
             if (batches == MAX_BATCHES) {
-                return results(new CursorPage<>(visible, Cursor.of(afterAt, afterId).encode(), true), authors,
-                        viewerId);
+                return results(
+                        new CursorPage<>(visible, Cursor.of(afterAt, afterId).encode(), true), authors, viewerId);
             }
         }
-        return results(CursorPage.of(visible, size, comment -> Cursor.of(comment.getCreatedAt(), comment.getId())),
-                authors, viewerId);
+        return results(
+                CursorPage.of(visible, size, comment -> Cursor.of(comment.getCreatedAt(), comment.getId())),
+                authors,
+                viewerId);
     }
 
-    private CursorPage<MobileRamenLogCommentResult> results(CursorPage<MobileRamenLogComment> page,
-            Map<Long, MobileAuthor> authors, Long viewerId) {
-        List<MobileRamenLogCommentResult> items = page.items()
-            .stream()
-            .map(comment -> MobileRamenLogViews.comment(comment, authors.get(comment.getUserId()), viewerId))
-            .toList();
+    private CursorPage<MobileRamenLogCommentResult> results(
+            CursorPage<MobileRamenLogComment> page, Map<Long, MobileAuthor> authors, Long viewerId) {
+        List<MobileRamenLogCommentResult> items = page.items().stream()
+                .map(comment -> MobileRamenLogViews.comment(comment, authors.get(comment.getUserId()), viewerId))
+                .toList();
         return new CursorPage<>(items, page.nextCursor(), page.hasNext());
     }
 
@@ -201,8 +206,7 @@ public class MobileRamenLogCommentService {
     private Instant parseInstant(Cursor cursor) {
         try {
             return Instant.parse(cursor.sortValue());
-        }
-        catch (DateTimeParseException exception) {
+        } catch (DateTimeParseException exception) {
             throw new MobileException(MobileErrorCode.VALIDATION_ERROR, "커서가 올바르지 않습니다.");
         }
     }
@@ -210,5 +214,4 @@ public class MobileRamenLogCommentService {
     private MobileException notFound() {
         return new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "댓글을 찾을 수 없습니다.");
     }
-
 }

@@ -54,7 +54,10 @@ class MobileShopQueryIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mvc = MockMvcBuilders.webAppContextSetup(context).addFilters(requestIdFilter).apply(springSecurity()).build();
+        mvc = MockMvcBuilders.webAppContextSetup(context)
+                .addFilters(requestIdFilter)
+                .apply(springSecurity())
+                .build();
         seed(FIRST, "쇼유집", "마포구", "[\"쇼유\",\"시오\"]", 10, "2026-09-01T00:00:00Z", "37.00000000", true, false, true);
         seed(SECOND, "미소집", "성동구", "[\"미소\"]", 5, "2026-09-03T00:00:00Z", "37.01000000", true, false, false);
         seed(THIRD, "쇼유 분점", "마포구", "[\"쇼유\"]", 5, "2026-09-02T00:00:00Z", "37.02000000", true, false, true);
@@ -99,12 +102,27 @@ class MobileShopQueryIntegrationTest extends BaseIntegrationTest {
         JsonNode map = data("/api/v2/shops/map");
         assertThat(ids(map)).containsExactly(id(FIRST), id(THIRD), id(SECOND));
         assertThat(map.get(0).get("imageUrl").asString()).isEqualTo("https://first");
-        assertThat(mapper.readValue(first.toString(),
-                new tools.jackson.core.type.TypeReference<java.util.Map<String, Object>>() {
-                }))
-            .containsOnlyKeys("id", "name", "branchName", "address", "region", "latitude", "longitude", "imageUrl",
-                    "tagline", "ramenTypes", "tags", "logCount", "bookmarkCount", "isBookmarked", "businessStatus",
-                    "isOpen", "distanceMeters");
+        assertThat(mapper.readValue(
+                        first.toString(),
+                        new tools.jackson.core.type.TypeReference<java.util.Map<String, Object>>() {}))
+                .containsOnlyKeys(
+                        "id",
+                        "name",
+                        "branchName",
+                        "address",
+                        "region",
+                        "latitude",
+                        "longitude",
+                        "imageUrl",
+                        "tagline",
+                        "ramenTypes",
+                        "tags",
+                        "logCount",
+                        "bookmarkCount",
+                        "isBookmarked",
+                        "businessStatus",
+                        "isOpen",
+                        "distanceMeters");
     }
 
     @Test
@@ -122,8 +140,8 @@ class MobileShopQueryIntegrationTest extends BaseIntegrationTest {
     void 인기_최신_거리순_커서_페이지는_누락이나_중복이_없다() throws Exception {
         assertPages("POPULAR", List.of(id(FIRST), id(THIRD), id(SECOND)), "");
         assertPages("LATEST", List.of(id(SECOND), id(THIRD), id(FIRST)), "");
-        assertPages("DISTANCE", List.of(id(FIRST), id(SECOND), id(THIRD)),
-                "&latitude=37.00000000&longitude=127.00000000");
+        assertPages(
+                "DISTANCE", List.of(id(FIRST), id(SECOND), id(THIRD)), "&latitude=37.00000000&longitude=127.00000000");
         JsonNode distance = list("/api/v2/shops?sort=DISTANCE&latitude=37&longitude=127");
         assertThat(distance.get("items").get(0).get("distanceMeters").asInt()).isZero();
         assertThat(distance.get("items").get(1).get("distanceMeters").asInt()).isGreaterThan(1000);
@@ -131,12 +149,17 @@ class MobileShopQueryIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void 페이지_크기와_거리순_좌표가_잘못되면_400이다() throws Exception {
-        for (String params : List.of("size=0", "size=51", "sort=DISTANCE", "sort=DISTANCE&latitude=37",
-                "sort=DISTANCE&latitude=91&longitude=127", "sort=DISTANCE&latitude=1E-999999999&longitude=0",
+        for (String params : List.of(
+                "size=0",
+                "size=51",
+                "sort=DISTANCE",
+                "sort=DISTANCE&latitude=37",
+                "sort=DISTANCE&latitude=91&longitude=127",
+                "sort=DISTANCE&latitude=1E-999999999&longitude=0",
                 "sort=DISTANCE&latitude=37&longitude=127&cursor=" + new Cursor("1E-999999999", 1).encode())) {
             mvc.perform(get("/api/v2/shops?" + params))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
         }
     }
 
@@ -155,8 +178,8 @@ class MobileShopQueryIntegrationTest extends BaseIntegrationTest {
     @Test
     void 공개_조회에_무효한_토큰을_보내면_v2_401이다() throws Exception {
         mvc.perform(get("/api/v2/shops").header(HttpHeaders.AUTHORIZATION, "Bearer invalid"))
-            .andExpect(status().isUnauthorized())
-            .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
     }
 
     @Test
@@ -186,33 +209,64 @@ class MobileShopQueryIntegrationTest extends BaseIntegrationTest {
         assertThat(detail.get("businessHours").size()).isEqualTo(7);
         assertThat(detail.get("businessHours").get(0).get("dayOfWeek").asInt()).isEqualTo(1);
         assertThat(detail.get("businessHours").get(0).get("opensAt").asString()).isEqualTo("00:00");
-        assertThat(detail.get("businessHours").get(0).get("lastOrderAt").isNull()).isTrue();
+        assertThat(detail.get("businessHours").get(0).get("lastOrderAt").isNull())
+                .isTrue();
         assertThat(detail.get("servicePerks").get(0).get("type").asString()).isEqualTo("NOODLE_REFILL");
         assertThat(detail.get("servicePerks").get(0).get("status").asString()).isEqualTo("FREE");
         assertThat(detail.get("aiSummaryKeywords").get(0).asString()).isEqualTo("육수");
         assertThat(detail.get("hoursVerifiedAt").asString()).endsWith("Z");
         assertThat(detail.get("aiSummaryGeneratedAt").asString()).contains(".123456Z");
-        assertThat(mapper.readValue(detail.toString(),
-                new tools.jackson.core.type.TypeReference<java.util.Map<String, Object>>() {
-                }))
-            .containsOnlyKeys("id", "name", "branchName", "address", "region", "latitude", "longitude", "imageUrl",
-                    "tagline", "ramenTypes", "tags", "logCount", "bookmarkCount", "averageSatisfaction", "isBookmarked",
-                    "businessStatus", "isOpen", "distanceMeters", "description", "phone", "instagramUrl",
-                    "reservationUrl", "websiteUrl", "naverPlaceId", "kakaoPlaceId", "priceMin", "priceMax",
-                    "closedDaysText", "hoursVerifiedAt", "images", "businessHours", "servicePerks", "aiReviewSummary",
-                    "aiSummaryKeywords", "aiSummaryGeneratedAt");
+        assertThat(mapper.readValue(
+                        detail.toString(),
+                        new tools.jackson.core.type.TypeReference<java.util.Map<String, Object>>() {}))
+                .containsOnlyKeys(
+                        "id",
+                        "name",
+                        "branchName",
+                        "address",
+                        "region",
+                        "latitude",
+                        "longitude",
+                        "imageUrl",
+                        "tagline",
+                        "ramenTypes",
+                        "tags",
+                        "logCount",
+                        "bookmarkCount",
+                        "averageSatisfaction",
+                        "isBookmarked",
+                        "businessStatus",
+                        "isOpen",
+                        "distanceMeters",
+                        "description",
+                        "phone",
+                        "instagramUrl",
+                        "reservationUrl",
+                        "websiteUrl",
+                        "naverPlaceId",
+                        "kakaoPlaceId",
+                        "priceMin",
+                        "priceMax",
+                        "closedDaysText",
+                        "hoursVerifiedAt",
+                        "images",
+                        "businessHours",
+                        "servicePerks",
+                        "aiReviewSummary",
+                        "aiSummaryKeywords",
+                        "aiSummaryGeneratedAt");
 
         data("/api/v2/shops/" + FIRST);
         assertThat(jdbc.queryForObject("SELECT view_count FROM tb_v2_shop WHERE id = ?", Integer.class, FIRST))
-            .isEqualTo(12);
+                .isEqualTo(12);
     }
 
     @Test
     void 알_수_없거나_숨김_삭제된_매장_상세는_404이다() throws Exception {
-        for (long id : new long[] { HIDDEN, DELETED, 900002999L }) {
+        for (long id : new long[] {HIDDEN, DELETED, 900002999L}) {
             mvc.perform(get("/api/v2/shops/" + id))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
         }
     }
 
@@ -241,19 +295,19 @@ class MobileShopQueryIntegrationTest extends BaseIntegrationTest {
 
     private JsonNode listWith(String name, String value) throws Exception {
         byte[] body = mvc.perform(get("/api/v2/shops").param(name, value))
-            .andExpect(status().isOk())
-            .andReturn()
-            .getResponse()
-            .getContentAsByteArray();
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsByteArray();
         return mapper.readTree(body).get("data");
     }
 
     private JsonNode data(String path) throws Exception {
         byte[] body = mvc.perform(get(path))
-            .andExpect(status().isOk())
-            .andReturn()
-            .getResponse()
-            .getContentAsByteArray();
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsByteArray();
         return mapper.readTree(body).get("data");
     }
 
@@ -271,8 +325,17 @@ class MobileShopQueryIntegrationTest extends BaseIntegrationTest {
         return Long.toString(value);
     }
 
-    private void seed(long id, String name, String region, String ramenTypes, int views, String createdAt,
-            String latitude, boolean published, boolean deleted, boolean verified) {
+    private void seed(
+            long id,
+            String name,
+            String region,
+            String ramenTypes,
+            int views,
+            String createdAt,
+            String latitude,
+            boolean published,
+            boolean deleted,
+            boolean verified) {
         Timestamp verifiedAt = null;
         if (verified) {
             verifiedAt = Timestamp.from(Instant.parse("2026-09-01T00:00:00Z"));
@@ -281,14 +344,24 @@ class MobileShopQueryIntegrationTest extends BaseIntegrationTest {
         if (deleted) {
             deletedAt = Timestamp.from(Instant.parse("2026-09-06T00:00:00Z"));
         }
-        jdbc.update("""
+        jdbc.update(
+                """
                 INSERT INTO tb_v2_shop (id, name, branch_name, address, region, latitude, longitude,
                     ramen_types, tags, business_status, hours_verified_at, ai_summary_keywords,
                     view_count, log_count, bookmark_count, is_published, created_at, updated_at, deleted_at)
                 VALUES (?, ?, NULL, '서울', ?, ?, 127.00000000, ?, '[]', 'OPERATIONAL', ?, '[]',
                     ?, 0, 0, ?, ?, ?, ?)
-                """, id, name, region, latitude, ramenTypes, verifiedAt, views, published,
-                Timestamp.from(Instant.parse(createdAt)), Timestamp.from(Instant.parse(createdAt)), deletedAt);
+                """,
+                id,
+                name,
+                region,
+                latitude,
+                ramenTypes,
+                verifiedAt,
+                views,
+                published,
+                Timestamp.from(Instant.parse(createdAt)),
+                Timestamp.from(Instant.parse(createdAt)),
+                deletedAt);
     }
-
 }

@@ -10,5 +10,4 @@ public interface SocialTokenVerifier {
     OAuthProvider provider();
 
     SocialIdentity verify(SocialCredential credential);
-
 }

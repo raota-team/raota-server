@@ -10,8 +10,14 @@ public interface PostRepository {
 
     Optional<Post> findById(Long id);
 
-    PostUpdateResult update(Long id, Long authorId, PostCategory category, String title, String content,
-            String thumbnailUrl, Long ramenShopId);
+    PostUpdateResult update(
+            Long id,
+            Long authorId,
+            PostCategory category,
+            String title,
+            String content,
+            String thumbnailUrl,
+            Long ramenShopId);
 
     PostCategory delete(Long id, Long authorId);
 
@@ -21,7 +27,5 @@ public interface PostRepository {
 
     void deleteAll();
 
-    record PostUpdateResult(Long postId, PostCategory beforeCategory, PostCategory afterCategory) {
-    }
-
+    record PostUpdateResult(Long postId, PostCategory beforeCategory, PostCategory afterCategory) {}
 }

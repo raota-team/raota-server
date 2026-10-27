@@ -23,8 +23,14 @@ public class MobileAccountRamenLogFacade {
         }
         Map<Long, MobileAuthor> result = new HashMap<>();
         for (MobileUser user : users.findAllById(userIds)) {
-            result.put(user.getId(), new MobileAuthor(user.getId(), user.getNickname(), user.getAvatarUrl(),
-                    user.getLogCount(), user.getStatus() == MobileUserStatus.ACTIVE));
+            result.put(
+                    user.getId(),
+                    new MobileAuthor(
+                            user.getId(),
+                            user.getNickname(),
+                            user.getAvatarUrl(),
+                            user.getLogCount(),
+                            user.getStatus() == MobileUserStatus.ACTIVE));
         }
         return result;
     }
@@ -39,7 +45,5 @@ public class MobileAccountRamenLogFacade {
         users.decrementLogCount(userId);
     }
 
-    public record MobileAuthor(Long id, String nickname, String avatarUrl, int logCount, boolean active) {
-    }
-
+    public record MobileAuthor(Long id, String nickname, String avatarUrl, int logCount, boolean active) {}
 }

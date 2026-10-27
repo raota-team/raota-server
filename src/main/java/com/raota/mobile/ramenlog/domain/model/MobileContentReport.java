@@ -47,5 +47,4 @@ public class MobileContentReport {
 
     @Column(name = "resolved_at")
     private Instant resolvedAt;
-
 }

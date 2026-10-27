@@ -1,14 +1,19 @@
 package com.raota.agent.application.recommendation;
 
-import com.raota.agent.application.recommendation.DailyCurationService;
-import com.raota.agent.application.recommendation.RamenRecommendationAiService;
-import com.raota.agent.domain.recommendation.model.RamenType;
-import com.raota.agent.domain.recommendation.model.DailyCuration;
-import com.raota.agent.domain.recommendation.repository.RamenTypeRepository;
-import com.raota.agent.domain.recommendation.repository.DailyCurationRepository;
-import com.raota.agent.infrastructure.external.KmaWeatherClient;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
+
 import com.raota.agent.application.recommendation.dto.AiRamenRecommendationResponse;
-import tools.jackson.databind.ObjectMapper;
+import com.raota.agent.domain.recommendation.model.DailyCuration;
+import com.raota.agent.domain.recommendation.model.RamenType;
+import com.raota.agent.domain.recommendation.repository.DailyCurationRepository;
+import com.raota.agent.domain.recommendation.repository.RamenTypeRepository;
+import com.raota.agent.infrastructure.external.KmaWeatherClient;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,15 +23,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
-
-import java.util.List;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.*;
+import tools.jackson.databind.ObjectMapper;
 
 @ExtendWith(MockitoExtension.class)
 class DailyCurationServiceTest {
@@ -62,19 +59,19 @@ class DailyCurationServiceTest {
     @BeforeEach
     void setUp() {
         mockRamenType = RamenType.builder()
-            .id(1L)
-            .name("돈코츠 라멘")
-            .subTitle("진한 돼지사골 육수")
-            .imageUrl("tonkotsu.jpg")
-            .build();
+                .id(1L)
+                .name("돈코츠 라멘")
+                .subTitle("진한 돼지사골 육수")
+                .imageUrl("tonkotsu.jpg")
+                .build();
 
         mockCuration = DailyCuration.builder()
-            .id(1L)
-            .dateKey(20260624)
-            .ramenType(mockRamenType)
-            .title("비 오는 날의 진한 한 그릇")
-            .reason("비 오는 날엔 돈코츠죠.")
-            .build();
+                .id(1L)
+                .dateKey(20260624)
+                .ramenType(mockRamenType)
+                .title("비 오는 날의 진한 한 그릇")
+                .reason("비 오는 날엔 돈코츠죠.")
+                .build();
     }
 
     @Test
@@ -120,10 +117,10 @@ class DailyCurationServiceTest {
         given(weatherClient.getWeatherOutlook()).willReturn("비가 옵니다.");
 
         AiRamenRecommendationResponse aiResponse = AiRamenRecommendationResponse.builder()
-            .ramenTypeName("돈코츠라멘")
-            .title("추천")
-            .reason("이유")
-            .build();
+                .ramenTypeName("돈코츠라멘")
+                .title("추천")
+                .reason("이유")
+                .build();
         given(aiService.getRecommendation(anyString())).willReturn(aiResponse);
 
         given(ramenTypeRepository.findAll()).willReturn(List.of(mockRamenType));
@@ -140,5 +137,4 @@ class DailyCurationServiceTest {
         verify(dailyCurationRepository).save(any());
         verify(valueOperations).set(anyString(), eq("json-string"));
     }
-
 }

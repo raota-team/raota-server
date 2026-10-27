@@ -22,5 +22,4 @@ public class RamenShopSearchRequest {
 
     @Schema(description = "정렬 기준", example = "NAME")
     private RamenShopSortType sort;
-
 }

@@ -19,5 +19,4 @@ public interface MobileUserConsentRepository extends JpaRepository<MobileUserCon
             group by consent.consentType
             """)
     List<Object[]> findLatestGrantedVersions(Long userId);
-
 }

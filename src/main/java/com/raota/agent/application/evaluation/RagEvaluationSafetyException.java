@@ -5,5 +5,4 @@ public class RagEvaluationSafetyException extends RuntimeException {
     public RagEvaluationSafetyException(String message) {
         super(message);
     }
-
 }

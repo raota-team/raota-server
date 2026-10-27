@@ -34,8 +34,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -86,7 +86,7 @@ class MobileWithdrawalPurgeIntegrationTest extends BaseIntegrationTest {
         subject = UUID.randomUUID().toString();
         when(kakaoVerifier.provider()).thenReturn(OAuthProvider.KAKAO);
         when(kakaoVerifier.verify(any(SocialCredential.class)))
-            .thenAnswer(invocation -> new SocialIdentity(OAuthProvider.KAKAO, subject, "new@example.com"));
+                .thenAnswer(invocation -> new SocialIdentity(OAuthProvider.KAKAO, subject, "new@example.com"));
     }
 
     @AfterEach
@@ -105,8 +105,8 @@ class MobileWithdrawalPurgeIntegrationTest extends BaseIntegrationTest {
     @Test
     void 기한이_지난_회원만_동의와_소셜_계정을_지우고_프로필을_익명화한다() {
         Long due = createUser(OAuthProvider.KAKAO, subject, true, REQUESTED_AT);
-        Long notDue = createUser(OAuthProvider.GOOGLE, UUID.randomUUID().toString(), false,
-                REQUESTED_AT.plus(Duration.ofDays(10)));
+        Long notDue = createUser(
+                OAuthProvider.GOOGLE, UUID.randomUUID().toString(), false, REQUESTED_AT.plus(Duration.ofDays(10)));
         Long active = createUser(OAuthProvider.GOOGLE, UUID.randomUUID().toString(), true, null);
 
         assertThat(purges.purgeExpired(REQUESTED_AT.plus(Duration.ofDays(30)))).isEqualTo(1);
@@ -139,9 +139,12 @@ class MobileWithdrawalPurgeIntegrationTest extends BaseIntegrationTest {
         account.storeAppleRefreshToken(cipher.encrypt("apple-refresh"));
         accounts.saveAndFlush(account);
         doAnswer(invocation -> {
-            assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
-            return null;
-        }).when(appleTokens).revoke("apple-refresh");
+                    assertThat(TransactionSynchronizationManager.isActualTransactionActive())
+                            .isFalse();
+                    return null;
+                })
+                .when(appleTokens)
+                .revoke("apple-refresh");
 
         assertThat(purges.purgeExpired(REQUESTED_AT.plus(Duration.ofDays(30)))).isEqualTo(1);
         verify(appleTokens).revoke("apple-refresh");
@@ -155,7 +158,9 @@ class MobileWithdrawalPurgeIntegrationTest extends BaseIntegrationTest {
         account.storeAppleRefreshToken(cipher.encrypt("unavailable-refresh"));
         accounts.saveAndFlush(account);
         Long succeeded = createUser(OAuthProvider.KAKAO, UUID.randomUUID().toString(), false, REQUESTED_AT);
-        doThrow(new IllegalStateException("provider unavailable")).when(appleTokens).revoke("unavailable-refresh");
+        doThrow(new IllegalStateException("provider unavailable"))
+                .when(appleTokens)
+                .revoke("unavailable-refresh");
 
         assertThat(purges.purgeExpired(REQUESTED_AT.plus(Duration.ofDays(30)))).isEqualTo(1);
         assertThat(users.findById(failed).orElseThrow().getStatus()).isEqualTo(MobileUserStatus.WITHDRAW_PENDING);
@@ -172,7 +177,9 @@ class MobileWithdrawalPurgeIntegrationTest extends BaseIntegrationTest {
         MobileUserOAuthAccount appleAccount = accounts.findAllByUserId(failed).getFirst();
         appleAccount.storeAppleRefreshToken(cipher.encrypt("failed-first-page"));
         accounts.saveAndFlush(appleAccount);
-        doThrow(new IllegalStateException("provider unavailable")).when(appleTokens).revoke("failed-first-page");
+        doThrow(new IllegalStateException("provider unavailable"))
+                .when(appleTokens)
+                .revoke("failed-first-page");
 
         for (int index = 0; index < 99; index++) {
             createUser(OAuthProvider.KAKAO, UUID.randomUUID().toString(), false, REQUESTED_AT);
@@ -191,15 +198,17 @@ class MobileWithdrawalPurgeIntegrationTest extends BaseIntegrationTest {
         Long previous = createUser(OAuthProvider.KAKAO, subject, false, REQUESTED_AT);
         assertThat(purges.purgeExpired(REQUESTED_AT.plus(Duration.ofDays(30)))).isEqualTo(1);
 
-        var login = auth.login(new SocialLoginCommand(OAuthProvider.KAKAO,
-                new SocialCredential(null, "valid-kakao-token", null, null)));
+        var login = auth.login(new SocialLoginCommand(
+                OAuthProvider.KAKAO, new SocialCredential(null, "valid-kakao-token", null, null)));
         Long next = Long.valueOf(login.member().id());
         createdUsers.add(next);
         assertThat(login.isNewMember()).isTrue();
         assertThat(next).isNotEqualTo(previous);
         assertThat(login.member().status()).isEqualTo("ONBOARDING");
-        assertThat(accounts.findByProviderAndProviderSubject(OAuthProvider.KAKAO, subject).orElseThrow().getUserId())
-            .isEqualTo(next);
+        assertThat(accounts.findByProviderAndProviderSubject(OAuthProvider.KAKAO, subject)
+                        .orElseThrow()
+                        .getUserId())
+                .isEqualTo(next);
     }
 
     private Long createUser(OAuthProvider provider, String providerSubject, boolean active, Instant requestedAt) {
@@ -222,5 +231,4 @@ class MobileWithdrawalPurgeIntegrationTest extends BaseIntegrationTest {
     private long consentCount(Long userId) {
         return jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_user_consent WHERE user_id = ?", Long.class, userId);
     }
-
 }

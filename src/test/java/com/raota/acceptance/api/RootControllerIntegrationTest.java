@@ -38,5 +38,4 @@ class RootControllerIntegrationTest extends BaseIntegrationTest {
     void missingResourceReturnsNotFound() throws Exception {
         mockMvc.perform(get("/missing-resource")).andExpect(status().isNotFound());
     }
-
 }

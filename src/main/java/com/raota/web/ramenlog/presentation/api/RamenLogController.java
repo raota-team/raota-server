@@ -1,14 +1,14 @@
 package com.raota.web.ramenlog.presentation.api;
 
-import com.raota.web.ramenlog.application.RamenLogService;
+import com.raota.global.presentation.common.ApiResponse;
+import com.raota.global.presentation.common.PageResponse;
 import com.raota.web.account.infrastructure.auth.LoginMember;
+import com.raota.web.ramenlog.application.RamenLogService;
 import com.raota.web.ramenlog.presentation.api.request.RamenLogSort;
 import com.raota.web.ramenlog.presentation.api.request.RamenLogUpsertRequest;
 import com.raota.web.ramenlog.presentation.api.response.RamenLogLikeResponse;
 import com.raota.web.ramenlog.presentation.api.response.RamenLogResponse;
 import com.raota.web.ramenlog.presentation.api.response.RamenLogShopResponse;
-import com.raota.global.presentation.common.ApiResponse;
-import com.raota.global.presentation.common.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -39,31 +39,33 @@ public class RamenLogController {
     @Operation(summary = "공개 라멘로그 목록 조회")
     @GetMapping("/ramen-logs")
     public ResponseEntity<ApiResponse<PageResponse<RamenLogResponse>>> getPublicLogs(
-            @LoginMember(required = false) Long memberId, @RequestParam(defaultValue = "LATEST") RamenLogSort sort,
-            @RequestParam(required = false) Long shopId, @RequestParam(required = false) String keyword,
+            @LoginMember(required = false) Long memberId,
+            @RequestParam(defaultValue = "LATEST") RamenLogSort sort,
+            @RequestParam(required = false) Long shopId,
+            @RequestParam(required = false) String keyword,
             @PageableDefault(size = 8, direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse
-            .success(PageResponse.from(ramenLogService.getPublicLogs(memberId, sort, shopId, keyword, pageable))));
+        return ResponseEntity.ok(ApiResponse.success(
+                PageResponse.from(ramenLogService.getPublicLogs(memberId, sort, shopId, keyword, pageable))));
     }
 
     @Operation(summary = "라멘로그 상세 조회")
     @GetMapping("/ramen-logs/{logId}")
-    public ResponseEntity<ApiResponse<RamenLogResponse>> getLog(@PathVariable Long logId,
-            @LoginMember(required = false) Long memberId) {
+    public ResponseEntity<ApiResponse<RamenLogResponse>> getLog(
+            @PathVariable Long logId, @LoginMember(required = false) Long memberId) {
         return ResponseEntity.ok(ApiResponse.success(ramenLogService.getLog(logId, memberId)));
     }
 
     @Operation(summary = "라멘로그 작성")
     @PostMapping("/ramen-logs")
-    public ResponseEntity<ApiResponse<RamenLogResponse>> create(@Valid @RequestBody RamenLogUpsertRequest request,
-            @LoginMember Long memberId) {
+    public ResponseEntity<ApiResponse<RamenLogResponse>> create(
+            @Valid @RequestBody RamenLogUpsertRequest request, @LoginMember Long memberId) {
         return ResponseEntity.ok(ApiResponse.success(ramenLogService.create(request, memberId)));
     }
 
     @Operation(summary = "라멘로그 수정")
     @PatchMapping("/ramen-logs/{logId}")
-    public ResponseEntity<ApiResponse<RamenLogResponse>> update(@PathVariable Long logId,
-            @Valid @RequestBody RamenLogUpsertRequest request, @LoginMember Long memberId) {
+    public ResponseEntity<ApiResponse<RamenLogResponse>> update(
+            @PathVariable Long logId, @Valid @RequestBody RamenLogUpsertRequest request, @LoginMember Long memberId) {
         return ResponseEntity.ok(ApiResponse.success(ramenLogService.update(logId, request, memberId)));
     }
 
@@ -76,27 +78,31 @@ public class RamenLogController {
 
     @Operation(summary = "라멘로그 좋아요 토글")
     @PostMapping("/ramen-logs/{logId}/likes")
-    public ResponseEntity<ApiResponse<RamenLogLikeResponse>> toggleLike(@PathVariable Long logId,
-            @LoginMember Long memberId) {
+    public ResponseEntity<ApiResponse<RamenLogLikeResponse>> toggleLike(
+            @PathVariable Long logId, @LoginMember Long memberId) {
         return ResponseEntity.ok(ApiResponse.success(ramenLogService.toggleLike(logId, memberId)));
     }
 
     @Operation(summary = "내 라멘로그 목록 조회")
     @GetMapping("/users/me/ramen-logs")
-    public ResponseEntity<ApiResponse<PageResponse<RamenLogResponse>>> getMyLogs(@LoginMember Long memberId,
-            @RequestParam(required = false) Long shopId, @PageableDefault(size = 8) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse
-            .success(PageResponse.from(ramenLogService.getMemberLogs(memberId, memberId, true, shopId, pageable))));
+    public ResponseEntity<ApiResponse<PageResponse<RamenLogResponse>>> getMyLogs(
+            @LoginMember Long memberId,
+            @RequestParam(required = false) Long shopId,
+            @PageableDefault(size = 8) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(
+                PageResponse.from(ramenLogService.getMemberLogs(memberId, memberId, true, shopId, pageable))));
     }
 
     @Operation(summary = "사용자 공개 라멘로그 목록 조회")
     @GetMapping("/users/{userId}/ramen-logs")
-    public ResponseEntity<ApiResponse<PageResponse<RamenLogResponse>>> getUserLogs(@PathVariable Long userId,
-            @LoginMember(required = false) Long viewerId, @RequestParam(required = false) Long shopId,
+    public ResponseEntity<ApiResponse<PageResponse<RamenLogResponse>>> getUserLogs(
+            @PathVariable Long userId,
+            @LoginMember(required = false) Long viewerId,
+            @RequestParam(required = false) Long shopId,
             @PageableDefault(size = 8) Pageable pageable) {
         boolean owner = viewerId != null && viewerId.equals(userId);
-        return ResponseEntity.ok(ApiResponse
-            .success(PageResponse.from(ramenLogService.getMemberLogs(userId, viewerId, owner, shopId, pageable))));
+        return ResponseEntity.ok(ApiResponse.success(
+                PageResponse.from(ramenLogService.getMemberLogs(userId, viewerId, owner, shopId, pageable))));
     }
 
     @Operation(summary = "내 라멘로그 가게 필터 목록 조회")
@@ -107,10 +113,9 @@ public class RamenLogController {
 
     @Operation(summary = "사용자 공개 라멘로그 가게 필터 목록 조회")
     @GetMapping("/users/{userId}/ramen-logs/shops")
-    public ResponseEntity<ApiResponse<List<RamenLogShopResponse>>> getUserLogShops(@PathVariable Long userId,
-            @LoginMember(required = false) Long viewerId) {
+    public ResponseEntity<ApiResponse<List<RamenLogShopResponse>>> getUserLogShops(
+            @PathVariable Long userId, @LoginMember(required = false) Long viewerId) {
         boolean owner = viewerId != null && viewerId.equals(userId);
         return ResponseEntity.ok(ApiResponse.success(ramenLogService.getMemberLogShops(userId, viewerId, owner)));
     }
-
 }

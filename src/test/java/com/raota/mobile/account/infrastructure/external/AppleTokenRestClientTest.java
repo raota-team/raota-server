@@ -10,8 +10,8 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
-import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.crypto.ECDSAVerifier;
+import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.raota.mobile.common.error.MobileErrorCode;
@@ -20,15 +20,15 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.interfaces.RSAPublicKey;
 import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.RSAPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Date;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,19 +71,25 @@ class AppleTokenRestClientTest {
     @Test
     void 인가_코드를_제출하고_ES256_클라이언트_JWT로_인증한다() throws Exception {
         server.expect(requestTo("https://apple.example/token"))
-            .andExpect(method(HttpMethod.POST))
-            .andExpect(content().contentType(MediaType.APPLICATION_FORM_URLENCODED))
-            .andExpect(request -> {
-                Map<String, String> form = form((MockClientHttpRequest) request);
-                assertThat(form).containsEntry("grant_type", "authorization_code")
-                    .containsEntry("code", "authorization-code")
-                    .containsEntry("client_id", "net.raota.mobile.test");
-                verifyClientSecret(form.get("client_secret"));
-            })
-            .andRespond(withSuccess(
-                    "{\"refresh_token\":\"refresh-secret\",\"id_token\":\"" + idToken("https://appleid.apple.com",
-                            "net.raota.mobile.test", "apple-subject", Instant.now().plusSeconds(300)) + "\"}",
-                    MediaType.APPLICATION_JSON));
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(content().contentType(MediaType.APPLICATION_FORM_URLENCODED))
+                .andExpect(request -> {
+                    Map<String, String> form = form((MockClientHttpRequest) request);
+                    assertThat(form)
+                            .containsEntry("grant_type", "authorization_code")
+                            .containsEntry("code", "authorization-code")
+                            .containsEntry("client_id", "net.raota.mobile.test");
+                    verifyClientSecret(form.get("client_secret"));
+                })
+                .andRespond(withSuccess(
+                        "{\"refresh_token\":\"refresh-secret\",\"id_token\":\""
+                                + idToken(
+                                        "https://appleid.apple.com",
+                                        "net.raota.mobile.test",
+                                        "apple-subject",
+                                        Instant.now().plusSeconds(300))
+                                + "\"}",
+                        MediaType.APPLICATION_JSON));
 
         assertThat(client.exchange("authorization-code", "apple-subject")).isEqualTo("refresh-secret");
         server.verify();
@@ -92,13 +98,14 @@ class AppleTokenRestClientTest {
     @Test
     void PEM_줄바꿈_방식에_관계없이_서명_키를_읽는다() throws Exception {
         String pem = "-----BEGIN PRIVATE KEY-----\n" + bareKey() + "\n-----END PRIVATE KEY-----";
-        for (String key : new String[] { pem, pem.replace("\n", "\\n") }) {
+        for (String key : new String[] {pem, pem.replace("\n", "\\n")}) {
             RestClient.Builder builder = RestClient.builder();
             MockRestServiceServer mock = MockRestServiceServer.bindTo(builder).build();
             AppleTokenRestClient tokenClient = new AppleTokenRestClient(builder, properties(key), decoder());
             mock.expect(requestTo("https://apple.example/revoke"))
-                .andExpect(request -> verifyClientSecret(form((MockClientHttpRequest) request).get("client_secret")))
-                .andRespond(withSuccess());
+                    .andExpect(request -> verifyClientSecret(
+                            form((MockClientHttpRequest) request).get("client_secret")))
+                    .andRespond(withSuccess());
             tokenClient.revoke("revoked-token");
             mock.verify();
         }
@@ -107,13 +114,13 @@ class AppleTokenRestClientTest {
     @Test
     void 토큰_폐기는_제공자에게_갱신_토큰을_제출한다() {
         server.expect(requestTo("https://apple.example/revoke"))
-            .andExpect(method(HttpMethod.POST))
-            .andExpect(content().contentType(MediaType.APPLICATION_FORM_URLENCODED))
-            .andExpect(request -> assertThat(form((MockClientHttpRequest) request))
-                .containsEntry("token", "refresh-secret")
-                .containsEntry("token_type_hint", "refresh_token")
-                .containsEntry("client_id", "net.raota.mobile.test"))
-            .andRespond(withSuccess());
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(content().contentType(MediaType.APPLICATION_FORM_URLENCODED))
+                .andExpect(request -> assertThat(form((MockClientHttpRequest) request))
+                        .containsEntry("token", "refresh-secret")
+                        .containsEntry("token_type_hint", "refresh_token")
+                        .containsEntry("client_id", "net.raota.mobile.test"))
+                .andRespond(withSuccess());
 
         client.revoke("refresh-secret");
         server.verify();
@@ -122,15 +129,17 @@ class AppleTokenRestClientTest {
     @Test
     void 잘못된_코드나_갱신_토큰_누락은_401이다() {
         server.expect(requestTo("https://apple.example/token"))
-            .andRespond(org.springframework.test.web.client.response.MockRestResponseCreators.withBadRequest());
+                .andRespond(org.springframework.test.web.client.response.MockRestResponseCreators.withBadRequest());
         server.expect(requestTo("https://apple.example/token"))
-            .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
-        assertThatThrownBy(() -> client.exchange("invalid", "apple-subject")).isInstanceOfSatisfying(
-                MobileException.class,
-                error -> assertThat(error.code()).isEqualTo(MobileErrorCode.OAUTH_CREDENTIAL_INVALID));
-        assertThatThrownBy(() -> client.exchange("missing", "apple-subject")).isInstanceOfSatisfying(
-                MobileException.class,
-                error -> assertThat(error.code()).isEqualTo(MobileErrorCode.OAUTH_CREDENTIAL_INVALID));
+                .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+        assertThatThrownBy(() -> client.exchange("invalid", "apple-subject"))
+                .isInstanceOfSatisfying(
+                        MobileException.class,
+                        error -> assertThat(error.code()).isEqualTo(MobileErrorCode.OAUTH_CREDENTIAL_INVALID));
+        assertThatThrownBy(() -> client.exchange("missing", "apple-subject"))
+                .isInstanceOfSatisfying(
+                        MobileException.class,
+                        error -> assertThat(error.code()).isEqualTo(MobileErrorCode.OAUTH_CREDENTIAL_INVALID));
         server.verify();
     }
 
@@ -139,7 +148,7 @@ class AppleTokenRestClientTest {
         server.expect(requestTo("https://apple.example/token")).andRespond(withServerError());
         server.expect(requestTo("https://apple.example/revoke")).andRespond(withServerError());
         assertThatThrownBy(() -> client.exchange("code", "apple-subject"))
-            .isInstanceOf(RestClientResponseException.class);
+                .isInstanceOf(RestClientResponseException.class);
         assertThatThrownBy(() -> client.revoke("token")).isInstanceOf(RestClientResponseException.class);
         server.verify();
     }
@@ -147,53 +156,63 @@ class AppleTokenRestClientTest {
     @Test
     void 잘못된_개인키는_초기화할_수_없다() {
         assertThatThrownBy(() -> new AppleTokenRestClient(RestClient.builder(), properties("invalid-key"), decoder()))
-            .isInstanceOf(IllegalStateException.class);
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
     void 다른_회원의_코드는_발급된_토큰을_폐기한_뒤_거부한다() throws Exception {
         server.expect(requestTo("https://apple.example/token"))
-            .andRespond(withSuccess(
-                    "{\"refresh_token\":\"other-refresh\",\"id_token\":\"" + idToken("https://appleid.apple.com",
-                            "net.raota.mobile.test", "different-subject", Instant.now().plusSeconds(300)) + "\"}",
-                    MediaType.APPLICATION_JSON));
+                .andRespond(withSuccess(
+                        "{\"refresh_token\":\"other-refresh\",\"id_token\":\""
+                                + idToken(
+                                        "https://appleid.apple.com",
+                                        "net.raota.mobile.test",
+                                        "different-subject",
+                                        Instant.now().plusSeconds(300))
+                                + "\"}",
+                        MediaType.APPLICATION_JSON));
         server.expect(requestTo("https://apple.example/revoke"))
-            .andExpect(
-                    request -> assertThat(form((MockClientHttpRequest) request)).containsEntry("token", "other-refresh")
+                .andExpect(request -> assertThat(form((MockClientHttpRequest) request))
+                        .containsEntry("token", "other-refresh")
                         .containsEntry("token_type_hint", "refresh_token"))
-            .andRespond(withSuccess());
+                .andRespond(withSuccess());
 
-        assertThatThrownBy(() -> client.exchange("other-code", "apple-subject")).isInstanceOfSatisfying(
-                MobileException.class,
-                error -> assertThat(error.code()).isEqualTo(MobileErrorCode.OAUTH_CREDENTIAL_INVALID));
+        assertThatThrownBy(() -> client.exchange("other-code", "apple-subject"))
+                .isInstanceOfSatisfying(
+                        MobileException.class,
+                        error -> assertThat(error.code()).isEqualTo(MobileErrorCode.OAUTH_CREDENTIAL_INVALID));
         server.verify();
     }
 
     @Test
     void 토큰_응답에_ID_토큰이_없어도_발급된_토큰을_폐기한다() {
         server.expect(requestTo("https://apple.example/token"))
-            .andRespond(withSuccess("{\"refresh_token\":\"orphan-refresh\"}", MediaType.APPLICATION_JSON));
+                .andRespond(withSuccess("{\"refresh_token\":\"orphan-refresh\"}", MediaType.APPLICATION_JSON));
         server.expect(requestTo("https://apple.example/revoke"))
-            .andExpect(request -> assertThat(form((MockClientHttpRequest) request)).containsEntry("token",
-                    "orphan-refresh"))
-            .andRespond(withSuccess());
+                .andExpect(request ->
+                        assertThat(form((MockClientHttpRequest) request)).containsEntry("token", "orphan-refresh"))
+                .andRespond(withSuccess());
 
-        assertThatThrownBy(() -> client.exchange("code", "apple-subject")).isInstanceOfSatisfying(MobileException.class,
-                error -> assertThat(error.code()).isEqualTo(MobileErrorCode.OAUTH_CREDENTIAL_INVALID));
+        assertThatThrownBy(() -> client.exchange("code", "apple-subject"))
+                .isInstanceOfSatisfying(
+                        MobileException.class,
+                        error -> assertThat(error.code()).isEqualTo(MobileErrorCode.OAUTH_CREDENTIAL_INVALID));
         server.verify();
     }
 
     private static NimbusJwtDecoder decoder() {
-        return NimbusJwtDecoder.withPublicKey((RSAPublicKey) rsaKeyPair.getPublic()).build();
+        return NimbusJwtDecoder.withPublicKey((RSAPublicKey) rsaKeyPair.getPublic())
+                .build();
     }
 
     private static String idToken(String issuer, String audience, String subject, Instant expiresAt) throws Exception {
-        JWTClaimsSet claims = new JWTClaimsSet.Builder().issuer(issuer)
-            .audience(audience)
-            .subject(subject)
-            .issueTime(Date.from(Instant.now().minusSeconds(30)))
-            .expirationTime(Date.from(expiresAt))
-            .build();
+        JWTClaimsSet claims = new JWTClaimsSet.Builder()
+                .issuer(issuer)
+                .audience(audience)
+                .subject(subject)
+                .issueTime(Date.from(Instant.now().minusSeconds(30)))
+                .expirationTime(Date.from(expiresAt))
+                .build();
         SignedJWT token = new SignedJWT(new JWSHeader(JWSAlgorithm.RS256), claims);
         token.sign(new RSASSASigner(rsaKeyPair.getPrivate()));
         return token.serialize();
@@ -204,24 +223,28 @@ class AppleTokenRestClientTest {
             SignedJWT jwt = SignedJWT.parse(raw);
             assertThat(jwt.getHeader().getAlgorithm().getName()).isEqualTo("ES256");
             assertThat(jwt.getHeader().getKeyID()).isEqualTo("TESTKEY001");
-            assertThat(jwt.verify(new ECDSAVerifier((ECPublicKey) keyPair.getPublic()))).isTrue();
+            assertThat(jwt.verify(new ECDSAVerifier((ECPublicKey) keyPair.getPublic())))
+                    .isTrue();
             var claims = jwt.getJWTClaimsSet();
             assertThat(claims.getIssuer()).isEqualTo("TESTTEAM01");
             assertThat(claims.getAudience()).containsExactly("https://appleid.apple.com");
             assertThat(claims.getSubject()).isEqualTo("net.raota.mobile.test");
-            assertThat(claims.getIssueTime().toInstant()).isBetween(Instant.now().minusSeconds(10), Instant.now());
-            assertThat(claims.getExpirationTime().getTime() - claims.getIssueTime().getTime()).isEqualTo(300_000);
-        }
-        catch (Exception exception) {
+            assertThat(claims.getIssueTime().toInstant())
+                    .isBetween(Instant.now().minusSeconds(10), Instant.now());
+            assertThat(claims.getExpirationTime().getTime()
+                            - claims.getIssueTime().getTime())
+                    .isEqualTo(300_000);
+        } catch (Exception exception) {
             throw new AssertionError(exception);
         }
     }
 
     private static Map<String, String> form(MockClientHttpRequest request) {
         return Arrays.stream(request.getBodyAsString().split("&"))
-            .map(field -> field.split("=", 2))
-            .collect(Collectors.toMap(field -> URLDecoder.decode(field[0], StandardCharsets.UTF_8),
-                    field -> URLDecoder.decode(field[1], StandardCharsets.UTF_8)));
+                .map(field -> field.split("=", 2))
+                .collect(Collectors.toMap(
+                        field -> URLDecoder.decode(field[0], StandardCharsets.UTF_8),
+                        field -> URLDecoder.decode(field[1], StandardCharsets.UTF_8)));
     }
 
     private static String bareKey() {
@@ -229,11 +252,18 @@ class AppleTokenRestClientTest {
     }
 
     private static MobileOAuthProperties properties(String key) {
-        return new MobileOAuthProperties(new MobileOAuthProperties.Google(List.of("google"), "https://unused.example"),
+        return new MobileOAuthProperties(
+                new MobileOAuthProperties.Google(List.of("google"), "https://unused.example"),
                 new MobileOAuthProperties.Kakao("123456", "https://unused.example"),
-                new MobileOAuthProperties.Apple("net.raota.mobile.test", "TESTTEAM01", "TESTKEY001", key,
-                        "cm2PatRyO0rn/bD+j2wAupkmWGwmDGXdnq3PxZx59Fk=", "https://unused.example/keys",
-                        "https://appleid.apple.com", "https://apple.example/token", "https://apple.example/revoke"));
+                new MobileOAuthProperties.Apple(
+                        "net.raota.mobile.test",
+                        "TESTTEAM01",
+                        "TESTKEY001",
+                        key,
+                        "cm2PatRyO0rn/bD+j2wAupkmWGwmDGXdnq3PxZx59Fk=",
+                        "https://unused.example/keys",
+                        "https://appleid.apple.com",
+                        "https://apple.example/token",
+                        "https://apple.example/revoke"));
     }
-
 }

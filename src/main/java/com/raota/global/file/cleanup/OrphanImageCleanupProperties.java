@@ -16,6 +16,6 @@ import org.springframework.validation.annotation.Validated;
  */
 @ConfigurationProperties("app.file.orphan-cleanup")
 @Validated
-public record OrphanImageCleanupProperties(@NotNull @DurationMin(days = 1) @DefaultValue("P7D") Duration retention,
-        @Positive @DefaultValue("500") int maxDeletes) {
-}
+public record OrphanImageCleanupProperties(
+        @NotNull @DurationMin(days = 1) @DefaultValue("P7D") Duration retention,
+        @Positive @DefaultValue("500") int maxDeletes) {}

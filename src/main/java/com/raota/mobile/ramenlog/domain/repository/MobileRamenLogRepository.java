@@ -57,8 +57,14 @@ public interface MobileRamenLogRepository extends JpaRepository<MobileRamenLog, 
                      or (log.createdAt = :afterCreatedAt and log.id < :afterId))
             order by log.createdAt desc, log.id desc
             """)
-    List<MobileRamenLog> findLatest(LogVisibility visibility, String ramenType, Long shopId, Long viewerId,
-            Instant afterCreatedAt, Long afterId, Pageable limit);
+    List<MobileRamenLog> findLatest(
+            LogVisibility visibility,
+            String ramenType,
+            Long shopId,
+            Long viewerId,
+            Instant afterCreatedAt,
+            Long afterId,
+            Pageable limit);
 
     /** {@link #findLatest}와 같은 조건을 공감 수 순으로 읽는다. */
     @Query("""
@@ -77,8 +83,14 @@ public interface MobileRamenLogRepository extends JpaRepository<MobileRamenLog, 
                      or (log.likeCount = :afterLikes and log.id < :afterId))
             order by log.likeCount desc, log.id desc
             """)
-    List<MobileRamenLog> findMostLiked(LogVisibility visibility, String ramenType, Long shopId, Long viewerId,
-            Integer afterLikes, Long afterId, Pageable limit);
+    List<MobileRamenLog> findMostLiked(
+            LogVisibility visibility,
+            String ramenType,
+            Long shopId,
+            Long viewerId,
+            Integer afterLikes,
+            Long afterId,
+            Pageable limit);
 
     @Query("""
             select log.shopId as shopId, count(log) as logs,
@@ -121,7 +133,5 @@ public interface MobileRamenLogRepository extends JpaRepository<MobileRamenLog, 
         Long getScoreSum();
 
         Long getScoredLogs();
-
     }
-
 }

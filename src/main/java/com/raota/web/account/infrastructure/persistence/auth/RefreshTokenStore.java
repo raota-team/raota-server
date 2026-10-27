@@ -12,5 +12,4 @@ public interface RefreshTokenStore {
     void save(Long memberId, String token, Instant expiresAt);
 
     void deleteByToken(String token);
-
 }

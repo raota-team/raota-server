@@ -33,12 +33,10 @@ public class UploadTicketRateLimiter {
         try {
             count = redis.opsForValue().increment(key, files);
             redis.expire(key, KEY_TTL);
-        }
-        catch (RuntimeException exception) {
+        } catch (RuntimeException exception) {
             log.warn("업로드 티켓 한도를 확인하지 못해 허용합니다: scope={}, memberId={}", scope, memberId, exception);
             return true;
         }
         return count == null || count <= FILES_PER_HOUR;
     }
-
 }

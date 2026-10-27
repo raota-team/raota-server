@@ -1,17 +1,17 @@
 package com.raota.support;
 
 import com.redis.testcontainers.RedisContainer;
-import org.junit.jupiter.api.AfterEach;
 import org.flywaydb.core.Flyway;
+import org.junit.jupiter.api.AfterEach;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.ai.vectorstore.VectorStore;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -30,9 +30,10 @@ public abstract class BaseIntegrationTest {
     protected static final RedisContainer REDIS_CONTAINER;
 
     static {
-        MYSQL_CONTAINER = new MySQLContainer<>("mysql:8.0").withDatabaseName("raota")
-            .withUsername("root")
-            .withPassword("password");
+        MYSQL_CONTAINER = new MySQLContainer<>("mysql:8.0")
+                .withDatabaseName("raota")
+                .withUsername("root")
+                .withPassword("password");
         MYSQL_CONTAINER.start();
 
         REDIS_CONTAINER = new RedisContainer(DockerImageName.parse("redis:7.2-alpine"));
@@ -40,9 +41,9 @@ public abstract class BaseIntegrationTest {
 
         // Ensure Flyway runs before Hibernate validation
         Flyway flyway = Flyway.configure()
-            .dataSource(MYSQL_CONTAINER.getJdbcUrl(), MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword())
-            .locations("classpath:db/migration")
-            .load();
+                .dataSource(MYSQL_CONTAINER.getJdbcUrl(), MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword())
+                .locations("classpath:db/migration")
+                .load();
         flyway.migrate();
     }
 
@@ -65,5 +66,4 @@ public abstract class BaseIntegrationTest {
             cache.clear();
         }
     }
-
 }

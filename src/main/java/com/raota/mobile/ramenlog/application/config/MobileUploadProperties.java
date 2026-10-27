@@ -7,5 +7,4 @@ import org.springframework.validation.annotation.Validated;
 /** 사진 업로드 후 앱에 반환하는 공개 저장소의 주소다. */
 @ConfigurationProperties("app.mobile.upload")
 @Validated
-public record MobileUploadProperties(@NotBlank String imageBaseUrl) {
-}
+public record MobileUploadProperties(@NotBlank String imageBaseUrl) {}

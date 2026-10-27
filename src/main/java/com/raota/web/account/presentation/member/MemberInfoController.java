@@ -1,5 +1,7 @@
 package com.raota.web.account.presentation.member;
 
+import com.raota.global.presentation.common.ApiResponse;
+import com.raota.global.presentation.common.PageResponse;
 import com.raota.web.account.application.member.MemberActivityVisibilityService;
 import com.raota.web.account.application.member.MemberInfoService;
 import com.raota.web.account.application.member.MemberLifecycleService;
@@ -15,8 +17,6 @@ import com.raota.web.account.presentation.member.response.MemberSummaryResponse;
 import com.raota.web.account.presentation.member.response.MyProfileResponse;
 import com.raota.web.account.presentation.member.response.PhotoSummaryResponse;
 import com.raota.web.account.presentation.member.response.VisitSummaryResponse;
-import com.raota.global.presentation.common.ApiResponse;
-import com.raota.global.presentation.common.PageResponse;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -58,17 +58,21 @@ public class MemberInfoController implements MemberInfoApi {
 
     @Override
     @PatchMapping("/me/profile")
-    public ResponseEntity<ApiResponse<MyProfileResponse>> updateMyProfile(@RequestBody UpdateProfileRequest request,
-            @LoginMember Long memberId) {
-        MyProfileResponse updated = memberInfoService.updateMyProfile(request.getNickname(),
-                request.getProfile_image_url(), request.getBackground_image_url(), request.getBio(), memberId);
+    public ResponseEntity<ApiResponse<MyProfileResponse>> updateMyProfile(
+            @RequestBody UpdateProfileRequest request, @LoginMember Long memberId) {
+        MyProfileResponse updated = memberInfoService.updateMyProfile(
+                request.getNickname(),
+                request.getProfile_image_url(),
+                request.getBackground_image_url(),
+                request.getBio(),
+                memberId);
         return ResponseEntity.ok(ApiResponse.success(updated));
     }
 
     @Override
     @PatchMapping("/me/email")
-    public ResponseEntity<ApiResponse<MyProfileResponse>> updateMyEmail(@Valid @RequestBody UpdateEmailRequest request,
-            @LoginMember Long memberId) {
+    public ResponseEntity<ApiResponse<MyProfileResponse>> updateMyEmail(
+            @Valid @RequestBody UpdateEmailRequest request, @LoginMember Long memberId) {
         return ResponseEntity.ok(ApiResponse.success(memberInfoService.updateMyEmail(request.email(), memberId)));
     }
 
@@ -85,58 +89,59 @@ public class MemberInfoController implements MemberInfoApi {
 
     @Override
     @DeleteMapping("/me")
-    public ResponseEntity<ApiResponse<Void>> withdrawMyAccount(@LoginMember Long memberId,
-            HttpServletResponse response) {
+    public ResponseEntity<ApiResponse<Void>> withdrawMyAccount(
+            @LoginMember Long memberId, HttpServletResponse response) {
         memberLifecycleService.withdraw(memberId);
-        response.addHeader("Set-Cookie", refreshTokenCookieManager.clearRefreshTokenCookie().toString());
+        response.addHeader(
+                "Set-Cookie",
+                refreshTokenCookieManager.clearRefreshTokenCookie().toString());
         return ResponseEntity.ok(ApiResponse.success(MemberLifecycleService.WITHDRAW_COMPLETE_MESSAGE, null));
     }
 
     @Override
     @GetMapping("/me/photos")
-    public ResponseEntity<ApiResponse<PageResponse<PhotoSummaryResponse>>> getUserPhoto(@LoginMember Long memberId,
-            Pageable pageable) {
+    public ResponseEntity<ApiResponse<PageResponse<PhotoSummaryResponse>>> getUserPhoto(
+            @LoginMember Long memberId, Pageable pageable) {
         Page<PhotoSummaryResponse> photos = memberInfoService.getMyPhotoList(memberId, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(photos)));
     }
 
     @Override
     @GetMapping("/me/bookmarks")
-    public ResponseEntity<ApiResponse<PageResponse<BookmarkSummaryResponse>>> getMyBookmarks(@LoginMember Long memberId,
-            Pageable pageable) {
+    public ResponseEntity<ApiResponse<PageResponse<BookmarkSummaryResponse>>> getMyBookmarks(
+            @LoginMember Long memberId, Pageable pageable) {
         Page<BookmarkSummaryResponse> page = memberInfoService.getMyBookmarks(memberId, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(page)));
     }
 
     @Override
     @GetMapping("/me/visits")
-    public ResponseEntity<ApiResponse<PageResponse<VisitSummaryResponse>>> getMyVisits(@LoginMember Long memberId,
-            Pageable pageable) {
+    public ResponseEntity<ApiResponse<PageResponse<VisitSummaryResponse>>> getMyVisits(
+            @LoginMember Long memberId, Pageable pageable) {
         Page<VisitSummaryResponse> page = memberInfoService.getMyVisits(memberId, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(page)));
     }
 
     @Override
     @GetMapping("/{userId}/profile")
-    public ResponseEntity<ApiResponse<MyProfileResponse>> getUserProfileById(@PathVariable Long userId,
-            @LoginMember(required = false) Long viewerId) {
+    public ResponseEntity<ApiResponse<MyProfileResponse>> getUserProfileById(
+            @PathVariable Long userId, @LoginMember(required = false) Long viewerId) {
         return ResponseEntity.ok(ApiResponse.success(memberInfoService.getUserProfile(userId, viewerId)));
     }
 
     @Override
     @GetMapping("/{userId}/photos")
-    public ResponseEntity<ApiResponse<PageResponse<PhotoSummaryResponse>>> getUserPhotosById(@PathVariable Long userId,
-            @LoginMember(required = false) Long viewerId, Pageable pageable) {
+    public ResponseEntity<ApiResponse<PageResponse<PhotoSummaryResponse>>> getUserPhotosById(
+            @PathVariable Long userId, @LoginMember(required = false) Long viewerId, Pageable pageable) {
         Page<PhotoSummaryResponse> photos = memberInfoService.getUserPhotoList(userId, viewerId, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(photos)));
     }
 
     @Override
     @GetMapping("/{userId}/visits")
-    public ResponseEntity<ApiResponse<PageResponse<VisitSummaryResponse>>> getUserVisitsById(@PathVariable Long userId,
-            @LoginMember(required = false) Long viewerId, Pageable pageable) {
+    public ResponseEntity<ApiResponse<PageResponse<VisitSummaryResponse>>> getUserVisitsById(
+            @PathVariable Long userId, @LoginMember(required = false) Long viewerId, Pageable pageable) {
         Page<VisitSummaryResponse> page = memberInfoService.getUserVisits(userId, viewerId, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(page)));
     }
-
 }

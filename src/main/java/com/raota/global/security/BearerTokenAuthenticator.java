@@ -8,5 +8,4 @@ public interface BearerTokenAuthenticator {
     boolean supports(HttpServletRequest request);
 
     Authentication authenticate(String token);
-
 }

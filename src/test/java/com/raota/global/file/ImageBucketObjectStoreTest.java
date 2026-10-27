@@ -36,30 +36,42 @@ class ImageBucketObjectStoreTest {
 
     @Test
     void 잘린_목록은_마지막_키를_marker로_이어_받고_기준_시각_이전_객체만_CDN_주소로_돌려준다() {
-        when(s3.listObjects(any(ListObjectsRequest.class))).thenReturn(
-                ListObjectsResponse.builder()
-                    .isTruncated(true)
-                    .contents(object("v2/ramen-logs/a.jpg", CUTOFF.minusSeconds(1)),
-                            object("v2/ramen-logs/b.jpg", CUTOFF))
-                    .build(),
-                ListObjectsResponse.builder()
-                    .isTruncated(false)
-                    .contents(object("v2/ramen-logs/c.jpg", CUTOFF.minusSeconds(60)))
-                    .build());
+        when(s3.listObjects(any(ListObjectsRequest.class)))
+                .thenReturn(
+                        ListObjectsResponse.builder()
+                                .isTruncated(true)
+                                .contents(
+                                        object("v2/ramen-logs/a.jpg", CUTOFF.minusSeconds(1)),
+                                        object("v2/ramen-logs/b.jpg", CUTOFF))
+                                .build(),
+                        ListObjectsResponse.builder()
+                                .isTruncated(false)
+                                .contents(object("v2/ramen-logs/c.jpg", CUTOFF.minusSeconds(60)))
+                                .build());
 
         List<StoredImage> images = store.listOlderThan("v2/ramen-logs/", CUTOFF);
 
-        assertThat(images).containsExactly(
-                new StoredImage("v2/ramen-logs/a.jpg", "https://images.raota.net/v2/ramen-logs/a.jpg",
-                        CUTOFF.minusSeconds(1)),
-                new StoredImage("v2/ramen-logs/c.jpg", "https://images.raota.net/v2/ramen-logs/c.jpg",
-                        CUTOFF.minusSeconds(60)));
+        assertThat(images)
+                .containsExactly(
+                        new StoredImage(
+                                "v2/ramen-logs/a.jpg",
+                                "https://images.raota.net/v2/ramen-logs/a.jpg",
+                                CUTOFF.minusSeconds(1)),
+                        new StoredImage(
+                                "v2/ramen-logs/c.jpg",
+                                "https://images.raota.net/v2/ramen-logs/c.jpg",
+                                CUTOFF.minusSeconds(60)));
         ArgumentCaptor<ListObjectsRequest> requests = ArgumentCaptor.forClass(ListObjectsRequest.class);
         verify(s3, times(2)).listObjects(requests.capture());
-        assertThat(requests.getAllValues()).extracting(ListObjectsRequest::bucket).containsOnly("raota");
-        assertThat(requests.getAllValues()).extracting(ListObjectsRequest::prefix).containsOnly("v2/ramen-logs/");
-        assertThat(requests.getAllValues()).extracting(ListObjectsRequest::marker)
-            .containsExactly(null, "v2/ramen-logs/b.jpg");
+        assertThat(requests.getAllValues())
+                .extracting(ListObjectsRequest::bucket)
+                .containsOnly("raota");
+        assertThat(requests.getAllValues())
+                .extracting(ListObjectsRequest::prefix)
+                .containsOnly("v2/ramen-logs/");
+        assertThat(requests.getAllValues())
+                .extracting(ListObjectsRequest::marker)
+                .containsExactly(null, "v2/ramen-logs/b.jpg");
     }
 
     @Test
@@ -72,5 +84,4 @@ class ImageBucketObjectStoreTest {
     private static S3Object object(String key, Instant lastModified) {
         return S3Object.builder().key(key).lastModified(lastModified).build();
     }
-
 }

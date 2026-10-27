@@ -16,8 +16,9 @@ public class RamenShopReader {
     }
 
     public RamenShop getRamenShop(Long shopId) {
-        return ramenShopRepository.findByIdAndPublishedTrue(shopId)
-            .orElseThrow(() -> new EntityNotFoundException("라멘샵을 찾을 수 없습니다. id=" + shopId));
+        return ramenShopRepository
+                .findByIdAndPublishedTrue(shopId)
+                .orElseThrow(() -> new EntityNotFoundException("라멘샵을 찾을 수 없습니다. id=" + shopId));
     }
 
     public List<RamenShop> getRamenShops(List<Long> shopIds) {
@@ -77,8 +78,7 @@ public class RamenShopReader {
                 주소: %s
                 태그: %s
                 설명: %s
-                """.formatted(shop.getName(), addressTextOrDefault(shop), tagsTextOrDefault(shop),
-                descriptionTextOrDefault(shop));
+                """.formatted(
+                shop.getName(), addressTextOrDefault(shop), tagsTextOrDefault(shop), descriptionTextOrDefault(shop));
     }
-
 }

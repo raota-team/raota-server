@@ -17,11 +17,9 @@ public final class MobileApiPath {
 
     private static final RequestMatcher MATCHER = pathPattern("/api/v2/**");
 
-    private MobileApiPath() {
-    }
+    private MobileApiPath() {}
 
     public static boolean matches(HttpServletRequest request) {
         return MATCHER.matches(request);
     }
-
 }

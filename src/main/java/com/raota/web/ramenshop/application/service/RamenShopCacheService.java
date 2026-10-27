@@ -1,17 +1,17 @@
 package com.raota.web.ramenshop.application.service;
 
-import com.raota.web.ramenshop.presentation.response.RamenShopBasicInfoResponse;
-import com.raota.web.ramenshop.presentation.response.RamenShopResponse;
-import com.raota.web.ramenshop.presentation.response.EventMenuDto;
-import com.raota.web.ramenshop.presentation.response.NormalMenuDto;
+import com.raota.global.file.FileUploader;
+import com.raota.web.ramenshop.application.port.RamenLogQueryPort;
 import com.raota.web.ramenshop.domain.model.EventMenu;
 import com.raota.web.ramenshop.domain.model.EventMenus;
 import com.raota.web.ramenshop.domain.model.NormalMenu;
 import com.raota.web.ramenshop.domain.model.NormalMenus;
 import com.raota.web.ramenshop.domain.model.RamenShop;
 import com.raota.web.ramenshop.domain.repository.RamenShopRepository;
-import com.raota.web.ramenshop.application.port.RamenLogQueryPort;
-import com.raota.global.file.FileUploader;
+import com.raota.web.ramenshop.presentation.response.EventMenuDto;
+import com.raota.web.ramenshop.presentation.response.NormalMenuDto;
+import com.raota.web.ramenshop.presentation.response.RamenShopBasicInfoResponse;
+import com.raota.web.ramenshop.presentation.response.RamenShopResponse;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,26 +36,40 @@ public class RamenShopCacheService {
     @Transactional(readOnly = true)
     @Cacheable(cacheNames = "ramenShopDetail", key = "#shopId.toString()")
     public RamenShopBasicInfoResponse getShopDetail(Long shopId) {
-        RamenShop ramenShop = ramenShopRepository.findByIdAndPublishedTrue(shopId)
-            .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
+        RamenShop ramenShop = ramenShopRepository
+                .findByIdAndPublishedTrue(shopId)
+                .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
 
-        return RamenShopBasicInfoResponse.from(ramenShop, fileUploader.getAccessibleUrl(ramenShop.getImageUrl()),
+        return RamenShopBasicInfoResponse.from(
+                ramenShop,
+                fileUploader.getAccessibleUrl(ramenShop.getImageUrl()),
                 normalMenusOf(ramenShop).stream().map(NormalMenuDto::from).toList(),
-                eventMenusOf(ramenShop).stream().map(EventMenuDto::from).toList(), false);
+                eventMenusOf(ramenShop).stream().map(EventMenuDto::from).toList(),
+                false);
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(cacheNames = "ramenShopList",
-            key = "T(String).valueOf(#city) + ':' + T(String).valueOf(#district) + ':' + T(String).valueOf(#keyword) + ':' + T(String).valueOf(#tag) + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort.toString()",
+    @Cacheable(
+            cacheNames = "ramenShopList",
+            key =
+                    "T(String).valueOf(#city) + ':' + T(String).valueOf(#district) + ':' + T(String).valueOf(#keyword) + ':' + T(String).valueOf(#tag) + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort.toString()",
             condition = "#pageable.pageNumber == 0")
-    public Page<RamenShopResponse> getFirstPageShopList(String city, String district, String keyword, String tag,
-            Pageable pageable) {
+    public Page<RamenShopResponse> getFirstPageShopList(
+            String city, String district, String keyword, String tag, Pageable pageable) {
         Page<RamenShopResponse> shops = ramenShopRepository.searchStores(city, district, keyword, tag, pageable);
-        List<Long> shopIds = shops.getContent().stream().map(RamenShopResponse::id).toList();
+        List<Long> shopIds =
+                shops.getContent().stream().map(RamenShopResponse::id).toList();
         Map<Long, RamenLogPreview> previewsByShopId = findRamenLogPreviews(shopIds);
 
-        return shops.map(store -> new RamenShopResponse(store.id(), store.name(), store.tagLine(), store.region(),
-                store.tags(), fileUploader.getAccessibleUrl(store.thumbnailUrl()), store.visits(), store.viewCount(),
+        return shops.map(store -> new RamenShopResponse(
+                store.id(),
+                store.name(),
+                store.tagLine(),
+                store.region(),
+                store.tags(),
+                fileUploader.getAccessibleUrl(store.thumbnailUrl()),
+                store.visits(),
+                store.viewCount(),
                 previewsByShopId.getOrDefault(store.id(), RamenLogPreview.EMPTY).count(),
                 previewsByShopId.getOrDefault(store.id(), RamenLogPreview.EMPTY).imageUrls()));
     }
@@ -67,8 +81,8 @@ public class RamenShopCacheService {
 
         Map<Long, RamenLogPreview> result = new LinkedHashMap<>();
         for (RamenLogQueryPort.Preview row : ramenLogQueryPort.findPreviewRowsByShopIds(shopIds)) {
-            RamenLogPreview preview = result.computeIfAbsent(row.ramenShopId(),
-                    ignored -> new RamenLogPreview(row.ramenLogCount(), new ArrayList<>()));
+            RamenLogPreview preview = result.computeIfAbsent(
+                    row.ramenShopId(), ignored -> new RamenLogPreview(row.ramenLogCount(), new ArrayList<>()));
             preview.imageUrls().add(fileUploader.getAccessibleUrl(row.imageUrl()));
         }
         return result;
@@ -86,7 +100,5 @@ public class RamenShopCacheService {
 
     private record RamenLogPreview(long count, List<String> imageUrls) {
         private static final RamenLogPreview EMPTY = new RamenLogPreview(0L, List.of());
-
     }
-
 }

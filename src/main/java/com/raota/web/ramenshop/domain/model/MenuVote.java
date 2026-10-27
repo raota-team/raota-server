@@ -61,5 +61,4 @@ public class MenuVote {
         this.isCancelled = false;
         this.votedAt = LocalDateTime.now();
     }
-
 }

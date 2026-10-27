@@ -48,8 +48,8 @@ public class MobileFallbackExceptionResolver implements HandlerExceptionResolver
     }
 
     @Override
-    public ModelAndView resolveException(HttpServletRequest request, HttpServletResponse response, Object handler,
-            Exception ex) {
+    public ModelAndView resolveException(
+            HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
         if (!MobileApiPath.matches(request)) {
             return null;
         }
@@ -63,7 +63,8 @@ public class MobileFallbackExceptionResolver implements HandlerExceptionResolver
             case HttpRequestMethodNotSupportedException methodException -> {
                 Set<HttpMethod> supportedMethods = methodException.getSupportedHttpMethods();
                 if (supportedMethods != null && !supportedMethods.isEmpty()) {
-                    response.setHeader(HttpHeaders.ALLOW,
+                    response.setHeader(
+                            HttpHeaders.ALLOW,
                             supportedMethods.stream().map(HttpMethod::name).collect(Collectors.joining(", ")));
                 }
                 yield new Failure(MobileErrorCode.METHOD_NOT_ALLOWED, "지원하지 않는 HTTP 메서드입니다.");
@@ -80,17 +81,15 @@ public class MobileFallbackExceptionResolver implements HandlerExceptionResolver
             response.setStatus(failure.code().httpStatus().value());
             response.setCharacterEncoding(StandardCharsets.UTF_8.name());
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            objectMapper.writeValue(response.getWriter(),
+            objectMapper.writeValue(
+                    response.getWriter(),
                     MobileApiResponse.failure(MobileError.of(failure.code(), failure.message()))
-                        .withRequestId(RequestIdFilter.currentRequestId(request)));
+                            .withRequestId(RequestIdFilter.currentRequestId(request)));
             return new ModelAndView();
-        }
-        catch (IOException ignored) {
+        } catch (IOException ignored) {
             return null;
         }
     }
 
-    private record Failure(MobileErrorCode code, String message) {
-    }
-
+    private record Failure(MobileErrorCode code, String message) {}
 }

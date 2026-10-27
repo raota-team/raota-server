@@ -59,5 +59,4 @@ public class MemberLifecycleService {
         }
         return expiredMembers.size();
     }
-
 }

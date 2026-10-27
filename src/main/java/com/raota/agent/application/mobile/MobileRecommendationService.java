@@ -96,14 +96,23 @@ public class MobileRecommendationService {
     private final Duration timeout;
 
     /** JDBC·HTTP 블로킹 호출이라 가상 스레드 대신 크기가 정해진 플랫폼 스레드를 쓴다. */
-    private final ThreadPoolExecutor executor = new ThreadPoolExecutor(MAX_CONCURRENT_SEARCHES, MAX_CONCURRENT_SEARCHES,
-            60, TimeUnit.SECONDS, new SynchronousQueue<>(),
+    private final ThreadPoolExecutor executor = new ThreadPoolExecutor(
+            MAX_CONCURRENT_SEARCHES,
+            MAX_CONCURRENT_SEARCHES,
+            60,
+            TimeUnit.SECONDS,
+            new SynchronousQueue<>(),
             Thread.ofPlatform().name("ai-recommendation-", 0).daemon(true).factory(),
             new ThreadPoolExecutor.AbortPolicy());
 
-    public MobileRecommendationService(RamenShopSearchDocumentPort documents, MobileShopAgentFacade shops,
-            MobileRecommendationReasonPort reasonWriter, MobileRecommendationRateLimiter rateLimiter,
-            MobileRecommendationLogger logger, MobileRecommendationTickets tickets, ObjectMapper mapper,
+    public MobileRecommendationService(
+            RamenShopSearchDocumentPort documents,
+            MobileShopAgentFacade shops,
+            MobileRecommendationReasonPort reasonWriter,
+            MobileRecommendationRateLimiter rateLimiter,
+            MobileRecommendationLogger logger,
+            MobileRecommendationTickets tickets,
+            ObjectMapper mapper,
             @Value("${app.mobile.recommendation.timeout:20s}") Duration timeout) {
         this.documents = documents;
         this.shops = shops;
@@ -125,7 +134,8 @@ public class MobileRecommendationService {
         String region = trimToNull(command.region());
         rateLimiter.acquire(userId);
         if (tickets.remaining(userId) == 0) {
-            throw new MobileException(MobileErrorCode.DAILY_LIMIT_EXCEEDED,
+            throw new MobileException(
+                    MobileErrorCode.DAILY_LIMIT_EXCEEDED,
                     "오늘 식권 " + tickets.dailyLimit() + "장을 모두 뽑았어요. 내일 다시 뽑을 수 있어요.");
         }
         long startedAt = System.nanoTime();
@@ -134,17 +144,21 @@ public class MobileRecommendationService {
         if (located) {
             limit = NEAREST_CANDIDATES;
         }
-        List<Long> candidates = shops.recommendationCandidates(command.soupType(), region, command.latitude(),
-                command.longitude(), limit);
+        List<Long> candidates = shops.recommendationCandidates(
+                command.soupType(), region, command.latitude(), command.longitude(), limit);
         List<Scored> ranked = rank(candidates, similarities(command.similarityQuery(), candidates), located);
-        List<MobileShopSummary> picked = shops.recommendable(userId, ranked.stream().map(Scored::shopId).toList(),
-                command.latitude(), command.longitude(), MAX_SHOPS);
+        List<MobileShopSummary> picked = shops.recommendable(
+                userId,
+                ranked.stream().map(Scored::shopId).toList(),
+                command.latitude(),
+                command.longitude(),
+                MAX_SHOPS);
         Map<String, String> reasonByShop = reasons(command, region, picked, startedAt);
         long latencyMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt);
-        String recommendationId = logger.record(userId, command, candidates.size(), shown(picked, ranked, reasonByShop),
-                latencyMs);
-        return new MobileRecommendationResult(recommendationId, picked,
-                appliedConditions(command.preferenceLabels(), region, located), reasonByShop);
+        String recommendationId =
+                logger.record(userId, command, candidates.size(), shown(picked, ranked, reasonByShop), latencyMs);
+        return new MobileRecommendationResult(
+                recommendationId, picked, appliedConditions(command.preferenceLabels(), region, located), reasonByShop);
     }
 
     /** 오늘 뽑은 식권과 남은 장수다. 식권마다 그때 보여준 순서대로, 지금도 추천해도 되는 매장만 다시 요약한다. */
@@ -152,7 +166,9 @@ public class MobileRecommendationService {
         List<ShownRecommendation> shown = tickets.today(userId);
         List<MobileTodayRecommendationsResult.Ticket> today = new ArrayList<>(shown.size());
         for (ShownRecommendation run : shown) {
-            List<Long> shopIds = run.items().stream().map(MobileRecommendationRun.Item::shopId).toList();
+            List<Long> shopIds = run.items().stream()
+                    .map(MobileRecommendationRun.Item::shopId)
+                    .toList();
             List<MobileShopSummary> picked = shops.recommendable(userId, shopIds, null, null, MAX_SHOPS);
             Map<String, String> reasons = new LinkedHashMap<>();
             for (MobileRecommendationRun.Item item : run.items()) {
@@ -160,23 +176,31 @@ public class MobileRecommendationService {
                     reasons.put(String.valueOf(item.shopId()), item.reason());
                 }
             }
-            Map<String, String> conditions = mapper.readValue(run.conditionsJson(), new TypeReference<>() {
-            });
-            MobileRecommendationCommand asked = new MobileRecommendationCommand(conditions.get("soup"),
-                    conditions.get("mood"), conditions.get("priority"), conditions.get("text"), null, null,
+            Map<String, String> conditions = mapper.readValue(run.conditionsJson(), new TypeReference<>() {});
+            MobileRecommendationCommand asked = new MobileRecommendationCommand(
+                    conditions.get("soup"),
+                    conditions.get("mood"),
+                    conditions.get("priority"),
+                    conditions.get("text"),
+                    null,
+                    null,
                     conditions.get("region"));
-            today.add(new MobileTodayRecommendationsResult.Ticket(String.valueOf(run.id()), run.createdAt(), picked,
-                    appliedConditions(asked.preferenceLabels(), trimToNull(asked.region()), run.located()), reasons));
+            today.add(new MobileTodayRecommendationsResult.Ticket(
+                    String.valueOf(run.id()),
+                    run.createdAt(),
+                    picked,
+                    appliedConditions(asked.preferenceLabels(), trimToNull(asked.region()), run.located()),
+                    reasons));
         }
-        return new MobileTodayRecommendationsResult(tickets.dailyLimit(),
-                Math.max(0, tickets.dailyLimit() - shown.size()), today);
+        return new MobileTodayRecommendationsResult(
+                tickets.dailyLimit(), Math.max(0, tickets.dailyLimit() - shown.size()), today);
     }
 
     /**
      * 고른 매장마다 추천 이유(2~3문장)다. 보여주는 매장의 이유만 남기고, LLM 장애·시간 초과·동시 실행 상한이면 빈 결과다.
      */
-    private Map<String, String> reasons(MobileRecommendationCommand command, String region,
-            List<MobileShopSummary> picked, long startedAt) {
+    private Map<String, String> reasons(
+            MobileRecommendationCommand command, String region, List<MobileShopSummary> picked, long startedAt) {
         if (picked.isEmpty()) {
             return Map.of();
         }
@@ -190,22 +214,18 @@ public class MobileRecommendationService {
         Future<Map<String, String>> future;
         try {
             future = executor.submit(() -> reasonWriter.reasons(conditions, context));
-        }
-        catch (RejectedExecutionException exception) {
+        } catch (RejectedExecutionException exception) {
             log.warn("AI 추천 이유 동시 실행 상한 초과: limit={}", MAX_CONCURRENT_SEARCHES);
             return Map.of();
         }
         try {
             return shownReasons(future.get(budgetMs, TimeUnit.MILLISECONDS), picked);
-        }
-        catch (TimeoutException exception) {
+        } catch (TimeoutException exception) {
             future.cancel(true);
             log.warn("AI 추천 이유 시간 초과: budgetMs={}", budgetMs);
-        }
-        catch (ExecutionException exception) {
+        } catch (ExecutionException exception) {
             log.warn("AI 추천 이유 생성 실패", exception.getCause());
-        }
-        catch (InterruptedException exception) {
+        } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
         }
         return Map.of();
@@ -225,8 +245,8 @@ public class MobileRecommendationService {
     }
 
     private String reasonContext(List<MobileShopSummary> picked) {
-        Map<Long, MobileShopReasonFacts> facts = shops
-            .reasonFacts(picked.stream().map(shop -> Long.valueOf(shop.id())).toList());
+        Map<Long, MobileShopReasonFacts> facts = shops.reasonFacts(
+                picked.stream().map(shop -> Long.valueOf(shop.id())).toList());
         StringBuilder context = new StringBuilder();
         for (MobileShopSummary shop : picked) {
             context.append("- 매장 ID: ").append(shop.id()).append('\n');
@@ -311,8 +331,8 @@ public class MobileRecommendationService {
         return scored;
     }
 
-    private static List<MobileRecommendationRun.Item> shown(List<MobileShopSummary> picked, List<Scored> ranked,
-            Map<String, String> reasons) {
+    private static List<MobileRecommendationRun.Item> shown(
+            List<MobileShopSummary> picked, List<Scored> ranked, Map<String, String> reasons) {
         Map<Long, Double> scores = new HashMap<>();
         for (Scored scored : ranked) {
             scores.put(scored.shopId(), scored.score());
@@ -320,8 +340,8 @@ public class MobileRecommendationService {
         List<MobileRecommendationRun.Item> items = new ArrayList<>(picked.size());
         for (int index = 0; index < picked.size(); index++) {
             String shopId = picked.get(index).id();
-            items.add(new MobileRecommendationRun.Item(index + 1, Long.valueOf(shopId),
-                    scores.get(Long.valueOf(shopId)), reasons.get(shopId)));
+            items.add(new MobileRecommendationRun.Item(
+                    index + 1, Long.valueOf(shopId), scores.get(Long.valueOf(shopId)), reasons.get(shopId)));
         }
         return items;
     }
@@ -337,24 +357,20 @@ public class MobileRecommendationService {
         Future<Map<Long, Double>> future;
         try {
             future = executor.submit(() -> documents.shopSimilarities(query, candidates));
-        }
-        catch (RejectedExecutionException exception) {
+        } catch (RejectedExecutionException exception) {
             log.warn("AI 추천 동시 검색 상한 초과: limit={}", MAX_CONCURRENT_SEARCHES);
             throw unavailable();
         }
         try {
             return future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-        }
-        catch (TimeoutException exception) {
+        } catch (TimeoutException exception) {
             future.cancel(true);
             log.warn("AI 추천 검색 시간 초과: timeout={}", timeout);
             throw unavailable();
-        }
-        catch (ExecutionException exception) {
+        } catch (ExecutionException exception) {
             log.warn("AI 추천 검색 실패", exception.getCause());
             throw unavailable();
-        }
-        catch (InterruptedException exception) {
+        } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             throw unavailable();
         }
@@ -387,7 +403,5 @@ public class MobileRecommendationService {
         executor.shutdownNow();
     }
 
-    private record Scored(Long shopId, double score, int order) {
-    }
-
+    private record Scored(Long shopId, double score, int order) {}
 }

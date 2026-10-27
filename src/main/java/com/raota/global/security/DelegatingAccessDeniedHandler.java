@@ -19,10 +19,9 @@ public class DelegatingAccessDeniedHandler implements AccessDeniedHandler {
     public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException exception)
             throws IOException {
         responders.stream()
-            .filter(responder -> responder.supports(request))
-            .findFirst()
-            .orElseThrow(() -> new IllegalStateException("접근 거부 응답기가 없습니다."))
-            .forbidden(request, response, exception);
+                .filter(responder -> responder.supports(request))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("접근 거부 응답기가 없습니다."))
+                .forbidden(request, response, exception);
     }
-
 }

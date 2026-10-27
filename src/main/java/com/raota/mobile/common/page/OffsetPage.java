@@ -10,12 +10,17 @@ public record OffsetPage<T>(List<T> items, PageInfo page) {
     public static final int MAX_SIZE = 100;
 
     public static <S, T> OffsetPage<T> of(Page<S> page, Function<S, T> mapper) {
-        return new OffsetPage<>(page.getContent().stream().map(mapper).toList(), new PageInfo(page.getNumber(),
-                page.getSize(), page.getTotalElements(), page.getTotalPages(), page.hasNext(), page.hasPrevious()));
+        return new OffsetPage<>(
+                page.getContent().stream().map(mapper).toList(),
+                new PageInfo(
+                        page.getNumber(),
+                        page.getSize(),
+                        page.getTotalElements(),
+                        page.getTotalPages(),
+                        page.hasNext(),
+                        page.hasPrevious()));
     }
 
-    public record PageInfo(int number, int size, long totalElements, int totalPages, boolean hasNext,
-            boolean hasPrevious) {
-    }
-
+    public record PageInfo(
+            int number, int size, long totalElements, int totalPages, boolean hasNext, boolean hasPrevious) {}
 }

@@ -57,7 +57,10 @@ public class AppleTokenRestClient implements AppleTokenClient {
 
     @Autowired
     public AppleTokenRestClient(RestClient.Builder builder, MobileOAuthProperties properties) {
-        this(builder, properties, NimbusJwtDecoder.withJwkSetUri(properties.apple().jwkSetUri()).build());
+        this(
+                builder,
+                properties,
+                NimbusJwtDecoder.withJwkSetUri(properties.apple().jwkSetUri()).build());
     }
 
     AppleTokenRestClient(RestClient.Builder builder, MobileOAuthProperties properties, JwtDecoder identityDecoder) {
@@ -65,7 +68,8 @@ public class AppleTokenRestClient implements AppleTokenClient {
         this.settings = properties.apple();
         this.signingKey = parseKey(settings.privateKey());
         this.identityDecoder = identityDecoder;
-        this.identityValidator = new DelegatingOAuth2TokenValidator<>(new JwtTimestampValidator(Duration.ZERO),
+        this.identityValidator = new DelegatingOAuth2TokenValidator<>(
+                new JwtTimestampValidator(Duration.ZERO),
                 jwt -> validate(settings.issuer().equals(jwt.getClaimAsString("iss"))),
                 jwt -> validate(jwt.getAudience() != null && jwt.getAudience().contains(settings.bundleId())));
     }
@@ -77,16 +81,18 @@ public class AppleTokenRestClient implements AppleTokenClient {
         form.add("code", authorizationCode);
         try {
             JsonNode response = client.post()
-                .uri(settings.tokenUri())
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .body(form)
-                .retrieve()
-                .body(JsonNode.class);
+                    .uri(settings.tokenUri())
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(form)
+                    .retrieve()
+                    .body(JsonNode.class);
             JsonNode refreshNode = null;
             if (response != null) {
                 refreshNode = response.get("refresh_token");
             }
-            if (refreshNode == null || refreshNode.isNull() || refreshNode.asString().isBlank()) {
+            if (refreshNode == null
+                    || refreshNode.isNull()
+                    || refreshNode.asString().isBlank()) {
                 throw invalidCredential();
             }
             String refreshToken = refreshNode.asString();
@@ -94,15 +100,13 @@ public class AppleTokenRestClient implements AppleTokenClient {
             if (idToken == null || idToken.isNull() || !validIdentity(idToken.asString(), expectedSubject)) {
                 try {
                     revoke(refreshToken);
-                }
-                catch (Exception ignored) {
+                } catch (Exception ignored) {
                     // 이미 발급된 토큰 폐기는 최대한 시도하고, 잘못된 인증 응답은 그대로 거부한다.
                 }
                 throw invalidCredential();
             }
             return refreshToken;
-        }
-        catch (RestClientResponseException exception) {
+        } catch (RestClientResponseException exception) {
             if (exception.getStatusCode().is4xxClientError()) {
                 throw invalidCredential();
             }
@@ -117,8 +121,7 @@ public class AppleTokenRestClient implements AppleTokenClient {
         try {
             Jwt jwt = identityDecoder.decode(idToken);
             return !identityValidator.validate(jwt).hasErrors() && expectedSubject.equals(jwt.getSubject());
-        }
-        catch (JwtException exception) {
+        } catch (JwtException exception) {
             return false;
         }
     }
@@ -136,11 +139,11 @@ public class AppleTokenRestClient implements AppleTokenClient {
         form.add("token", refreshToken);
         form.add("token_type_hint", "refresh_token");
         client.post()
-            .uri(settings.revokeUri())
-            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-            .body(form)
-            .retrieve()
-            .toBodilessEntity();
+                .uri(settings.revokeUri())
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body(form)
+                .retrieve()
+                .toBodilessEntity();
     }
 
     private MultiValueMap<String, String> credentials() {
@@ -152,19 +155,22 @@ public class AppleTokenRestClient implements AppleTokenClient {
 
     private String clientSecret() {
         Instant now = Instant.now();
-        JWTClaimsSet claims = new JWTClaimsSet.Builder().issuer(settings.teamId())
-            .issueTime(Date.from(now))
-            .expirationTime(Date.from(now.plusSeconds(300)))
-            .audience(APPLE_ISSUER)
-            .subject(settings.bundleId())
-            .build();
-        SignedJWT jwt = new SignedJWT(new JWSHeader.Builder(JWSAlgorithm.ES256).keyID(settings.keyId()).build(),
+        JWTClaimsSet claims = new JWTClaimsSet.Builder()
+                .issuer(settings.teamId())
+                .issueTime(Date.from(now))
+                .expirationTime(Date.from(now.plusSeconds(300)))
+                .audience(APPLE_ISSUER)
+                .subject(settings.bundleId())
+                .build();
+        SignedJWT jwt = new SignedJWT(
+                new JWSHeader.Builder(JWSAlgorithm.ES256)
+                        .keyID(settings.keyId())
+                        .build(),
                 claims);
         try {
             jwt.sign(new ECDSASigner(signingKey));
             return jwt.serialize();
-        }
-        catch (JOSEException exception) {
+        } catch (JOSEException exception) {
             throw new IllegalStateException("Apple 클라이언트 서명에 실패했습니다.", exception);
         }
     }
@@ -172,12 +178,12 @@ public class AppleTokenRestClient implements AppleTokenClient {
     private static ECPrivateKey parseKey(String rawKey) {
         try {
             String base64 = rawKey.replace("\\n", "\n")
-                .replace("-----BEGIN PRIVATE KEY-----", "")
-                .replace("-----END PRIVATE KEY-----", "")
-                .replaceAll("\\s", "");
+                    .replace("-----BEGIN PRIVATE KEY-----", "")
+                    .replace("-----END PRIVATE KEY-----", "")
+                    .replaceAll("\\s", "");
             byte[] der = Base64.getDecoder().decode(base64);
-            ECPrivateKey key = (ECPrivateKey) KeyFactory.getInstance("EC")
-                .generatePrivate(new PKCS8EncodedKeySpec(der));
+            ECPrivateKey key =
+                    (ECPrivateKey) KeyFactory.getInstance("EC").generatePrivate(new PKCS8EncodedKeySpec(der));
             AlgorithmParameters parameters = AlgorithmParameters.getInstance("EC");
             parameters.init(new ECGenParameterSpec("secp256r1"));
             ECParameterSpec p256 = parameters.getParameterSpec(ECParameterSpec.class);
@@ -187,8 +193,7 @@ public class AppleTokenRestClient implements AppleTokenClient {
                 throw new IllegalArgumentException("서명 키가 P-256 곡선을 사용하지 않습니다.");
             }
             return key;
-        }
-        catch (Exception exception) {
+        } catch (Exception exception) {
             throw new IllegalStateException("Apple PKCS#8 P-256 서명 키가 올바르지 않습니다.", exception);
         }
     }
@@ -196,5 +201,4 @@ public class AppleTokenRestClient implements AppleTokenClient {
     private static MobileException invalidCredential() {
         return new MobileException(MobileErrorCode.OAUTH_CREDENTIAL_INVALID, INVALID_CREDENTIAL_MESSAGE);
     }
-
 }

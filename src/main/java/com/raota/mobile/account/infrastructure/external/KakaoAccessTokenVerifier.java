@@ -40,26 +40,29 @@ public class KakaoAccessTokenVerifier implements SocialTokenVerifier {
 
         try {
             JsonNode info = client.get()
-                .uri("/v1/user/access_token_info")
-                .headers(headers -> headers.setBearerAuth(token))
-                .retrieve()
-                .body(JsonNode.class);
-            if (info == null || info.get("app_id") == null || !appId.equals(info.get("app_id").asString())) {
+                    .uri("/v1/user/access_token_info")
+                    .headers(headers -> headers.setBearerAuth(token))
+                    .retrieve()
+                    .body(JsonNode.class);
+            if (info == null
+                    || info.get("app_id") == null
+                    || !appId.equals(info.get("app_id").asString())) {
                 throw invalidCredential();
             }
 
             JsonNode profile = client.get()
-                .uri("/v2/user/me")
-                .headers(headers -> headers.setBearerAuth(token))
-                .retrieve()
-                .body(JsonNode.class);
-            if (profile == null || profile.get("id") == null || profile.get("id").isNull()) {
+                    .uri("/v2/user/me")
+                    .headers(headers -> headers.setBearerAuth(token))
+                    .retrieve()
+                    .body(JsonNode.class);
+            if (profile == null
+                    || profile.get("id") == null
+                    || profile.get("id").isNull()) {
                 throw invalidCredential();
             }
-            return new SocialIdentity(provider(), profile.get("id").asString(),
-                    verifiedEmail(profile.get("kakao_account")));
-        }
-        catch (RestClientResponseException exception) {
+            return new SocialIdentity(
+                    provider(), profile.get("id").asString(), verifiedEmail(profile.get("kakao_account")));
+        } catch (RestClientResponseException exception) {
             if (exception.getStatusCode().is4xxClientError()) {
                 throw invalidCredential();
             }
@@ -69,7 +72,9 @@ public class KakaoAccessTokenVerifier implements SocialTokenVerifier {
 
     /** Kakao가 유효하고 인증된 이메일이라고 표시한 경우에만 이메일을 쓴다. */
     private static String verifiedEmail(JsonNode account) {
-        if (account == null || account.get("email") == null || account.get("email").isNull()) {
+        if (account == null
+                || account.get("email") == null
+                || account.get("email").isNull()) {
             return null;
         }
         boolean valid = account.path("is_email_valid").asBoolean(false);
@@ -83,5 +88,4 @@ public class KakaoAccessTokenVerifier implements SocialTokenVerifier {
     private static MobileException invalidCredential() {
         return new MobileException(MobileErrorCode.OAUTH_CREDENTIAL_INVALID, INVALID_CREDENTIAL_MESSAGE);
     }
-
 }

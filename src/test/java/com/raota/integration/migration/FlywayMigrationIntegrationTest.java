@@ -1,5 +1,7 @@
 package com.raota.integration.migration;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.raota.support.BaseIntegrationTest;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -10,7 +12,6 @@ import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import static org.assertj.core.api.Assertions.assertThat;
 
 class FlywayMigrationIntegrationTest extends BaseIntegrationTest {
 
@@ -29,23 +30,24 @@ class FlywayMigrationIntegrationTest extends BaseIntegrationTest {
         String adminUrl = MYSQL_CONTAINER.getJdbcUrl();
         String migrationUrl = adminUrl.replace("/raota", "/" + databaseName);
 
-        try (Connection connection = DriverManager.getConnection(adminUrl, MYSQL_CONTAINER.getUsername(),
-                MYSQL_CONTAINER.getPassword()); Statement statement = connection.createStatement()) {
+        try (Connection connection = DriverManager.getConnection(
+                        adminUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword());
+                Statement statement = connection.createStatement()) {
             statement.execute("CREATE DATABASE " + databaseName);
         }
 
         try {
             Flyway.configure()
-                .dataSource(migrationUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword())
-                .locations("classpath:db/migration")
-                .target(MigrationVersion.fromVersion("15"))
-                .load()
-                .migrate();
+                    .dataSource(migrationUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword())
+                    .locations("classpath:db/migration")
+                    .target(MigrationVersion.fromVersion("15"))
+                    .load()
+                    .migrate();
 
-            try (Connection connection = DriverManager.getConnection(migrationUrl, MYSQL_CONTAINER.getUsername(),
-                    MYSQL_CONTAINER.getPassword()); Statement statement = connection.createStatement()) {
-                statement.executeUpdate(
-                        """
+            try (Connection connection = DriverManager.getConnection(
+                            migrationUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword());
+                    Statement statement = connection.createStatement()) {
+                statement.executeUpdate("""
                                 INSERT INTO tb_ramen_proof_picture
                                     (ramen_shop_id, member_id, image_name, image_url, description, uploaded_at, menu_name, is_deleted)
                                 VALUES
@@ -54,13 +56,13 @@ class FlywayMigrationIntegrationTest extends BaseIntegrationTest {
             }
 
             Flyway.configure()
-                .dataSource(migrationUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword())
-                .locations("classpath:db/migration")
-                .load()
-                .migrate();
+                    .dataSource(migrationUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword())
+                    .locations("classpath:db/migration")
+                    .load()
+                    .migrate();
 
-            try (Connection connection = DriverManager.getConnection(migrationUrl, MYSQL_CONTAINER.getUsername(),
-                    MYSQL_CONTAINER.getPassword());
+            try (Connection connection = DriverManager.getConnection(
+                            migrationUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword());
                     Statement statement = connection.createStatement();
                     ResultSet result = statement.executeQuery("""
                             SELECT menu_name, ramen_type, image_url, note, revisit, is_public, is_deleted
@@ -76,10 +78,10 @@ class FlywayMigrationIntegrationTest extends BaseIntegrationTest {
                 assertThat(result.getBoolean("is_public")).isTrue();
                 assertThat(result.getBoolean("is_deleted")).isFalse();
             }
-        }
-        finally {
-            try (Connection connection = DriverManager.getConnection(adminUrl, MYSQL_CONTAINER.getUsername(),
-                    MYSQL_CONTAINER.getPassword()); Statement statement = connection.createStatement()) {
+        } finally {
+            try (Connection connection = DriverManager.getConnection(
+                            adminUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword());
+                    Statement statement = connection.createStatement()) {
                 statement.execute("DROP DATABASE IF EXISTS " + databaseName);
             }
         }
@@ -92,21 +94,23 @@ class FlywayMigrationIntegrationTest extends BaseIntegrationTest {
         String adminUrl = MYSQL_CONTAINER.getJdbcUrl();
         String migrationUrl = adminUrl.replace("/raota", "/" + databaseName);
 
-        try (Connection connection = DriverManager.getConnection(adminUrl, MYSQL_CONTAINER.getUsername(),
-                MYSQL_CONTAINER.getPassword()); Statement statement = connection.createStatement()) {
+        try (Connection connection = DriverManager.getConnection(
+                        adminUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword());
+                Statement statement = connection.createStatement()) {
             statement.execute("CREATE DATABASE " + databaseName);
         }
 
         try {
             Flyway.configure()
-                .dataSource(migrationUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword())
-                .locations("classpath:db/migration")
-                .target(MigrationVersion.fromVersion("21"))
-                .load()
-                .migrate();
+                    .dataSource(migrationUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword())
+                    .locations("classpath:db/migration")
+                    .target(MigrationVersion.fromVersion("21"))
+                    .load()
+                    .migrate();
 
-            try (Connection connection = DriverManager.getConnection(migrationUrl, MYSQL_CONTAINER.getUsername(),
-                    MYSQL_CONTAINER.getPassword()); Statement statement = connection.createStatement()) {
+            try (Connection connection = DriverManager.getConnection(
+                            migrationUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword());
+                    Statement statement = connection.createStatement()) {
                 statement.executeUpdate("""
                         INSERT INTO tb_member_profile (id, nickname)
                         VALUES (100, '백필회원')
@@ -120,13 +124,13 @@ class FlywayMigrationIntegrationTest extends BaseIntegrationTest {
             }
 
             Flyway.configure()
-                .dataSource(migrationUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword())
-                .locations("classpath:db/migration")
-                .load()
-                .migrate();
+                    .dataSource(migrationUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword())
+                    .locations("classpath:db/migration")
+                    .load()
+                    .migrate();
 
-            try (Connection connection = DriverManager.getConnection(migrationUrl, MYSQL_CONTAINER.getUsername(),
-                    MYSQL_CONTAINER.getPassword());
+            try (Connection connection = DriverManager.getConnection(
+                            migrationUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword());
                     Statement statement = connection.createStatement();
                     ResultSet result = statement.executeQuery("""
                             SELECT email
@@ -136,10 +140,10 @@ class FlywayMigrationIntegrationTest extends BaseIntegrationTest {
                 assertThat(result.next()).isTrue();
                 assertThat(result.getString("email")).isEqualTo("kakao@example.com");
             }
-        }
-        finally {
-            try (Connection connection = DriverManager.getConnection(adminUrl, MYSQL_CONTAINER.getUsername(),
-                    MYSQL_CONTAINER.getPassword()); Statement statement = connection.createStatement()) {
+        } finally {
+            try (Connection connection = DriverManager.getConnection(
+                            adminUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword());
+                    Statement statement = connection.createStatement()) {
                 statement.execute("DROP DATABASE IF EXISTS " + databaseName);
             }
         }
@@ -152,21 +156,23 @@ class FlywayMigrationIntegrationTest extends BaseIntegrationTest {
         String adminUrl = MYSQL_CONTAINER.getJdbcUrl();
         String migrationUrl = adminUrl.replace("/raota", "/" + databaseName);
 
-        try (Connection connection = DriverManager.getConnection(adminUrl, MYSQL_CONTAINER.getUsername(),
-                MYSQL_CONTAINER.getPassword()); Statement statement = connection.createStatement()) {
+        try (Connection connection = DriverManager.getConnection(
+                        adminUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword());
+                Statement statement = connection.createStatement()) {
             statement.execute("CREATE DATABASE " + databaseName);
         }
 
         try {
             Flyway.configure()
-                .dataSource(migrationUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword())
-                .locations("classpath:db/migration")
-                .target(MigrationVersion.fromVersion("23"))
-                .load()
-                .migrate();
+                    .dataSource(migrationUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword())
+                    .locations("classpath:db/migration")
+                    .target(MigrationVersion.fromVersion("23"))
+                    .load()
+                    .migrate();
 
-            try (Connection connection = DriverManager.getConnection(migrationUrl, MYSQL_CONTAINER.getUsername(),
-                    MYSQL_CONTAINER.getPassword()); Statement statement = connection.createStatement()) {
+            try (Connection connection = DriverManager.getConnection(
+                            migrationUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword());
+                    Statement statement = connection.createStatement()) {
                 statement.executeUpdate("""
                         INSERT INTO tb_member_profile (id, nickname)
                         VALUES (100, '기존회원')
@@ -174,13 +180,13 @@ class FlywayMigrationIntegrationTest extends BaseIntegrationTest {
             }
 
             Flyway.configure()
-                .dataSource(migrationUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword())
-                .locations("classpath:db/migration")
-                .load()
-                .migrate();
+                    .dataSource(migrationUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword())
+                    .locations("classpath:db/migration")
+                    .load()
+                    .migrate();
 
-            try (Connection connection = DriverManager.getConnection(migrationUrl, MYSQL_CONTAINER.getUsername(),
-                    MYSQL_CONTAINER.getPassword());
+            try (Connection connection = DriverManager.getConnection(
+                            migrationUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword());
                     Statement statement = connection.createStatement();
                     ResultSet result = statement.executeQuery("""
                             SELECT role
@@ -190,13 +196,12 @@ class FlywayMigrationIntegrationTest extends BaseIntegrationTest {
                 assertThat(result.next()).isTrue();
                 assertThat(result.getString("role")).isEqualTo("USER");
             }
-        }
-        finally {
-            try (Connection connection = DriverManager.getConnection(adminUrl, MYSQL_CONTAINER.getUsername(),
-                    MYSQL_CONTAINER.getPassword()); Statement statement = connection.createStatement()) {
+        } finally {
+            try (Connection connection = DriverManager.getConnection(
+                            adminUrl, MYSQL_CONTAINER.getUsername(), MYSQL_CONTAINER.getPassword());
+                    Statement statement = connection.createStatement()) {
                 statement.execute("DROP DATABASE IF EXISTS " + databaseName);
             }
         }
     }
-
 }

@@ -3,16 +3,15 @@ package com.raota.web.community.application.service;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.raota.web.account.domain.member.model.MemberProfile;
+import com.raota.web.account.domain.member.repository.MemberRepository;
 import com.raota.web.community.application.command.CreatePostCommand;
 import com.raota.web.community.application.command.UpdatePostCommand;
+import com.raota.web.community.domain.event.PostIndexingAction;
+import com.raota.web.community.domain.event.PostIndexingEvent;
 import com.raota.web.community.domain.model.Post;
 import com.raota.web.community.domain.model.PostCategory;
 import com.raota.web.community.domain.repository.PostRepository;
-import com.raota.web.community.application.service.PostService;
-import com.raota.web.account.domain.member.model.MemberProfile;
-import com.raota.web.account.domain.member.repository.MemberRepository;
-import com.raota.web.community.domain.event.PostIndexingAction;
-import com.raota.web.community.domain.event.PostIndexingEvent;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -102,11 +101,12 @@ class PostServiceTest {
 
         UpdatePostCommand command = new UpdatePostCommand(postId, "FREE", null, "제목", null, "PLAIN", "내용", otherId);
         when(postRepository.update(postId, otherId, PostCategory.FREE, "제목", "내용", null, null))
-            .thenThrow(new IllegalStateException("수정 권한이 없습니다."));
+                .thenThrow(new IllegalStateException("수정 권한이 없습니다."));
 
         // when & then
-        assertThatThrownBy(() -> postService.updatePost(command)).isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("수정 권한이 없습니다.");
+        assertThatThrownBy(() -> postService.updatePost(command))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("수정 권한이 없습니다.");
     }
 
     @Test
@@ -116,10 +116,10 @@ class PostServiceTest {
         Long postId = 1L;
         Long authorId = 1L;
 
-        UpdatePostCommand command = new UpdatePostCommand(postId, "REVIEW", null, "수정 제목", null, "PLAIN", "수정 내용",
-                authorId);
+        UpdatePostCommand command =
+                new UpdatePostCommand(postId, "REVIEW", null, "수정 제목", null, "PLAIN", "수정 내용", authorId);
         when(postRepository.update(postId, authorId, PostCategory.REVIEW, "수정 제목", "수정 내용", null, null))
-            .thenReturn(new PostRepository.PostUpdateResult(postId, PostCategory.REVIEW, PostCategory.REVIEW));
+                .thenReturn(new PostRepository.PostUpdateResult(postId, PostCategory.REVIEW, PostCategory.REVIEW));
 
         // when
         postService.updatePost(command);
@@ -174,5 +174,4 @@ class PostServiceTest {
         assertThat(publishedEvent.postId()).isEqualTo(postId);
         assertThat(publishedEvent.action()).isEqualTo(PostIndexingAction.DELETE);
     }
-
 }

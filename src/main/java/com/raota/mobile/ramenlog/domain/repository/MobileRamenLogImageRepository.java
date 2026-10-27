@@ -19,5 +19,4 @@ public interface MobileRamenLogImageRepository extends JpaRepository<MobileRamen
             where image.ramenLogId in (select log.id from MobileRamenLog log where log.userId = :userId)
             """)
     void deleteForUser(Long userId);
-
 }

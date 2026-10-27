@@ -28,5 +28,4 @@ public class MobileRamenLogLikeController {
     public MobileApiResponse<MobileRamenLogLikeResult> unlike(@LoginUser Long userId, @PathVariable Long logId) {
         return MobileApiResponse.success(likes.unlike(logId, userId));
     }
-
 }

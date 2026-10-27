@@ -6,15 +6,14 @@ import com.raota.agent.domain.recommendation.model.RamenType;
 import com.raota.agent.domain.recommendation.repository.DailyCurationRepository;
 import com.raota.agent.domain.recommendation.repository.RamenTypeRepository;
 import com.raota.agent.infrastructure.external.KmaWeatherClient;
+import java.time.LocalDate;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-
-import java.time.LocalDate;
-import java.util.Optional;
 import tools.jackson.databind.ObjectMapper;
 
 @Slf4j
@@ -45,8 +44,7 @@ public class DailyCurationService {
             if (cached != null && !cached.isBlank()) {
                 return Optional.of(redisObjectMapper.readValue(cached, DailyCuration.class));
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.error("Failed to read curation from Redis cache", e);
         }
 
@@ -76,11 +74,11 @@ public class DailyCurationService {
         RamenType selectedType = findRamenTypeByName(aiResponse.ramenTypeName());
 
         DailyCuration curation = DailyCuration.builder()
-            .dateKey(currentDateKey)
-            .ramenType(selectedType)
-            .title(defaultIfBlank(aiResponse.title(), selectedType.getName() + " 추천"))
-            .reason(defaultIfBlank(aiResponse.reason(), "오늘 날씨와 잘 어울리는 라멘입니다."))
-            .build();
+                .dateKey(currentDateKey)
+                .ramenType(selectedType)
+                .title(defaultIfBlank(aiResponse.title(), selectedType.getName() + " 추천"))
+                .reason(defaultIfBlank(aiResponse.reason(), "오늘 날씨와 잘 어울리는 라멘입니다."))
+                .build();
 
         DailyCuration saved = dailyCurationRepository.save(curation);
 
@@ -93,8 +91,7 @@ public class DailyCurationService {
             redisTemplate.delete(REDIS_KEY_LATEST_CURATION);
             String json = redisObjectMapper.writeValueAsString(curation);
             redisTemplate.opsForValue().set(REDIS_KEY_LATEST_CURATION, json);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.error("Failed to cache curation to Redis", e);
         }
     }
@@ -107,14 +104,16 @@ public class DailyCurationService {
     private RamenType findRamenTypeByName(String name) {
         String targetName = defaultIfBlank(name, "").replace(" ", "").toLowerCase();
 
-        return ramenTypeRepository.findAll().stream().filter(t -> {
-            String dbName = t.getName().replace(" ", "").toLowerCase();
-            return dbName.contains(targetName) || targetName.contains(dbName);
-        }).findFirst().orElseGet(() -> ramenTypeRepository.findById(1L).orElseThrow());
+        return ramenTypeRepository.findAll().stream()
+                .filter(t -> {
+                    String dbName = t.getName().replace(" ", "").toLowerCase();
+                    return dbName.contains(targetName) || targetName.contains(dbName);
+                })
+                .findFirst()
+                .orElseGet(() -> ramenTypeRepository.findById(1L).orElseThrow());
     }
 
     private String defaultIfBlank(String value, String defaultValue) {
         return StringUtils.hasText(value) ? value : defaultValue;
     }
-
 }

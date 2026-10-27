@@ -50,8 +50,12 @@ class MobileUploadTicketIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mvc = MockMvcBuilders.webAppContextSetup(context).addFilters(requestIdFilter).apply(springSecurity()).build();
-        userId = users.saveAndFlush(MobileUser.onboarding("upload-test@example.com")).getId();
+        mvc = MockMvcBuilders.webAppContextSetup(context)
+                .addFilters(requestIdFilter)
+                .apply(springSecurity())
+                .build();
+        userId = users.saveAndFlush(MobileUser.onboarding("upload-test@example.com"))
+                .getId();
     }
 
     @AfterEach
@@ -71,20 +75,22 @@ class MobileUploadTicketIntegrationTest extends BaseIntegrationTest {
         assertThat(ramen.get(0).get("url").asString()).isEqualTo("/files/mock-upload-endpoint");
         assertThat(ramen.get(0).get("fields").isNull()).isTrue();
         assertThat(ramen.get(0).get("headers").get("Content-Type").asString()).isEqualTo("image/jpeg");
-        assertThat(ramen.get(0).get("imageUrl").asString()).startsWith("https://mock.cdn.com/v2/ramen-logs/")
-            .endsWith(".jpg");
+        assertThat(ramen.get(0).get("imageUrl").asString())
+                .startsWith("https://mock.cdn.com/v2/ramen-logs/")
+                .endsWith(".jpg");
         assertThat(ramen.get(1).get("imageUrl").asString()).endsWith(".webp");
 
         JsonNode profile = ticket("""
                 {"purpose":"PROFILE","files":[{"contentType":"image/png","extension":"png"}]}
                 """);
-        assertThat(profile.get(0).get("imageUrl").asString()).startsWith("https://mock.cdn.com/v2/profiles/")
-            .endsWith(".png");
+        assertThat(profile.get(0).get("imageUrl").asString())
+                .startsWith("https://mock.cdn.com/v2/profiles/")
+                .endsWith(".png");
     }
 
     @Test
     void 장수와_사진_형식이_올바르지_않으면_400이다() throws Exception {
-        for (String request : new String[] { """
+        for (String request : new String[] {"""
                 {"purpose":"RAMEN_LOG","files":[{"contentType":"image/png","extension":"png"},
                 {"contentType":"image/png","extension":"png"},{"contentType":"image/png","extension":"png"},
                 {"contentType":"image/png","extension":"png"}]}
@@ -95,12 +101,13 @@ class MobileUploadTicketIntegrationTest extends BaseIntegrationTest {
                 {"purpose":"RAMEN_LOG","files":[{"contentType":"application/pdf","extension":"png"}]}
                 """, """
                 {"purpose":"RAMEN_LOG","files":[{"contentType":"image/png","extension":"jpg"}]}
-                """ }) {
-            mvc.perform(post("/api/v2/files/upload-tickets").header(HttpHeaders.AUTHORIZATION, authorization())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(request))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+                """}) {
+            mvc.perform(post("/api/v2/files/upload-tickets")
+                            .header(HttpHeaders.AUTHORIZATION, authorization())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(request))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
         }
     }
 
@@ -110,43 +117,52 @@ class MobileUploadTicketIntegrationTest extends BaseIntegrationTest {
                 {"purpose":"RAMEN_LOG","files":[{"contentType":"image/jpeg","extension":"jpg"},
                 {"contentType":"image/jpeg","extension":"jpg"},{"contentType":"image/jpeg","extension":"jpg"}]}
                 """;
-        mvc.perform(post("/api/v2/files/upload-tickets").header(HttpHeaders.AUTHORIZATION, authorization())
-            .contentType(MediaType.APPLICATION_JSON)
-            .content("""
+        mvc.perform(post("/api/v2/files/upload-tickets")
+                        .header(HttpHeaders.AUTHORIZATION, authorization())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
                     {"purpose":"RAMEN_LOG","files":[{"contentType":"application/pdf","extension":"pdf"}]}
-                    """)).andExpect(status().isBadRequest());
+                    """))
+                .andExpect(status().isBadRequest());
         for (int request = 0; request < 10; request++) {
             assertThat(ticket(threeFiles).size()).isEqualTo(3);
         }
 
-        mvc.perform(post("/api/v2/files/upload-tickets").header(HttpHeaders.AUTHORIZATION, authorization())
-            .contentType(MediaType.APPLICATION_JSON)
-            .content("""
+        mvc.perform(post("/api/v2/files/upload-tickets")
+                        .header(HttpHeaders.AUTHORIZATION, authorization())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
                     {"purpose":"PROFILE","files":[{"contentType":"image/png","extension":"png"}]}
                     """))
-            .andExpect(status().isTooManyRequests())
-            .andExpect(jsonPath("$.error.code").value("RATE_LIMITED"));
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.error.code").value("RATE_LIMITED"));
     }
 
     @Test
     void 로그인하지_않으면_발급하지_않는다() throws Exception {
-        mvc.perform(post("/api/v2/files/upload-tickets").contentType(MediaType.APPLICATION_JSON).content("""
+        mvc.perform(post("/api/v2/files/upload-tickets")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
                 {"purpose":"PROFILE","files":[{"contentType":"image/png","extension":"png"}]}
-                """)).andExpect(status().isUnauthorized()).andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
+                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
     }
 
     private JsonNode ticket(String request) throws Exception {
-        return mapper
-            .readTree(
-                    mvc.perform(post("/api/v2/files/upload-tickets").header(HttpHeaders.AUTHORIZATION, authorization())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(request)).andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray())
-            .get("data")
-            .get("uploads");
+        return mapper.readTree(mvc.perform(post("/api/v2/files/upload-tickets")
+                                .header(HttpHeaders.AUTHORIZATION, authorization())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(request))
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsByteArray())
+                .get("data")
+                .get("uploads");
     }
 
     private String authorization() {
         return "Bearer " + tokens.issue(userId);
     }
-
 }

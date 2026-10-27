@@ -28,5 +28,4 @@ public class DailyCurationRepositoryImpl implements DailyCurationRepository {
         DailyCurationEntity entity = DailyCurationEntity.from(curation);
         return jpaDailyCurationRepository.save(entity).toDomain();
     }
-
 }

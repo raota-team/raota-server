@@ -14,5 +14,4 @@ public interface MobileShopImageRepository extends JpaRepository<MobileShopImage
     @Modifying(flushAutomatically = true)
     @Query("delete from MobileShopImage image where image.shopId = :shopId")
     void deleteByShopId(Long shopId);
-
 }

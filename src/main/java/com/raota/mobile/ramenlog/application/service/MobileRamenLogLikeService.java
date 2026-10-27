@@ -38,5 +38,4 @@ public class MobileRamenLogLikeService {
         }
         return new MobileRamenLogLikeResult(false, log.getLikeCount());
     }
-
 }

@@ -6,8 +6,8 @@ import com.raota.mobile.account.application.port.RefreshTokenStore;
 import com.raota.support.BaseIntegrationTest;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.HexFormat;
 import java.time.Duration;
+import java.util.HexFormat;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -37,8 +37,7 @@ class MobileRedisRefreshTokenStoreIntegrationTest extends BaseIntegrationTest {
             assertThat(tokens.consume(token)).contains(42L);
             assertThat(tokens.consume(token)).isEmpty();
             assertThat(redis.hasKey(key)).isFalse();
-        }
-        finally {
+        } finally {
 
             redis.delete(key);
         }
@@ -55,8 +54,8 @@ class MobileRedisRefreshTokenStoreIntegrationTest extends BaseIntegrationTest {
         String other = tokens.issue(otherUserId);
         try {
             assertThat(redis.opsForSet().members(userKey)).containsExactlyInAnyOrder(hash(first), hash(second));
-            assertThat(redis.getExpire(userKey, TimeUnit.SECONDS)).isBetween(1L,
-                    properties.refreshTokenExpirySeconds());
+            assertThat(redis.getExpire(userKey, TimeUnit.SECONDS))
+                    .isBetween(1L, properties.refreshTokenExpirySeconds());
             tokens.revokeAll(userId);
             assertThat(redis.hasKey(userKey)).isFalse();
             assertThat(redis.hasKey(key(first))).isFalse();
@@ -64,8 +63,7 @@ class MobileRedisRefreshTokenStoreIntegrationTest extends BaseIntegrationTest {
             assertThat(tokens.consume(first)).isEmpty();
             assertThat(tokens.consume(second)).isEmpty();
             assertThat(tokens.consume(other)).contains(otherUserId);
-        }
-        finally {
+        } finally {
             tokens.revokeAll(userId);
             tokens.revokeAll(otherUserId);
         }
@@ -81,8 +79,7 @@ class MobileRedisRefreshTokenStoreIntegrationTest extends BaseIntegrationTest {
             assertThat(tokens.consume(deviceA)).contains(42L);
             tokens.revoke(deviceB, 42L);
             assertThat(tokens.consume(deviceB)).isEmpty();
-        }
-        finally {
+        } finally {
             redis.delete(key(deviceA));
             redis.delete(key(deviceB));
         }
@@ -102,9 +99,9 @@ class MobileRedisRefreshTokenStoreIntegrationTest extends BaseIntegrationTest {
                 return tokens.consume(token);
             });
             start.countDown();
-            assertThat(first.get().stream().count() + second.get().stream().count()).isEqualTo(1);
-        }
-        finally {
+            assertThat(first.get().stream().count() + second.get().stream().count())
+                    .isEqualTo(1);
+        } finally {
             redis.delete(key(token));
         }
     }
@@ -117,5 +114,4 @@ class MobileRedisRefreshTokenStoreIntegrationTest extends BaseIntegrationTest {
     private String hash(String token) throws Exception {
         return key(token).substring(properties.refreshTokenKeyPrefix().length());
     }
-
 }

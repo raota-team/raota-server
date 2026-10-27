@@ -53,9 +53,11 @@ public class MobileRamenLogPurgeService {
         images.deleteForUser(userId);
         logs.deleteForUser(userId);
         for (ShopLogTotals total : totals) {
-            shops.recordLogsRemoved(total.getShopId(), Math.toIntExact(total.getLogs()),
-                    Math.toIntExact(total.getScoreSum()), Math.toIntExact(total.getScoredLogs()));
+            shops.recordLogsRemoved(
+                    total.getShopId(),
+                    Math.toIntExact(total.getLogs()),
+                    Math.toIntExact(total.getScoreSum()),
+                    Math.toIntExact(total.getScoredLogs()));
         }
     }
-
 }

@@ -53,9 +53,15 @@ class MobileRamenLogStoredImagesIntegrationTest extends BaseIntegrationTest {
                 """, SHOP);
         insertLog(LIVE_LOG, null);
         insertLog(DELETED_LOG, "2026-09-02 00:00:00");
-        jdbc.update("INSERT INTO tb_v2_ramen_log_image (ramen_log_id, url, sort_order) VALUES (?, ?, 0), (?, ?, 1)",
-                LIVE_LOG, BASE + "live.jpg", LIVE_LOG, BASE + "live-2.jpg");
-        jdbc.update("INSERT INTO tb_v2_ramen_log_image (ramen_log_id, url, sort_order) VALUES (?, ?, 0)", DELETED_LOG,
+        jdbc.update(
+                "INSERT INTO tb_v2_ramen_log_image (ramen_log_id, url, sort_order) VALUES (?, ?, 0), (?, ?, 1)",
+                LIVE_LOG,
+                BASE + "live.jpg",
+                LIVE_LOG,
+                BASE + "live-2.jpg");
+        jdbc.update(
+                "INSERT INTO tb_v2_ramen_log_image (ramen_log_id, url, sort_order) VALUES (?, ?, 0)",
+                DELETED_LOG,
                 BASE + "deleted.jpg");
     }
 
@@ -72,9 +78,9 @@ class MobileRamenLogStoredImagesIntegrationTest extends BaseIntegrationTest {
         assertThat(contributors).contains(references);
         assertThat(references.prefix()).isEqualTo("v2/ramen-logs/");
 
-        assertThat(references
-            .referencedUrls(List.of(BASE + "live.jpg", BASE + "deleted.jpg", BASE + "orphan.jpg", BASE + "live.jpg")))
-            .containsExactlyInAnyOrder(BASE + "live.jpg", BASE + "deleted.jpg");
+        assertThat(references.referencedUrls(
+                        List.of(BASE + "live.jpg", BASE + "deleted.jpg", BASE + "orphan.jpg", BASE + "live.jpg")))
+                .containsExactlyInAnyOrder(BASE + "live.jpg", BASE + "deleted.jpg");
     }
 
     @Test
@@ -86,8 +92,8 @@ class MobileRamenLogStoredImagesIntegrationTest extends BaseIntegrationTest {
         urls.add(BASE + "live-2.jpg");
         urls.add(BASE + "deleted.jpg");
 
-        assertThat(references.referencedUrls(urls)).containsExactlyInAnyOrder(BASE + "live-2.jpg",
-                BASE + "deleted.jpg");
+        assertThat(references.referencedUrls(urls))
+                .containsExactlyInAnyOrder(BASE + "live-2.jpg", BASE + "deleted.jpg");
     }
 
     private void insertLog(long id, String deletedAt) {
@@ -98,5 +104,4 @@ class MobileRamenLogStoredImagesIntegrationTest extends BaseIntegrationTest {
                     '2026-09-01 00:00:00', '2026-09-01 00:00:00', ?)
                 """, id, userId, SHOP, deletedAt);
     }
-
 }

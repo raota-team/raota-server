@@ -10,8 +10,21 @@ import org.springframework.modulith.NamedInterface;
  * 공개 API에 포함한다.
  */
 @NamedInterface("facade")
-public record MobileShopSummary(String id, String name, String branchName, String address, String region,
-        BigDecimal latitude, BigDecimal longitude, String imageUrl, String tagline, List<String> ramenTypes,
-        List<String> tags, int logCount, int bookmarkCount, boolean isBookmarked,
-        MobileShopBusinessStatus businessStatus, Boolean isOpen, Integer distanceMeters) {
-}
+public record MobileShopSummary(
+        String id,
+        String name,
+        String branchName,
+        String address,
+        String region,
+        BigDecimal latitude,
+        BigDecimal longitude,
+        String imageUrl,
+        String tagline,
+        List<String> ramenTypes,
+        List<String> tags,
+        int logCount,
+        int bookmarkCount,
+        boolean isBookmarked,
+        MobileShopBusinessStatus businessStatus,
+        Boolean isOpen,
+        Integer distanceMeters) {}

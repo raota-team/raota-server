@@ -13,5 +13,4 @@ public class DiscordMessage {
     private String content;
 
     private List<DiscordEmbed> embeds;
-
 }

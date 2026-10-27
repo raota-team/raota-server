@@ -4,5 +4,4 @@ package com.raota.mobile.common;
 public interface MobilePrincipal {
 
     Long userId();
-
 }

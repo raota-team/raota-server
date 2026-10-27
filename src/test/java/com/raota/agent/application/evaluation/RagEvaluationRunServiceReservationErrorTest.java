@@ -57,10 +57,19 @@ class RagEvaluationRunServiceReservationErrorTest {
         given(datasetLoader.load(any())).willReturn(dataset);
         given(lockClient.tryAcquire(anyString(), any(Duration.class))).willReturn(Optional.of(LOCK));
         given(lockClient.release(LOCK)).willReturn(true);
-        given(runRepository.findFirstByStatusInOrderByCreatedAtDesc(anyCollection())).willReturn(Optional.empty());
-        runService = new RagEvaluationRunService(datasetLoader, runRepository,
-                mock(RagEvaluationCaseResultJpaRepository.class), runner, lockClient,
-                new TransactionTemplate(mock(PlatformTransactionManager.class)), objectMapper, "test", "v1", "test",
+        given(runRepository.findFirstByStatusInOrderByCreatedAtDesc(anyCollection()))
+                .willReturn(Optional.empty());
+        runService = new RagEvaluationRunService(
+                datasetLoader,
+                runRepository,
+                mock(RagEvaluationCaseResultJpaRepository.class),
+                runner,
+                lockClient,
+                new TransactionTemplate(mock(PlatformTransactionManager.class)),
+                objectMapper,
+                "test",
+                "v1",
+                "test",
                 "{}");
     }
 
@@ -71,7 +80,8 @@ class RagEvaluationRunServiceReservationErrorTest {
         given(runRepository.findByIdempotencyKey(KEY)).willReturn(Optional.empty());
         given(runRepository.saveAndFlush(any())).willThrow(dataTooLong);
 
-        assertThatThrownBy(() -> runService.start(null, RagEvaluationSplit.DEV, KEY)).isSameAs(dataTooLong);
+        assertThatThrownBy(() -> runService.start(null, RagEvaluationSplit.DEV, KEY))
+                .isSameAs(dataTooLong);
         verify(lockClient).release(LOCK);
         verify(runner, never()).execute(anyString(), any(), any());
     }
@@ -80,23 +90,33 @@ class RagEvaluationRunServiceReservationErrorTest {
     @DisplayName("활성 슬롯 UNIQUE 충돌은 이미 실행 중 오류로 바꾼다")
     void activeSlotViolationBecomesAlreadyRunning() {
         given(runRepository.findByIdempotencyKey(KEY)).willReturn(Optional.empty());
-        given(runRepository.saveAndFlush(any())).willThrow(violation(
-                "Duplicate entry 'ACTIVE' for key 'tb_rag_evaluation_run.uk_rag_evaluation_run_active_slot'"));
+        given(runRepository.saveAndFlush(any()))
+                .willThrow(violation(
+                        "Duplicate entry 'ACTIVE' for key 'tb_rag_evaluation_run.uk_rag_evaluation_run_active_slot'"));
 
         assertThatThrownBy(() -> runService.start(null, RagEvaluationSplit.DEV, KEY))
-            .isInstanceOf(RagEvaluationAlreadyRunningException.class);
+                .isInstanceOf(RagEvaluationAlreadyRunningException.class);
         verify(lockClient).release(LOCK);
     }
 
     @Test
     @DisplayName("멱등키 UNIQUE 충돌은 먼저 저장된 실행을 다시 조회해 반환한다")
     void idempotencyKeyViolationReturnsExistingRun() {
-        RagEvaluationRunEntity existing = RagEvaluationRunEntity.queued("existing-run", "rag-mobile-v1.1",
-                RagEvaluationSplit.DEV, KEY, LocalDateTime.now().plusHours(24), "test", "v1", "test", "{}");
-        given(runRepository.findByIdempotencyKey(KEY)).willReturn(Optional.empty(), Optional.empty(),
-                Optional.of(existing));
-        given(runRepository.saveAndFlush(any())).willThrow(violation(
-                "Duplicate entry '" + KEY + "' for key 'tb_rag_evaluation_run.uk_rag_evaluation_run_idempotency_key'"));
+        RagEvaluationRunEntity existing = RagEvaluationRunEntity.queued(
+                "existing-run",
+                "rag-mobile-v1.1",
+                RagEvaluationSplit.DEV,
+                KEY,
+                LocalDateTime.now().plusHours(24),
+                "test",
+                "v1",
+                "test",
+                "{}");
+        given(runRepository.findByIdempotencyKey(KEY))
+                .willReturn(Optional.empty(), Optional.empty(), Optional.of(existing));
+        given(runRepository.saveAndFlush(any()))
+                .willThrow(violation("Duplicate entry '" + KEY
+                        + "' for key 'tb_rag_evaluation_run.uk_rag_evaluation_run_idempotency_key'"));
 
         RunStart result = runService.start(null, RagEvaluationSplit.DEV, KEY);
 
@@ -105,8 +125,7 @@ class RagEvaluationRunServiceReservationErrorTest {
     }
 
     private static DataIntegrityViolationException violation(String databaseMessage) {
-        return new DataIntegrityViolationException("could not execute statement",
-                new SQLIntegrityConstraintViolationException(databaseMessage));
+        return new DataIntegrityViolationException(
+                "could not execute statement", new SQLIntegrityConstraintViolationException(databaseMessage));
     }
-
 }

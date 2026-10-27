@@ -46,8 +46,10 @@ public interface RamenShopReportRepository extends JpaRepository<RamenShopReport
                    )))
               and (:reportType is null or report.reportType = :reportType)
             """)
-    Page<RamenShopReport> findAdminReports(@Param("keywordBlank") boolean keywordBlank,
-            @Param("keyword") String keyword, @Param("keywordId") Long keywordId,
-            @Param("reportType") RamenShopReportType reportType, Pageable pageable);
-
+    Page<RamenShopReport> findAdminReports(
+            @Param("keywordBlank") boolean keywordBlank,
+            @Param("keyword") String keyword,
+            @Param("keywordId") Long keywordId,
+            @Param("reportType") RamenShopReportType reportType,
+            Pageable pageable);
 }

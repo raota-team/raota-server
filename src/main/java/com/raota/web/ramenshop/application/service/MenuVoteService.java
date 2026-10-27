@@ -2,13 +2,13 @@ package com.raota.web.ramenshop.application.service;
 
 import com.raota.web.account.domain.member.model.MemberProfile;
 import com.raota.web.account.domain.member.repository.MemberRepository;
-import com.raota.web.ramenshop.presentation.response.VotingStatusResponse;
-import com.raota.web.ramenshop.presentation.response.VoteResultsDto;
+import com.raota.web.ramenshop.domain.model.MenuVote;
 import com.raota.web.ramenshop.domain.model.NormalMenu;
 import com.raota.web.ramenshop.domain.model.RamenShop;
-import com.raota.web.ramenshop.domain.repository.RamenShopRepository;
-import com.raota.web.ramenshop.domain.model.MenuVote;
 import com.raota.web.ramenshop.domain.repository.MenuVoteRepository;
+import com.raota.web.ramenshop.domain.repository.RamenShopRepository;
+import com.raota.web.ramenshop.presentation.response.VoteResultsDto;
+import com.raota.web.ramenshop.presentation.response.VotingStatusResponse;
 import jakarta.persistence.EntityManager;
 import java.util.List;
 import java.util.Optional;
@@ -63,25 +63,28 @@ public class MenuVoteService {
                 }
                 // 다른 메뉴를 누른 경우 -> 기존 투표 메뉴 변경
                 else {
-                    RamenShop ramenShop = ramenShopRepository.findById(shopId)
-                        .orElseThrow(() -> new IllegalArgumentException("찾을수 없는 라멘가게 입니다."));
-                    NormalMenu newMenu = ramenShop.getNormalMenus()
-                        .findMenuById(menuId)
-                        .orElseThrow(() -> new IllegalArgumentException("찾을수 없는 메뉴입니다."));
+                    RamenShop ramenShop = ramenShopRepository
+                            .findById(shopId)
+                            .orElseThrow(() -> new IllegalArgumentException("찾을수 없는 라멘가게 입니다."));
+                    NormalMenu newMenu = ramenShop
+                            .getNormalMenus()
+                            .findMenuById(menuId)
+                            .orElseThrow(() -> new IllegalArgumentException("찾을수 없는 메뉴입니다."));
                     vote.reVote(newMenu);
                 }
             }
             // 이전에 투표했다가 취소한 상태인 경우 -> 다시 활성화 및 메뉴 설정
             else {
-                RamenShop ramenShop = ramenShopRepository.findById(shopId)
-                    .orElseThrow(() -> new IllegalArgumentException("찾을수 없는 라멘가게 입니다."));
-                NormalMenu newMenu = ramenShop.getNormalMenus()
-                    .findMenuById(menuId)
-                    .orElseThrow(() -> new IllegalArgumentException("찾을수 없는 메뉴입니다."));
+                RamenShop ramenShop = ramenShopRepository
+                        .findById(shopId)
+                        .orElseThrow(() -> new IllegalArgumentException("찾을수 없는 라멘가게 입니다."));
+                NormalMenu newMenu = ramenShop
+                        .getNormalMenus()
+                        .findMenuById(menuId)
+                        .orElseThrow(() -> new IllegalArgumentException("찾을수 없는 메뉴입니다."));
                 vote.reVote(newMenu);
             }
-        }
-        else {
+        } else {
             // 투표 기록이 아예 없었던 경우 -> 새 투표 생성
             createNewVote(shopId, menuId, memberId);
         }
@@ -93,18 +96,25 @@ public class MenuVoteService {
     }
 
     private void createNewVote(Long shopId, Long menuId, Long memberId) {
-        RamenShop ramenShop = ramenShopRepository.findById(shopId)
-            .orElseThrow(() -> new IllegalArgumentException("찾을수 없는 라멘가게 입니다."));
-        NormalMenu menu = ramenShop.getNormalMenus()
-            .findMenuById(menuId)
-            .orElseThrow(() -> new IllegalArgumentException("찾을수 없는 메뉴입니다."));
+        RamenShop ramenShop = ramenShopRepository
+                .findById(shopId)
+                .orElseThrow(() -> new IllegalArgumentException("찾을수 없는 라멘가게 입니다."));
+        NormalMenu menu = ramenShop
+                .getNormalMenus()
+                .findMenuById(menuId)
+                .orElseThrow(() -> new IllegalArgumentException("찾을수 없는 메뉴입니다."));
         MemberProfile member = null;
         if (memberId != null) {
-            member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("찾을수 없는 유저입니다."));
+            member = memberRepository
+                    .findById(memberId)
+                    .orElseThrow(() -> new IllegalArgumentException("찾을수 없는 유저입니다."));
         }
 
-        MenuVote vote = MenuVote.builder().memberProfile(member).ramenShop(ramenShop).normalMenu(menu).build();
+        MenuVote vote = MenuVote.builder()
+                .memberProfile(member)
+                .ramenShop(ramenShop)
+                .normalMenu(menu)
+                .build();
 
         voteRepository.save(vote);
     }
@@ -132,5 +142,4 @@ public class MenuVoteService {
         double percentage = dto.getVoteCount() * 100.0 / totalCount;
         return Math.round(percentage * 100.0) / 100.0;
     }
-
 }

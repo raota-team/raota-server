@@ -35,26 +35,34 @@ public class MobileContentReportService {
     public void report(Long reporterId, MobileReportCommand command) {
         Long authorId = switch (command.targetType()) {
             case RAMEN_LOG -> visibility.visible(command.targetId(), reporterId).getUserId();
-            case RAMEN_LOG_COMMENT -> visibleComment(command.targetId(), reporterId).getUserId();
+            case RAMEN_LOG_COMMENT ->
+                visibleComment(command.targetId(), reporterId).getUserId();
         };
         if (authorId.equals(reporterId)) {
             throw new MobileException(MobileErrorCode.VALIDATION_ERROR, "자기 글은 신고할 수 없습니다.");
         }
-        int inserted = reports.insertIfAbsent(reporterId, command.targetType().name(), command.targetId(),
-                command.reason().name(), Instant.now(clock).truncatedTo(ChronoUnit.MICROS));
+        int inserted = reports.insertIfAbsent(
+                reporterId,
+                command.targetType().name(),
+                command.targetId(),
+                command.reason().name(),
+                Instant.now(clock).truncatedTo(ChronoUnit.MICROS));
         if (inserted == 1) {
-            log.warn("모바일 콘텐츠 신고 접수: targetType={}, targetId={}, reason={}, reporterId={}", command.targetType(),
-                    command.targetId(), command.reason(), reporterId);
+            log.warn(
+                    "모바일 콘텐츠 신고 접수: targetType={}, targetId={}, reason={}, reporterId={}",
+                    command.targetType(),
+                    command.targetId(),
+                    command.reason(),
+                    reporterId);
         }
     }
 
     /** 삭제된 댓글이나 볼 수 없는 기록에 달린 댓글은 404다. */
     private MobileRamenLogComment visibleComment(Long commentId, Long reporterId) {
         MobileRamenLogComment comment = comments.findById(commentId)
-            .filter(found -> found.getDeletedAt() == null)
-            .orElseThrow(() -> new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "댓글을 찾을 수 없습니다."));
+                .filter(found -> found.getDeletedAt() == null)
+                .orElseThrow(() -> new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "댓글을 찾을 수 없습니다."));
         visibility.visible(comment.getRamenLogId(), reporterId);
         return comment;
     }
-
 }

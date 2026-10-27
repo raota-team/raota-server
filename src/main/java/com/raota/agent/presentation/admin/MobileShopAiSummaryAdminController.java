@@ -33,7 +33,6 @@ public class MobileShopAiSummaryAdminController {
     @PostMapping("/ai-summary")
     public ResponseEntity<ApiResponse<BulkStart>> summarizeMissing(@RequestParam(defaultValue = "0") long afterId) {
         return ResponseEntity.status(HttpStatus.ACCEPTED)
-            .body(ApiResponse.success("AI 요약이 없는 공개 매장의 요약 생성을 시작했습니다.", summaries.summarizeMissing(afterId)));
+                .body(ApiResponse.success("AI 요약이 없는 공개 매장의 요약 생성을 시작했습니다.", summaries.summarizeMissing(afterId)));
     }
-
 }

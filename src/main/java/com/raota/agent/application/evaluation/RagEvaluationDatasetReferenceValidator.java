@@ -27,12 +27,14 @@ public class RagEvaluationDatasetReferenceValidator {
 
         List<String> invalidReferences = new ArrayList<>();
         for (RagEvaluationCase evaluationCase : dataset.casesFor(split)) {
-            if (evaluationCase.contractOnly() || evaluationCase.expectsFallback()
+            if (evaluationCase.contractOnly()
+                    || evaluationCase.expectsFallback()
                     || evaluationCase.expectedError() != null) {
                 continue;
             }
             for (Long shopId : referencedShopIds(evaluationCase)) {
-                if (shopId == null || ramenShopRepository.findByIdAndPublishedTrue(shopId).isEmpty()) {
+                if (shopId == null
+                        || ramenShopRepository.findByIdAndPublishedTrue(shopId).isEmpty()) {
                     invalidReferences.add(evaluationCase.caseId() + "(shopId=" + shopId + ")");
                 }
             }
@@ -47,10 +49,15 @@ public class RagEvaluationDatasetReferenceValidator {
     private List<Long> referencedShopIds(RagEvaluationCase evaluationCase) {
         List<Long> shopIds = new ArrayList<>();
         switch (evaluationCase.type()) {
-            case SEARCH -> evaluationCase.relevantShops().stream().map(RagExpectedShop::shopId).forEach(shopIds::add);
+            case SEARCH ->
+                evaluationCase.relevantShops().stream()
+                        .map(RagExpectedShop::shopId)
+                        .forEach(shopIds::add);
             case SUMMARY -> addField(shopIds, evaluationCase.request(), "shopId");
             case CHAT -> {
-                JsonNode values = evaluationCase.request() == null ? null : evaluationCase.request().get("shopIds");
+                JsonNode values = evaluationCase.request() == null
+                        ? null
+                        : evaluationCase.request().get("shopIds");
                 if (values != null && values.isArray()) {
                     values.forEach(value -> shopIds.add(toLong(value)));
                 }
@@ -77,10 +84,8 @@ public class RagEvaluationDatasetReferenceValidator {
         }
         try {
             return Long.valueOf(value.asText());
-        }
-        catch (NumberFormatException exception) {
+        } catch (NumberFormatException exception) {
             return null;
         }
     }
-
 }

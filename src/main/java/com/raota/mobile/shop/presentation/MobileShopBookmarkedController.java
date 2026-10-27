@@ -22,10 +22,10 @@ public class MobileShopBookmarkedController {
     private final MobileShopQueryService shops;
 
     @GetMapping
-    public MobileApiResponse<CursorPage<MobileShopSummary>> bookmarked(@LoginUser Long userId,
+    public MobileApiResponse<CursorPage<MobileShopSummary>> bookmarked(
+            @LoginUser Long userId,
             @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "20") @Min(1) @Max(CursorPage.MAX_SIZE) int size) {
         return MobileApiResponse.success(shops.bookmarked(userId, cursor, size));
     }
-
 }

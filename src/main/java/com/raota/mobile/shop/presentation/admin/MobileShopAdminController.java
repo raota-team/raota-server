@@ -36,8 +36,10 @@ public class MobileShopAdminController {
     private final MobileShopAdminService shops;
 
     @GetMapping
-    public MobileApiResponse<OffsetPage<MobileAdminShopRow>> list(@RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Boolean published, @RequestParam(defaultValue = "0") @Min(0) int page,
+    public MobileApiResponse<OffsetPage<MobileAdminShopRow>> list(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Boolean published,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(OffsetPage.MAX_SIZE) int size) {
         return MobileApiResponse.success(shops.list(keyword, published, page, size));
     }
@@ -51,31 +53,30 @@ public class MobileShopAdminController {
     public ResponseEntity<MobileApiResponse<MobileAdminShopDetail>> create(
             @RequestBody @Valid MobileAdminShopRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(MobileApiResponse.success(shops.create(request.toCommand())));
+                .body(MobileApiResponse.success(shops.create(request.toCommand())));
     }
 
     @PutMapping("/{shopId}")
-    public MobileApiResponse<MobileAdminShopDetail> update(@PathVariable Long shopId,
-            @RequestBody @Valid MobileAdminShopRequest request) {
+    public MobileApiResponse<MobileAdminShopDetail> update(
+            @PathVariable Long shopId, @RequestBody @Valid MobileAdminShopRequest request) {
         return MobileApiResponse.success(shops.update(shopId, request.toCommand()));
     }
 
     @PutMapping("/{shopId}/business-hours")
-    public MobileApiResponse<MobileAdminShopDetail> replaceBusinessHours(@PathVariable Long shopId,
-            @RequestBody @Valid MobileAdminBusinessHoursRequest request) {
+    public MobileApiResponse<MobileAdminShopDetail> replaceBusinessHours(
+            @PathVariable Long shopId, @RequestBody @Valid MobileAdminBusinessHoursRequest request) {
         return MobileApiResponse.success(shops.replaceBusinessHours(shopId, request.toCommands()));
     }
 
     @PutMapping("/{shopId}/service-perks")
-    public MobileApiResponse<MobileAdminShopDetail> replaceServicePerks(@PathVariable Long shopId,
-            @RequestBody @Valid MobileAdminServicePerksRequest request) {
+    public MobileApiResponse<MobileAdminShopDetail> replaceServicePerks(
+            @PathVariable Long shopId, @RequestBody @Valid MobileAdminServicePerksRequest request) {
         return MobileApiResponse.success(shops.replaceServicePerks(shopId, request.toCommands()));
     }
 
     @PatchMapping("/{shopId}/visibility")
-    public MobileApiResponse<MobileAdminShopDetail> changeVisibility(@PathVariable Long shopId,
-            @RequestBody @Valid MobileAdminVisibilityRequest request) {
+    public MobileApiResponse<MobileAdminShopDetail> changeVisibility(
+            @PathVariable Long shopId, @RequestBody @Valid MobileAdminVisibilityRequest request) {
         return MobileApiResponse.success(shops.changeVisibility(shopId, request.published()));
     }
-
 }

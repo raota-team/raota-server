@@ -17,5 +17,4 @@ public class MobileRecommendationPurgeListener {
     public void onMemberPurged(MobileMemberPurgedEvent event) {
         runs.deleteByUserId(event.userId());
     }
-
 }

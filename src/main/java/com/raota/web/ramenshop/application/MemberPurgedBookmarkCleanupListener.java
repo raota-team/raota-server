@@ -16,5 +16,4 @@ public class MemberPurgedBookmarkCleanupListener {
     public void deleteMemberBookmarks(MemberPurgedEvent event) {
         bookmarkRepository.deleteAllByMemberProfileId(event.memberId());
     }
-
 }

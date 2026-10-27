@@ -187,5 +187,4 @@ public class MobileShop {
         this.businessStatus = profile.businessStatus();
         this.closedDaysText = profile.closedDaysText();
     }
-
 }

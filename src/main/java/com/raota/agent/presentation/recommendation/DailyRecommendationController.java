@@ -37,5 +37,4 @@ public class DailyRecommendationController implements DailyRecommendationApi {
     public ResponseEntity<ApiResponse<TodayRecommendationResponse>> generateTodayRecommendation() {
         return ResponseEntity.ok(ApiResponse.success(recommendationService.generateTodayRecommendation()));
     }
-
 }

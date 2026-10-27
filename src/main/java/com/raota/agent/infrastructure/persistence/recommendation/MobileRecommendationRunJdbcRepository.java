@@ -30,28 +30,32 @@ public class MobileRecommendationRunJdbcRepository implements MobileRecommendati
     @Transactional
     public Long save(MobileRecommendationRun run) {
         KeyHolder key = new GeneratedKeyHolder();
-        jdbc.update(connection -> {
-            PreparedStatement statement = connection.prepareStatement("""
+        jdbc.update(
+                connection -> {
+                    PreparedStatement statement = connection.prepareStatement("""
                     INSERT INTO tb_v2_recommendation_run (user_id, conditions, latitude, longitude, candidate_count,
                         algorithm_version, index_version, model_version, latency_ms, created_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, Statement.RETURN_GENERATED_KEYS);
-            statement.setLong(1, run.userId());
-            statement.setString(2, run.conditionsJson());
-            statement.setBigDecimal(3, run.latitude());
-            statement.setBigDecimal(4, run.longitude());
-            statement.setInt(5, run.candidateCount());
-            statement.setString(6, run.algorithmVersion());
-            statement.setString(7, run.indexVersion());
-            statement.setString(8, run.modelVersion());
-            statement.setInt(9, run.latencyMs());
-            statement.setTimestamp(10, Timestamp.from(run.createdAt()));
-            return statement;
-        }, key);
+                    statement.setLong(1, run.userId());
+                    statement.setString(2, run.conditionsJson());
+                    statement.setBigDecimal(3, run.latitude());
+                    statement.setBigDecimal(4, run.longitude());
+                    statement.setInt(5, run.candidateCount());
+                    statement.setString(6, run.algorithmVersion());
+                    statement.setString(7, run.indexVersion());
+                    statement.setString(8, run.modelVersion());
+                    statement.setInt(9, run.latencyMs());
+                    statement.setTimestamp(10, Timestamp.from(run.createdAt()));
+                    return statement;
+                },
+                key);
         long runId = key.getKey().longValue();
         jdbc.batchUpdate(
                 "INSERT INTO tb_v2_recommendation_item (run_id, item_rank, shop_id, score, reason) VALUES (?, ?, ?, ?, ?)",
-                run.items(), run.items().size(), (statement, item) -> {
+                run.items(),
+                run.items().size(),
+                (statement, item) -> {
                     statement.setLong(1, runId);
                     statement.setInt(2, item.rank());
                     statement.setLong(3, item.shopId());
@@ -87,25 +91,36 @@ public class MobileRecommendationRunJdbcRepository implements MobileRecommendati
     @Override
     public List<ShownRecommendation> findShownSince(Long userId, Instant since) {
         Map<Long, ShownRecommendation> runs = new LinkedHashMap<>();
-        jdbc.query("""
+        jdbc.query(
+                """
                 SELECT run.id, run.conditions, run.latitude, run.created_at,
                     item.item_rank, item.shop_id, item.score, item.reason
                 FROM tb_v2_recommendation_run run
                 JOIN tb_v2_recommendation_item item ON item.run_id = run.id
                 WHERE run.user_id = ? AND run.created_at >= ?
                 ORDER BY run.created_at DESC, run.id DESC, item.item_rank
-                """, row -> {
-            long runId = row.getLong("id");
-            ShownRecommendation shown = runs.get(runId);
-            if (shown == null) {
-                shown = new ShownRecommendation(runId, row.getString("conditions"), row.getObject("latitude") != null,
-                        row.getTimestamp("created_at").toInstant(), new ArrayList<>());
-                runs.put(runId, shown);
-            }
-            shown.items()
-                .add(new MobileRecommendationRun.Item(row.getInt("item_rank"), row.getLong("shop_id"),
-                        row.getDouble("score"), row.getString("reason")));
-        }, userId, Timestamp.from(since));
+                """,
+                row -> {
+                    long runId = row.getLong("id");
+                    ShownRecommendation shown = runs.get(runId);
+                    if (shown == null) {
+                        shown = new ShownRecommendation(
+                                runId,
+                                row.getString("conditions"),
+                                row.getObject("latitude") != null,
+                                row.getTimestamp("created_at").toInstant(),
+                                new ArrayList<>());
+                        runs.put(runId, shown);
+                    }
+                    shown.items()
+                            .add(new MobileRecommendationRun.Item(
+                                    row.getInt("item_rank"),
+                                    row.getLong("shop_id"),
+                                    row.getDouble("score"),
+                                    row.getString("reason")));
+                },
+                userId,
+                Timestamp.from(since));
         return List.copyOf(runs.values());
     }
 
@@ -130,23 +145,32 @@ public class MobileRecommendationRunJdbcRepository implements MobileRecommendati
 
     @Override
     public List<RecommendationImpression> findImpressions(Instant from, Instant to) {
-        return jdbc.query("""
+        return jdbc.query(
+                """
                 SELECT run.id, run.user_id, run.created_at, run.algorithm_version, run.conditions,
                     item.item_rank, item.shop_id, item.opened_at
                 FROM tb_v2_recommendation_run run
                 JOIN tb_v2_recommendation_item item ON item.run_id = run.id
                 WHERE run.created_at >= ? AND run.created_at < ?
                 ORDER BY run.id, item.item_rank
-                """, (row, index) -> {
-            Timestamp opened = row.getTimestamp("opened_at");
-            Instant openedAt = null;
-            if (opened != null) {
-                openedAt = opened.toInstant();
-            }
-            return new RecommendationImpression(row.getLong("id"), row.getLong("user_id"),
-                    row.getTimestamp("created_at").toInstant(), row.getString("algorithm_version"),
-                    row.getString("conditions"), row.getInt("item_rank"), row.getLong("shop_id"), openedAt);
-        }, Timestamp.from(from), Timestamp.from(to));
+                """,
+                (row, index) -> {
+                    Timestamp opened = row.getTimestamp("opened_at");
+                    Instant openedAt = null;
+                    if (opened != null) {
+                        openedAt = opened.toInstant();
+                    }
+                    return new RecommendationImpression(
+                            row.getLong("id"),
+                            row.getLong("user_id"),
+                            row.getTimestamp("created_at").toInstant(),
+                            row.getString("algorithm_version"),
+                            row.getString("conditions"),
+                            row.getInt("item_rank"),
+                            row.getLong("shop_id"),
+                            openedAt);
+                },
+                Timestamp.from(from),
+                Timestamp.from(to));
     }
-
 }

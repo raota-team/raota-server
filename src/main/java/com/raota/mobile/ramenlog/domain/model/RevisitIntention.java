@@ -1,8 +1,9 @@
 package com.raota.mobile.ramenlog.domain.model;
 
 public enum RevisitIntention {
-
-    OFTEN(5), SOMETIMES(3), ONCE_IS_ENOUGH(1);
+    OFTEN(5),
+    SOMETIMES(3),
+    ONCE_IS_ENOUGH(1);
 
     private final int score;
 
@@ -13,5 +14,4 @@ public enum RevisitIntention {
     public int score() {
         return score;
     }
-
 }

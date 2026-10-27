@@ -17,5 +17,4 @@ public interface StoredImageReferences {
      * 건너뛴다).
      */
     Set<String> referencedUrls(Collection<String> urls);
-
 }

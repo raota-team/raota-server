@@ -1,16 +1,16 @@
 package com.raota.web.ramenshop.application.service;
 
-import com.raota.web.ramenshop.domain.repository.BookmarkRepository;
+import com.raota.global.cache.CacheInvalidationPublisher;
+import com.raota.web.ramenshop.application.port.RamenLogQueryPort;
 import com.raota.web.ramenshop.domain.model.EventMenus;
 import com.raota.web.ramenshop.domain.model.NormalMenus;
 import com.raota.web.ramenshop.domain.model.RamenShop;
+import com.raota.web.ramenshop.domain.repository.BookmarkRepository;
 import com.raota.web.ramenshop.domain.repository.RamenShopRepository;
-import com.raota.web.ramenshop.application.port.RamenLogQueryPort;
-import com.raota.global.cache.CacheInvalidationPublisher;
-import com.raota.web.ramenshop.presentation.response.RamenShopMenuOptionsResponse;
-import com.raota.web.ramenshop.presentation.response.RamenShopResponse;
 import com.raota.web.ramenshop.presentation.request.RamenShopSortType;
 import com.raota.web.ramenshop.presentation.response.RamenShopBasicInfoResponse;
+import com.raota.web.ramenshop.presentation.response.RamenShopMenuOptionsResponse;
+import com.raota.web.ramenshop.presentation.response.RamenShopResponse;
 import com.raota.web.ramenshop.presentation.response.RecentVerifiedShopResponse;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -38,17 +38,17 @@ public class RamenShopInfoService {
 
     @Transactional(readOnly = true)
     public List<RecentVerifiedShopResponse> getRecentVerifiedShops(int limit) {
-        return ramenLogQueryPort.findRecentVerifiedShops(limit)
-            .stream()
-            .map(shop -> new RecentVerifiedShopResponse(shop.id(), shop.name(), shop.location(), shop.imageUrl(),
-                    shop.photoCount()))
-            .toList();
+        return ramenLogQueryPort.findRecentVerifiedShops(limit).stream()
+                .map(shop -> new RecentVerifiedShopResponse(
+                        shop.id(), shop.name(), shop.location(), shop.imageUrl(), shop.photoCount()))
+                .toList();
     }
 
     @Transactional(readOnly = true)
     public RamenShopBasicInfoResponse getShopDetailInfo(Long shopId, Long memberId) {
-        RamenShop ramenShop = ramenShopRepository.findByIdAndPublishedTrue(shopId)
-            .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
+        RamenShop ramenShop = ramenShopRepository
+                .findByIdAndPublishedTrue(shopId)
+                .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
         int viewCount = ramenShop.getStats().viewCount();
 
         RamenShopBasicInfoResponse cachedResponse = ramenShopCacheService.getShopDetail(shopId);
@@ -63,19 +63,23 @@ public class RamenShopInfoService {
 
     @Transactional(readOnly = true)
     public RamenShopMenuOptionsResponse getShopMenuOptions(Long shopId) {
-        RamenShop ramenShop = ramenShopRepository.findByIdAndPublishedTrue(shopId)
-            .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
+        RamenShop ramenShop = ramenShopRepository
+                .findByIdAndPublishedTrue(shopId)
+                .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
         NormalMenus normalMenus = ramenShop.getNormalMenus();
         EventMenus eventMenus = ramenShop.getEventMenus();
 
-        return RamenShopMenuOptionsResponse.from(ramenShop, normalMenus == null ? List.of() : normalMenus.getValues(),
+        return RamenShopMenuOptionsResponse.from(
+                ramenShop,
+                normalMenus == null ? List.of() : normalMenus.getValues(),
                 eventMenus == null ? List.of() : eventMenus.getValues());
     }
 
     @Transactional
     public void increaseViewCount(Long shopId) {
-        RamenShop ramenShop = ramenShopRepository.findByIdAndPublishedTrue(shopId)
-            .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
+        RamenShop ramenShop = ramenShopRepository
+                .findByIdAndPublishedTrue(shopId)
+                .orElseThrow(() -> new IllegalArgumentException("없는 라멘가게 입니다."));
         ramenShop.increaseViewCount();
         ramenShopViewRankingService.increaseTodayViewCount(shopId);
 
@@ -84,12 +88,11 @@ public class RamenShopInfoService {
     }
 
     @Transactional(readOnly = true)
-    public Page<RamenShopResponse> getRamenShopList(String city, String district, String keyword, String tag,
-            RamenShopSortType sort, Pageable pageable) {
+    public Page<RamenShopResponse> getRamenShopList(
+            String city, String district, String keyword, String tag, RamenShopSortType sort, Pageable pageable) {
         RamenShopSortType sortType = RamenShopSortType.defaultIfNull(sort);
         Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sortType.toSort());
 
         return ramenShopCacheService.getFirstPageShopList(city, district, keyword, tag, sortedPageable);
     }
-
 }

@@ -22,5 +22,4 @@ public class MobileAccountPurgeScheduler {
             log.info("모바일 탈퇴 회원 {}명 익명화 완료", purged);
         }
     }
-
 }

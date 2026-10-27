@@ -15,9 +15,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "tb_social_account",
-        uniqueConstraints = { @UniqueConstraint(name = "uk_social_account_provider_user",
-                columnNames = { "provider", "provider_id" }) })
+@Table(
+        name = "tb_social_account",
+        uniqueConstraints = {
+            @UniqueConstraint(
+                    name = "uk_social_account_provider_user",
+                    columnNames = {"provider", "provider_id"})
+        })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SocialAccount {
@@ -44,8 +48,13 @@ public class SocialAccount {
     private Long memberId;
 
     @Builder
-    public SocialAccount(AuthProvider provider, String providerUserId, String email, String nickname,
-            String profileImageUrl, Long memberId) {
+    public SocialAccount(
+            AuthProvider provider,
+            String providerUserId,
+            String email,
+            String nickname,
+            String profileImageUrl,
+            Long memberId) {
         this.provider = provider;
         this.providerUserId = providerUserId;
         this.email = email;
@@ -65,5 +74,4 @@ public class SocialAccount {
     public void updateMemberId(Long memberId) {
         this.memberId = memberId;
     }
-
 }

@@ -25,5 +25,4 @@ public class MobileRecommendationFeedbackService {
             throw new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "추천 기록을 찾을 수 없습니다.");
         }
     }
-
 }

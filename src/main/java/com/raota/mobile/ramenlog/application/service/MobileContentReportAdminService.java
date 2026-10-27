@@ -75,7 +75,7 @@ public class MobileContentReportAdminService {
     @Transactional
     public MobileAdminReportResolutionResult resolve(Long reportId, MobileReportResolution resolution) {
         MobileContentReport report = reports.findById(reportId)
-            .orElseThrow(() -> new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "신고를 찾을 수 없습니다."));
+                .orElseThrow(() -> new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "신고를 찾을 수 없습니다."));
         if (report.getStatus() != ReportStatus.OPEN) {
             throw alreadyClosed();
         }
@@ -84,7 +84,10 @@ public class MobileContentReportAdminService {
             closedAs = ReportStatus.RESOLVED;
             removeTarget(report);
         }
-        int closed = reports.closeOpen(report.getTargetType(), report.getTargetId(), closedAs,
+        int closed = reports.closeOpen(
+                report.getTargetType(),
+                report.getTargetId(),
+                closedAs,
                 Instant.now(clock).truncatedTo(ChronoUnit.MICROS));
         // 읽은 뒤 다른 관리자가 먼저 닫았다. 롤백해 그 결과를 덮어쓰지 않는다.
         if (closed == 0) {
@@ -109,12 +112,10 @@ public class MobileContentReportAdminService {
                 case RAMEN_LOG_COMMENT -> commentIds.add(report.getTargetId());
             }
         }
-        Map<Long, MobileRamenLogComment> commentById = comments.findAllById(commentIds)
-            .stream()
-            .collect(Collectors.toMap(MobileRamenLogComment::getId, Function.identity()));
-        Map<Long, MobileRamenLog> logById = logs.findAllById(logIds)
-            .stream()
-            .collect(Collectors.toMap(MobileRamenLog::getId, Function.identity()));
+        Map<Long, MobileRamenLogComment> commentById = comments.findAllById(commentIds).stream()
+                .collect(Collectors.toMap(MobileRamenLogComment::getId, Function.identity()));
+        Map<Long, MobileRamenLog> logById =
+                logs.findAllById(logIds).stream().collect(Collectors.toMap(MobileRamenLog::getId, Function.identity()));
         Map<Long, String> firstImage = new HashMap<>();
         for (MobileRamenLogImage image : images.findByRamenLogIdInOrderByRamenLogIdAscSortOrderAsc(logIds)) {
             firstImage.putIfAbsent(image.getRamenLogId(), image.getUrl());
@@ -123,7 +124,11 @@ public class MobileContentReportAdminService {
         page.forEach(report -> userIds.add(report.getReporterId()));
         logById.values().forEach(log -> userIds.add(log.getUserId()));
         commentById.values().forEach(comment -> userIds.add(comment.getUserId()));
-        return new Previews(logById, commentById, firstImage, accounts.authors(userIds),
+        return new Previews(
+                logById,
+                commentById,
+                firstImage,
+                accounts.authors(userIds),
                 openCounts(ReportTargetType.RAMEN_LOG, logIds),
                 openCounts(ReportTargetType.RAMEN_LOG_COMMENT, commentIds));
     }
@@ -149,9 +154,15 @@ public class MobileContentReportAdminService {
             case RAMEN_LOG -> previews.openLogReports().getOrDefault(targetId, 0);
             case RAMEN_LOG_COMMENT -> previews.openCommentReports().getOrDefault(targetId, 0);
         };
-        return new MobileAdminReport(String.valueOf(report.getId()), report.getStatus(), report.getReason(),
-                person(report.getReporterId(), previews.authors()), report.getCreatedAt(), report.getResolvedAt(),
-                openCount, target);
+        return new MobileAdminReport(
+                String.valueOf(report.getId()),
+                report.getStatus(),
+                report.getReason(),
+                person(report.getReporterId(), previews.authors()),
+                report.getCreatedAt(),
+                report.getResolvedAt(),
+                openCount,
+                target);
     }
 
     private Target logTarget(Long logId, Previews previews) {
@@ -159,9 +170,15 @@ public class MobileContentReportAdminService {
         if (log == null) {
             return missing(ReportTargetType.RAMEN_LOG, logId, logId);
         }
-        return new Target(ReportTargetType.RAMEN_LOG, String.valueOf(logId), String.valueOf(logId),
-                person(log.getUserId(), previews.authors()), log.getNote(), log.getMenuName(),
-                previews.firstImages().get(logId), log.getDeletedAt() != null);
+        return new Target(
+                ReportTargetType.RAMEN_LOG,
+                String.valueOf(logId),
+                String.valueOf(logId),
+                person(log.getUserId(), previews.authors()),
+                log.getNote(),
+                log.getMenuName(),
+                previews.firstImages().get(logId),
+                log.getDeletedAt() != null);
     }
 
     private Target commentTarget(Long commentId, Previews previews) {
@@ -169,9 +186,15 @@ public class MobileContentReportAdminService {
         if (comment == null) {
             return missing(ReportTargetType.RAMEN_LOG_COMMENT, commentId, null);
         }
-        return new Target(ReportTargetType.RAMEN_LOG_COMMENT, String.valueOf(commentId),
-                String.valueOf(comment.getRamenLogId()), person(comment.getUserId(), previews.authors()),
-                comment.getContent(), null, null, comment.getDeletedAt() != null);
+        return new Target(
+                ReportTargetType.RAMEN_LOG_COMMENT,
+                String.valueOf(commentId),
+                String.valueOf(comment.getRamenLogId()),
+                person(comment.getUserId(), previews.authors()),
+                comment.getContent(),
+                null,
+                null,
+                comment.getDeletedAt() != null);
     }
 
     /** 대상 행이 없으면(정상 흐름에서는 탈퇴 정리 때 신고도 함께 지워진다) 지워진 대상으로 보여 준다. */
@@ -196,9 +219,11 @@ public class MobileContentReportAdminService {
         return new MobileException(MobileErrorCode.CONFLICT, "이미 처리된 신고입니다.");
     }
 
-    private record Previews(Map<Long, MobileRamenLog> logs, Map<Long, MobileRamenLogComment> comments,
-            Map<Long, String> firstImages, Map<Long, MobileAuthor> authors, Map<Long, Integer> openLogReports,
-            Map<Long, Integer> openCommentReports) {
-    }
-
+    private record Previews(
+            Map<Long, MobileRamenLog> logs,
+            Map<Long, MobileRamenLogComment> comments,
+            Map<Long, String> firstImages,
+            Map<Long, MobileAuthor> authors,
+            Map<Long, Integer> openLogReports,
+            Map<Long, Integer> openCommentReports) {}
 }

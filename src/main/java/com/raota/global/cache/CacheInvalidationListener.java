@@ -23,8 +23,8 @@ public class CacheInvalidationListener implements MessageListener {
     @Override
     public void onMessage(Message message, byte @Nullable [] pattern) {
         try {
-            CacheInvalidationMessage invalidationMessage = objectMapper.readValue(message.getBody(),
-                    CacheInvalidationMessage.class);
+            CacheInvalidationMessage invalidationMessage =
+                    objectMapper.readValue(message.getBody(), CacheInvalidationMessage.class);
 
             log.debug("Received cache invalidation: {}", invalidationMessage);
 
@@ -34,17 +34,16 @@ public class CacheInvalidationListener implements MessageListener {
                 if ("ALL".equals(invalidationMessage.key())) {
                     cache.clear();
                     log.info("Cleared all entries in cache: {}", invalidationMessage.cacheName());
-                }
-                else {
+                } else {
                     cache.evict(invalidationMessage.key());
-                    log.debug("Evicted key [{}] from cache: {}", invalidationMessage.key(),
+                    log.debug(
+                            "Evicted key [{}] from cache: {}",
+                            invalidationMessage.key(),
                             invalidationMessage.cacheName());
                 }
             }
-        }
-        catch (JacksonException e) {
+        } catch (JacksonException e) {
             log.error("Failed to parse cache invalidation message", e);
         }
     }
-
 }

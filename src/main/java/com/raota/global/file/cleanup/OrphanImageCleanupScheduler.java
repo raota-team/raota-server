@@ -36,8 +36,12 @@ public class OrphanImageCleanupScheduler {
 
     private final Clock clock;
 
-    public OrphanImageCleanupScheduler(ObjectProvider<ImageObjectStore> stores, List<StoredImageReferences> references,
-            RedisLockClient locks, OrphanImageCleanupProperties properties, Clock clock) {
+    public OrphanImageCleanupScheduler(
+            ObjectProvider<ImageObjectStore> stores,
+            List<StoredImageReferences> references,
+            RedisLockClient locks,
+            OrphanImageCleanupProperties properties,
+            Clock clock) {
         this.stores = stores;
         this.references = references;
         this.locks = locks;
@@ -56,18 +60,23 @@ public class OrphanImageCleanupScheduler {
                 log.info("고아 사진 정리: 다른 서버가 실행 중이라 건너뜀");
                 return;
             }
-        }
-        catch (RedisLockUnavailableException exception) {
+        } catch (RedisLockUnavailableException exception) {
             log.warn("고아 사진 정리: Redis 락을 잡지 못해 건너뜀", exception);
             return;
         }
-        List<PrefixResult> results = new OrphanImageCleaner(store, references, properties.retention(),
-                properties.maxDeletes())
-            .clean(clock.instant());
+        List<PrefixResult> results = new OrphanImageCleaner(
+                        store, references, properties.retention(), properties.maxDeletes())
+                .clean(clock.instant());
         for (PrefixResult result : results) {
-            log.info("고아 사진 정리 prefix={} status={} 후보={} 참조={} 삭제={} 실패={} 보류={}", result.prefix(), result.status(),
-                    result.candidates(), result.referenced(), result.deleted(), result.failed(), result.deferred());
+            log.info(
+                    "고아 사진 정리 prefix={} status={} 후보={} 참조={} 삭제={} 실패={} 보류={}",
+                    result.prefix(),
+                    result.status(),
+                    result.candidates(),
+                    result.referenced(),
+                    result.deleted(),
+                    result.failed(),
+                    result.deferred());
         }
     }
-
 }

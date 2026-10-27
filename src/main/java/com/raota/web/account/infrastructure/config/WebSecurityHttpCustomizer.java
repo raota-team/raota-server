@@ -20,12 +20,11 @@ public class WebSecurityHttpCustomizer implements SecurityHttpCustomizer {
 
     @Override
     public void customize(HttpSecurity http) throws Exception {
-        http.oauth2Login(oauth2 -> oauth2
-            .authorizationEndpoint(authorization -> authorization.baseUri("/oauth2/authorization")
-                .authorizationRequestRepository(authorizationRequestRepository))
-            .redirectionEndpoint(redirection -> redirection.baseUri("/login/oauth2/code/*"))
-            .successHandler(successHandler)
-            .failureHandler(failureHandler));
+        http.oauth2Login(oauth2 -> oauth2.authorizationEndpoint(authorization -> authorization
+                        .baseUri("/oauth2/authorization")
+                        .authorizationRequestRepository(authorizationRequestRepository))
+                .redirectionEndpoint(redirection -> redirection.baseUri("/login/oauth2/code/*"))
+                .successHandler(successHandler)
+                .failureHandler(failureHandler));
     }
-
 }

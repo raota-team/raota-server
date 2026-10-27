@@ -36,15 +36,16 @@ class MobileBearerTokenAuthenticatorTest {
     @Test
     void 활성_ADMIN은_사용자_관리자_활성_회원_권한을_함께_가진다() {
         assertThat(authenticate(MobileUserStatus.ACTIVE, MobileUserRole.ADMIN).getAuthorities())
-            .extracting(authority -> authority.getAuthority())
-            .containsExactlyInAnyOrder("ROLE_USER", "ROLE_ADMIN", "ACTIVE_MEMBER");
+                .extracting(authority -> authority.getAuthority())
+                .containsExactlyInAnyOrder("ROLE_USER", "ROLE_ADMIN", "ACTIVE_MEMBER");
     }
 
     @Test
     void 가입_중인_회원은_활성_회원_권한_대신_가입_중_권한을_가진다() {
-        assertThat(authenticate(MobileUserStatus.ONBOARDING, MobileUserRole.USER).getAuthorities())
-            .extracting(authority -> authority.getAuthority())
-            .containsExactlyInAnyOrder("ROLE_USER", "ONBOARDING");
+        assertThat(authenticate(MobileUserStatus.ONBOARDING, MobileUserRole.USER)
+                        .getAuthorities())
+                .extracting(authority -> authority.getAuthority())
+                .containsExactlyInAnyOrder("ROLE_USER", "ONBOARDING");
     }
 
     private Authentication authenticate(MobileUserStatus status, MobileUserRole role) {
@@ -56,5 +57,4 @@ class MobileBearerTokenAuthenticatorTest {
         when(user.getRole()).thenReturn(role);
         return authenticator.authenticate("valid-token");
     }
-
 }

@@ -1,7 +1,7 @@
 plugins {
     id 'java'
     id 'checkstyle'
-    id 'io.spring.javaformat' version '0.0.48'
+    id 'com.diffplug.spotless' version '8.10.4'
     id 'org.springframework.boot' version '4.1.0'
     id 'io.spring.dependency-management' version '1.1.7'
 }
@@ -167,4 +167,13 @@ checkstyle {
 // v2 코드에만 적용한다. web(v1)·agent·global은 검사하지 않는다.
 tasks.withType(Checkstyle).configureEach {
     include 'com/raota/mobile/**'
+}
+
+// 포맷은 Palantir Java Format(120자)으로 맞춘다. 커밋 전 spotlessApply, CI는 spotlessCheck.
+spotless {
+    java {
+        target 'src/**/*.java'
+        palantirJavaFormat('2.102.0')
+        removeUnusedImports()
+    }
 }

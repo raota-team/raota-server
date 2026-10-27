@@ -13,5 +13,4 @@ public interface RagEvaluationCaseResultJpaRepository extends JpaRepository<RagE
     Optional<RagEvaluationCaseResultEntity> findByRunIdAndCaseId(String runId, String caseId);
 
     long countByRunIdAndStatus(String runId, RagEvaluationCaseStatus status);
-
 }

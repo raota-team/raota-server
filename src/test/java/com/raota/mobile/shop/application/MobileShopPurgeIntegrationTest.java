@@ -10,7 +10,6 @@ import com.raota.mobile.account.domain.repository.MobileUserRepository;
 import com.raota.support.BaseIntegrationTest;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,27 +59,30 @@ class MobileShopPurgeIntegrationTest extends BaseIntegrationTest {
         insertShop(INCONSISTENT_COUNT, 0);
         jdbc.update(
                 "INSERT INTO tb_v2_shop_bookmark (user_id, shop_id, created_at) VALUES (?, ?, CURRENT_TIMESTAMP(6))",
-                dueId, SHARED);
+                dueId,
+                SHARED);
         jdbc.update(
                 "INSERT INTO tb_v2_shop_bookmark (user_id, shop_id, created_at) VALUES (?, ?, CURRENT_TIMESTAMP(6))",
-                dueId, INCONSISTENT_COUNT);
+                dueId,
+                INCONSISTENT_COUNT);
         jdbc.update(
                 "INSERT INTO tb_v2_shop_bookmark (user_id, shop_id, created_at) VALUES (?, ?, CURRENT_TIMESTAMP(6))",
-                activeId, SHARED);
+                activeId,
+                SHARED);
 
         assertThat(purges.purgeExpired(REQUESTED_AT.plus(Duration.ofDays(30)))).isEqualTo(1);
         assertThat(users.findById(dueId).orElseThrow().getStatus()).isEqualTo(MobileUserStatus.WITHDRAWN);
-        assertThat(
-                jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_shop_bookmark WHERE user_id = ?", Integer.class, dueId))
-            .isZero();
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_shop_bookmark WHERE user_id = ?", Integer.class,
-                activeId))
-            .isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM tb_v2_shop_bookmark WHERE user_id = ?", Integer.class, dueId))
+                .isZero();
+        assertThat(jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM tb_v2_shop_bookmark WHERE user_id = ?", Integer.class, activeId))
+                .isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT bookmark_count FROM tb_v2_shop WHERE id = ?", Integer.class, SHARED))
-            .isEqualTo(1);
-        assertThat(jdbc.queryForObject("SELECT bookmark_count FROM tb_v2_shop WHERE id = ?", Integer.class,
-                INCONSISTENT_COUNT))
-            .isZero();
+                .isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                        "SELECT bookmark_count FROM tb_v2_shop WHERE id = ?", Integer.class, INCONSISTENT_COUNT))
+                .isZero();
     }
 
     private void insertShop(long shopId, int bookmarkCount) {
@@ -91,5 +93,4 @@ class MobileShopPurgeIntegrationTest extends BaseIntegrationTest {
                     '2026-09-01 00:00:00.000000', '2026-09-01 00:00:00.000000')
                 """, shopId, bookmarkCount);
     }
-
 }

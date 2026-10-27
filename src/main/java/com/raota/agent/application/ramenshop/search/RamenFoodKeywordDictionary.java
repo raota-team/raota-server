@@ -14,39 +14,38 @@ final class RamenFoodKeywordDictionary {
             new FoodKeywordGroup("탄탄", List.of("탄탄", "탄탄멘", "매운 라멘", "매콤한 국물")),
             new FoodKeywordGroup("매운", List.of("매운", "매운 라멘", "매콤한", "카라이", "탄탄멘")));
 
-    private RamenFoodKeywordDictionary() {
-    }
+    private RamenFoodKeywordDictionary() {}
 
     static List<String> detectTypes(String normalizedQuery) {
         return GROUPS.stream()
-            .filter(group -> containsAny(normalizedQuery, group.aliases()))
-            .map(FoodKeywordGroup::type)
-            .distinct()
-            .toList();
+                .filter(group -> containsAny(normalizedQuery, group.aliases()))
+                .map(FoodKeywordGroup::type)
+                .distinct()
+                .toList();
     }
 
     static List<String> aliasesFor(List<String> foodTypes) {
         return GROUPS.stream()
-            .filter(group -> foodTypes.contains(group.type()))
-            .flatMap(group -> group.aliases().stream())
-            .distinct()
-            .toList();
+                .filter(group -> foodTypes.contains(group.type()))
+                .flatMap(group -> group.aliases().stream())
+                .distinct()
+                .toList();
     }
 
     static List<String> conflictAliasesFor(List<String> foodTypes) {
         return GROUPS.stream()
-            .filter(group -> !foodTypes.contains(group.type()))
-            .filter(group -> !"매운".equals(group.type()))
-            .flatMap(group -> group.aliases().stream())
-            .distinct()
-            .toList();
+                .filter(group -> !foodTypes.contains(group.type()))
+                .filter(group -> !"매운".equals(group.type()))
+                .flatMap(group -> group.aliases().stream())
+                .distinct()
+                .toList();
     }
 
     private static boolean containsAny(String value, List<String> keywords) {
-        return keywords.stream().map(keyword -> keyword.toLowerCase(Locale.ROOT)).anyMatch(value::contains);
+        return keywords.stream()
+                .map(keyword -> keyword.toLowerCase(Locale.ROOT))
+                .anyMatch(value::contains);
     }
 
-    record FoodKeywordGroup(String type, List<String> aliases) {
-    }
-
+    record FoodKeywordGroup(String type, List<String> aliases) {}
 }

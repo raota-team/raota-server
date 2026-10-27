@@ -70,7 +70,10 @@ class MobileRamenLogFeedIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mvc = MockMvcBuilders.webAppContextSetup(context).addFilters(requestIdFilter).apply(springSecurity()).build();
+        mvc = MockMvcBuilders.webAppContextSetup(context)
+                .addFilters(requestIdFilter)
+                .apply(springSecurity())
+                .build();
         jdbc.update("""
                 INSERT INTO tb_v2_shop (id, name, branch_name, address, region, ramen_types, tags, business_status,
                     ai_summary_keywords, is_published, created_at, updated_at)
@@ -82,7 +85,8 @@ class MobileRamenLogFeedIntegrationTest extends BaseIntegrationTest {
         admin = active();
         jdbc.update("UPDATE tb_v2_user SET role = 'ADMIN' WHERE id = ?", admin);
         MobileUser pending = MobileUser.onboarding("feed-" + UUID.randomUUID() + "@example.com");
-        pending.completeOnboarding(Nickname.of("F" + UUID.randomUUID().toString().substring(0, 8)), BASE);
+        pending.completeOnboarding(
+                Nickname.of("F" + UUID.randomUUID().toString().substring(0, 8)), BASE);
         pending.requestWithdrawal(BASE, Duration.ofDays(30));
         withdrawing = users.saveAndFlush(pending).getId();
     }
@@ -108,13 +112,15 @@ class MobileRamenLogFeedIntegrationTest extends BaseIntegrationTest {
         insertLog(LOG + 7, withdrawing, "쇼유", "PUBLIC", 0, 7, false);
         insertLog(LOG + 8, author, "쇼유", "PUBLIC", 0, 8, false);
 
-        JsonNode first = feed(get("/api/v2/ramen-logs").param("shopId", String.valueOf(SHOP)).param("size", "2"));
+        JsonNode first = feed(
+                get("/api/v2/ramen-logs").param("shopId", String.valueOf(SHOP)).param("size", "2"));
         assertThat(ids(first)).containsExactly(LOG + 8, LOG + 6);
         assertThat(first.get("hasNext").asBoolean()).isTrue();
 
-        JsonNode second = feed(get("/api/v2/ramen-logs").param("shopId", String.valueOf(SHOP))
-            .param("size", "2")
-            .param("cursor", first.get("nextCursor").asString()));
+        JsonNode second = feed(get("/api/v2/ramen-logs")
+                .param("shopId", String.valueOf(SHOP))
+                .param("size", "2")
+                .param("cursor", first.get("nextCursor").asString()));
         assertThat(ids(second)).containsExactly(LOG + 1);
         assertThat(second.get("hasNext").asBoolean()).isFalse();
         assertThat(second.get("nextCursor").isNull()).isTrue();
@@ -127,13 +133,15 @@ class MobileRamenLogFeedIntegrationTest extends BaseIntegrationTest {
             insertLog(LOG + 40 + minute, withdrawing, "쇼유", "PUBLIC", 0, minute, false);
         }
 
-        JsonNode first = feed(get("/api/v2/ramen-logs").param("shopId", String.valueOf(SHOP)).param("size", "1"));
+        JsonNode first = feed(
+                get("/api/v2/ramen-logs").param("shopId", String.valueOf(SHOP)).param("size", "1"));
         assertThat(ids(first)).isEmpty();
         assertThat(first.get("hasNext").asBoolean()).isTrue();
 
-        JsonNode second = feed(get("/api/v2/ramen-logs").param("shopId", String.valueOf(SHOP))
-            .param("size", "1")
-            .param("cursor", first.get("nextCursor").asString()));
+        JsonNode second = feed(get("/api/v2/ramen-logs")
+                .param("shopId", String.valueOf(SHOP))
+                .param("size", "1")
+                .param("cursor", first.get("nextCursor").asString()));
         assertThat(ids(second)).containsExactly(LOG + 40);
         assertThat(second.get("hasNext").asBoolean()).isFalse();
     }
@@ -145,20 +153,23 @@ class MobileRamenLogFeedIntegrationTest extends BaseIntegrationTest {
         insertLog(LOG + 13, author, "돈코츠", "PUBLIC", 7, 3, false);
         insertLog(LOG + 14, author, "쇼유", "PUBLIC", 5, 4, false);
 
-        JsonNode first = feed(get("/api/v2/ramen-logs").param("shopId", String.valueOf(SHOP))
-            .param("sort", "LIKES")
-            .param("size", "2"));
+        JsonNode first = feed(get("/api/v2/ramen-logs")
+                .param("shopId", String.valueOf(SHOP))
+                .param("sort", "LIKES")
+                .param("size", "2"));
         assertThat(ids(first)).containsExactly(LOG + 12, LOG + 13);
-        JsonNode second = feed(get("/api/v2/ramen-logs").param("shopId", String.valueOf(SHOP))
-            .param("sort", "LIKES")
-            .param("size", "2")
-            .param("cursor", first.get("nextCursor").asString()));
+        JsonNode second = feed(get("/api/v2/ramen-logs")
+                .param("shopId", String.valueOf(SHOP))
+                .param("sort", "LIKES")
+                .param("size", "2")
+                .param("cursor", first.get("nextCursor").asString()));
         assertThat(ids(second)).containsExactly(LOG + 14, LOG + 11);
         assertThat(second.get("hasNext").asBoolean()).isFalse();
 
-        JsonNode shoyu = feed(get("/api/v2/ramen-logs").param("shopId", String.valueOf(SHOP))
-            .param("sort", "LIKES")
-            .param("ramenType", "쇼유"));
+        JsonNode shoyu = feed(get("/api/v2/ramen-logs")
+                .param("shopId", String.valueOf(SHOP))
+                .param("sort", "LIKES")
+                .param("ramenType", "쇼유"));
         assertThat(ids(shoyu)).containsExactly(LOG + 12, LOG + 14, LOG + 11);
     }
 
@@ -166,25 +177,36 @@ class MobileRamenLogFeedIntegrationTest extends BaseIntegrationTest {
     void 비회원과_회원과_관리자_모두_읽을_수_있고_회원별_공감_여부와_내_기록_여부가_표시된다() throws Exception {
         insertLog(LOG + 21, author, "쇼유", "PUBLIC", 0, 1, false);
         mvc.perform(put("/api/v2/ramen-logs/{logId}/like", LOG + 21).header(HttpHeaders.AUTHORIZATION, auth(viewer)))
-            .andExpect(status().isOk());
+                .andExpect(status().isOk());
 
-        JsonNode anonymous = feed(get("/api/v2/ramen-logs").param("shopId", String.valueOf(SHOP))).get("items").get(0);
+        JsonNode anonymous = feed(get("/api/v2/ramen-logs").param("shopId", String.valueOf(SHOP)))
+                .get("items")
+                .get(0);
         assertThat(anonymous.get("likeCount").asInt()).isEqualTo(1);
         assertThat(anonymous.get("isLiked").asBoolean()).isFalse();
         assertThat(anonymous.get("isMine").asBoolean()).isFalse();
 
-        JsonNode liker = feed(get("/api/v2/ramen-logs").param("shopId", String.valueOf(SHOP))
-            .header(HttpHeaders.AUTHORIZATION, auth(viewer))).get("items").get(0);
+        JsonNode liker = feed(get("/api/v2/ramen-logs")
+                        .param("shopId", String.valueOf(SHOP))
+                        .header(HttpHeaders.AUTHORIZATION, auth(viewer)))
+                .get("items")
+                .get(0);
         assertThat(liker.get("isLiked").asBoolean()).isTrue();
         assertThat(liker.get("isMine").asBoolean()).isFalse();
 
-        JsonNode own = feed(get("/api/v2/ramen-logs").param("shopId", String.valueOf(SHOP))
-            .header(HttpHeaders.AUTHORIZATION, auth(author))).get("items").get(0);
+        JsonNode own = feed(get("/api/v2/ramen-logs")
+                        .param("shopId", String.valueOf(SHOP))
+                        .header(HttpHeaders.AUTHORIZATION, auth(author)))
+                .get("items")
+                .get(0);
         assertThat(own.get("isLiked").asBoolean()).isFalse();
         assertThat(own.get("isMine").asBoolean()).isTrue();
 
-        JsonNode byAdmin = feed(get("/api/v2/ramen-logs").param("shopId", String.valueOf(SHOP))
-            .header(HttpHeaders.AUTHORIZATION, auth(admin))).get("items").get(0);
+        JsonNode byAdmin = feed(get("/api/v2/ramen-logs")
+                        .param("shopId", String.valueOf(SHOP))
+                        .header(HttpHeaders.AUTHORIZATION, auth(admin)))
+                .get("items")
+                .get(0);
         assertThat(byAdmin.get("id").asString()).isEqualTo(String.valueOf(LOG + 21));
     }
 
@@ -192,21 +214,26 @@ class MobileRamenLogFeedIntegrationTest extends BaseIntegrationTest {
     void 정렬과_맞지_않는_커서와_알_수_없는_정렬은_400이다() throws Exception {
         insertLog(LOG + 31, author, "쇼유", "PUBLIC", 0, 1, false);
         insertLog(LOG + 32, author, "쇼유", "PUBLIC", 0, 2, false);
-        JsonNode latest = feed(get("/api/v2/ramen-logs").param("shopId", String.valueOf(SHOP)).param("size", "1"));
+        JsonNode latest = feed(
+                get("/api/v2/ramen-logs").param("shopId", String.valueOf(SHOP)).param("size", "1"));
 
-        mvc.perform(
-                get("/api/v2/ramen-logs").param("sort", "LIKES").param("cursor", latest.get("nextCursor").asString()))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+        mvc.perform(get("/api/v2/ramen-logs")
+                        .param("sort", "LIKES")
+                        .param("cursor", latest.get("nextCursor").asString()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
         mvc.perform(get("/api/v2/ramen-logs").param("sort", "POPULAR"))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
     }
 
     private JsonNode feed(MockHttpServletRequestBuilder request) throws Exception {
-        return mapper
-            .readTree(mvc.perform(request).andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray())
-            .get("data");
+        return mapper.readTree(mvc.perform(request)
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsByteArray())
+                .get("data");
     }
 
     private List<Long> ids(JsonNode page) {
@@ -215,8 +242,8 @@ class MobileRamenLogFeedIntegrationTest extends BaseIntegrationTest {
         return ids;
     }
 
-    private void insertLog(long id, Long userId, String ramenType, String visibility, int likes, int minute,
-            boolean deleted) {
+    private void insertLog(
+            long id, Long userId, String ramenType, String visibility, int likes, int minute, boolean deleted) {
         Timestamp createdAt = Timestamp.from(BASE.plus(Duration.ofMinutes(minute)));
         Timestamp deletedAt = null;
         if (deleted) {
@@ -240,5 +267,4 @@ class MobileRamenLogFeedIntegrationTest extends BaseIntegrationTest {
     private String auth(Long userId) {
         return "Bearer " + tokens.issue(userId);
     }
-
 }

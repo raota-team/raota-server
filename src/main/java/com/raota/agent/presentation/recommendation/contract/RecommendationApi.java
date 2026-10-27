@@ -21,5 +21,4 @@ public interface RecommendationApi {
     @Operation(summary = "AI 추가 채팅")
     @PostMapping("/chat")
     ResponseEntity<ApiResponse<AiChatResponse>> followUpChat(@RequestBody AiChatRequest request);
-
 }

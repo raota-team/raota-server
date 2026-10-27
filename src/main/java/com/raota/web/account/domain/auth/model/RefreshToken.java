@@ -50,5 +50,4 @@ public class RefreshToken {
     public Instant getExpiresAt() {
         return expiryDate;
     }
-
 }

@@ -37,8 +37,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final AuthProperties authProperties;
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
-            Authentication authentication) throws IOException, ServletException {
+    public void onAuthenticationSuccess(
+            HttpServletRequest request, HttpServletResponse response, Authentication authentication)
+            throws IOException, ServletException {
         OAuth2AuthenticationToken oauth2Authentication = (OAuth2AuthenticationToken) authentication;
         OAuth2User principal = oauth2Authentication.getPrincipal();
         String targetUri = getTargetUriFromCookie(request);
@@ -48,36 +49,38 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             OAuth2UserInfo userInfo = oAuth2UserInfoFactory.from(registrationId, principal.getAttributes());
 
             OAuth2LoginResult loginResult = authService.login(userInfo);
-            response.addHeader("Set-Cookie",
-                    refreshTokenCookieManager.createRefreshTokenCookie(loginResult.refreshToken()).toString());
+            response.addHeader(
+                    "Set-Cookie",
+                    refreshTokenCookieManager
+                            .createRefreshTokenCookie(loginResult.refreshToken())
+                            .toString());
 
             httpCookieOAuth2AuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
 
-            getRedirectStrategy().sendRedirect(request, response,
-                    buildSuccessRedirectUri(targetUri, loginResult, registrationId));
-        }
-        catch (AuthenticationRequiredException exception) {
+            getRedirectStrategy()
+                    .sendRedirect(request, response, buildSuccessRedirectUri(targetUri, loginResult, registrationId));
+        } catch (AuthenticationRequiredException exception) {
             httpCookieOAuth2AuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
-            getRedirectStrategy().sendRedirect(request, response,
-                    buildErrorRedirectUri(targetUri, exception.getMessage(), registrationId));
+            getRedirectStrategy()
+                    .sendRedirect(
+                            request,
+                            response,
+                            buildErrorRedirectUri(targetUri, exception.getMessage(), registrationId));
         }
     }
 
     private String getTargetUriFromCookie(HttpServletRequest request) {
         String targetUri = Arrays.stream(request.getCookies() != null ? request.getCookies() : new Cookie[0])
-            .filter(cookie -> HttpCookieOAuth2AuthorizationRequestRepository.REDIRECT_URI_PARAM_COOKIE_NAME
-                .equals(cookie.getName()))
-            .map(Cookie::getValue)
-            .findFirst()
-            .orElse(authProperties.oauth2().redirectUri());
+                .filter(cookie -> HttpCookieOAuth2AuthorizationRequestRepository.REDIRECT_URI_PARAM_COOKIE_NAME.equals(
+                        cookie.getName()))
+                .map(Cookie::getValue)
+                .findFirst()
+                .orElse(authProperties.oauth2().redirectUri());
         String targetOrigin = getOrigin(targetUri);
-        boolean isAllowed = authProperties.cors()
-            .allowedOrigins()
-            .stream()
-            .anyMatch(allowedOrigin -> allowedOrigin.equalsIgnoreCase(targetOrigin));
+        boolean isAllowed = authProperties.cors().allowedOrigins().stream()
+                .anyMatch(allowedOrigin -> allowedOrigin.equalsIgnoreCase(targetOrigin));
 
-        if (isAllowed)
-            return targetUri;
+        if (isAllowed) return targetUri;
 
         return authProperties.oauth2().redirectUri();
     }
@@ -105,14 +108,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
             StringBuilder origin = new StringBuilder();
             origin.append(scheme).append("://").append(host);
-            if (port != -1)
-                origin.append(":").append(port);
+            if (port != -1) origin.append(":").append(port);
 
             return origin.toString();
-        }
-        catch (URISyntaxException e) {
+        } catch (URISyntaxException e) {
             return "";
         }
     }
-
 }

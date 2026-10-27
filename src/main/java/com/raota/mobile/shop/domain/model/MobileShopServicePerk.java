@@ -43,8 +43,13 @@ public class MobileShopServicePerk {
     @Column(name = "verified_at")
     private Instant verifiedAt;
 
-    public static MobileShopServicePerk of(Long shopId, ServicePerkType perkType, ServicePerkStatus status,
-            Integer price, String conditionText, Instant verifiedAt) {
+    public static MobileShopServicePerk of(
+            Long shopId,
+            ServicePerkType perkType,
+            ServicePerkStatus status,
+            Integer price,
+            String conditionText,
+            Instant verifiedAt) {
         MobileShopServicePerk perk = new MobileShopServicePerk();
         perk.shopId = shopId;
         perk.perkType = perkType;
@@ -54,5 +59,4 @@ public class MobileShopServicePerk {
         perk.verifiedAt = verifiedAt;
         return perk;
     }
-
 }

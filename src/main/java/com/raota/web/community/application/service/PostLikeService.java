@@ -24,5 +24,4 @@ public class PostLikeService {
 
         return postLikeRepository.toggle(postId, memberId);
     }
-
 }

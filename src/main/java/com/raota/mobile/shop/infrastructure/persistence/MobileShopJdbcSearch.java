@@ -34,8 +34,15 @@ public class MobileShopJdbcSearch implements MobileShopSearchPort {
     private final NamedParameterJdbcTemplate jdbc;
 
     @Override
-    public List<RankedShop> search(MobileShopSort sort, String query, String region, String ramenType,
-            BigDecimal latitude, BigDecimal longitude, Cursor cursor, Integer limit) {
+    public List<RankedShop> search(
+            MobileShopSort sort,
+            String query,
+            String region,
+            String ramenType,
+            BigDecimal latitude,
+            BigDecimal longitude,
+            Cursor cursor,
+            Integer limit) {
         String distance = HAVERSINE;
         if (latitude == null) {
             distance = "NULL";
@@ -45,10 +52,11 @@ public class MobileShopJdbcSearch implements MobileShopSearchPort {
             case LATEST -> "s.created_at";
             case DISTANCE -> "COALESCE(" + HAVERSINE + ", 99999999.000000)";
         };
-        StringBuilder sql = new StringBuilder("SELECT ranked.* FROM (SELECT s.id, ").append(sortValue)
-            .append(" AS sort_value, ")
-            .append(distance)
-            .append(" AS distance_value FROM tb_v2_shop s WHERE s.is_published = TRUE AND s.deleted_at IS NULL");
+        StringBuilder sql = new StringBuilder("SELECT ranked.* FROM (SELECT s.id, ")
+                .append(sortValue)
+                .append(" AS sort_value, ")
+                .append(distance)
+                .append(" AS distance_value FROM tb_v2_shop s WHERE s.is_published = TRUE AND s.deleted_at IS NULL");
         var params = new MapSqlParameterSource();
         if (latitude != null) {
             params.addValue("latitude", latitude).addValue("longitude", longitude);
@@ -74,13 +82,16 @@ public class MobileShopJdbcSearch implements MobileShopSearchPort {
         }
         if (cursor != null) {
             sql.append(" AND (ranked.sort_value ")
-                .append(operator)
-                .append(" :position OR (ranked.sort_value = :position AND ranked.id ")
-                .append(operator)
-                .append(" :cursorId))");
+                    .append(operator)
+                    .append(" :position OR (ranked.sort_value = :position AND ranked.id ")
+                    .append(operator)
+                    .append(" :cursorId))");
             params.addValue("position", position(sort, cursor)).addValue("cursorId", cursor.id());
         }
-        sql.append(" ORDER BY ranked.sort_value ").append(direction).append(", ranked.id ").append(direction);
+        sql.append(" ORDER BY ranked.sort_value ")
+                .append(direction)
+                .append(", ranked.id ")
+                .append(direction);
         if (limit != null) {
             sql.append(" LIMIT :limit");
             params.addValue("limit", limit);
@@ -111,10 +122,8 @@ public class MobileShopJdbcSearch implements MobileShopSearchPort {
                 case LATEST -> Timestamp.from(Instant.parse(cursor.sortValue()));
                 case DISTANCE -> distance(cursor.sortValue());
             };
-        }
-        catch (NumberFormatException | DateTimeParseException exception) {
+        } catch (NumberFormatException | DateTimeParseException exception) {
             throw new MobileException(MobileErrorCode.VALIDATION_ERROR, "커서가 올바르지 않습니다.");
         }
     }
-
 }

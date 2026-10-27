@@ -23,5 +23,4 @@ public interface PostQueryPort {
     List<HomePostResult> findHomePosts(String categoryName, int limit);
 
     List<PopularPostResult> findRecentPopularPosts(int limit);
-
 }

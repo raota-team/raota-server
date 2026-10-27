@@ -1,8 +1,8 @@
 package com.raota.agent.infrastructure.messaging.redis;
 
-import com.raota.web.community.domain.event.PostIndexingEvent;
-import com.raota.global.presentation.messaging.MessagePublisher;
 import com.raota.agent.infrastructure.messaging.MessagingTopics;
+import com.raota.global.presentation.messaging.MessagePublisher;
+import com.raota.web.community.domain.event.PostIndexingEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -18,5 +18,4 @@ public class PostIndexingEventDispatcher {
     public void dispatchToRedisStream(PostIndexingEvent event) {
         messagePublisher.publish(MessagingTopics.POST_INDEXING, event);
     }
-
 }

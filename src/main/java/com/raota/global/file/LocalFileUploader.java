@@ -41,5 +41,4 @@ public class LocalFileUploader implements FileUploader {
         String extension = StringUtils.getFilenameExtension(file.getOriginalFilename());
         return extension == null || extension.isBlank() ? ".png" : "." + extension;
     }
-
 }

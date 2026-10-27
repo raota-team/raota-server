@@ -1,8 +1,8 @@
 package com.raota.web.community.infrastructure.persistence.entity;
 
+import com.raota.web.account.domain.member.model.MemberProfile;
 import com.raota.web.community.domain.model.Post;
 import com.raota.web.community.domain.model.PostCategory;
-import com.raota.web.account.domain.member.model.MemberProfile;
 import com.raota.web.ramenshop.domain.model.RamenShop;
 import jakarta.persistence.Column;
 import jakarta.persistence.ConstraintMode;
@@ -86,23 +86,31 @@ public class PostEntity {
     }
 
     public Post toDomain() {
-        return Post.of(id, category, title, content, contentFormat, thumbnailUrl, author.getId(),
-                ramenShop != null ? ramenShop.getId() : null, viewCount, createdAt);
+        return Post.of(
+                id,
+                category,
+                title,
+                content,
+                contentFormat,
+                thumbnailUrl,
+                author.getId(),
+                ramenShop != null ? ramenShop.getId() : null,
+                viewCount,
+                createdAt);
     }
 
     public static PostEntity fromDomain(Post post, MemberProfile author, RamenShop ramenShop) {
         return PostEntity.builder()
-            .id(post.getId())
-            .category(post.getCategory())
-            .title(post.getTitle())
-            .content(post.getContent())
-            .contentFormat(post.getContentFormat())
-            .thumbnailUrl(post.getThumbnailUrl())
-            .author(author)
-            .ramenShop(ramenShop)
-            .viewCount(post.getViewCount())
-            .createdAt(post.getCreatedAt())
-            .build();
+                .id(post.getId())
+                .category(post.getCategory())
+                .title(post.getTitle())
+                .content(post.getContent())
+                .contentFormat(post.getContentFormat())
+                .thumbnailUrl(post.getThumbnailUrl())
+                .author(author)
+                .ramenShop(ramenShop)
+                .viewCount(post.getViewCount())
+                .createdAt(post.getCreatedAt())
+                .build();
     }
-
 }

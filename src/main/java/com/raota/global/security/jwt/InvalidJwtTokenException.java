@@ -5,5 +5,4 @@ public class InvalidJwtTokenException extends JwtTokenException {
     public InvalidJwtTokenException(Throwable cause) {
         super(cause);
     }
-
 }

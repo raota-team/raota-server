@@ -20,8 +20,8 @@ public class TodayRecommendationResponse {
     private final String reason;
 
     @Builder
-    public TodayRecommendationResponse(String id, String name, String title, String location, String imageUrl,
-            String reason) {
+    public TodayRecommendationResponse(
+            String id, String name, String title, String location, String imageUrl, String reason) {
         this.id = id;
         this.name = name;
         this.title = title;
@@ -32,13 +32,12 @@ public class TodayRecommendationResponse {
 
     public static TodayRecommendationResponse from(DailyCuration curation, String imageUrl) {
         return TodayRecommendationResponse.builder()
-            .id(curation.getRamenType().getId().toString())
-            .name(curation.getRamenType().getName())
-            .title(curation.getTitle())
-            .location(curation.getRamenType().getSubTitle())
-            .imageUrl(imageUrl)
-            .reason(curation.getReason())
-            .build();
+                .id(curation.getRamenType().getId().toString())
+                .name(curation.getRamenType().getName())
+                .title(curation.getTitle())
+                .location(curation.getRamenType().getSubTitle())
+                .imageUrl(imageUrl)
+                .reason(curation.getReason())
+                .build();
     }
-
 }

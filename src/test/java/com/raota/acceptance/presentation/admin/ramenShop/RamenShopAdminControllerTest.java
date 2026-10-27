@@ -10,9 +10,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.raota.support.BaseIntegrationTest;
 import com.raota.web.account.domain.member.model.MemberProfile;
 import com.raota.web.account.domain.member.model.MemberRole;
 import com.raota.web.account.domain.member.repository.MemberRepository;
+import com.raota.web.account.infrastructure.auth.JwtTokenProvider;
 import com.raota.web.ramenshop.domain.model.Address;
 import com.raota.web.ramenshop.domain.model.BusinessHours;
 import com.raota.web.ramenshop.domain.model.EventMenus;
@@ -20,8 +22,6 @@ import com.raota.web.ramenshop.domain.model.NormalMenu;
 import com.raota.web.ramenshop.domain.model.NormalMenus;
 import com.raota.web.ramenshop.domain.model.RamenShop;
 import com.raota.web.ramenshop.domain.repository.RamenShopRepository;
-import com.raota.web.account.infrastructure.auth.JwtTokenProvider;
-import com.raota.support.BaseIntegrationTest;
 import java.time.LocalTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,11 +56,13 @@ class RamenShopAdminControllerTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).apply(springSecurity()).build();
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                .apply(springSecurity())
+                .build();
         ramenShopRepository.deleteAll();
 
-        MemberProfile admin = memberRepository
-            .saveAndFlush(MemberProfile.builder().nickname("관리자").role(MemberRole.ADMIN).build());
+        MemberProfile admin = memberRepository.saveAndFlush(
+                MemberProfile.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         adminToken = jwtTokenProvider.createAccessToken(admin.getId());
     }
 
@@ -69,10 +71,10 @@ class RamenShopAdminControllerTest extends BaseIntegrationTest {
         RamenShop savedShop = ramenShopRepository.save(sampleShop("목록 라멘"));
 
         mockMvc.perform(admin(get("/admin/api/ramen-shops")))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status").value("SUCCESS"))
-            .andExpect(jsonPath("$.data[0].id").value(savedShop.getId()))
-            .andExpect(jsonPath("$.data[0].name").value("목록 라멘"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data[0].id").value(savedShop.getId()))
+                .andExpect(jsonPath("$.data[0].name").value("목록 라멘"));
     }
 
     @Test
@@ -80,18 +82,20 @@ class RamenShopAdminControllerTest extends BaseIntegrationTest {
         RamenShop savedShop = ramenShopRepository.save(sampleShop("상세 라멘"));
 
         mockMvc.perform(admin(get("/admin/api/ramen-shops/{shopId}", savedShop.getId())))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status").value("SUCCESS"))
-            .andExpect(jsonPath("$.data.id").value(savedShop.getId()))
-            .andExpect(jsonPath("$.data.name").value("상세 라멘"))
-            .andExpect(jsonPath("$.data.city").value("서울"))
-            .andExpect(jsonPath("$.data.normalMenus[0].name").value("기본 라멘"))
-            .andExpect(jsonPath("$.data.eventMenus.length()").value(0));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.id").value(savedShop.getId()))
+                .andExpect(jsonPath("$.data.name").value("상세 라멘"))
+                .andExpect(jsonPath("$.data.city").value("서울"))
+                .andExpect(jsonPath("$.data.normalMenus[0].name").value("기본 라멘"))
+                .andExpect(jsonPath("$.data.eventMenus.length()").value(0));
     }
 
     @Test
     void createShopWithJsonApi() throws Exception {
-        mockMvc.perform(admin(post("/admin/api/ramen-shops").contentType(MediaType.APPLICATION_JSON).content("""
+        mockMvc.perform(admin(post("/admin/api/ramen-shops")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
                 {
                   "name": "제이슨 라멘",
                   "city": "서울",
@@ -113,9 +117,9 @@ class RamenShopAdminControllerTest extends BaseIntegrationTest {
                   "eventMenus": []
                 }
                 """)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status").value("SUCCESS"))
-            .andExpect(jsonPath("$.data.id").exists());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.id").exists());
 
         RamenShop shop = ramenShopRepository.findAll().getFirst();
         assertThat(shop.getName()).isEqualTo("제이슨 라멘");
@@ -128,11 +132,9 @@ class RamenShopAdminControllerTest extends BaseIntegrationTest {
     void updateShopWithJsonApi() throws Exception {
         RamenShop savedShop = ramenShopRepository.save(sampleShop("수정 전"));
 
-        mockMvc
-            .perform(admin(
-                    put("/admin/api/ramen-shops/{shopId}", savedShop.getId()).contentType(MediaType.APPLICATION_JSON)
-                        .content(
-                                """
+        mockMvc.perform(admin(put("/admin/api/ramen-shops/{shopId}", savedShop.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
                                         {
                                           "name": "JSON 수정 후",
                                           "city": "서울",
@@ -155,14 +157,15 @@ class RamenShopAdminControllerTest extends BaseIntegrationTest {
                                           ]
                                         }
                                         """)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status").value("SUCCESS"))
-            .andExpect(jsonPath("$.data.id").value(savedShop.getId()));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.id").value(savedShop.getId()));
 
         RamenShop updatedShop = ramenShopRepository.findById(savedShop.getId()).orElseThrow();
         assertThat(updatedShop.getName()).isEqualTo("JSON 수정 후");
         assertThat(updatedShop.getImageUrl()).isNull();
-        assertThat(updatedShop.getNormalMenus().getValues().getFirst().getName()).isEqualTo("츠케멘");
+        assertThat(updatedShop.getNormalMenus().getValues().getFirst().getName())
+                .isEqualTo("츠케멘");
         assertThat(updatedShop.getEventMenus().getValues()).hasSize(1);
         assertThat(updatedShop.isPublished()).isFalse();
     }
@@ -171,19 +174,19 @@ class RamenShopAdminControllerTest extends BaseIntegrationTest {
     void updateShopVisibilityWithJsonApi() throws Exception {
         RamenShop savedShop = ramenShopRepository.save(sampleShop("숨김 전환 대상"));
 
-        mockMvc
-            .perform(admin(patch("/admin/api/ramen-shops/{shopId}/visibility", savedShop.getId())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""
+        mockMvc.perform(admin(patch("/admin/api/ramen-shops/{shopId}/visibility", savedShop.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
                         {
                           "published": false
                         }
                         """)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status").value("SUCCESS"))
-            .andExpect(jsonPath("$.data.id").value(savedShop.getId()));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.id").value(savedShop.getId()));
 
-        assertThat(ramenShopRepository.findById(savedShop.getId()).orElseThrow().isPublished()).isFalse();
+        assertThat(ramenShopRepository.findById(savedShop.getId()).orElseThrow().isPublished())
+                .isFalse();
     }
 
     @Test
@@ -191,21 +194,23 @@ class RamenShopAdminControllerTest extends BaseIntegrationTest {
         RamenShop first = ramenShopRepository.save(sampleShop("범위 첫 매장"));
         RamenShop second = ramenShopRepository.save(sampleShop("범위 둘째 매장"));
 
-        mockMvc
-            .perform(
-                    admin(patch("/admin/api/ramen-shops/visibility").contentType(MediaType.APPLICATION_JSON).content("""
+        mockMvc.perform(admin(patch("/admin/api/ramen-shops/visibility")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
                             {
                               "fromId": %d,
                               "toId": %d,
                               "published": false
                             }
                             """.formatted(first.getId(), second.getId()))))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status").value("SUCCESS"))
-            .andExpect(jsonPath("$.data.updatedCount").value(2));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.updatedCount").value(2));
 
-        assertThat(ramenShopRepository.findById(first.getId()).orElseThrow().isPublished()).isFalse();
-        assertThat(ramenShopRepository.findById(second.getId()).orElseThrow().isPublished()).isFalse();
+        assertThat(ramenShopRepository.findById(first.getId()).orElseThrow().isPublished())
+                .isFalse();
+        assertThat(ramenShopRepository.findById(second.getId()).orElseThrow().isPublished())
+                .isFalse();
     }
 
     @Test
@@ -213,9 +218,9 @@ class RamenShopAdminControllerTest extends BaseIntegrationTest {
         RamenShop savedShop = ramenShopRepository.save(sampleShop("JSON 삭제 대상"));
 
         mockMvc.perform(admin(delete("/admin/api/ramen-shops/{shopId}", savedShop.getId())))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status").value("SUCCESS"))
-            .andExpect(jsonPath("$.data.id").value(savedShop.getId()));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.id").value(savedShop.getId()));
 
         assertThat(ramenShopRepository.findAll()).isEmpty();
     }
@@ -226,19 +231,22 @@ class RamenShopAdminControllerTest extends BaseIntegrationTest {
 
     private RamenShop sampleShop(String name) {
         RamenShop ramenShop = RamenShop.builder()
-            .name(name)
-            .address(Address.of("서울", "강남구", "강남대로 1", "1층"))
-            .businessHours(BusinessHours.of("일요일", LocalTime.of(11, 0), LocalTime.of(20, 0), null, null, "불가"))
-            .tags(List.of("돈코츠"))
-            .imageUrl("https://example.com/original.jpg")
-            .instagramUrl("https://instagram.com/original")
-            .catchTableUrl("https://app.catchtable.co.kr/ct/shop/original")
-            .description("기본기가 좋은 정통 돈코츠 라멘집")
-            .normalMenus(NormalMenus.init())
-            .eventMenus(EventMenus.init())
-            .build();
-        ramenShop.addNormalMenu(NormalMenu.builder().name("기본 라멘").price(10000).isSignature(true).build());
+                .name(name)
+                .address(Address.of("서울", "강남구", "강남대로 1", "1층"))
+                .businessHours(BusinessHours.of("일요일", LocalTime.of(11, 0), LocalTime.of(20, 0), null, null, "불가"))
+                .tags(List.of("돈코츠"))
+                .imageUrl("https://example.com/original.jpg")
+                .instagramUrl("https://instagram.com/original")
+                .catchTableUrl("https://app.catchtable.co.kr/ct/shop/original")
+                .description("기본기가 좋은 정통 돈코츠 라멘집")
+                .normalMenus(NormalMenus.init())
+                .eventMenus(EventMenus.init())
+                .build();
+        ramenShop.addNormalMenu(NormalMenu.builder()
+                .name("기본 라멘")
+                .price(10000)
+                .isSignature(true)
+                .build());
         return ramenShop;
     }
-
 }

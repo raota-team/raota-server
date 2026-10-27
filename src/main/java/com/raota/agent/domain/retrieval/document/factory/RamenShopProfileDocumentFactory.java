@@ -1,15 +1,15 @@
 package com.raota.agent.domain.retrieval.document.factory;
 
+import com.raota.agent.domain.retrieval.document.RetrievalDocumentFactory;
+import com.raota.agent.domain.retrieval.document.RetrievalDocumentSource;
+import com.raota.agent.domain.retrieval.document.RetrievalDocumentType;
+import com.raota.agent.domain.retrieval.document.RetrievalMetadataKeys;
 import com.raota.web.ramenshop.domain.model.Address;
 import com.raota.web.ramenshop.domain.model.BusinessHours;
 import com.raota.web.ramenshop.domain.model.EventMenu;
 import com.raota.web.ramenshop.domain.model.NormalMenu;
 import com.raota.web.ramenshop.domain.model.RamenShop;
 import com.raota.web.ramenshop.domain.model.ShopStats;
-import com.raota.agent.domain.retrieval.document.RetrievalDocumentFactory;
-import com.raota.agent.domain.retrieval.document.RetrievalDocumentSource;
-import com.raota.agent.domain.retrieval.document.RetrievalDocumentType;
-import com.raota.agent.domain.retrieval.document.RetrievalMetadataKeys;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,10 +33,15 @@ public class RamenShopProfileDocumentFactory implements RetrievalDocumentFactory
                 영업 정보는 %s이다.
                 방문 수는 %d회이고 북마크 수는 %d회이다.
                 %s
-                """.formatted(formatShopName(shop), region, joinOrFallback(menuNames, "대표 메뉴 정보 없음"),
-                joinOrFallback(tags, "태그 정보 없음"), formatBusinessHours(shop.getBusinessHours()),
-                visitCount(shop.getStats()), bookmarkCount(shop.getStats()),
-                defaultText(descriptionText(shop), "가게 설명 정보는 아직 없다."));
+                """.formatted(
+                        formatShopName(shop),
+                        region,
+                        joinOrFallback(menuNames, "대표 메뉴 정보 없음"),
+                        joinOrFallback(tags, "태그 정보 없음"),
+                        formatBusinessHours(shop.getBusinessHours()),
+                        visitCount(shop.getStats()),
+                        bookmarkCount(shop.getStats()),
+                        defaultText(descriptionText(shop), "가게 설명 정보는 아직 없다."));
 
         Map<String, Object> metadata = new HashMap<>();
         metadata.put(RetrievalMetadataKeys.DOCUMENT_TYPE, RetrievalDocumentType.SHOP_PROFILE.name());
@@ -113,10 +118,10 @@ public class RamenShopProfileDocumentFactory implements RetrievalDocumentFactory
     }
 
     private String descriptionText(RamenShop shop) {
-        if (shop.getDetailedDescription() != null && !shop.getDetailedDescription().isBlank()) {
+        if (shop.getDetailedDescription() != null
+                && !shop.getDetailedDescription().isBlank()) {
             return shop.getDetailedDescription();
         }
         return shop.getDescription();
     }
-
 }

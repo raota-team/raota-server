@@ -20,9 +20,8 @@ public class MobileUploadTicketController {
     private final MobileUploadTicketService tickets;
 
     @PostMapping
-    public MobileApiResponse<MobileUploadTickets> issue(@LoginUser Long userId,
-            @Valid @RequestBody MobileUploadTicketRequest request) {
+    public MobileApiResponse<MobileUploadTickets> issue(
+            @LoginUser Long userId, @Valid @RequestBody MobileUploadTicketRequest request) {
         return MobileApiResponse.success(tickets.issue(userId, request.toCommand()));
     }
-
 }

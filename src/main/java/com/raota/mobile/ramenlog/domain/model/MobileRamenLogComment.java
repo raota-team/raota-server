@@ -43,8 +43,8 @@ public class MobileRamenLogComment {
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
-    public static MobileRamenLogComment create(Long ramenLogId, Long userId, String content, String idempotencyKey,
-            Instant now) {
+    public static MobileRamenLogComment create(
+            Long ramenLogId, Long userId, String content, String idempotencyKey, Instant now) {
         MobileRamenLogComment comment = new MobileRamenLogComment();
         comment.ramenLogId = ramenLogId;
         comment.userId = userId;
@@ -59,5 +59,4 @@ public class MobileRamenLogComment {
         this.deletedAt = now;
         this.updatedAt = now;
     }
-
 }

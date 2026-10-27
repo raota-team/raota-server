@@ -65,14 +65,16 @@ class MobileRamenLogPurgeIntegrationTest extends BaseIntegrationTest {
         insertLog(DELETED_LOG, dueId, 3, true);
         insertLog(OTHER_LOG, otherId, 4, false);
         insertLog(DUE_UNSCORED_LOG, dueId, null, false);
-        for (long id : new long[] { DUE_LOG, DELETED_LOG, OTHER_LOG, DUE_UNSCORED_LOG }) {
-            jdbc.update("INSERT INTO tb_v2_ramen_log_image (ramen_log_id, url, sort_order) VALUES (?, ?, 0)", id,
+        for (long id : new long[] {DUE_LOG, DELETED_LOG, OTHER_LOG, DUE_UNSCORED_LOG}) {
+            jdbc.update(
+                    "INSERT INTO tb_v2_ramen_log_image (ramen_log_id, url, sort_order) VALUES (?, ?, 0)",
+                    id,
                     "https://mock.cdn.com/v2/ramen-logs/" + id + ".png");
         }
         jdbc.update("UPDATE tb_v2_ramen_log SET like_count = 2 WHERE id = ?", OTHER_LOG);
         jdbc.update("UPDATE tb_v2_ramen_log SET like_count = 1 WHERE id = ?", DUE_LOG);
-        for (Object[] like : List.of(new Object[] { dueId, OTHER_LOG }, new Object[] { otherId, OTHER_LOG },
-                new Object[] { otherId, DUE_LOG })) {
+        for (Object[] like : List.of(
+                new Object[] {dueId, OTHER_LOG}, new Object[] {otherId, OTHER_LOG}, new Object[] {otherId, DUE_LOG})) {
             jdbc.update("""
                     INSERT INTO tb_v2_ramen_log_like (user_id, ramen_log_id, created_at)
                     VALUES (?, ?, '2026-09-01 00:00:00')
@@ -80,9 +82,11 @@ class MobileRamenLogPurgeIntegrationTest extends BaseIntegrationTest {
         }
         jdbc.update("UPDATE tb_v2_ramen_log SET comment_count = 2 WHERE id = ?", OTHER_LOG);
         jdbc.update("UPDATE tb_v2_ramen_log SET comment_count = 1 WHERE id = ?", DUE_LOG);
-        for (Object[] comment : List.of(new Object[] { OTHER_LOG, dueId, null },
-                new Object[] { OTHER_LOG, otherId, null }, new Object[] { OTHER_LOG, dueId, "2026-09-02 00:00:00" },
-                new Object[] { DUE_LOG, otherId, null })) {
+        for (Object[] comment : List.of(
+                new Object[] {OTHER_LOG, dueId, null},
+                new Object[] {OTHER_LOG, otherId, null},
+                new Object[] {OTHER_LOG, dueId, "2026-09-02 00:00:00"},
+                new Object[] {DUE_LOG, otherId, null})) {
             jdbc.update("""
                     INSERT INTO tb_v2_ramen_log_comment (ramen_log_id, user_id, content, created_at, updated_at,
                         deleted_at)
@@ -112,9 +116,17 @@ class MobileRamenLogPurgeIntegrationTest extends BaseIntegrationTest {
         jdbc.update("DELETE FROM tb_v2_user_block WHERE blocker_id IN (?, ?)", dueId, otherId);
         jdbc.update("DELETE FROM tb_v2_ramen_log_comment WHERE ramen_log_id IN (?, ?)", DUE_LOG, OTHER_LOG);
         jdbc.update("DELETE FROM tb_v2_ramen_log_like WHERE ramen_log_id IN (?, ?)", DUE_LOG, OTHER_LOG);
-        jdbc.update("DELETE FROM tb_v2_ramen_log_image WHERE ramen_log_id IN (?, ?, ?, ?)", DUE_LOG, DELETED_LOG,
-                OTHER_LOG, DUE_UNSCORED_LOG);
-        jdbc.update("DELETE FROM tb_v2_ramen_log WHERE id IN (?, ?, ?, ?)", DUE_LOG, DELETED_LOG, OTHER_LOG,
+        jdbc.update(
+                "DELETE FROM tb_v2_ramen_log_image WHERE ramen_log_id IN (?, ?, ?, ?)",
+                DUE_LOG,
+                DELETED_LOG,
+                OTHER_LOG,
+                DUE_UNSCORED_LOG);
+        jdbc.update(
+                "DELETE FROM tb_v2_ramen_log WHERE id IN (?, ?, ?, ?)",
+                DUE_LOG,
+                DELETED_LOG,
+                OTHER_LOG,
                 DUE_UNSCORED_LOG);
         jdbc.update("DELETE FROM tb_v2_shop WHERE id = ?", SHOP);
         users.deleteById(dueId);
@@ -126,41 +138,56 @@ class MobileRamenLogPurgeIntegrationTest extends BaseIntegrationTest {
         assertThat(purges.purgeExpired(REQUESTED_AT.plus(Duration.ofDays(30)))).isEqualTo(1);
         assertThat(users.findById(dueId).orElseThrow().getStatus()).isEqualTo(MobileUserStatus.WITHDRAWN);
         assertThat(jdbc.queryForObject("SELECT log_count FROM tb_v2_user WHERE id = ?", Integer.class, dueId))
-            .isEqualTo(3);
+                .isEqualTo(3);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_ramen_log WHERE user_id = ?", Integer.class, dueId))
-            .isZero();
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_ramen_log_image WHERE ramen_log_id IN (?, ?, ?)",
-                Integer.class, DUE_LOG, DELETED_LOG, DUE_UNSCORED_LOG))
-            .isZero();
-        assertThat(
-                jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_ramen_log WHERE user_id = ?", Integer.class, otherId))
-            .isEqualTo(1);
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_ramen_log_image WHERE ramen_log_id = ?",
-                Integer.class, OTHER_LOG))
-            .isEqualTo(1);
+                .isZero();
+        assertThat(jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM tb_v2_ramen_log_image WHERE ramen_log_id IN (?, ?, ?)",
+                        Integer.class,
+                        DUE_LOG,
+                        DELETED_LOG,
+                        DUE_UNSCORED_LOG))
+                .isZero();
+        assertThat(jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM tb_v2_ramen_log WHERE user_id = ?", Integer.class, otherId))
+                .isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM tb_v2_ramen_log_image WHERE ramen_log_id = ?", Integer.class, OTHER_LOG))
+                .isEqualTo(1);
         assertThat(jdbc.queryForMap(
-                "SELECT log_count, satisfaction_score_sum, scored_log_count FROM tb_v2_shop WHERE id = ?", SHOP))
-            .containsEntry("log_count", 1)
-            .containsEntry("satisfaction_score_sum", 4)
-            .containsEntry("scored_log_count", 1);
+                        "SELECT log_count, satisfaction_score_sum, scored_log_count FROM tb_v2_shop WHERE id = ?",
+                        SHOP))
+                .containsEntry("log_count", 1)
+                .containsEntry("satisfaction_score_sum", 4)
+                .containsEntry("scored_log_count", 1);
         assertThat(jdbc.queryForObject("SELECT like_count FROM tb_v2_ramen_log WHERE id = ?", Integer.class, OTHER_LOG))
-            .isEqualTo(1);
-        assertThat(jdbc.queryForList("SELECT user_id FROM tb_v2_ramen_log_like WHERE ramen_log_id IN (?, ?)",
-                Long.class, DUE_LOG, OTHER_LOG))
-            .containsExactly(otherId);
-        assertThat(
-                jdbc.queryForObject("SELECT comment_count FROM tb_v2_ramen_log WHERE id = ?", Integer.class, OTHER_LOG))
-            .isEqualTo(1);
-        assertThat(jdbc.queryForList("SELECT user_id FROM tb_v2_ramen_log_comment WHERE ramen_log_id IN (?, ?)",
-                Long.class, DUE_LOG, OTHER_LOG))
-            .containsExactly(otherId);
+                .isEqualTo(1);
+        assertThat(jdbc.queryForList(
+                        "SELECT user_id FROM tb_v2_ramen_log_like WHERE ramen_log_id IN (?, ?)",
+                        Long.class,
+                        DUE_LOG,
+                        OTHER_LOG))
+                .containsExactly(otherId);
+        assertThat(jdbc.queryForObject(
+                        "SELECT comment_count FROM tb_v2_ramen_log WHERE id = ?", Integer.class, OTHER_LOG))
+                .isEqualTo(1);
+        assertThat(jdbc.queryForList(
+                        "SELECT user_id FROM tb_v2_ramen_log_comment WHERE ramen_log_id IN (?, ?)",
+                        Long.class,
+                        DUE_LOG,
+                        OTHER_LOG))
+                .containsExactly(otherId);
         assertThat(jdbc.queryForList("""
                 SELECT CONCAT(reporter_id, ':', target_type, ':', target_id) FROM tb_v2_content_report
                 WHERE reporter_id IN (?, ?)
-                """, String.class, dueId, otherId)).containsExactly(otherId + ":RAMEN_LOG:" + OTHER_LOG);
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_user_block WHERE blocker_id IN (?, ?)",
-                Integer.class, dueId, otherId))
-            .isZero();
+                """, String.class, dueId, otherId))
+                .containsExactly(otherId + ":RAMEN_LOG:" + OTHER_LOG);
+        assertThat(jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM tb_v2_user_block WHERE blocker_id IN (?, ?)",
+                        Integer.class,
+                        dueId,
+                        otherId))
+                .isZero();
     }
 
     private void insertLog(long id, Long userId, Integer satisfaction, boolean deleted) {
@@ -180,5 +207,4 @@ class MobileRamenLogPurgeIntegrationTest extends BaseIntegrationTest {
                     'OFTEN', '', '[]', 'PUBLIC', '2026-09-01 00:00:00', '2026-09-01 00:00:00', ?)
                 """, id, userId, SHOP, satisfaction, otherScore, otherScore, otherScore, deletedAt);
     }
-
 }

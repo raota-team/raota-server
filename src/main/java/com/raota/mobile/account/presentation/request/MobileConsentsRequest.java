@@ -12,9 +12,8 @@ public record MobileConsentsRequest(@NotEmpty List<@NotNull @Valid ConsentReques
 
     public List<MobileOnboardingCommand.ConsentDecision> toDecisions() {
         return consents.stream()
-            .map(consent -> new MobileOnboardingCommand.ConsentDecision(consent.type(), consent.documentVersion(),
-                    consent.granted()))
-            .toList();
+                .map(consent -> new MobileOnboardingCommand.ConsentDecision(
+                        consent.type(), consent.documentVersion(), consent.granted()))
+                .toList();
     }
-
 }

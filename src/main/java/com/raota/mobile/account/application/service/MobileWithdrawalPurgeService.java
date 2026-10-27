@@ -10,12 +10,12 @@ import com.raota.mobile.account.domain.model.OAuthProvider;
 import com.raota.mobile.account.domain.repository.MobileUserConsentRepository;
 import com.raota.mobile.account.domain.repository.MobileUserOAuthAccountRepository;
 import com.raota.mobile.account.domain.repository.MobileUserRepository;
-import java.util.List;
 import java.time.Instant;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -41,9 +41,14 @@ public class MobileWithdrawalPurgeService {
 
     private static final int PAGE_SIZE = 100;
 
-    public MobileWithdrawalPurgeService(MobileUserRepository users, MobileUserOAuthAccountRepository accounts,
-            MobileUserConsentRepository consents, AppleTokenClient appleTokens, ProviderTokenCipher cipher,
-            PlatformTransactionManager transactionManager, ApplicationEventPublisher events) {
+    public MobileWithdrawalPurgeService(
+            MobileUserRepository users,
+            MobileUserOAuthAccountRepository accounts,
+            MobileUserConsentRepository consents,
+            AppleTokenClient appleTokens,
+            ProviderTokenCipher cipher,
+            PlatformTransactionManager transactionManager,
+            ApplicationEventPublisher events) {
         this.users = users;
         this.accounts = accounts;
         this.consents = consents;
@@ -63,10 +68,9 @@ public class MobileWithdrawalPurgeService {
             List<MobileUserRepository.DueUser> due;
             if (afterScheduledAt == null) {
                 due = users.findDueForPurge(MobileUserStatus.WITHDRAW_PENDING, now, pageSize);
-            }
-            else {
-                due = users.findDueForPurgeAfter(MobileUserStatus.WITHDRAW_PENDING, now, afterScheduledAt, afterId,
-                        pageSize);
+            } else {
+                due = users.findDueForPurgeAfter(
+                        MobileUserStatus.WITHDRAW_PENDING, now, afterScheduledAt, afterId, pageSize);
             }
             for (MobileUserRepository.DueUser candidate : due) {
                 Long userId = candidate.getId();
@@ -77,8 +81,7 @@ public class MobileWithdrawalPurgeService {
                     if (Boolean.TRUE.equals(purgeTransaction.execute(status -> anonymize(userId, now)))) {
                         purged++;
                     }
-                }
-                catch (Exception exception) {
+                } catch (Exception exception) {
                     log.error("모바일 탈퇴 회원 익명화 실패: userId={}", userId, exception);
                 }
             }
@@ -98,7 +101,9 @@ public class MobileWithdrawalPurgeService {
 
     private boolean anonymize(Long userId, Instant now) {
         MobileUser user = users.findByIdForUpdate(userId).orElse(null);
-        if (user == null || user.getStatus() != MobileUserStatus.WITHDRAW_PENDING || user.getPurgeScheduledAt() == null
+        if (user == null
+                || user.getStatus() != MobileUserStatus.WITHDRAW_PENDING
+                || user.getPurgeScheduledAt() == null
                 || user.getPurgeScheduledAt().isAfter(now)) {
             return false;
         }
@@ -108,5 +113,4 @@ public class MobileWithdrawalPurgeService {
         events.publishEvent(new MobileMemberPurgedEvent(userId));
         return true;
     }
-
 }

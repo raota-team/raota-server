@@ -114,9 +114,19 @@ public class RamenLog {
     @Column(name = "is_deleted", nullable = false)
     private boolean isDeleted = false;
 
-    public void update(RamenShop ramenShop, String menuName, String ramenType, String imageUrl, String note,
-            List<String> brothNotes, List<String> noodleNotes, List<String> seasoningNotes, List<String> toppingNotes,
-            RevisitIntention revisit, LocalDate visitedAt, boolean isPublic) {
+    public void update(
+            RamenShop ramenShop,
+            String menuName,
+            String ramenType,
+            String imageUrl,
+            String note,
+            List<String> brothNotes,
+            List<String> noodleNotes,
+            List<String> seasoningNotes,
+            List<String> toppingNotes,
+            RevisitIntention revisit,
+            LocalDate visitedAt,
+            boolean isPublic) {
         this.ramenShop = ramenShop;
         this.menuName = menuName;
         this.ramenType = ramenType;
@@ -146,5 +156,4 @@ public class RamenLog {
     private static List<String> copyOf(List<String> values) {
         return values == null ? new ArrayList<>() : new ArrayList<>(values);
     }
-
 }

@@ -40,8 +40,7 @@ class RequestIdFilterTest {
 
     @Test
     void 체인이_끝나면_MDC를_지운다() throws Exception {
-        filter.doFilter(request, response, (req, res) -> {
-        });
+        filter.doFilter(request, response, (req, res) -> {});
 
         assertThat(MDC.get(RequestIdFilter.MDC_KEY)).isNull();
     }
@@ -60,8 +59,7 @@ class RequestIdFilterTest {
     void 이미_requestId가_있는_요청은_새로_만들지_않는다() throws Exception {
         request.setAttribute(RequestIdFilter.ATTRIBUTE, "existing-id");
 
-        filter.doFilter(request, response, (req, res) -> {
-        });
+        filter.doFilter(request, response, (req, res) -> {});
 
         assertThat(response.getHeader(RequestIdFilter.HEADER)).isEqualTo("existing-id");
     }
@@ -70,5 +68,4 @@ class RequestIdFilterTest {
     void 필터를_거치지_않은_요청의_requestId는_null이다() {
         assertThat(RequestIdFilter.currentRequestId(request)).isNull();
     }
-
 }

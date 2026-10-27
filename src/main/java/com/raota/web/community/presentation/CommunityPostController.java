@@ -1,18 +1,18 @@
 package com.raota.web.community.presentation;
 
-import com.raota.web.community.application.service.PostLikeService;
-import com.raota.web.community.application.service.PostQueryService;
-import com.raota.web.community.application.service.PostService;
+import com.raota.global.presentation.common.ApiResponse;
+import com.raota.global.presentation.common.PageResponse;
+import com.raota.web.account.infrastructure.auth.LoginMember;
 import com.raota.web.community.application.query.PostSearchQuery;
 import com.raota.web.community.application.result.PostCardResult;
 import com.raota.web.community.application.result.PostDetailResult;
 import com.raota.web.community.application.result.RamenShopOptionResult;
-import com.raota.web.account.infrastructure.auth.LoginMember;
+import com.raota.web.community.application.service.PostLikeService;
+import com.raota.web.community.application.service.PostQueryService;
+import com.raota.web.community.application.service.PostService;
 import com.raota.web.community.presentation.contract.CommunityApi;
 import com.raota.web.community.presentation.request.CommunityCreatePostRequest;
 import com.raota.web.community.presentation.request.CommunityUpdatePostRequest;
-import com.raota.global.presentation.common.ApiResponse;
-import com.raota.global.presentation.common.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -49,15 +49,16 @@ public class CommunityPostController implements CommunityApi {
     @GetMapping("/posts")
     public ResponseEntity<ApiResponse<PageResponse<PostCardResult>>> getCommunityPosts(
             @PageableDefault(size = 10, direction = Sort.Direction.DESC) Pageable pageable,
-            @RequestParam(required = false) String category, @RequestParam(required = false) Long ramenShopId) {
-        return ResponseEntity.ok(ApiResponse.success(PageResponse
-            .from(postQueryService.searchPostCards(new PostSearchQuery(category, ramenShopId), pageable))));
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) Long ramenShopId) {
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(
+                postQueryService.searchPostCards(new PostSearchQuery(category, ramenShopId), pageable))));
     }
 
     @Override
     @GetMapping("/posts/{postId}")
-    public ResponseEntity<ApiResponse<PostDetailResult>> getCommunityPostDetail(@PathVariable Long postId,
-            @LoginMember(required = false) Long memberId) {
+    public ResponseEntity<ApiResponse<PostDetailResult>> getCommunityPostDetail(
+            @PathVariable Long postId, @LoginMember(required = false) Long memberId) {
         return ResponseEntity.ok(ApiResponse.success(postQueryService.getPostDetail(postId, memberId)));
     }
 
@@ -79,16 +80,16 @@ public class CommunityPostController implements CommunityApi {
 
     @PatchMapping("/posts/{postId}")
     @Override
-    public ResponseEntity<ApiResponse<PostDetailResult>> updateCommunityPost(@PathVariable Long postId,
-            @RequestBody CommunityUpdatePostRequest request, @LoginMember Long memberId) {
+    public ResponseEntity<ApiResponse<PostDetailResult>> updateCommunityPost(
+            @PathVariable Long postId, @RequestBody CommunityUpdatePostRequest request, @LoginMember Long memberId) {
         postService.updatePost(request.toCommand(postId, memberId));
         return ResponseEntity.ok(ApiResponse.success(postQueryService.getPostDetail(postId, memberId)));
     }
 
     @Override
     @DeleteMapping("/posts/{postId}")
-    public ResponseEntity<ApiResponse<Void>> deleteCommunityPost(@PathVariable Long postId,
-            @LoginMember Long memberId) {
+    public ResponseEntity<ApiResponse<Void>> deleteCommunityPost(
+            @PathVariable Long postId, @LoginMember Long memberId) {
         postService.deletePost(postId, memberId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -98,8 +99,7 @@ public class CommunityPostController implements CommunityApi {
     public ResponseEntity<ApiResponse<PageResponse<RamenShopOptionResult>>> getRamenShopOptions(
             @PageableDefault(size = 10, direction = Sort.Direction.DESC) Pageable pageable,
             @RequestParam(required = false) String keyword) {
-        return ResponseEntity
-            .ok(ApiResponse.success(PageResponse.from(postQueryService.getRamenShopOptions(keyword, pageable))));
+        return ResponseEntity.ok(
+                ApiResponse.success(PageResponse.from(postQueryService.getRamenShopOptions(keyword, pageable))));
     }
-
 }

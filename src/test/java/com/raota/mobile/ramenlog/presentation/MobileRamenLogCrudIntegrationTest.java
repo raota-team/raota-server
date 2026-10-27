@@ -73,7 +73,10 @@ class MobileRamenLogCrudIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mvc = MockMvcBuilders.webAppContextSetup(context).addFilters(requestIdFilter).apply(springSecurity()).build();
+        mvc = MockMvcBuilders.webAppContextSetup(context)
+                .addFilters(requestIdFilter)
+                .apply(springSecurity())
+                .build();
         for (long shopId : List.of(SHOP, HIDDEN_SHOP)) {
             jdbc.update("""
                     INSERT INTO tb_v2_shop (id, name, branch_name, address, region, ramen_types, tags, business_status,
@@ -84,7 +87,8 @@ class MobileRamenLogCrudIntegrationTest extends BaseIntegrationTest {
         }
         owner = active();
         other = active();
-        onboarding = users.saveAndFlush(MobileUser.onboarding("ramen-onboarding@example.com")).getId();
+        onboarding = users.saveAndFlush(MobileUser.onboarding("ramen-onboarding@example.com"))
+                .getId();
         admin = active();
         jdbc.update("UPDATE tb_v2_user SET role = 'ADMIN' WHERE id = ?", admin);
     }
@@ -93,7 +97,8 @@ class MobileRamenLogCrudIntegrationTest extends BaseIntegrationTest {
     void cleanUp() {
         jdbc.update(
                 "DELETE FROM tb_v2_ramen_log_image WHERE ramen_log_id IN (SELECT id FROM tb_v2_ramen_log WHERE shop_id IN (?, ?))",
-                SHOP, HIDDEN_SHOP);
+                SHOP,
+                HIDDEN_SHOP);
         jdbc.update("DELETE FROM tb_v2_ramen_log WHERE shop_id IN (?, ?)", SHOP, HIDDEN_SHOP);
         jdbc.update("DELETE FROM tb_v2_shop WHERE id IN (?, ?)", SHOP, HIDDEN_SHOP);
         for (Long userId : List.of(owner, other, onboarding, admin)) {
@@ -103,36 +108,42 @@ class MobileRamenLogCrudIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void 점수와_날짜와_사진과_매장_및_멱등키를_검증한다() throws Exception {
-        for (String body : List.of(valid().replace("\"topping\":3", "\"topping\":null"),
+        for (String body : List.of(
+                valid().replace("\"topping\":3", "\"topping\":null"),
                 valid().replace("\"topping\":3", "\"topping\":6"),
                 valid().replace("\"visitedAt\":\"2026-09-01\"", "\"visitedAt\":\"2999-01-01\""),
-                valid().replace("[\"" + IMAGE + "\"]",
-                        "[\"" + IMAGE + "\",\"" + IMAGE + "\",\"" + IMAGE + "\",\"" + IMAGE + "\"]"),
+                valid().replace(
+                                "[\"" + IMAGE + "\"]",
+                                "[\"" + IMAGE + "\",\"" + IMAGE + "\",\"" + IMAGE + "\",\"" + IMAGE + "\"]"),
                 valid().replace(IMAGE, "https://elsewhere.example/photo.png"),
                 valid().replace("\"ramenType\":\"이에케\"", "\"ramenType\":\"우동\""),
                 valid().replace("[\"BROTH_01\"]", "[\"BROTH_01\",\"BROTH_01\"]"),
                 valid().replace("\"shopId\":\"" + SHOP + "\"", "\"shopId\":\"" + HIDDEN_SHOP + "\""))) {
-            var response = mvc.perform(post("/api/v2/ramen-logs").header(HttpHeaders.AUTHORIZATION, auth(owner))
-                .header("Idempotency-Key", UUID.randomUUID().toString())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body));
+            var response = mvc.perform(post("/api/v2/ramen-logs")
+                    .header(HttpHeaders.AUTHORIZATION, auth(owner))
+                    .header("Idempotency-Key", UUID.randomUUID().toString())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body));
             if (body.contains("\"shopId\":\"" + HIDDEN_SHOP + "\"")) {
                 response.andExpect(status().isNotFound());
-            }
-            else {
+            } else {
                 response.andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+                        .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
             }
         }
-        mvc.perform(post("/api/v2/ramen-logs").header(HttpHeaders.AUTHORIZATION, auth(owner))
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(valid())).andExpect(status().isBadRequest());
-        mvc.perform(post("/api/v2/ramen-logs").header(HttpHeaders.AUTHORIZATION, auth(owner))
-            .header("Idempotency-Key", "bad key!")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(valid())).andExpect(status().isBadRequest());
+        mvc.perform(post("/api/v2/ramen-logs")
+                        .header(HttpHeaders.AUTHORIZATION, auth(owner))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(valid()))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post("/api/v2/ramen-logs")
+                        .header(HttpHeaders.AUTHORIZATION, auth(owner))
+                        .header("Idempotency-Key", "bad key!")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(valid()))
+                .andExpect(status().isBadRequest());
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_ramen_log WHERE shop_id = ?", Integer.class, SHOP))
-            .isZero();
+                .isZero();
     }
 
     @Test
@@ -166,63 +177,70 @@ class MobileRamenLogCrudIntegrationTest extends BaseIntegrationTest {
             assertThat(left.get(30, TimeUnit.SECONDS)).isEqualTo(right.get(30, TimeUnit.SECONDS));
         }
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_ramen_log WHERE shop_id = ?", Integer.class, SHOP))
-            .isEqualTo(2);
+                .isEqualTo(2);
         assertThat(jdbc.queryForObject("SELECT log_count FROM tb_v2_user WHERE id = ?", Integer.class, owner))
-            .isEqualTo(2);
+                .isEqualTo(2);
     }
 
     @Test
     void 삭제한_기록의_멱등키를_다시_쓰면_충돌한다() throws Exception {
         String id = create(owner, "deleted-key", valid()).get("id").asString();
         mvc.perform(delete("/api/v2/ramen-logs/{logId}", id).header(HttpHeaders.AUTHORIZATION, auth(owner)))
-            .andExpect(status().isNoContent());
+                .andExpect(status().isNoContent());
 
-        mvc.perform(post("/api/v2/ramen-logs").header(HttpHeaders.AUTHORIZATION, auth(owner))
-            .header("Idempotency-Key", "deleted-key")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(valid()))
-            .andExpect(status().isConflict())
-            .andExpect(jsonPath("$.error.code").value("CONFLICT"))
-            .andExpect(jsonPath("$.error.message").value("이미 삭제된 기록의 요청입니다."));
-        assertThat(jdbc.queryForObject("SELECT log_count FROM tb_v2_user WHERE id = ?", Integer.class, owner)).isZero();
-        assertThat(jdbc.queryForObject("SELECT log_count FROM tb_v2_shop WHERE id = ?", Integer.class, SHOP)).isZero();
+        mvc.perform(post("/api/v2/ramen-logs")
+                        .header(HttpHeaders.AUTHORIZATION, auth(owner))
+                        .header("Idempotency-Key", "deleted-key")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(valid()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("CONFLICT"))
+                .andExpect(jsonPath("$.error.message").value("이미 삭제된 기록의 요청입니다."));
+        assertThat(jdbc.queryForObject("SELECT log_count FROM tb_v2_user WHERE id = ?", Integer.class, owner))
+                .isZero();
+        assertThat(jdbc.queryForObject("SELECT log_count FROM tb_v2_shop WHERE id = ?", Integer.class, SHOP))
+                .isZero();
     }
 
     @Test
     void 타인에게_비공개_기록과_탈퇴_유예_회원의_공개_기록은_보이지_않는다() throws Exception {
-        String privateId = create(owner, "private", valid().replace("\"PUBLIC\"", "\"PRIVATE\"")).get("id").asString();
+        String privateId = create(owner, "private", valid().replace("\"PUBLIC\"", "\"PRIVATE\""))
+                .get("id")
+                .asString();
         mvc.perform(get("/api/v2/ramen-logs/{logId}", privateId))
-            .andExpect(status().isNotFound())
-            .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
         mvc.perform(get("/api/v2/ramen-logs/{logId}", privateId).header(HttpHeaders.AUTHORIZATION, auth(other)))
-            .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound());
         assertThat(detail(privateId, owner).get("isMine").asBoolean()).isTrue();
-        mvc.perform(patch("/api/v2/ramen-logs/{logId}", privateId).header(HttpHeaders.AUTHORIZATION, auth(other))
-            .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"note\":\"변경\"}"))
-            .andExpect(status().isForbidden())
-            .andExpect(jsonPath("$.error.code").value("FORBIDDEN"));
+        mvc.perform(patch("/api/v2/ramen-logs/{logId}", privateId)
+                        .header(HttpHeaders.AUTHORIZATION, auth(other))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"note\":\"변경\"}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("FORBIDDEN"));
 
         String publicId = create(owner, "public", valid()).get("id").asString();
         MobileUser withdrawing = users.findById(owner).orElseThrow();
         withdrawing.requestWithdrawal(Instant.now(), Duration.ofDays(30));
         users.saveAndFlush(withdrawing);
         mvc.perform(get("/api/v2/ramen-logs/{logId}", publicId).header(HttpHeaders.AUTHORIZATION, auth(other)))
-            .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound());
     }
 
     @Test
     void 공개_기록은_익명_USER_ADMIN_모두_보고_비공개_기록은_ADMIN에게도_보이지_않는다() throws Exception {
         String publicId = create(owner, "access-public", valid()).get("id").asString();
-        String privateId = create(owner, "access-private", valid().replace("\"PUBLIC\"", "\"PRIVATE\"")).get("id")
-            .asString();
+        String privateId = create(owner, "access-private", valid().replace("\"PUBLIC\"", "\"PRIVATE\""))
+                .get("id")
+                .asString();
         mvc.perform(get("/api/v2/ramen-logs/{logId}", publicId))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.isMine").value(false));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.isMine").value(false));
         assertThat(detail(publicId, other).get("isMine").asBoolean()).isFalse();
         assertThat(detail(publicId, admin).get("isMine").asBoolean()).isFalse();
         mvc.perform(get("/api/v2/ramen-logs/{logId}", privateId).header(HttpHeaders.AUTHORIZATION, auth(admin)))
-            .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -230,63 +248,74 @@ class MobileRamenLogCrudIntegrationTest extends BaseIntegrationTest {
         String id = create(owner, "hidden-after-create", valid()).get("id").asString();
         jdbc.update("UPDATE tb_v2_shop SET is_published = FALSE, deleted_at = CURRENT_TIMESTAMP(6) WHERE id = ?", SHOP);
         assertThat(detail(id, other).get("shop").get("name").asString()).isEqualTo("테스트 매장");
-        assertThat(create(owner, "hidden-after-create", valid()).get("id").asString()).isEqualTo(id);
+        assertThat(create(owner, "hidden-after-create", valid()).get("id").asString())
+                .isEqualTo(id);
     }
 
     @Test
     void 수정과_삭제는_사진과_카운터와_만족도_평균에_반영된다() throws Exception {
         assertThat(shopDetail().get("averageSatisfaction").isNull()).isTrue();
-        String first = create(owner, "score-1", valid().replace("\"satisfaction\":5", "\"satisfaction\":1")).get("id")
-            .asString();
+        String first = create(owner, "score-1", valid().replace("\"satisfaction\":5", "\"satisfaction\":1"))
+                .get("id")
+                .asString();
         create(owner, "score-2", valid().replace("\"satisfaction\":5", "\"satisfaction\":4"));
         assertThat(shopDetail().get("averageSatisfaction").isNull()).isTrue();
         create(owner, "score-3", valid());
-        assertThat(shopDetail().get("averageSatisfaction").decimalValue().toString()).isEqualTo("3.3");
-        String fourth = create(owner, "score-4", valid().replace("\"satisfaction\":5", "\"satisfaction\":2")).get("id")
-            .asString();
-        JsonNode updated = mapper
-            .readTree(mvc
-                .perform(patch("/api/v2/ramen-logs/{logId}", fourth).header(HttpHeaders.AUTHORIZATION, auth(owner))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""
+        assertThat(shopDetail().get("averageSatisfaction").decimalValue().toString())
+                .isEqualTo("3.3");
+        String fourth = create(owner, "score-4", valid().replace("\"satisfaction\":5", "\"satisfaction\":2"))
+                .get("id")
+                .asString();
+        JsonNode updated = mapper.readTree(mvc.perform(patch("/api/v2/ramen-logs/{logId}", fourth)
+                                .header(HttpHeaders.AUTHORIZATION, auth(owner))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
                             {"scores":{"satisfaction":4,"brothDensity":2,"noodleFirmness":4,"topping":3},
                             "imageUrls":[],"note":"  새 방문  ","visibility":"PRIVATE"}
                             """))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsByteArray())
-            .get("data");
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsByteArray())
+                .get("data");
         assertThat(updated.get("imageUrls").size()).isZero();
         assertThat(updated.get("note").asString()).isEqualTo("  새 방문  ");
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_ramen_log_image WHERE ramen_log_id = ?",
-                Integer.class, Long.valueOf(fourth)))
-            .isZero();
-        assertThat(shopDetail().get("averageSatisfaction").decimalValue().toString()).isEqualTo("3.5");
+        assertThat(jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM tb_v2_ramen_log_image WHERE ramen_log_id = ?",
+                        Integer.class,
+                        Long.valueOf(fourth)))
+                .isZero();
+        assertThat(shopDetail().get("averageSatisfaction").decimalValue().toString())
+                .isEqualTo("3.5");
 
         mvc.perform(delete("/api/v2/ramen-logs/{logId}", first).header(HttpHeaders.AUTHORIZATION, auth(owner)))
-            .andExpect(status().isNoContent());
+                .andExpect(status().isNoContent());
         mvc.perform(get("/api/v2/ramen-logs/{logId}", first)).andExpect(status().isNotFound());
         mvc.perform(delete("/api/v2/ramen-logs/{logId}", first).header(HttpHeaders.AUTHORIZATION, auth(owner)))
-            .andExpect(status().isNotFound());
-        assertThat(shopDetail().get("averageSatisfaction").decimalValue().toString()).isEqualTo("4.3");
+                .andExpect(status().isNotFound());
+        assertThat(shopDetail().get("averageSatisfaction").decimalValue().toString())
+                .isEqualTo("4.3");
         assertThat(jdbc.queryForObject("SELECT log_count FROM tb_v2_user WHERE id = ?", Integer.class, owner))
-            .isEqualTo(3);
+                .isEqualTo(3);
         assertThat(jdbc.queryForObject("SELECT log_count FROM tb_v2_shop WHERE id = ?", Integer.class, SHOP))
-            .isEqualTo(3);
+                .isEqualTo(3);
     }
 
     @Test
     void 부분_수정도_입력_제약과_맛_태그_중복을_검증한다() throws Exception {
         String id = create(owner, "patch-validation", valid()).get("id").asString();
-        for (String body : List.of("{\"menuName\":\"   \"}", "{\"note\":\"" + "x".repeat(501) + "\"}",
-                "{\"imageUrls\":[\" \"]}", "{\"tasteNoteCodes\":[\"BROTH_01\",\"BROTH_01\"]}",
+        for (String body : List.of(
+                "{\"menuName\":\"   \"}",
+                "{\"note\":\"" + "x".repeat(501) + "\"}",
+                "{\"imageUrls\":[\" \"]}",
+                "{\"tasteNoteCodes\":[\"BROTH_01\",\"BROTH_01\"]}",
                 "{\"scores\":{\"satisfaction\":null,\"brothDensity\":2,\"noodleFirmness\":4,\"topping\":3}}")) {
-            mvc.perform(patch("/api/v2/ramen-logs/{logId}", id).header(HttpHeaders.AUTHORIZATION, auth(owner))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+            mvc.perform(patch("/api/v2/ramen-logs/{logId}", id)
+                            .header(HttpHeaders.AUTHORIZATION, auth(owner))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
         }
         assertThat(detail(id, owner).get("menuName").asString()).isEqualTo("쇼유라멘");
     }
@@ -297,61 +326,67 @@ class MobileRamenLogCrudIntegrationTest extends BaseIntegrationTest {
         String copied = "https://res.cloudinary.com/raota/image/upload/v1/log.jpg";
         jdbc.update("UPDATE tb_v2_ramen_log_image SET url = ? WHERE ramen_log_id = ?", copied, Long.valueOf(id));
 
-        JsonNode updated = mapper.readTree(mvc
-            .perform(patch("/api/v2/ramen-logs/{logId}", id).header(HttpHeaders.AUTHORIZATION, auth(owner))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"imageUrls\":[\"" + copied + "\",\"" + IMAGE + "\"]}"))
-            .andExpect(status().isOk())
-            .andReturn()
-            .getResponse()
-            .getContentAsByteArray()).get("data");
+        JsonNode updated = mapper.readTree(mvc.perform(patch("/api/v2/ramen-logs/{logId}", id)
+                                .header(HttpHeaders.AUTHORIZATION, auth(owner))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"imageUrls\":[\"" + copied + "\",\"" + IMAGE + "\"]}"))
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsByteArray())
+                .get("data");
         assertThat(updated.get("imageUrls").get(0).asString()).isEqualTo(copied);
         assertThat(updated.get("imageUrls").get(1).asString()).isEqualTo(IMAGE);
 
-        mvc.perform(patch("/api/v2/ramen-logs/{logId}", id).header(HttpHeaders.AUTHORIZATION, auth(owner))
-            .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"imageUrls\":[\"" + copied + "\",\"https://elsewhere.example/new.png\"]}"))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+        mvc.perform(patch("/api/v2/ramen-logs/{logId}", id)
+                        .header(HttpHeaders.AUTHORIZATION, auth(owner))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"imageUrls\":[\"" + copied + "\",\"https://elsewhere.example/new.png\"]}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
     }
 
     @Test
     void 온보딩_회원은_작성할_수_없다() throws Exception {
-        mvc.perform(post("/api/v2/ramen-logs").header(HttpHeaders.AUTHORIZATION, auth(onboarding))
-            .header("Idempotency-Key", "onboarding")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(valid()))
-            .andExpect(status().isForbidden())
-            .andExpect(jsonPath("$.error.code").value("ONBOARDING_REQUIRED"));
+        mvc.perform(post("/api/v2/ramen-logs")
+                        .header(HttpHeaders.AUTHORIZATION, auth(onboarding))
+                        .header("Idempotency-Key", "onboarding")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(valid()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("ONBOARDING_REQUIRED"));
     }
 
     private JsonNode create(Long userId, String key, String body) throws Exception {
-        return mapper
-            .readTree(mvc.perform(post("/api/v2/ramen-logs").header(HttpHeaders.AUTHORIZATION, auth(userId))
-                .header("Idempotency-Key", key)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body)).andExpect(status().isCreated()).andReturn().getResponse().getContentAsByteArray())
-            .get("data");
+        return mapper.readTree(mvc.perform(post("/api/v2/ramen-logs")
+                                .header(HttpHeaders.AUTHORIZATION, auth(userId))
+                                .header("Idempotency-Key", key)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(body))
+                        .andExpect(status().isCreated())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsByteArray())
+                .get("data");
     }
 
     private JsonNode detail(String id, Long userId) throws Exception {
-        return mapper
-            .readTree(mvc.perform(get("/api/v2/ramen-logs/{logId}", id).header(HttpHeaders.AUTHORIZATION, auth(userId)))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsByteArray())
-            .get("data");
+        return mapper.readTree(mvc.perform(
+                                get("/api/v2/ramen-logs/{logId}", id).header(HttpHeaders.AUTHORIZATION, auth(userId)))
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsByteArray())
+                .get("data");
     }
 
     private JsonNode shopDetail() throws Exception {
-        return mapper
-            .readTree(mvc.perform(get("/api/v2/shops/{shopId}", SHOP))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsByteArray())
-            .get("data");
+        return mapper.readTree(mvc.perform(get("/api/v2/shops/{shopId}", SHOP))
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsByteArray())
+                .get("data");
     }
 
     private String valid() {
@@ -372,5 +407,4 @@ class MobileRamenLogCrudIntegrationTest extends BaseIntegrationTest {
     private String auth(Long userId) {
         return "Bearer " + tokens.issue(userId);
     }
-
 }

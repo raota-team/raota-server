@@ -44,5 +44,4 @@ public class MobileShopImage {
         image.sortOrder = sortOrder;
         return image;
     }
-
 }

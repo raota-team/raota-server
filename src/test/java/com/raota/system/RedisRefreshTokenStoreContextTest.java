@@ -18,9 +18,8 @@ class RedisRefreshTokenStoreContextTest extends BaseIntegrationTest {
     @Test
     void 운영과_같은_Redis_저장소_설정으로_v1과_v2_리프레시_토큰_저장소가_함께_뜬다() {
         assertThat(context.getBean(com.raota.web.account.infrastructure.persistence.auth.RefreshTokenStore.class))
-            .isInstanceOf(com.raota.web.account.infrastructure.persistence.auth.RedisRefreshTokenStore.class);
+                .isInstanceOf(com.raota.web.account.infrastructure.persistence.auth.RedisRefreshTokenStore.class);
         assertThat(context.getBean(com.raota.mobile.account.application.port.RefreshTokenStore.class))
-            .isInstanceOf(com.raota.mobile.account.infrastructure.auth.MobileRedisRefreshTokenStore.class);
+                .isInstanceOf(com.raota.mobile.account.infrastructure.auth.MobileRedisRefreshTokenStore.class);
     }
-
 }

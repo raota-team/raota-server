@@ -21,5 +21,4 @@ public interface CommentRepository {
     void deleteAll();
 
     List<Comment> findAllByPostId(Long postId);
-
 }

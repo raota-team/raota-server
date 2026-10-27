@@ -25,5 +25,4 @@ public interface MobileUserBlockRepository extends JpaRepository<MobileUserBlock
     @Modifying
     @Query("delete from MobileUserBlock block where block.blockerId = :userId or block.blockedId = :userId")
     void deleteInvolving(Long userId);
-
 }

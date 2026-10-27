@@ -67,7 +67,9 @@ class MobileContentReportAdminIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
+        mvc = MockMvcBuilders.webAppContextSetup(context)
+                .apply(springSecurity())
+                .build();
         jdbc.update("""
                 INSERT INTO tb_v2_shop (id, name, branch_name, address, region, ramen_types, tags, business_status,
                     ai_summary_keywords, log_count, satisfaction_score_sum, scored_log_count, is_published, created_at,
@@ -113,98 +115,111 @@ class MobileContentReportAdminIntegrationTest extends BaseIntegrationTest {
     @Test
     void 열린_신고를_오래된_순으로_대상_미리보기와_같은_대상_신고_수와_함께_보여준다() throws Exception {
         mvc.perform(get(BASE).with(ADMIN))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.items.length()").value(3))
-            .andExpect(jsonPath("$.data.items[0].id").value(String.valueOf(LOG_REPORT_FIRST)))
-            .andExpect(jsonPath("$.data.items[0].reporter.nickname").value(startsWith("신고자A")))
-            .andExpect(jsonPath("$.data.items[0].openReportCount").value(2))
-            .andExpect(jsonPath("$.data.items[0].target.type").value("RAMEN_LOG"))
-            .andExpect(jsonPath("$.data.items[0].target.author.nickname").value(startsWith("작성자")))
-            .andExpect(jsonPath("$.data.items[0].target.text").value("광고 글입니다"))
-            .andExpect(jsonPath("$.data.items[0].target.menuName").value("특제 쇼유"))
-            .andExpect(jsonPath("$.data.items[0].target.imageUrl").value("https://images.raota.net/log.jpg"))
-            .andExpect(jsonPath("$.data.items[0].target.deleted").value(false))
-            .andExpect(jsonPath("$.data.items[1].id").value(String.valueOf(COMMENT_REPORT)))
-            .andExpect(jsonPath("$.data.items[1].openReportCount").value(1))
-            .andExpect(jsonPath("$.data.items[1].target.ramenLogId").value(String.valueOf(LOG)))
-            .andExpect(jsonPath("$.data.items[1].target.text").value("욕설 댓글"))
-            .andExpect(jsonPath("$.data.items[1].target.author.nickname").value(startsWith("댓글러")))
-            .andExpect(jsonPath("$.data.page.totalElements").value(3));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items.length()").value(3))
+                .andExpect(jsonPath("$.data.items[0].id").value(String.valueOf(LOG_REPORT_FIRST)))
+                .andExpect(jsonPath("$.data.items[0].reporter.nickname").value(startsWith("신고자A")))
+                .andExpect(jsonPath("$.data.items[0].openReportCount").value(2))
+                .andExpect(jsonPath("$.data.items[0].target.type").value("RAMEN_LOG"))
+                .andExpect(jsonPath("$.data.items[0].target.author.nickname").value(startsWith("작성자")))
+                .andExpect(jsonPath("$.data.items[0].target.text").value("광고 글입니다"))
+                .andExpect(jsonPath("$.data.items[0].target.menuName").value("특제 쇼유"))
+                .andExpect(jsonPath("$.data.items[0].target.imageUrl").value("https://images.raota.net/log.jpg"))
+                .andExpect(jsonPath("$.data.items[0].target.deleted").value(false))
+                .andExpect(jsonPath("$.data.items[1].id").value(String.valueOf(COMMENT_REPORT)))
+                .andExpect(jsonPath("$.data.items[1].openReportCount").value(1))
+                .andExpect(jsonPath("$.data.items[1].target.ramenLogId").value(String.valueOf(LOG)))
+                .andExpect(jsonPath("$.data.items[1].target.text").value("욕설 댓글"))
+                .andExpect(jsonPath("$.data.items[1].target.author.nickname").value(startsWith("댓글러")))
+                .andExpect(jsonPath("$.data.page.totalElements").value(3));
     }
 
     @Test
     void 기록을_지우면_같은_대상_신고를_모두_닫고_회원과_매장_집계를_줄인다() throws Exception {
-        resolve(LOG_REPORT_SECOND, "DELETE_CONTENT").andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.closedReportCount").value(2));
+        resolve(LOG_REPORT_SECOND, "DELETE_CONTENT")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.closedReportCount").value(2));
 
-        assertThat(jdbc.queryForObject("SELECT deleted_at IS NOT NULL FROM tb_v2_ramen_log WHERE id = ?", Boolean.class,
-                LOG))
-            .isTrue();
-        assertThat(jdbc.queryForObject("SELECT log_count FROM tb_v2_shop WHERE id = ?", Integer.class, SHOP)).isZero();
-        assertThat(
-                jdbc.queryForObject("SELECT satisfaction_score_sum FROM tb_v2_shop WHERE id = ?", Integer.class, SHOP))
-            .isZero();
+        assertThat(jdbc.queryForObject(
+                        "SELECT deleted_at IS NOT NULL FROM tb_v2_ramen_log WHERE id = ?", Boolean.class, LOG))
+                .isTrue();
+        assertThat(jdbc.queryForObject("SELECT log_count FROM tb_v2_shop WHERE id = ?", Integer.class, SHOP))
+                .isZero();
+        assertThat(jdbc.queryForObject(
+                        "SELECT satisfaction_score_sum FROM tb_v2_shop WHERE id = ?", Integer.class, SHOP))
+                .isZero();
         assertThat(jdbc.queryForObject("SELECT log_count FROM tb_v2_user WHERE id = ?", Integer.class, author))
-            .isZero();
+                .isZero();
         assertThat(statuses()).containsExactly("RESOLVED", "RESOLVED", "OPEN");
 
-        resolve(LOG_REPORT_FIRST, "DISMISS").andExpect(status().isConflict())
-            .andExpect(jsonPath("$.error.code").value("CONFLICT"));
+        resolve(LOG_REPORT_FIRST, "DISMISS")
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("CONFLICT"));
         mvc.perform(get(BASE).param("status", "RESOLVED").with(ADMIN))
-            .andExpect(jsonPath("$.data.items.length()").value(2))
-            .andExpect(jsonPath("$.data.items[0].target.deleted").value(true))
-            .andExpect(jsonPath("$.data.items[0].resolvedAt").isNotEmpty());
+                .andExpect(jsonPath("$.data.items.length()").value(2))
+                .andExpect(jsonPath("$.data.items[0].target.deleted").value(true))
+                .andExpect(jsonPath("$.data.items[0].resolvedAt").isNotEmpty());
     }
 
     @Test
     void 댓글을_지우면_기록의_댓글_수를_줄이고_기록은_남긴다() throws Exception {
-        resolve(COMMENT_REPORT, "DELETE_CONTENT").andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.closedReportCount").value(1));
+        resolve(COMMENT_REPORT, "DELETE_CONTENT")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.closedReportCount").value(1));
 
-        assertThat(jdbc.queryForObject("SELECT deleted_at IS NOT NULL FROM tb_v2_ramen_log_comment WHERE id = ?",
-                Boolean.class, COMMENT))
-            .isTrue();
+        assertThat(jdbc.queryForObject(
+                        "SELECT deleted_at IS NOT NULL FROM tb_v2_ramen_log_comment WHERE id = ?",
+                        Boolean.class,
+                        COMMENT))
+                .isTrue();
         assertThat(jdbc.queryForObject("SELECT comment_count FROM tb_v2_ramen_log WHERE id = ?", Integer.class, LOG))
-            .isZero();
-        assertThat(
-                jdbc.queryForObject("SELECT deleted_at IS NULL FROM tb_v2_ramen_log WHERE id = ?", Boolean.class, LOG))
-            .isTrue();
+                .isZero();
+        assertThat(jdbc.queryForObject(
+                        "SELECT deleted_at IS NULL FROM tb_v2_ramen_log WHERE id = ?", Boolean.class, LOG))
+                .isTrue();
         assertThat(statuses()).containsExactly("OPEN", "OPEN", "RESOLVED");
     }
 
     @Test
     void 기각하면_대상은_두고_같은_대상_신고를_기각으로_닫는다() throws Exception {
-        resolve(LOG_REPORT_FIRST, "DISMISS").andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.closedReportCount").value(2));
+        resolve(LOG_REPORT_FIRST, "DISMISS")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.closedReportCount").value(2));
 
         assertThat(statuses()).containsExactly("DISMISSED", "DISMISSED", "OPEN");
-        assertThat(
-                jdbc.queryForObject("SELECT deleted_at IS NULL FROM tb_v2_ramen_log WHERE id = ?", Boolean.class, LOG))
-            .isTrue();
+        assertThat(jdbc.queryForObject(
+                        "SELECT deleted_at IS NULL FROM tb_v2_ramen_log WHERE id = ?", Boolean.class, LOG))
+                .isTrue();
         assertThat(jdbc.queryForObject("SELECT log_count FROM tb_v2_shop WHERE id = ?", Integer.class, SHOP))
-            .isEqualTo(1);
+                .isEqualTo(1);
     }
 
     @Test
     void 없는_신고와_잘못된_처리는_거절하고_웹_관리자만_쓸_수_있다() throws Exception {
         resolve(900006799L, "DISMISS").andExpect(status().isNotFound());
-        mvc.perform(post(BASE + "/" + LOG_REPORT_FIRST + "/resolve").with(ADMIN)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"action\":\"BAN\"}")).andExpect(status().isBadRequest());
+        mvc.perform(post(BASE + "/" + LOG_REPORT_FIRST + "/resolve")
+                        .with(ADMIN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"action\":\"BAN\"}"))
+                .andExpect(status().isBadRequest());
         mvc.perform(get(BASE)).andExpect(status().isUnauthorized());
         mvc.perform(get(BASE).with(user("member").roles("USER"))).andExpect(status().isForbidden());
         assertThat(statuses()).containsOnly("OPEN");
     }
 
     private ResultActions resolve(long reportId, String action) throws Exception {
-        return mvc.perform(post(BASE + "/" + reportId + "/resolve").with(ADMIN)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"action\":\"" + action + "\"}"));
+        return mvc.perform(post(BASE + "/" + reportId + "/resolve")
+                .with(ADMIN)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"action\":\"" + action + "\"}"));
     }
 
     private List<String> statuses() {
-        return jdbc.queryForList("SELECT status FROM tb_v2_content_report WHERE id BETWEEN ? AND ? ORDER BY id",
-                String.class, LOG_REPORT_FIRST, COMMENT_REPORT);
+        return jdbc.queryForList(
+                "SELECT status FROM tb_v2_content_report WHERE id BETWEEN ? AND ? ORDER BY id",
+                String.class,
+                LOG_REPORT_FIRST,
+                COMMENT_REPORT);
     }
 
     private void report(long id, Long reporterId, String targetType, long targetId, String reason, String createdAt) {
@@ -216,10 +231,10 @@ class MobileContentReportAdminIntegrationTest extends BaseIntegrationTest {
 
     private Long active(String nickname) {
         MobileUser user = MobileUser.onboarding("report-admin-" + UUID.randomUUID() + "@example.com");
-        user.completeOnboarding(Nickname.of(nickname + UUID.randomUUID().toString().substring(0, 4)), Instant.now());
+        user.completeOnboarding(
+                Nickname.of(nickname + UUID.randomUUID().toString().substring(0, 4)), Instant.now());
         Long id = users.saveAndFlush(user).getId();
         created.add(id);
         return id;
     }
-
 }

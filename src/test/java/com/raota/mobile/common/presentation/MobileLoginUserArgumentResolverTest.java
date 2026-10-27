@@ -9,9 +9,9 @@ import com.raota.mobile.common.error.MobileException;
 import java.lang.reflect.Method;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.junit.jupiter.api.Test;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 class MobileLoginUserArgumentResolverTest {
@@ -26,9 +26,10 @@ class MobileLoginUserArgumentResolverTest {
         MobileLoginUserArgumentResolver resolver = new MobileLoginUserArgumentResolver();
         MethodParameter required = parameter("required");
 
-        assertThatThrownBy(() -> resolver.resolveArgument(required, null, null, null)).isInstanceOfSatisfying(
-                MobileException.class,
-                exception -> assertThat(exception.code()).isEqualTo(MobileErrorCode.UNAUTHORIZED));
+        assertThatThrownBy(() -> resolver.resolveArgument(required, null, null, null))
+                .isInstanceOfSatisfying(
+                        MobileException.class,
+                        exception -> assertThat(exception.code()).isEqualTo(MobileErrorCode.UNAUTHORIZED));
     }
 
     @Test
@@ -39,7 +40,7 @@ class MobileLoginUserArgumentResolverTest {
 
         MobilePrincipal principal = () -> 17L;
         SecurityContextHolder.getContext()
-            .setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, List.of()));
+                .setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, List.of()));
         assertThat(resolver.resolveArgument(optional, null, null, null)).isEqualTo(17L);
     }
 
@@ -48,10 +49,7 @@ class MobileLoginUserArgumentResolverTest {
         return new MethodParameter(method, 0);
     }
 
-    private void required(@LoginUser Long userId) {
-    }
+    private void required(@LoginUser Long userId) {}
 
-    private void optional(@LoginUser(required = false) Long userId) {
-    }
-
+    private void optional(@LoginUser(required = false) Long userId) {}
 }

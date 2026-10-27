@@ -17,5 +17,4 @@ public class MobileShopPurgeListener {
     public void onMemberPurged(MobileMemberPurgedEvent event) {
         bookmarks.removeForPurgedUser(event.userId());
     }
-
 }

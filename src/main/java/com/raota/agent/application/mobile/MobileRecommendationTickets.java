@@ -25,7 +25,9 @@ class MobileRecommendationTickets {
 
     private final int dailyLimit;
 
-    MobileRecommendationTickets(MobileRecommendationRunRepository runs, Clock clock,
+    MobileRecommendationTickets(
+            MobileRecommendationRunRepository runs,
+            Clock clock,
             @Value("${app.mobile.recommendation.daily-limit:3}") int dailyLimit) {
         this.runs = runs;
         this.clock = clock;
@@ -48,5 +50,4 @@ class MobileRecommendationTickets {
     private Instant startOfToday() {
         return LocalDate.now(clock.withZone(SEOUL)).atStartOfDay(SEOUL).toInstant();
     }
-
 }

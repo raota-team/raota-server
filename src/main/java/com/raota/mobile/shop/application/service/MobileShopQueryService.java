@@ -20,8 +20,8 @@ import com.raota.mobile.shop.domain.model.MobileShopBusinessStatus;
 import com.raota.mobile.shop.domain.model.MobileShopImage;
 import com.raota.mobile.shop.domain.repository.MobileShopBusinessHourRepository;
 import com.raota.mobile.shop.domain.repository.MobileShopImageRepository;
-import com.raota.mobile.shop.domain.repository.MobileShopServicePerkRepository;
 import com.raota.mobile.shop.domain.repository.MobileShopRepository;
+import com.raota.mobile.shop.domain.repository.MobileShopServicePerkRepository;
 import com.raota.mobile.shop.domain.service.MobileShopOpenStatus;
 import com.raota.mobile.shop.domain.service.MobileShopOpenStatus.Hours;
 import java.math.BigDecimal;
@@ -62,8 +62,17 @@ public class MobileShopQueryService {
     private final MobileShopOpenStatus openStatus;
 
     @Transactional(readOnly = true)
-    public CursorPage<MobileShopSummary> list(Long userId, MobileShopSort sort, String query, String region,
-            String ramenType, boolean openNow, BigDecimal latitude, BigDecimal longitude, String rawCursor, int size) {
+    public CursorPage<MobileShopSummary> list(
+            Long userId,
+            MobileShopSort sort,
+            String query,
+            String region,
+            String ramenType,
+            boolean openNow,
+            BigDecimal latitude,
+            BigDecimal longitude,
+            String rawCursor,
+            int size) {
         validate(sort, latitude, longitude);
         Cursor cursor = Cursor.parse(rawCursor).orElse(null);
         // 확인된 영업시간은 요일·휴식에 따라 달라져 SQL 정렬 이후 일괄 계산한다.
@@ -73,8 +82,8 @@ public class MobileShopQueryService {
             limit = null;
         }
         Ranked ranked = rank(sort, query, region, ramenType, openNow, latitude, longitude, cursor, limit);
-        CursorPage<RankedShop> page = CursorPage.of(ranked.rows().stream().limit(size + 1L).toList(), size,
-                RankedShop::position);
+        CursorPage<RankedShop> page =
+                CursorPage.of(ranked.rows().stream().limit(size + 1L).toList(), size, RankedShop::position);
         return new CursorPage<>(summaries(userId, page.items(), ranked), page.nextCursor(), page.hasNext());
     }
 
@@ -83,25 +92,40 @@ public class MobileShopQueryService {
      * 공개 매장이 수백 곳이라 한 번에 보낸다.
      */
     @Transactional(readOnly = true)
-    public List<MobileShopSummary> all(Long userId, MobileShopSort sort, String query, String region, String ramenType,
-            boolean openNow, BigDecimal latitude, BigDecimal longitude) {
+    public List<MobileShopSummary> all(
+            Long userId,
+            MobileShopSort sort,
+            String query,
+            String region,
+            String ramenType,
+            boolean openNow,
+            BigDecimal latitude,
+            BigDecimal longitude) {
         validate(sort, latitude, longitude);
         Ranked ranked = rank(sort, query, region, ramenType, openNow, latitude, longitude, null, null);
         return summaries(userId, ranked.rows(), ranked);
     }
 
-    private Ranked rank(MobileShopSort sort, String query, String region, String ramenType, boolean openNow,
-            BigDecimal latitude, BigDecimal longitude, Cursor cursor, Integer limit) {
-        List<RankedShop> rows = search.search(sort, query, region, ramenType, coordinate(latitude, 90),
-                coordinate(longitude, 180), cursor, limit);
+    private Ranked rank(
+            MobileShopSort sort,
+            String query,
+            String region,
+            String ramenType,
+            boolean openNow,
+            BigDecimal latitude,
+            BigDecimal longitude,
+            Cursor cursor,
+            Integer limit) {
+        List<RankedShop> rows = search.search(
+                sort, query, region, ramenType, coordinate(latitude, 90), coordinate(longitude, 180), cursor, limit);
         List<Long> ids = rows.stream().map(RankedShop::id).toList();
         Map<Long, MobileShop> byId = byId(ids);
         Map<Long, List<Hours>> byHours = hours(ids);
         if (openNow) {
             rows = rows.stream()
-                .filter(row -> Boolean.TRUE.equals(openStatus.isOpen(byId.get(row.id()).getHoursVerifiedAt(),
-                        byHours.getOrDefault(row.id(), List.of()))))
-                .toList();
+                    .filter(row -> Boolean.TRUE.equals(openStatus.isOpen(
+                            byId.get(row.id()).getHoursVerifiedAt(), byHours.getOrDefault(row.id(), List.of()))))
+                    .toList();
         }
         return new Ranked(rows, byId, byHours);
     }
@@ -111,19 +135,21 @@ public class MobileShopQueryService {
         Map<Long, String> firstImages = images(ids);
         var bookmarkedIds = bookmarks.bookmarkedShopIds(userId, ids);
         return rows.stream()
-            .map(row -> summary(ranked.byId().get(row.id()), firstImages.get(row.id()),
-                    ranked.byHours().getOrDefault(row.id(), List.of()), row.distance(),
-                    bookmarkedIds.contains(row.id())))
-            .toList();
+                .map(row -> summary(
+                        ranked.byId().get(row.id()),
+                        firstImages.get(row.id()),
+                        ranked.byHours().getOrDefault(row.id(), List.of()),
+                        row.distance(),
+                        bookmarkedIds.contains(row.id())))
+                .toList();
     }
 
-    private record Ranked(List<RankedShop> rows, Map<Long, MobileShop> byId, Map<Long, List<Hours>> byHours) {
-    }
+    private record Ranked(List<RankedShop> rows, Map<Long, MobileShop> byId, Map<Long, List<Hours>> byHours) {}
 
     @Transactional
     public MobileShopDetail detail(Long userId, Long shopId) {
         MobileShop shop = shops.findByIdAndPublishedTrueAndDeletedAtIsNull(shopId)
-            .orElseThrow(() -> new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "매장을 찾을 수 없습니다."));
+                .orElseThrow(() -> new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "매장을 찾을 수 없습니다."));
         List<MobileShopImage> shopImages = images.findByShopIdInOrderBySortOrderAscIdAsc(List.of(shopId));
         List<MobileShopBusinessHour> shopHours = hours.findByShopIdInOrderByDayOfWeekAsc(List.of(shopId));
         List<Hours> openHours = shopHours.stream().map(this::toHours).toList();
@@ -131,28 +157,69 @@ public class MobileShopQueryService {
         if (!shopImages.isEmpty()) {
             imageUrl = shopImages.getFirst().getUrl();
         }
-        MobileShopSummary base = summary(shop, imageUrl, openHours, null,
+        MobileShopSummary base = summary(
+                shop,
+                imageUrl,
+                openHours,
+                null,
                 bookmarks.bookmarkedShopIds(userId, List.of(shopId)).contains(shopId));
         List<MobileShopBusinessHourResult> businessHours = shopHours.stream()
-            .map(hour -> new MobileShopBusinessHourResult(hour.getDayOfWeek(), time(hour.getOpensAt()),
-                    time(hour.getClosesAt()), time(hour.getBreakStart()), time(hour.getBreakEnd()),
-                    time(hour.getLastOrderAt()), hour.isClosed()))
-            .toList();
-        List<MobileShopServicePerkResult> servicePerks = perks.findByShopIdOrderByIdAsc(shopId)
-            .stream()
-            .map(perk -> new MobileShopServicePerkResult(perk.getPerkType(), perk.getStatus(), perk.getPrice(),
-                    perk.getConditionText(), perk.getVerifiedAt()))
-            .toList();
+                .map(hour -> new MobileShopBusinessHourResult(
+                        hour.getDayOfWeek(),
+                        time(hour.getOpensAt()),
+                        time(hour.getClosesAt()),
+                        time(hour.getBreakStart()),
+                        time(hour.getBreakEnd()),
+                        time(hour.getLastOrderAt()),
+                        hour.isClosed()))
+                .toList();
+        List<MobileShopServicePerkResult> servicePerks = perks.findByShopIdOrderByIdAsc(shopId).stream()
+                .map(perk -> new MobileShopServicePerkResult(
+                        perk.getPerkType(),
+                        perk.getStatus(),
+                        perk.getPrice(),
+                        perk.getConditionText(),
+                        perk.getVerifiedAt()))
+                .toList();
         shops.incrementViewCount(shopId);
-        return new MobileShopDetail(base.id(), base.name(), base.branchName(), base.address(), base.region(),
-                base.latitude(), base.longitude(), base.imageUrl(), base.tagline(), base.ramenTypes(), base.tags(),
-                base.logCount(), base.bookmarkCount(), averageSatisfaction(shop), base.isBookmarked(),
-                base.businessStatus(), base.isOpen(), base.distanceMeters(), shop.getDescription(), shop.getPhone(),
-                shop.getInstagramUrl(), shop.getReservationUrl(), shop.getWebsiteUrl(), shop.getNaverPlaceId(),
-                shop.getKakaoPlaceId(), shop.getPriceMin(), shop.getPriceMax(), shop.getClosedDaysText(),
+        return new MobileShopDetail(
+                base.id(),
+                base.name(),
+                base.branchName(),
+                base.address(),
+                base.region(),
+                base.latitude(),
+                base.longitude(),
+                base.imageUrl(),
+                base.tagline(),
+                base.ramenTypes(),
+                base.tags(),
+                base.logCount(),
+                base.bookmarkCount(),
+                averageSatisfaction(shop),
+                base.isBookmarked(),
+                base.businessStatus(),
+                base.isOpen(),
+                base.distanceMeters(),
+                shop.getDescription(),
+                shop.getPhone(),
+                shop.getInstagramUrl(),
+                shop.getReservationUrl(),
+                shop.getWebsiteUrl(),
+                shop.getNaverPlaceId(),
+                shop.getKakaoPlaceId(),
+                shop.getPriceMin(),
+                shop.getPriceMax(),
+                shop.getClosedDaysText(),
                 shop.getHoursVerifiedAt(),
-                shopImages.stream().map(image -> new MobileShopImageResult(image.getUrl())).toList(), businessHours,
-                servicePerks, shop.getAiReviewSummary(), shop.getAiSummaryKeywords(), shop.getAiSummaryGeneratedAt());
+                shopImages.stream()
+                        .map(image -> new MobileShopImageResult(image.getUrl()))
+                        .toList(),
+                businessHours,
+                servicePerks,
+                shop.getAiReviewSummary(),
+                shop.getAiSummaryKeywords(),
+                shop.getAiSummaryGeneratedAt());
     }
 
     private BigDecimal averageSatisfaction(MobileShop shop) {
@@ -160,7 +227,7 @@ public class MobileShopQueryService {
             return null;
         }
         return BigDecimal.valueOf(shop.getSatisfactionScoreSum())
-            .divide(BigDecimal.valueOf(shop.getScoredLogCount()), 1, RoundingMode.HALF_UP);
+                .divide(BigDecimal.valueOf(shop.getScoredLogCount()), 1, RoundingMode.HALF_UP);
     }
 
     @Transactional(readOnly = true)
@@ -171,11 +238,14 @@ public class MobileShopQueryService {
         Map<Long, MobileShop> byId = byId(ids);
         Map<Long, String> firstImages = images(ids);
         Map<Long, List<Hours>> byHours = hours(ids);
-        List<MobileShopSummary> items = page.items()
-            .stream()
-            .map(row -> summary(byId.get(row.shopId()), firstImages.get(row.shopId()),
-                    byHours.getOrDefault(row.shopId(), List.of()), null, true))
-            .toList();
+        List<MobileShopSummary> items = page.items().stream()
+                .map(row -> summary(
+                        byId.get(row.shopId()),
+                        firstImages.get(row.shopId()),
+                        byHours.getOrDefault(row.shopId(), List.of()),
+                        null,
+                        true))
+                .toList();
         return new CursorPage<>(items, page.nextCursor(), page.hasNext());
     }
 
@@ -185,25 +255,25 @@ public class MobileShopQueryService {
      * 반경은 없다.
      */
     @Transactional(readOnly = true)
-    public List<Long> recommendationCandidates(String ramenType, String region, BigDecimal latitude,
-            BigDecimal longitude, int limit) {
+    public List<Long> recommendationCandidates(
+            String ramenType, String region, BigDecimal latitude, BigDecimal longitude, int limit) {
         List<Long> ids = shops.findRecommendableIds(ramenType);
         Map<Long, MobileShop> byId = byId(ids);
         List<MobileShop> candidates = ids.stream()
-            .map(byId::get)
-            .filter(shop -> shop != null && inRegion(shop, region))
-            .toList();
+                .map(byId::get)
+                .filter(shop -> shop != null && inRegion(shop, region))
+                .toList();
         if (latitude == null) {
             return candidates.stream().limit(limit).map(MobileShop::getId).toList();
         }
         return candidates.stream()
-            .filter(shop -> shop.getLatitude() != null && shop.getLongitude() != null)
-            .sorted(Comparator.comparingDouble(
-                    (MobileShop shop) -> distanceMeters(latitude, longitude, shop.getLatitude(), shop.getLongitude()))
-                .thenComparing(MobileShop::getId))
-            .limit(limit)
-            .map(MobileShop::getId)
-            .toList();
+                .filter(shop -> shop.getLatitude() != null && shop.getLongitude() != null)
+                .sorted(Comparator.comparingDouble((MobileShop shop) ->
+                                distanceMeters(latitude, longitude, shop.getLatitude(), shop.getLongitude()))
+                        .thenComparing(MobileShop::getId))
+                .limit(limit)
+                .map(MobileShop::getId)
+                .toList();
     }
 
     /**
@@ -211,8 +281,8 @@ public class MobileShopQueryService {
      * 따른다. 좌표가 오면 거리를 채운다.
      */
     @Transactional(readOnly = true)
-    public List<MobileShopSummary> recommendable(Long userId, List<Long> rankedIds, BigDecimal latitude,
-            BigDecimal longitude, int limit) {
+    public List<MobileShopSummary> recommendable(
+            Long userId, List<Long> rankedIds, BigDecimal latitude, BigDecimal longitude, int limit) {
         Map<Long, MobileShop> byId = byId(rankedIds);
         List<MobileShop> picked = new ArrayList<>(limit);
         Map<Long, BigDecimal> distances = new HashMap<>();
@@ -222,8 +292,10 @@ public class MobileShopQueryService {
                 continue;
             }
             if (latitude != null && shop.getLatitude() != null && shop.getLongitude() != null) {
-                distances.put(id, BigDecimal
-                    .valueOf(distanceMeters(latitude, longitude, shop.getLatitude(), shop.getLongitude())));
+                distances.put(
+                        id,
+                        BigDecimal.valueOf(
+                                distanceMeters(latitude, longitude, shop.getLatitude(), shop.getLongitude())));
             }
             picked.add(shop);
             if (picked.size() == limit) {
@@ -235,9 +307,13 @@ public class MobileShopQueryService {
         Map<Long, List<Hours>> byHours = hours(ids);
         var bookmarkedIds = bookmarks.bookmarkedShopIds(userId, ids);
         return picked.stream()
-            .map(shop -> summary(shop, firstImages.get(shop.getId()), byHours.getOrDefault(shop.getId(), List.of()),
-                    distances.get(shop.getId()), bookmarkedIds.contains(shop.getId())))
-            .toList();
+                .map(shop -> summary(
+                        shop,
+                        firstImages.get(shop.getId()),
+                        byHours.getOrDefault(shop.getId(), List.of()),
+                        distances.get(shop.getId()),
+                        bookmarkedIds.contains(shop.getId())))
+                .toList();
     }
 
     /**
@@ -246,19 +322,24 @@ public class MobileShopQueryService {
      */
     @Transactional(readOnly = true)
     public Optional<MobileShopSummary> mostPopular(Long userId, String ramenType, String tagKeyword) {
-        Optional<MobileShop> best = shops.findMostViewedRecommendableId(ramenType, tagKeyword).flatMap(shops::findById);
+        Optional<MobileShop> best =
+                shops.findMostViewedRecommendableId(ramenType, tagKeyword).flatMap(shops::findById);
         if (best.isEmpty()) {
             return Optional.empty();
         }
         MobileShop shop = best.get();
         List<Long> ids = List.of(shop.getId());
-        return Optional
-            .of(summary(shop, images(ids).get(shop.getId()), hours(ids).getOrDefault(shop.getId(), List.of()), null,
-                    bookmarks.bookmarkedShopIds(userId, ids).contains(shop.getId())));
+        return Optional.of(summary(
+                shop,
+                images(ids).get(shop.getId()),
+                hours(ids).getOrDefault(shop.getId(), List.of()),
+                null,
+                bookmarks.bookmarkedShopIds(userId, ids).contains(shop.getId())));
     }
 
     private boolean isRecommendable(MobileShop shop) {
-        return shop.isPublished() && shop.getDeletedAt() == null
+        return shop.isPublished()
+                && shop.getDeletedAt() == null
                 && shop.getBusinessStatus() != MobileShopBusinessStatus.CLOSED
                 && shop.getBusinessStatus() != MobileShopBusinessStatus.TEMPORARILY_CLOSED;
     }
@@ -267,12 +348,13 @@ public class MobileShopQueryService {
         if (region == null) {
             return true;
         }
-        return region.equals(shop.getRegion()) || (shop.getAddress() != null && shop.getAddress().contains(region));
+        return region.equals(shop.getRegion())
+                || (shop.getAddress() != null && shop.getAddress().contains(region));
     }
 
     /** 매장 목록 거리순 SQL과 같은 하버사인 거리(지구 반지름 6,371km)다. */
-    private static double distanceMeters(BigDecimal fromLatitude, BigDecimal fromLongitude, BigDecimal toLatitude,
-            BigDecimal toLongitude) {
+    private static double distanceMeters(
+            BigDecimal fromLatitude, BigDecimal fromLongitude, BigDecimal toLatitude, BigDecimal toLongitude) {
         double lat1 = Math.toRadians(fromLatitude.doubleValue());
         double lat2 = Math.toRadians(toLatitude.doubleValue());
         double dLat = lat2 - lat1;
@@ -282,8 +364,13 @@ public class MobileShopQueryService {
     }
 
     private Hours toHours(MobileShopBusinessHour hour) {
-        return new Hours(hour.getDayOfWeek(), hour.getOpensAt(), hour.getClosesAt(), hour.getBreakStart(),
-                hour.getBreakEnd(), hour.isClosed());
+        return new Hours(
+                hour.getDayOfWeek(),
+                hour.getOpensAt(),
+                hour.getClosesAt(),
+                hour.getBreakStart(),
+                hour.getBreakEnd(),
+                hour.isClosed());
     }
 
     private String time(LocalTime value) {
@@ -293,12 +380,25 @@ public class MobileShopQueryService {
         return value.format(CLOCK_TIME);
     }
 
-    private MobileShopSummary summary(MobileShop shop, String imageUrl, List<Hours> shopHours, BigDecimal distance,
-            boolean bookmarked) {
-        return new MobileShopSummary(shop.getId().toString(), shop.getName(), shop.getBranchName(), shop.getAddress(),
-                shop.getRegion(), shop.getLatitude(), shop.getLongitude(), imageUrl, shop.getTagline(),
-                shop.getRamenTypes(), shop.getTags(), shop.getLogCount(), shop.getBookmarkCount(), bookmarked,
-                shop.getBusinessStatus(), openStatus.isOpen(shop.getHoursVerifiedAt(), shopHours),
+    private MobileShopSummary summary(
+            MobileShop shop, String imageUrl, List<Hours> shopHours, BigDecimal distance, boolean bookmarked) {
+        return new MobileShopSummary(
+                shop.getId().toString(),
+                shop.getName(),
+                shop.getBranchName(),
+                shop.getAddress(),
+                shop.getRegion(),
+                shop.getLatitude(),
+                shop.getLongitude(),
+                imageUrl,
+                shop.getTagline(),
+                shop.getRamenTypes(),
+                shop.getTags(),
+                shop.getLogCount(),
+                shop.getBookmarkCount(),
+                bookmarked,
+                shop.getBusinessStatus(),
+                openStatus.isOpen(shop.getHoursVerifiedAt(), shopHours),
                 roundedMeters(distance));
     }
 
@@ -330,7 +430,8 @@ public class MobileShopQueryService {
         Map<Long, List<Hours>> byShop = new HashMap<>();
         if (!ids.isEmpty()) {
             for (MobileShopBusinessHour hour : hours.findByShopIdInOrderByDayOfWeekAsc(ids)) {
-                byShop.computeIfAbsent(hour.getShopId(), ignored -> new ArrayList<>()).add(toHours(hour));
+                byShop.computeIfAbsent(hour.getShopId(), ignored -> new ArrayList<>())
+                        .add(toHours(hour));
             }
         }
         return byShop;
@@ -361,5 +462,4 @@ public class MobileShopQueryService {
     private MobileException invalidParams() {
         return new MobileException(MobileErrorCode.VALIDATION_ERROR, "매장 목록 요청 값을 확인해 주세요.");
     }
-
 }

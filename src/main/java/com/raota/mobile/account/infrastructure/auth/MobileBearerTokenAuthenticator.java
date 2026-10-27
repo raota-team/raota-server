@@ -36,13 +36,12 @@ public class MobileBearerTokenAuthenticator implements BearerTokenAuthenticator 
         Long userId;
         try {
             userId = accessTokens.verify(token);
-        }
-        catch (JwtTokenException exception) {
+        } catch (JwtTokenException exception) {
             throw new MobileAuthenticationException("유효하지 않은 액세스 토큰입니다.", exception);
         }
 
         MobileUser user = users.findById(userId)
-            .orElseThrow(() -> new MobileAuthenticationException(UNAVAILABLE_ACCOUNT_MESSAGE, null));
+                .orElseThrow(() -> new MobileAuthenticationException(UNAVAILABLE_ACCOUNT_MESSAGE, null));
         if (user.getStatus() != MobileUserStatus.ONBOARDING && user.getStatus() != MobileUserStatus.ACTIVE) {
             throw new MobileAuthenticationException(UNAVAILABLE_ACCOUNT_MESSAGE, null);
         }
@@ -50,5 +49,4 @@ public class MobileBearerTokenAuthenticator implements BearerTokenAuthenticator 
         MobileAuthenticatedUser principal = MobileAuthenticatedUser.of(user);
         return new UsernamePasswordAuthenticationToken(principal, null, principal.authorities());
     }
-
 }

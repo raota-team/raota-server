@@ -20,9 +20,12 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 @Entity
-@Table(name = "tb_rag_evaluation_case_result",
-        uniqueConstraints = @UniqueConstraint(name = "uk_rag_eval_case_run_case",
-                columnNames = { "run_id", "case_id" }))
+@Table(
+        name = "tb_rag_evaluation_case_result",
+        uniqueConstraints =
+                @UniqueConstraint(
+                        name = "uk_rag_eval_case_run_case",
+                        columnNames = {"run_id", "case_id"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class RagEvaluationCaseResultEntity {
@@ -92,8 +95,13 @@ public class RagEvaluationCaseResultEntity {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    private RagEvaluationCaseResultEntity(String runId, String caseId, RagEvaluationCaseType caseType,
-            RagEvaluationCaseStatus status, String requestJson, String expectedJson) {
+    private RagEvaluationCaseResultEntity(
+            String runId,
+            String caseId,
+            RagEvaluationCaseType caseType,
+            RagEvaluationCaseStatus status,
+            String requestJson,
+            String expectedJson) {
         this.runId = runId;
         this.caseId = caseId;
         this.caseType = caseType;
@@ -102,18 +110,25 @@ public class RagEvaluationCaseResultEntity {
         this.expectedJson = expectedJson;
     }
 
-    public static RagEvaluationCaseResultEntity pending(String runId, String caseId, RagEvaluationCaseType caseType,
-            String requestJson, String expectedJson) {
-        return new RagEvaluationCaseResultEntity(runId, caseId, caseType, RagEvaluationCaseStatus.PENDING, requestJson,
-                expectedJson);
+    public static RagEvaluationCaseResultEntity pending(
+            String runId, String caseId, RagEvaluationCaseType caseType, String requestJson, String expectedJson) {
+        return new RagEvaluationCaseResultEntity(
+                runId, caseId, caseType, RagEvaluationCaseStatus.PENDING, requestJson, expectedJson);
     }
 
     public void markRunning() {
         this.status = RagEvaluationCaseStatus.RUNNING;
     }
 
-    public void recordExecution(RagEvaluationCaseStatus status, String responseJson, String evidenceJson,
-            String metricsJson, String autoJudgementJson, Long latencyMs, String errorType, String errorMessage) {
+    public void recordExecution(
+            RagEvaluationCaseStatus status,
+            String responseJson,
+            String evidenceJson,
+            String metricsJson,
+            String autoJudgementJson,
+            Long latencyMs,
+            String errorType,
+            String errorMessage) {
         this.status = status;
         this.responseJson = responseJson;
         this.evidenceJson = evidenceJson;
@@ -129,5 +144,4 @@ public class RagEvaluationCaseResultEntity {
         this.finalReviewJson = finalReviewJson;
         this.reviewedAt = LocalDateTime.now();
     }
-
 }

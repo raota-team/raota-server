@@ -39,14 +39,14 @@ public class MobileShopAgentFacade {
      * 추천 후보 매장 ID다. 추천해도 되는 매장 중 라멘 종류가 {@code ramenType}인(null이면 전부) 매장이고, 지역이 오면 그 지역
      * 매장만 남긴다. 좌표가 오면 가까운 순, 없으면 조회수 순으로 최대 {@code limit}곳이다.
      */
-    public List<Long> recommendationCandidates(String ramenType, String region, BigDecimal latitude,
-            BigDecimal longitude, int limit) {
+    public List<Long> recommendationCandidates(
+            String ramenType, String region, BigDecimal latitude, BigDecimal longitude, int limit) {
         return shops.recommendationCandidates(ramenType, region, latitude, longitude, limit);
     }
 
     /** 순위대로 받은 매장 ID 중 추천해도 되는 매장을 최대 {@code limit}개 요약한다. 좌표가 오면 거리를 채운다. */
-    public List<MobileShopSummary> recommendable(Long viewerId, List<Long> rankedShopIds, BigDecimal latitude,
-            BigDecimal longitude, int limit) {
+    public List<MobileShopSummary> recommendable(
+            Long viewerId, List<Long> rankedShopIds, BigDecimal latitude, BigDecimal longitude, int limit) {
         if (rankedShopIds.isEmpty()) {
             return List.of();
         }
@@ -61,10 +61,9 @@ public class MobileShopAgentFacade {
     /** 추천 성과 집계용으로 이 회원들이 {@code [from, to)} 사이에 만든 북마크다. 해제한 북마크는 빠진다. */
     @Transactional(readOnly = true)
     public List<MobileShopActivity> bookmarksCreatedBetween(Collection<Long> userIds, Instant from, Instant to) {
-        return bookmarks.createdBetween(userIds, from, to)
-            .stream()
-            .map(bookmark -> new MobileShopActivity(bookmark.userId(), bookmark.shopId(), bookmark.createdAt()))
-            .toList();
+        return bookmarks.createdBetween(userIds, from, to).stream()
+                .map(bookmark -> new MobileShopActivity(bookmark.userId(), bookmark.shopId(), bookmark.createdAt()))
+                .toList();
     }
 
     /**
@@ -76,14 +75,20 @@ public class MobileShopAgentFacade {
         for (MobileShopServicePerk perk : perks.findByShopIdInOrderByIdAsc(shopIds)) {
             String label = perkLabel(perk);
             if (label != null) {
-                perksByShop.computeIfAbsent(perk.getShopId(), id -> new ArrayList<>()).add(label);
+                perksByShop
+                        .computeIfAbsent(perk.getShopId(), id -> new ArrayList<>())
+                        .add(label);
             }
         }
         Map<Long, MobileShopReasonFacts> facts = new HashMap<>();
         for (MobileShop shop : repository.findAllById(shopIds)) {
-            facts.put(shop.getId(),
-                    new MobileShopReasonFacts(text(shop.getAiReviewSummary()), text(shop.getDescription()),
-                            shop.getPriceMin(), shop.getPriceMax(),
+            facts.put(
+                    shop.getId(),
+                    new MobileShopReasonFacts(
+                            text(shop.getAiReviewSummary()),
+                            text(shop.getDescription()),
+                            shop.getPriceMin(),
+                            shop.getPriceMax(),
                             List.copyOf(perksByShop.getOrDefault(shop.getId(), List.of()))));
         }
         return facts;
@@ -120,7 +125,9 @@ public class MobileShopAgentFacade {
             case PAID -> paidLabel(name, perk.getPrice());
             case NOT_OFFERED, UNKNOWN -> null;
         };
-        if (label == null || perk.getConditionText() == null || perk.getConditionText().isBlank()) {
+        if (label == null
+                || perk.getConditionText() == null
+                || perk.getConditionText().isBlank()) {
             return label;
         }
         return label + "(" + perk.getConditionText().trim() + ")";
@@ -134,12 +141,9 @@ public class MobileShopAgentFacade {
     }
 
     /** 추천 이유를 쓸 때 근거로 삼는 매장 정보다. 값이 없으면 {@code null}이다. */
-    public record MobileShopReasonFacts(String aiReviewSummary, String description, Integer priceMin, Integer priceMax,
-            List<String> perks) {
-    }
+    public record MobileShopReasonFacts(
+            String aiReviewSummary, String description, Integer priceMin, Integer priceMax, List<String> perks) {}
 
     /** 회원이 매장에 남긴 행동(북마크)과 그 시각이다. */
-    public record MobileShopActivity(Long userId, Long shopId, Instant createdAt) {
-    }
-
+    public record MobileShopActivity(Long userId, Long shopId, Instant createdAt) {}
 }

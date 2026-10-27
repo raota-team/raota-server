@@ -9,5 +9,4 @@ public interface JpaDailyCurationRepository extends JpaRepository<DailyCurationE
     Optional<DailyCurationEntity> findByDateKey(Integer dateKey);
 
     Optional<DailyCurationEntity> findTopByOrderByDateKeyDesc();
-
 }

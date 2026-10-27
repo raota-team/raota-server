@@ -19,5 +19,4 @@ public class DiscordEmbed {
     private String timestamp;
 
     private List<EmbedField> fields;
-
 }

@@ -82,10 +82,14 @@ public class EndpointAccessPolicy implements AccessRuleContributor {
             new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.GET, "/users/me/ramen-logs/shops"),
             new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/ramen-shops/{shopId:[0-9]+}/bookmark"),
             new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/ramen-shops/{shopId:[0-9]+}/reports"),
-            new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.POST,
+            new AccessRule(
+                    AccessLevel.AUTHENTICATED,
+                    HttpMethod.POST,
                     "/ramen-shops/{shopId:[0-9]+}/votes/menus/{menuId:[0-9]+}"),
             new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/ramen-shops/{shopId:[0-9]+}/photos"),
-            new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.DELETE,
+            new AccessRule(
+                    AccessLevel.AUTHENTICATED,
+                    HttpMethod.DELETE,
                     "/ramen-shops/{shopId:[0-9]+}/photos/{photoId:[0-9]+}"),
             new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/ramen-shops/ai-search"),
             new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.POST, "/ramen-shops/compare"),
@@ -106,5 +110,4 @@ public class EndpointAccessPolicy implements AccessRuleContributor {
     public List<AccessRule> accessRules() {
         return RULES;
     }
-
 }

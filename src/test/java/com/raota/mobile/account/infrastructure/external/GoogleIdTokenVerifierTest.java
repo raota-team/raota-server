@@ -34,8 +34,12 @@ class GoogleIdTokenVerifierTest {
 
     @Test
     void 유효한_토큰은_제공자_식별자와_이메일을_반환한다() throws Exception {
-        var identity = verifier(keyPair).verify(credential(
-                token(keyPair, "https://accounts.google.com", "mobile-client", Instant.now().plusSeconds(300))));
+        var identity = verifier(keyPair)
+                .verify(credential(token(
+                        keyPair,
+                        "https://accounts.google.com",
+                        "mobile-client",
+                        Instant.now().plusSeconds(300))));
 
         assertThat(identity.provider()).isEqualTo(OAuthProvider.GOOGLE);
         assertThat(identity.subject()).isEqualTo("google-subject");
@@ -47,9 +51,9 @@ class GoogleIdTokenVerifierTest {
         Instant expiresAt = Instant.now().plusSeconds(300);
 
         var unverified = verifier(keyPair)
-            .verify(credential(token(keyPair, "https://accounts.google.com", "mobile-client", expiresAt, false)));
+                .verify(credential(token(keyPair, "https://accounts.google.com", "mobile-client", expiresAt, false)));
         var absent = verifier(keyPair)
-            .verify(credential(token(keyPair, "https://accounts.google.com", "mobile-client", expiresAt, null)));
+                .verify(credential(token(keyPair, "https://accounts.google.com", "mobile-client", expiresAt, null)));
 
         assertThat(unverified.subject()).isEqualTo("google-subject");
         assertThat(unverified.email()).isNull();
@@ -59,7 +63,11 @@ class GoogleIdTokenVerifierTest {
     @Test
     void Google의_도메인_발급자_표기도_허용한다() throws Exception {
         var identity = verifier(keyPair)
-            .verify(credential(token(keyPair, "accounts.google.com", "mobile-client", Instant.now().plusSeconds(300))));
+                .verify(credential(token(
+                        keyPair,
+                        "accounts.google.com",
+                        "mobile-client",
+                        Instant.now().plusSeconds(300))));
 
         assertThat(identity.subject()).isEqualTo("google-subject");
     }
@@ -67,22 +75,33 @@ class GoogleIdTokenVerifierTest {
     @Test
     void 다른_앱을_대상으로_하는_토큰은_거부한다() throws Exception {
         assertInvalid(
-                credential(token(keyPair, "accounts.google.com", "foreign-client", Instant.now().plusSeconds(300))),
+                credential(token(
+                        keyPair,
+                        "accounts.google.com",
+                        "foreign-client",
+                        Instant.now().plusSeconds(300))),
                 keyPair);
     }
 
     @Test
     void 다른_발급자의_토큰은_거부한다() throws Exception {
         assertInvalid(
-                credential(
-                        token(keyPair, "https://untrusted.example", "mobile-client", Instant.now().plusSeconds(300))),
+                credential(token(
+                        keyPair,
+                        "https://untrusted.example",
+                        "mobile-client",
+                        Instant.now().plusSeconds(300))),
                 keyPair);
     }
 
     @Test
     void 만료된_토큰은_거부한다() throws Exception {
-        assertInvalid(credential(
-                token(keyPair, "https://accounts.google.com", "mobile-client", Instant.now().minusSeconds(3600))),
+        assertInvalid(
+                credential(token(
+                        keyPair,
+                        "https://accounts.google.com",
+                        "mobile-client",
+                        Instant.now().minusSeconds(3600))),
                 keyPair);
     }
 
@@ -91,32 +110,48 @@ class GoogleIdTokenVerifierTest {
         KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
         generator.initialize(2048);
         KeyPair foreignKey = generator.generateKeyPair();
-        assertInvalid(credential(
-                token(foreignKey, "https://accounts.google.com", "mobile-client", Instant.now().plusSeconds(300))),
+        assertInvalid(
+                credential(token(
+                        foreignKey,
+                        "https://accounts.google.com",
+                        "mobile-client",
+                        Instant.now().plusSeconds(300))),
                 keyPair);
     }
 
     @Test
     void ID_토큰을_누락하면_입력_오류다() {
         assertThatThrownBy(() -> verifier(keyPair).verify(new SocialCredential(null, null, null, null)))
-            .isInstanceOfSatisfying(MobileException.class,
-                    exception -> assertThat(exception.code()).isEqualTo(MobileErrorCode.VALIDATION_ERROR));
+                .isInstanceOfSatisfying(
+                        MobileException.class,
+                        exception -> assertThat(exception.code()).isEqualTo(MobileErrorCode.VALIDATION_ERROR));
     }
 
     private static void assertInvalid(SocialCredential credential, KeyPair trustedKey) {
-        assertThatThrownBy(() -> verifier(trustedKey).verify(credential)).isInstanceOfSatisfying(MobileException.class,
-                exception -> assertThat(exception.code()).isEqualTo(MobileErrorCode.OAUTH_CREDENTIAL_INVALID));
+        assertThatThrownBy(() -> verifier(trustedKey).verify(credential))
+                .isInstanceOfSatisfying(
+                        MobileException.class,
+                        exception -> assertThat(exception.code()).isEqualTo(MobileErrorCode.OAUTH_CREDENTIAL_INVALID));
     }
 
     private static GoogleIdTokenVerifier verifier(KeyPair key) {
         var properties = new MobileOAuthProperties(
                 new MobileOAuthProperties.Google(List.of("mobile-client"), "https://unused.example/certs"),
                 new MobileOAuthProperties.Kakao("123456", "https://kapi.kakao.com"),
-                new MobileOAuthProperties.Apple("net.raota.mobile.test", "TESTTEAM01", "TESTKEY001", "test-key",
-                        "cm2PatRyO0rn/bD+j2wAupkmWGwmDGXdnq3PxZx59Fk=", "https://unused.example/certs",
-                        "https://appleid.apple.com", "https://unused.example/token", "https://unused.example/revoke"));
-        return new GoogleIdTokenVerifier(properties,
-                NimbusJwtDecoder.withPublicKey((java.security.interfaces.RSAPublicKey) key.getPublic()).build());
+                new MobileOAuthProperties.Apple(
+                        "net.raota.mobile.test",
+                        "TESTTEAM01",
+                        "TESTKEY001",
+                        "test-key",
+                        "cm2PatRyO0rn/bD+j2wAupkmWGwmDGXdnq3PxZx59Fk=",
+                        "https://unused.example/certs",
+                        "https://appleid.apple.com",
+                        "https://unused.example/token",
+                        "https://unused.example/revoke"));
+        return new GoogleIdTokenVerifier(
+                properties,
+                NimbusJwtDecoder.withPublicKey((java.security.interfaces.RSAPublicKey) key.getPublic())
+                        .build());
     }
 
     private static SocialCredential credential(String idToken) {
@@ -129,12 +164,13 @@ class GoogleIdTokenVerifierTest {
 
     private static String token(KeyPair key, String issuer, String audience, Instant expiresAt, Boolean emailVerified)
             throws Exception {
-        JWTClaimsSet.Builder builder = new JWTClaimsSet.Builder().issuer(issuer)
-            .audience(audience)
-            .subject("google-subject")
-            .claim("email", "member@example.com")
-            .issueTime(Date.from(Instant.now().minusSeconds(30)))
-            .expirationTime(Date.from(expiresAt));
+        JWTClaimsSet.Builder builder = new JWTClaimsSet.Builder()
+                .issuer(issuer)
+                .audience(audience)
+                .subject("google-subject")
+                .claim("email", "member@example.com")
+                .issueTime(Date.from(Instant.now().minusSeconds(30)))
+                .expirationTime(Date.from(expiresAt));
         if (emailVerified != null) {
             builder.claim("email_verified", emailVerified);
         }
@@ -143,5 +179,4 @@ class GoogleIdTokenVerifierTest {
         jwt.sign(new RSASSASigner(key.getPrivate()));
         return jwt.serialize();
     }
-
 }

@@ -67,20 +67,22 @@ class MobileShopBookmarkIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mvc = MockMvcBuilders.webAppContextSetup(context).addFilters(requestIdFilter).apply(springSecurity()).build();
+        mvc = MockMvcBuilders.webAppContextSetup(context)
+                .addFilters(requestIdFilter)
+                .apply(springSecurity())
+                .build();
         for (long id : List.of(FIRST, SECOND)) {
-            jdbc.update(
-                    """
+            jdbc.update("""
                             INSERT INTO tb_v2_shop (id, name, address, ramen_types, tags, business_status,
                                 ai_summary_keywords, view_count, log_count, bookmark_count, is_published, created_at, updated_at)
                             VALUES (?, '북마크 매장', '서울', '[]', '[]', 'OPERATIONAL', '[]', 0, 0, 0,
                                 TRUE, '2026-09-01 00:00:00.000000', '2026-09-01 00:00:00.000000')
-                            """,
-                    id);
+                            """, id);
         }
         activeId = active();
         otherId = active();
-        onboardingId = users.saveAndFlush(MobileUser.onboarding("new@example.com")).getId();
+        onboardingId =
+                users.saveAndFlush(MobileUser.onboarding("new@example.com")).getId();
     }
 
     @AfterEach
@@ -95,18 +97,18 @@ class MobileShopBookmarkIntegrationTest extends BaseIntegrationTest {
     @Test
     void 같은_북마크를_두_번_저장하고_두_번_삭제해도_카운트는_각각_한_번만_변한다() throws Exception {
         for (int attempt = 0; attempt < 2; attempt++) {
-            mvc.perform(put("/api/v2/shops/{shopId}/bookmark", FIRST).header(HttpHeaders.AUTHORIZATION,
-                    authorization(activeId)))
-                .andExpect(status().isNoContent());
+            mvc.perform(put("/api/v2/shops/{shopId}/bookmark", FIRST)
+                            .header(HttpHeaders.AUTHORIZATION, authorization(activeId)))
+                    .andExpect(status().isNoContent());
         }
         assertThat(bookmarkCount(FIRST)).isEqualTo(1);
-        assertThat(
-                jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_shop_bookmark WHERE shop_id = ?", Integer.class, FIRST))
-            .isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM tb_v2_shop_bookmark WHERE shop_id = ?", Integer.class, FIRST))
+                .isEqualTo(1);
         for (int attempt = 0; attempt < 2; attempt++) {
-            mvc.perform(delete("/api/v2/shops/{shopId}/bookmark", FIRST).header(HttpHeaders.AUTHORIZATION,
-                    authorization(activeId)))
-                .andExpect(status().isNoContent());
+            mvc.perform(delete("/api/v2/shops/{shopId}/bookmark", FIRST)
+                            .header(HttpHeaders.AUTHORIZATION, authorization(activeId)))
+                    .andExpect(status().isNoContent());
         }
         assertThat(bookmarkCount(FIRST)).isZero();
     }
@@ -132,32 +134,32 @@ class MobileShopBookmarkIntegrationTest extends BaseIntegrationTest {
             second.get(10, TimeUnit.SECONDS);
         }
         assertThat(bookmarkCount(FIRST)).isEqualTo(1);
-        assertThat(
-                jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_shop_bookmark WHERE shop_id = ?", Integer.class, FIRST))
-            .isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM tb_v2_shop_bookmark WHERE shop_id = ?", Integer.class, FIRST))
+                .isEqualTo(1);
     }
 
     @Test
     void 비회원과_온보딩_회원은_북마크를_쓸_수_없고_없는_매장은_404이다() throws Exception {
         mvc.perform(put("/api/v2/shops/{shopId}/bookmark", FIRST))
-            .andExpect(status().isUnauthorized())
-            .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
-        mvc.perform(put("/api/v2/shops/{shopId}/bookmark", FIRST).header(HttpHeaders.AUTHORIZATION,
-                authorization(onboardingId)))
-            .andExpect(status().isForbidden())
-            .andExpect(jsonPath("$.error.code").value("ONBOARDING_REQUIRED"));
-        mvc.perform(put("/api/v2/shops/{shopId}/bookmark", 900003999L).header(HttpHeaders.AUTHORIZATION,
-                authorization(activeId)))
-            .andExpect(status().isNotFound())
-            .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
+        mvc.perform(put("/api/v2/shops/{shopId}/bookmark", FIRST)
+                        .header(HttpHeaders.AUTHORIZATION, authorization(onboardingId)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("ONBOARDING_REQUIRED"));
+        mvc.perform(put("/api/v2/shops/{shopId}/bookmark", 900003999L)
+                        .header(HttpHeaders.AUTHORIZATION, authorization(activeId)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
         jdbc.update("UPDATE tb_v2_shop SET is_published = FALSE WHERE id = ?", SECOND);
-        mvc.perform(put("/api/v2/shops/{shopId}/bookmark", SECOND).header(HttpHeaders.AUTHORIZATION,
-                authorization(activeId)))
-            .andExpect(status().isNotFound())
-            .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
-        mvc.perform(delete("/api/v2/shops/{shopId}/bookmark", 900003999L).header(HttpHeaders.AUTHORIZATION,
-                authorization(activeId)))
-            .andExpect(status().isNoContent());
+        mvc.perform(put("/api/v2/shops/{shopId}/bookmark", SECOND)
+                        .header(HttpHeaders.AUTHORIZATION, authorization(activeId)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+        mvc.perform(delete("/api/v2/shops/{shopId}/bookmark", 900003999L)
+                        .header(HttpHeaders.AUTHORIZATION, authorization(activeId)))
+                .andExpect(status().isNoContent());
     }
 
     @Test
@@ -177,7 +179,8 @@ class MobileShopBookmarkIntegrationTest extends BaseIntegrationTest {
         add(SECOND, activeId);
         JsonNode firstPage = bookmarked(activeId, null, 1);
         assertThat(firstPage.get("items").get(0).get("id").asString()).isEqualTo(Long.toString(SECOND));
-        assertThat(firstPage.get("items").get(0).get("isBookmarked").asBoolean()).isTrue();
+        assertThat(firstPage.get("items").get(0).get("isBookmarked").asBoolean())
+                .isTrue();
         assertThat(firstPage.get("hasNext").asBoolean()).isTrue();
         JsonNode next = bookmarked(activeId, firstPage.get("nextCursor").asString(), 1);
         assertThat(next.get("items").get(0).get("id").asString()).isEqualTo(Long.toString(FIRST));
@@ -185,14 +188,14 @@ class MobileShopBookmarkIntegrationTest extends BaseIntegrationTest {
         assertThat(bookmarked(otherId, null, 20).get("items").size()).isZero();
         assertThat(bookmarked(onboardingId, null, 20).get("items").size()).isZero();
         mvc.perform(get("/api/v2/members/me/bookmarked-shops"))
-            .andExpect(status().isUnauthorized())
-            .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("UNAUTHORIZED"));
     }
 
     private void add(long shopId, Long userId) throws Exception {
-        mvc.perform(
-                put("/api/v2/shops/{shopId}/bookmark", shopId).header(HttpHeaders.AUTHORIZATION, authorization(userId)))
-            .andExpect(status().isNoContent());
+        mvc.perform(put("/api/v2/shops/{shopId}/bookmark", shopId)
+                        .header(HttpHeaders.AUTHORIZATION, authorization(userId)))
+                .andExpect(status().isNoContent());
     }
 
     private boolean markedInList(Long userId, long shopId) throws Exception {
@@ -200,10 +203,13 @@ class MobileShopBookmarkIntegrationTest extends BaseIntegrationTest {
         if (userId != null) {
             request.header(HttpHeaders.AUTHORIZATION, authorization(userId));
         }
-        JsonNode items = mapper
-            .readTree(mvc.perform(request).andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray())
-            .get("data")
-            .get("items");
+        JsonNode items = mapper.readTree(mvc.perform(request)
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsByteArray())
+                .get("data")
+                .get("items");
         for (JsonNode item : items) {
             if (item.get("id").asString().equals(Long.toString(shopId))) {
                 return item.get("isBookmarked").asBoolean();
@@ -217,21 +223,27 @@ class MobileShopBookmarkIntegrationTest extends BaseIntegrationTest {
         if (userId != null) {
             request.header(HttpHeaders.AUTHORIZATION, authorization(userId));
         }
-        return mapper
-            .readTree(mvc.perform(request).andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray())
-            .get("data");
+        return mapper.readTree(mvc.perform(request)
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsByteArray())
+                .get("data");
     }
 
     private JsonNode bookmarked(Long userId, String cursor, int size) throws Exception {
         var request = get("/api/v2/members/me/bookmarked-shops")
-            .header(HttpHeaders.AUTHORIZATION, authorization(userId))
-            .param("size", Integer.toString(size));
+                .header(HttpHeaders.AUTHORIZATION, authorization(userId))
+                .param("size", Integer.toString(size));
         if (cursor != null) {
             request.param("cursor", cursor);
         }
-        return mapper
-            .readTree(mvc.perform(request).andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray())
-            .get("data");
+        return mapper.readTree(mvc.perform(request)
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsByteArray())
+                .get("data");
     }
 
     private int bookmarkCount(long shopId) {
@@ -247,5 +259,4 @@ class MobileShopBookmarkIntegrationTest extends BaseIntegrationTest {
     private String authorization(Long userId) {
         return "Bearer " + accessTokens.issue(userId);
     }
-
 }

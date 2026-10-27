@@ -5,7 +5,5 @@ public final class MobileAuthorities {
 
     public static final String ONBOARDING = "ONBOARDING";
 
-    private MobileAuthorities() {
-    }
-
+    private MobileAuthorities() {}
 }

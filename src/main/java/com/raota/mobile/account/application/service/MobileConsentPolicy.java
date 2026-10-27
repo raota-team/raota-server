@@ -36,5 +36,4 @@ class MobileConsentPolicy {
     private static boolean covers(String granted, String required) {
         return granted != null && granted.compareTo(required) >= 0;
     }
-
 }

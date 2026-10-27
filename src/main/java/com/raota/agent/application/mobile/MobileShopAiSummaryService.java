@@ -56,8 +56,8 @@ public class MobileShopAiSummaryService {
 
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
-    public MobileShopAiSummaryService(ReviewSummaryService summaries, MobileShopAgentFacade shops,
-            RedisLockClient locks, Clock clock) {
+    public MobileShopAiSummaryService(
+            ReviewSummaryService summaries, MobileShopAgentFacade shops, RedisLockClient locks, Clock clock) {
         this.summaries = summaries;
         this.shops = shops;
         this.locks = locks;
@@ -68,8 +68,7 @@ public class MobileShopAiSummaryService {
         ReviewSummaryResponse response;
         try {
             response = summaries.summarizeReviews(new ReviewSummaryQuery(shopId, FOCUS));
-        }
-        catch (EntityNotFoundException exception) {
+        } catch (EntityNotFoundException exception) {
             return new Result(shopId, Outcome.NO_SOURCE_SHOP);
         }
         if (response.reviewCount() == null || response.reviewCount() == 0) {
@@ -83,8 +82,8 @@ public class MobileShopAiSummaryService {
         if (lines.isEmpty()) {
             return new Result(shopId, Outcome.NO_REVIEWS);
         }
-        boolean saved = shops.saveAiSummary(shopId, String.join("\n", lines), keywords,
-                Instant.now(clock).truncatedTo(ChronoUnit.MICROS));
+        boolean saved = shops.saveAiSummary(
+                shopId, String.join("\n", lines), keywords, Instant.now(clock).truncatedTo(ChronoUnit.MICROS));
         if (!saved) {
             return new Result(shopId, Outcome.NO_V2_SHOP);
         }
@@ -97,12 +96,11 @@ public class MobileShopAiSummaryService {
      */
     public BulkStart summarizeMissing(long afterId) {
         LockToken lock = locks.tryAcquire(BULK_LOCK_KEY, BULK_LOCK_TTL)
-            .orElseThrow(() -> new IllegalStateException("매장 AI 요약 전체 생성이 이미 실행 중입니다."));
+                .orElseThrow(() -> new IllegalStateException("매장 AI 요약 전체 생성이 이미 실행 중입니다."));
         List<Long> missing;
         try {
             missing = shops.publishedShopIdsWithoutAiSummary(afterId);
-        }
-        catch (RuntimeException exception) {
+        } catch (RuntimeException exception) {
             locks.release(lock);
             throw exception;
         }
@@ -124,20 +122,21 @@ public class MobileShopAiSummaryService {
                 try {
                     if (summarize(shopId).outcome() == Outcome.SAVED) {
                         saved++;
-                    }
-                    else {
+                    } else {
                         skipped++;
                     }
-                }
-                catch (RuntimeException exception) {
+                } catch (RuntimeException exception) {
                     failed++;
                     log.warn("매장 AI 요약 생성 실패: shopId={}", shopId, exception);
                 }
             }
-            log.info("매장 AI 요약 전체 생성 완료: total={}, saved={}, skipped={}, failed={}", shopIds.size(), saved, skipped,
+            log.info(
+                    "매장 AI 요약 전체 생성 완료: total={}, saved={}, skipped={}, failed={}",
+                    shopIds.size(),
+                    saved,
+                    skipped,
                     failed);
-        }
-        finally {
+        } finally {
             locks.release(lock);
         }
     }
@@ -156,18 +155,16 @@ public class MobileShopAiSummaryService {
     }
 
     public enum Outcome {
-
-        SAVED, NO_REVIEWS, NO_SOURCE_SHOP, NO_V2_SHOP
-
+        SAVED,
+        NO_REVIEWS,
+        NO_SOURCE_SHOP,
+        NO_V2_SHOP
     }
 
-    public record Result(Long shopId, Outcome outcome) {
-    }
+    public record Result(Long shopId, Outcome outcome) {}
 
     /**
      * 이번에 처리할 매장 수, 그 뒤에 남은 매장 수, 다음 실행에 넘길 {@code afterId}(처리할 매장이 없으면 {@code null})다.
      */
-    public record BulkStart(int queued, int remaining, Long nextAfterId) {
-    }
-
+    public record BulkStart(int queued, int remaining, Long nextAfterId) {}
 }

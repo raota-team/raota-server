@@ -10,5 +10,4 @@ public interface MobileRecommendationReasonPort {
      * 문장을 돌려준다. 모델이 빠뜨린 매장은 결과에 없다.
      */
     Map<String, String> reasons(String conditions, String shopContext);
-
 }

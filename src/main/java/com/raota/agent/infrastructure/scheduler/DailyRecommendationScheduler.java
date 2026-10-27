@@ -19,5 +19,4 @@ public class DailyRecommendationScheduler {
         dailyCurationService.generateDailyCuration();
         log.info("Finish daily ramen recommendation generation");
     }
-
 }

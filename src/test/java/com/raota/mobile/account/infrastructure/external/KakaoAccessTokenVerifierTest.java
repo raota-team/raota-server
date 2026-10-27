@@ -29,24 +29,33 @@ class KakaoAccessTokenVerifierTest {
     void setUp() {
         RestClient.Builder builder = RestClient.builder();
         server = MockRestServiceServer.bindTo(builder).build();
-        verifier = new KakaoAccessTokenVerifier(builder, new MobileOAuthProperties(
-                new MobileOAuthProperties.Google(List.of("client"), "https://unused.example"),
-                new MobileOAuthProperties.Kakao("123456", "https://kakao.example"),
-                new MobileOAuthProperties.Apple("net.raota.mobile.test", "TESTTEAM01", "TESTKEY001", "test-key",
-                        "cm2PatRyO0rn/bD+j2wAupkmWGwmDGXdnq3PxZx59Fk=", "https://unused.example/certs",
-                        "https://appleid.apple.com", "https://unused.example/token", "https://unused.example/revoke")));
+        verifier = new KakaoAccessTokenVerifier(
+                builder,
+                new MobileOAuthProperties(
+                        new MobileOAuthProperties.Google(List.of("client"), "https://unused.example"),
+                        new MobileOAuthProperties.Kakao("123456", "https://kakao.example"),
+                        new MobileOAuthProperties.Apple(
+                                "net.raota.mobile.test",
+                                "TESTTEAM01",
+                                "TESTKEY001",
+                                "test-key",
+                                "cm2PatRyO0rn/bD+j2wAupkmWGwmDGXdnq3PxZx59Fk=",
+                                "https://unused.example/certs",
+                                "https://appleid.apple.com",
+                                "https://unused.example/token",
+                                "https://unused.example/revoke")));
     }
 
     @Test
     void 앱이_맞는_토큰의_회원_ID와_이메일을_반환한다() {
         server.expect(once(), requestTo("https://kakao.example/v1/user/access_token_info"))
-            .andExpect(header("Authorization", "Bearer kakao-token"))
-            .andRespond(withSuccess("{\"app_id\":123456}", MediaType.APPLICATION_JSON));
+                .andExpect(header("Authorization", "Bearer kakao-token"))
+                .andRespond(withSuccess("{\"app_id\":123456}", MediaType.APPLICATION_JSON));
         server.expect(once(), requestTo("https://kakao.example/v2/user/me"))
-            .andExpect(header("Authorization", "Bearer kakao-token"))
-            .andRespond(withSuccess(
-                    "{\"id\":987654,\"kakao_account\":{\"email\":\"member@example.com\",\"is_email_valid\":true,\"is_email_verified\":true}}",
-                    MediaType.APPLICATION_JSON));
+                .andExpect(header("Authorization", "Bearer kakao-token"))
+                .andRespond(withSuccess(
+                        "{\"id\":987654,\"kakao_account\":{\"email\":\"member@example.com\",\"is_email_valid\":true,\"is_email_verified\":true}}",
+                        MediaType.APPLICATION_JSON));
 
         var identity = verifier.verify(credential("kakao-token"));
 
@@ -59,11 +68,11 @@ class KakaoAccessTokenVerifierTest {
     @Test
     void 인증되지_않은_카카오_이메일은_쓰지_않는다() {
         server.expect(once(), requestTo("https://kakao.example/v1/user/access_token_info"))
-            .andRespond(withSuccess("{\"app_id\":123456}", MediaType.APPLICATION_JSON));
+                .andRespond(withSuccess("{\"app_id\":123456}", MediaType.APPLICATION_JSON));
         server.expect(once(), requestTo("https://kakao.example/v2/user/me"))
-            .andRespond(withSuccess(
-                    "{\"id\":987654,\"kakao_account\":{\"email\":\"member@example.com\",\"is_email_valid\":true,\"is_email_verified\":false}}",
-                    MediaType.APPLICATION_JSON));
+                .andRespond(withSuccess(
+                        "{\"id\":987654,\"kakao_account\":{\"email\":\"member@example.com\",\"is_email_valid\":true,\"is_email_verified\":false}}",
+                        MediaType.APPLICATION_JSON));
 
         var identity = verifier.verify(credential("kakao-token"));
 
@@ -75,7 +84,7 @@ class KakaoAccessTokenVerifierTest {
     @Test
     void 유효하지_않은_토큰의_401은_인증_오류다() {
         server.expect(once(), requestTo("https://kakao.example/v1/user/access_token_info"))
-            .andRespond(withUnauthorizedRequest());
+                .andRespond(withUnauthorizedRequest());
 
         assertInvalid("kakao-token");
         server.verify();
@@ -84,7 +93,7 @@ class KakaoAccessTokenVerifierTest {
     @Test
     void 다른_카카오_앱에서_발급한_토큰은_회원_정보를_읽지_않는다() {
         server.expect(once(), requestTo("https://kakao.example/v1/user/access_token_info"))
-            .andRespond(withSuccess("{\"app_id\":999999}", MediaType.APPLICATION_JSON));
+                .andRespond(withSuccess("{\"app_id\":999999}", MediaType.APPLICATION_JSON));
 
         assertInvalid("kakao-token");
         server.verify();
@@ -92,17 +101,20 @@ class KakaoAccessTokenVerifierTest {
 
     @Test
     void 액세스_토큰을_누락하면_입력_오류다() {
-        assertThatThrownBy(() -> verifier.verify(credential(null))).isInstanceOfSatisfying(MobileException.class,
-                exception -> assertThat(exception.code()).isEqualTo(MobileErrorCode.VALIDATION_ERROR));
+        assertThatThrownBy(() -> verifier.verify(credential(null)))
+                .isInstanceOfSatisfying(
+                        MobileException.class,
+                        exception -> assertThat(exception.code()).isEqualTo(MobileErrorCode.VALIDATION_ERROR));
     }
 
     private void assertInvalid(String token) {
-        assertThatThrownBy(() -> verifier.verify(credential(token))).isInstanceOfSatisfying(MobileException.class,
-                exception -> assertThat(exception.code()).isEqualTo(MobileErrorCode.OAUTH_CREDENTIAL_INVALID));
+        assertThatThrownBy(() -> verifier.verify(credential(token)))
+                .isInstanceOfSatisfying(
+                        MobileException.class,
+                        exception -> assertThat(exception.code()).isEqualTo(MobileErrorCode.OAUTH_CREDENTIAL_INVALID));
     }
 
     private static SocialCredential credential(String accessToken) {
         return new SocialCredential(null, accessToken, null, null);
     }
-
 }

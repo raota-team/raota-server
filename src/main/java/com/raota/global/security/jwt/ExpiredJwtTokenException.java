@@ -5,5 +5,4 @@ public class ExpiredJwtTokenException extends JwtTokenException {
     public ExpiredJwtTokenException(Throwable cause) {
         super(cause);
     }
-
 }

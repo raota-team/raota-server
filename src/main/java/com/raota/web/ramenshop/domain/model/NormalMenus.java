@@ -55,5 +55,4 @@ public class NormalMenus {
         }
         return values;
     }
-
 }

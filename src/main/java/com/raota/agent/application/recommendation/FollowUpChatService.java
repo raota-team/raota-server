@@ -1,12 +1,12 @@
 package com.raota.agent.application.recommendation;
 
+import com.raota.agent.application.ramenshop.search.RamenShopReader;
 import com.raota.agent.application.recommendation.dto.AiFollowUpChatResult;
 import com.raota.agent.application.recommendation.query.FollowUpChatQuery;
-import com.raota.agent.application.ramenshop.search.RamenShopReader;
-import com.raota.web.ramenshop.domain.model.RamenShop;
 import com.raota.agent.domain.retrieval.document.RetrievalDocumentFilters;
 import com.raota.agent.domain.retrieval.document.RetrievalMetadataKeys;
 import com.raota.agent.presentation.recommendation.response.AiChatResponse;
+import com.raota.web.ramenshop.domain.model.RamenShop;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -37,8 +37,11 @@ public class FollowUpChatService {
 
     private final Resource followUpChatTemplate;
 
-    public FollowUpChatService(RamenShopReader ramenShopReader, VectorStore vectorStore,
-            ChatClient.Builder chatClientBuilder, @Value("classpath:/prompts/system-persona.st") Resource systemPersona,
+    public FollowUpChatService(
+            RamenShopReader ramenShopReader,
+            VectorStore vectorStore,
+            ChatClient.Builder chatClientBuilder,
+            @Value("classpath:/prompts/system-persona.st") Resource systemPersona,
             @Value("classpath:/prompts/follow-up-chat.st") Resource followUpChatTemplate) {
         this.ramenShopReader = ramenShopReader;
         this.vectorStore = vectorStore;
@@ -103,32 +106,33 @@ public class FollowUpChatService {
             throw new IllegalArgumentException("대화 메시지는 필수입니다.");
         }
 
-        if (request.messages()
-            .stream()
-            .anyMatch(message -> message == null || !ramenShopReader.hasText(message.content()))) {
+        if (request.messages().stream()
+                .anyMatch(message -> message == null || !ramenShopReader.hasText(message.content()))) {
             throw new IllegalArgumentException("대화 메시지 내용은 필수입니다.");
         }
     }
 
-    private List<Document> collectChatDocuments(String contextType, List<RamenShop> shops,
-            List<FollowUpChatQuery.Message> messages) {
+    private List<Document> collectChatDocuments(
+            String contextType, List<RamenShop> shops, List<FollowUpChatQuery.Message> messages) {
         String query = buildChatQuery(contextType, shops, messages);
         FilterExpressionBuilder builder = new FilterExpressionBuilder();
 
         return vectorStore.similaritySearch(SearchRequest.builder()
-            .query(query)
-            .topK(10)
-            .similarityThreshold(0.4)
-            .filterExpression(buildChatFilter(builder, shops))
-            .build());
+                .query(query)
+                .topK(10)
+                .similarityThreshold(0.4)
+                .filterExpression(buildChatFilter(builder, shops))
+                .build());
     }
 
     private Filter.Expression buildChatFilter(FilterExpressionBuilder builder, List<RamenShop> shops) {
-        var shopFilter = builder
-            .group(filterOp(RetrievalDocumentFilters.shopProfileOrExternalReviewsForShop(shops.getFirst().getId())));
+        var shopFilter = builder.group(filterOp(RetrievalDocumentFilters.shopProfileOrExternalReviewsForShop(
+                shops.getFirst().getId())));
         if (shops.size() == 2) {
-            shopFilter = builder.or(shopFilter, builder
-                .group(filterOp(RetrievalDocumentFilters.shopProfileOrExternalReviewsForShop(shops.get(1).getId()))));
+            shopFilter = builder.or(
+                    shopFilter,
+                    builder.group(filterOp(RetrievalDocumentFilters.shopProfileOrExternalReviewsForShop(
+                            shops.get(1).getId()))));
         }
 
         return builder.group(shopFilter).build();
@@ -156,16 +160,20 @@ public class FollowUpChatService {
         return messages.getLast().content().trim();
     }
 
-    private AiFollowUpChatResult generateChatResult(String contextType, List<RamenShop> shops, List<Document> documents,
+    private AiFollowUpChatResult generateChatResult(
+            String contextType,
+            List<RamenShop> shops,
+            List<Document> documents,
             List<FollowUpChatQuery.Message> messages) {
-        return chatClient.prompt()
-            .user(user -> user.text(followUpChatTemplate)
-                .param("contextType", contextType)
-                .param("shopContext", buildShopContext(shops))
-                .param("documentContext", buildDocumentContext(documents))
-                .param("messageContext", buildMessageContext(messages)))
-            .call()
-            .entity(AiFollowUpChatResult.class);
+        return chatClient
+                .prompt()
+                .user(user -> user.text(followUpChatTemplate)
+                        .param("contextType", contextType)
+                        .param("shopContext", buildShopContext(shops))
+                        .param("documentContext", buildDocumentContext(documents))
+                        .param("messageContext", buildMessageContext(messages)))
+                .call()
+                .entity(AiFollowUpChatResult.class);
     }
 
     private AiChatResponse buildChatResponse(AiFollowUpChatResult aiResult) {
@@ -173,12 +181,13 @@ public class FollowUpChatService {
             return fallbackResponse();
         }
 
-        return new AiChatResponse(new AiChatResponse.ChatMessageResponse("ai", aiResult.content().trim()));
+        return new AiChatResponse(
+                new AiChatResponse.ChatMessageResponse("ai", aiResult.content().trim()));
     }
 
     private AiChatResponse fallbackResponse() {
-        return new AiChatResponse(new AiChatResponse.ChatMessageResponse("ai",
-                "확인 가능한 리뷰와 매장 정보가 충분하지 않아 답변하기 어렵습니다. 검색 가능한 리뷰 데이터가 쌓인 뒤 다시 질문해 주세요."));
+        return new AiChatResponse(new AiChatResponse.ChatMessageResponse(
+                "ai", "확인 가능한 리뷰와 매장 정보가 충분하지 않아 답변하기 어렵습니다. 검색 가능한 리뷰 데이터가 쌓인 뒤 다시 질문해 주세요."));
     }
 
     private String buildShopContext(List<RamenShop> shops) {
@@ -192,8 +201,12 @@ public class FollowUpChatService {
                   주소: %s
                   태그: %s
                   설명: %s
-                """.formatted(shop.getId(), shop.getName(), ramenShopReader.addressTextOrDefault(shop),
-                ramenShopReader.tagsTextOrDefault(shop), ramenShopReader.descriptionTextOrDefault(shop));
+                """.formatted(
+                        shop.getId(),
+                        shop.getName(),
+                        ramenShopReader.addressTextOrDefault(shop),
+                        ramenShopReader.tagsTextOrDefault(shop),
+                        ramenShopReader.descriptionTextOrDefault(shop));
     }
 
     private String buildDocumentContext(List<Document> documents) {
@@ -210,17 +223,22 @@ public class FollowUpChatService {
                   문서유형: %s
                   출처: %s
                   내용: %s
-                """.formatted(shopId == null ? "UNKNOWN" : shopId, documentType == null ? "UNKNOWN" : documentType,
-                source == null ? "UNKNOWN" : source, document.getText());
+                """.formatted(
+                        shopId == null ? "UNKNOWN" : shopId,
+                        documentType == null ? "UNKNOWN" : documentType,
+                        source == null ? "UNKNOWN" : source,
+                        document.getText());
     }
 
     private String buildMessageContext(List<FollowUpChatQuery.Message> messages) {
         int skipCount = Math.max(0, messages.size() - RECENT_MESSAGE_LIMIT);
 
         return messages.stream()
-            .skip(skipCount)
-            .map(message -> "%s: %s".formatted(normalizeRole(message.role()), message.content().trim()))
-            .collect(Collectors.joining("\n"));
+                .skip(skipCount)
+                .map(message -> "%s: %s"
+                        .formatted(
+                                normalizeRole(message.role()), message.content().trim()))
+                .collect(Collectors.joining("\n"));
     }
 
     private String normalizeContextType(String contextType) {
@@ -249,5 +267,4 @@ public class FollowUpChatService {
             evidence = evidence == null ? List.of() : List.copyOf(evidence);
         }
     }
-
 }

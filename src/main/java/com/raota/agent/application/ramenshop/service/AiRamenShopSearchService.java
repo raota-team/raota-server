@@ -1,7 +1,5 @@
 package com.raota.agent.application.ramenshop.service;
 
-import com.raota.web.ramenshop.application.service.BookmarkService;
-import com.raota.web.ramenshop.application.port.FileUrlPort;
 import com.raota.agent.application.ramenshop.command.AiRamenShopSearchCommand;
 import com.raota.agent.application.ramenshop.port.RamenShopSearchDocumentPort;
 import com.raota.agent.application.ramenshop.query.ParsedAiRamenShopSearchQuery;
@@ -9,6 +7,8 @@ import com.raota.agent.application.ramenshop.result.AiRamenShopSearchHit;
 import com.raota.agent.application.ramenshop.result.AiRamenShopSearchResult;
 import com.raota.agent.application.ramenshop.search.AiRamenShopSearchQueryParser;
 import com.raota.agent.application.ramenshop.search.AiRamenShopSearchReranker;
+import com.raota.web.ramenshop.application.port.FileUrlPort;
+import com.raota.web.ramenshop.application.service.BookmarkService;
 import com.raota.web.ramenshop.domain.model.RamenShop;
 import com.raota.web.ramenshop.domain.repository.RamenShopRepository;
 import java.util.List;
@@ -29,9 +29,13 @@ public class AiRamenShopSearchService {
 
     private final AiRamenShopSearchReranker reranker;
 
-    public AiRamenShopSearchService(RamenShopSearchDocumentPort searchDocumentPort,
-            RamenShopRepository ramenShopRepository, FileUrlPort fileUrlPort, BookmarkService bookmarkService,
-            AiRamenShopSearchQueryParser queryParser, AiRamenShopSearchReranker reranker) {
+    public AiRamenShopSearchService(
+            RamenShopSearchDocumentPort searchDocumentPort,
+            RamenShopRepository ramenShopRepository,
+            FileUrlPort fileUrlPort,
+            BookmarkService bookmarkService,
+            AiRamenShopSearchQueryParser queryParser,
+            AiRamenShopSearchReranker reranker) {
         this.bookmarkService = bookmarkService;
         this.searchDocumentPort = searchDocumentPort;
         this.ramenShopRepository = ramenShopRepository;
@@ -57,8 +61,8 @@ public class AiRamenShopSearchService {
 
     private AiRamenShopSearchResult buildSearchResponse(List<AiRamenShopSearchHit> searchResult, Long memberId) {
         List<AiRamenShopSearchResult.ShopResult> recommendedShops = searchResult.stream()
-            .map(hit -> toRecommendedShopResponse(hit, memberId))
-            .toList();
+                .map(hit -> toRecommendedShopResponse(hit, memberId))
+                .toList();
 
         return new AiRamenShopSearchResult(recommendedShops);
     }
@@ -66,8 +70,12 @@ public class AiRamenShopSearchService {
     private AiRamenShopSearchResult.ShopResult toRecommendedShopResponse(AiRamenShopSearchHit hit, Long memberId) {
         RamenShop shop = ramenShopRepository.findById(hit.shopId()).orElseThrow();
 
-        return new AiRamenShopSearchResult.ShopResult(shop.getId(), shop.getName(), primaryTag(shop),
-                shop.getAddress() == null ? "" : shop.getAddress().fullAddress(), shop.getDescription(),
+        return new AiRamenShopSearchResult.ShopResult(
+                shop.getId(),
+                shop.getName(),
+                primaryTag(shop),
+                shop.getAddress() == null ? "" : shop.getAddress().fullAddress(),
+                shop.getDescription(),
                 fileUrlPort.getAccessibleUrl(shop.getImageUrl()),
                 Math.min(100, (int) Math.round(hit.finalScore() * 100)),
                 bookmarkService.isBookmarked(memberId, shop.getId()));
@@ -79,5 +87,4 @@ public class AiRamenShopSearchService {
         }
         return shop.getTags().getFirst();
     }
-
 }

@@ -52,7 +52,9 @@ class MobileShopAdminIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
+        mvc = MockMvcBuilders.webAppContextSetup(context)
+                .apply(springSecurity())
+                .build();
         jdbc.update("""
                 INSERT INTO tb_v2_shop (id, name, branch_name, address, region, ramen_types, tags, business_status,
                     ai_summary_keywords, view_count, log_count, bookmark_count, is_published, created_at, updated_at,
@@ -87,49 +89,59 @@ class MobileShopAdminIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void 새_매장은_v1과_겹치지_않는_번호의_숨김_매장으로_만들고_공개하면_앱에_보인다() throws Exception {
-        String body = mvc
-            .perform(json(post(BASE),
-                    form("새 라멘집", List.of("https://images.raota.net/a.jpg", "https://images.raota.net/b.jpg")))
-                .with(ADMIN))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.success").value(true))
-            .andExpect(jsonPath("$.data.published").value(false))
-            .andExpect(jsonPath("$.data.ramenTypes[0]").value("쇼유"))
-            .andExpect(jsonPath("$.data.tags.length()").value(1))
-            .andExpect(jsonPath("$.data.imageUrls[0]").value("https://images.raota.net/a.jpg"))
-            .andExpect(jsonPath("$.data.branchName").isEmpty())
-            .andReturn()
-            .getResponse()
-            .getContentAsString();
+        String body = mvc.perform(json(
+                                post(BASE),
+                                form(
+                                        "새 라멘집",
+                                        List.of("https://images.raota.net/a.jpg", "https://images.raota.net/b.jpg")))
+                        .with(ADMIN))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.published").value(false))
+                .andExpect(jsonPath("$.data.ramenTypes[0]").value("쇼유"))
+                .andExpect(jsonPath("$.data.tags.length()").value(1))
+                .andExpect(jsonPath("$.data.imageUrls[0]").value("https://images.raota.net/a.jpg"))
+                .andExpect(jsonPath("$.data.branchName").isEmpty())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
         long id = Long.parseLong(mapper.readTree(body).path("data").path("id").asString());
         created.add(id);
         assertThat(id).isGreaterThanOrEqualTo(10_000_000L);
 
         mvc.perform(get("/api/v2/shops/" + id)).andExpect(status().isNotFound());
-        mvc.perform(json(patch(BASE + "/" + id + "/visibility"), "{\"published\":true}").with(ADMIN))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.published").value(true));
+        mvc.perform(json(patch(BASE + "/" + id + "/visibility"), "{\"published\":true}")
+                        .with(ADMIN))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.published").value(true));
         mvc.perform(get("/api/v2/shops/" + id))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.name").value("새 라멘집"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.name").value("새 라멘집"));
     }
 
     @Test
     void 수정은_집계를_건드리지_않고_남은_사진의_등록_주체를_유지한다() throws Exception {
-        mvc.perform(json(put(BASE + "/" + EXISTING),
-                form("이름 바꿈", List.of("https://images.raota.net/new.jpg", "https://images.raota.net/user.jpg")))
-            .with(ADMIN))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.name").value("이름 바꿈"))
-            .andExpect(jsonPath("$.data.logCount").value(7))
-            .andExpect(jsonPath("$.data.viewCount").value(30))
-            .andExpect(jsonPath("$.data.published").value(true));
+        mvc.perform(json(
+                                put(BASE + "/" + EXISTING),
+                                form(
+                                        "이름 바꿈",
+                                        List.of(
+                                                "https://images.raota.net/new.jpg",
+                                                "https://images.raota.net/user.jpg")))
+                        .with(ADMIN))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.name").value("이름 바꿈"))
+                .andExpect(jsonPath("$.data.logCount").value(7))
+                .andExpect(jsonPath("$.data.viewCount").value(30))
+                .andExpect(jsonPath("$.data.published").value(true));
 
-        assertThat(jdbc.queryForList("SELECT source FROM tb_v2_shop_image WHERE shop_id = ? ORDER BY sort_order",
-                String.class, EXISTING))
-            .containsExactly("ADMIN", "USER");
+        assertThat(jdbc.queryForList(
+                        "SELECT source FROM tb_v2_shop_image WHERE shop_id = ? ORDER BY sort_order",
+                        String.class,
+                        EXISTING))
+                .containsExactly("ADMIN", "USER");
         assertThat(jdbc.queryForObject("SELECT bookmark_count FROM tb_v2_shop WHERE id = ?", Integer.class, EXISTING))
-            .isEqualTo(4);
+                .isEqualTo(4);
     }
 
     @Test
@@ -141,14 +153,14 @@ class MobileShopAdminIntegrationTest extends BaseIntegrationTest {
                   {"dayOfWeek":1,"closed":true}
                 ]}
                 """).with(ADMIN))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.hoursVerifiedAt").isNotEmpty())
-            .andExpect(jsonPath("$.data.businessHours.length()").value(2))
-            .andExpect(jsonPath("$.data.businessHours[0].dayOfWeek").value(1))
-            .andExpect(jsonPath("$.data.businessHours[0].closed").value(true))
-            .andExpect(jsonPath("$.data.businessHours[0].opensAt").isEmpty())
-            .andExpect(jsonPath("$.data.businessHours[1].opensAt").value("11:30"))
-            .andExpect(jsonPath("$.data.businessHours[1].closesAt").value("01:00"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.hoursVerifiedAt").isNotEmpty())
+                .andExpect(jsonPath("$.data.businessHours.length()").value(2))
+                .andExpect(jsonPath("$.data.businessHours[0].dayOfWeek").value(1))
+                .andExpect(jsonPath("$.data.businessHours[0].closed").value(true))
+                .andExpect(jsonPath("$.data.businessHours[0].opensAt").isEmpty())
+                .andExpect(jsonPath("$.data.businessHours[1].opensAt").value("11:30"))
+                .andExpect(jsonPath("$.data.businessHours[1].closesAt").value("01:00"));
     }
 
     @Test
@@ -157,8 +169,8 @@ class MobileShopAdminIntegrationTest extends BaseIntegrationTest {
         mvc.perform(json(put(hours), """
                 {"hours":[{"dayOfWeek":1,"closed":true,"opensAt":"11:00"}]}
                 """).with(ADMIN))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
         mvc.perform(json(put(hours), """
                 {"hours":[{"dayOfWeek":3,"closed":false,"opensAt":"11:00","closesAt":"20:00"},
                           {"dayOfWeek":3,"closed":true}]}
@@ -170,9 +182,9 @@ class MobileShopAdminIntegrationTest extends BaseIntegrationTest {
                 {"hours":[{"dayOfWeek":2,"closed":false,"opensAt":"11:00"}]}
                 """).with(ADMIN)).andExpect(status().isBadRequest());
 
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_shop_business_hour WHERE shop_id = ?", Integer.class,
-                EXISTING))
-            .isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM tb_v2_shop_business_hour WHERE shop_id = ?", Integer.class, EXISTING))
+                .isEqualTo(1);
     }
 
     @Test
@@ -186,15 +198,15 @@ class MobileShopAdminIntegrationTest extends BaseIntegrationTest {
                 {"perks":[{"type":"NOODLE_REFILL","status":"FREE","condition":"1회 무료"},
                           {"type":"RICE_REFILL","status":"PAID","price":1000}]}
                 """).with(ADMIN))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.servicePerks.length()").value(2))
-            .andExpect(jsonPath("$.data.servicePerks[0].condition").value("1회 무료"))
-            .andExpect(jsonPath("$.data.servicePerks[1].price").value(1000))
-            .andExpect(jsonPath("$.data.servicePerks[1].verifiedAt").isNotEmpty());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.servicePerks.length()").value(2))
+                .andExpect(jsonPath("$.data.servicePerks[0].condition").value("1회 무료"))
+                .andExpect(jsonPath("$.data.servicePerks[1].price").value(1000))
+                .andExpect(jsonPath("$.data.servicePerks[1].verifiedAt").isNotEmpty());
 
         mvc.perform(json(put(perks), "{\"perks\":[]}").with(ADMIN))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.servicePerks.length()").value(0));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.servicePerks.length()").value(0));
     }
 
     @Test
@@ -202,15 +214,18 @@ class MobileShopAdminIntegrationTest extends BaseIntegrationTest {
         jdbc.update("UPDATE tb_v2_shop SET is_published = FALSE WHERE id = ?", EXISTING);
 
         mvc.perform(get(BASE).param("keyword", "관리자테스트").with(ADMIN))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.items.length()").value(1))
-            .andExpect(jsonPath("$.data.items[0].id").value(String.valueOf(EXISTING)))
-            .andExpect(jsonPath("$.data.items[0].published").value(false))
-            .andExpect(jsonPath("$.data.items[0].thumbnailUrl").value("https://images.raota.net/user.jpg"))
-            .andExpect(jsonPath("$.data.page.totalElements").value(1))
-            .andExpect(jsonPath("$.data.page.hasNext").value(false));
-        mvc.perform(get(BASE).param("keyword", "관리자테스트").param("published", "true").with(ADMIN))
-            .andExpect(jsonPath("$.data.items.length()").value(0));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items.length()").value(1))
+                .andExpect(jsonPath("$.data.items[0].id").value(String.valueOf(EXISTING)))
+                .andExpect(jsonPath("$.data.items[0].published").value(false))
+                .andExpect(jsonPath("$.data.items[0].thumbnailUrl").value("https://images.raota.net/user.jpg"))
+                .andExpect(jsonPath("$.data.page.totalElements").value(1))
+                .andExpect(jsonPath("$.data.page.hasNext").value(false));
+        mvc.perform(get(BASE)
+                        .param("keyword", "관리자테스트")
+                        .param("published", "true")
+                        .with(ADMIN))
+                .andExpect(jsonPath("$.data.items.length()").value(0));
         mvc.perform(get(BASE + "/" + DELETED).with(ADMIN)).andExpect(status().isNotFound());
     }
 
@@ -218,12 +233,13 @@ class MobileShopAdminIntegrationTest extends BaseIntegrationTest {
     void 좌표가_한쪽만_있거나_URL이_아니면_400이다() throws Exception {
         String halfCoordinate = form("이름", List.of()).replace("\"latitude\":null", "\"latitude\":37.5");
         mvc.perform(json(post(BASE), halfCoordinate).with(ADMIN))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
         mvc.perform(json(post(BASE), form("이름", List.of("ftp://bad"))).with(ADMIN))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.error.fields").isNotEmpty());
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_shop WHERE name = '이름'", Integer.class)).isZero();
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.fields").isNotEmpty());
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_shop WHERE name = '이름'", Integer.class))
+                .isZero();
     }
 
     @Test
@@ -253,5 +269,4 @@ class MobileShopAdminIntegrationTest extends BaseIntegrationTest {
                  "imageUrls":[%s]}
                 """.formatted(name, images);
     }
-
 }

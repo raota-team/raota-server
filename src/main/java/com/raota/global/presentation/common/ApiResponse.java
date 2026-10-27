@@ -21,8 +21,7 @@ public class ApiResponse<T> {
         this.data = data;
     }
 
-    private ApiResponse() {
-    }
+    private ApiResponse() {}
 
     public boolean isSuccess() {
         return status == ApiStatus.SUCCESS;
@@ -39,5 +38,4 @@ public class ApiResponse<T> {
     public static <T> ApiResponse<T> fail(String message) {
         return new ApiResponse<>(ApiStatus.FAIL, message, null);
     }
-
 }
