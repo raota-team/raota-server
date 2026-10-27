@@ -34,21 +34,21 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class MobileShopQueryService {
 
-    private final MobileShopSearchPort search;
+    private final MobileShopSearchPort searchPort;
 
-    private final MobileShopRepository shops;
+    private final MobileShopRepository shopRepository;
 
-    private final MobileShopImageRepository images;
+    private final MobileShopImageRepository imageRepository;
 
-    private final MobileShopBusinessHourRepository hours;
+    private final MobileShopBusinessHourRepository businessHourRepository;
 
-    private final MobileShopServicePerkRepository perks;
+    private final MobileShopServicePerkRepository servicePerkRepository;
 
-    private final MobileShopBookmarkPort bookmarks;
+    private final MobileShopBookmarkPort bookmarkPort;
 
     private final MobileShopOpenStatus openStatus;
 
-    private final MobileShopSummaryAssembler assembler;
+    private final MobileShopSummaryAssembler summaryAssembler;
 
     /** 매장 목록 탭이다. 조건에 맞는 공개 매장을 정렬 순서대로 커서 페이지로 준다. */
     @Transactional(readOnly = true)
@@ -82,10 +82,10 @@ public class MobileShopQueryService {
      * 정렬된 매장 순위를 읽고, 그 매장들과 영업시간도 함께 읽어 둔다. 영업 중 필터에 쓴 매장·영업시간을 요약에도 그대로 쓰려는 것이다.
      */
     private RankedShops searchRanked(MobileShopSearchCondition condition, Cursor cursor, Integer limit) {
-        List<RankedShop> rows = search.search(condition, cursor, limit);
+        List<RankedShop> rows = searchPort.search(condition, cursor, limit);
         List<Long> ids = rows.stream().map(RankedShop::id).toList();
-        Map<Long, MobileShop> shopsById = assembler.findShopsById(ids);
-        Map<Long, List<Hours>> hoursByShopId = assembler.findHoursByShopId(ids);
+        Map<Long, MobileShop> shopsById = summaryAssembler.findShopsById(ids);
+        Map<Long, List<Hours>> hoursByShopId = summaryAssembler.findHoursByShopId(ids);
         if (condition.openNow()) {
             rows = rows.stream()
                     .filter(row -> Boolean.TRUE.equals(openStatus.isOpen(
@@ -105,10 +105,10 @@ public class MobileShopQueryService {
                 distances.put(row.id(), row.distance());
             }
         }
-        return assembler.summarize(
+        return summaryAssembler.summarize(
                 ids.stream().map(ranked.shopsById()::get).toList(),
                 ranked.hoursByShopId(),
-                bookmarks.bookmarkedShopIds(userId, ids),
+                bookmarkPort.bookmarkedShopIds(userId, ids),
                 distances);
     }
 
@@ -119,37 +119,43 @@ public class MobileShopQueryService {
     /** 매장 상세를 보여 주고 조회수를 원자적으로 하나 올린다. */
     @Transactional
     public MobileShopDetailResult viewDetail(Long userId, Long shopId) {
-        MobileShop shop = shops.findByIdAndPublishedTrueAndDeletedAtIsNull(shopId)
+        MobileShop shop = shopRepository
+                .findByIdAndPublishedTrueAndDeletedAtIsNull(shopId)
                 .orElseThrow(() -> new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "매장을 찾을 수 없습니다."));
-        List<MobileShopImage> shopImages = images.findByShopIdInOrderBySortOrderAscIdAsc(List.of(shopId));
-        List<MobileShopBusinessHour> shopHours = hours.findByShopIdInOrderByDayOfWeekAsc(List.of(shopId));
+        List<MobileShopImage> shopImages = imageRepository.findByShopIdInOrderBySortOrderAscIdAsc(List.of(shopId));
+        List<MobileShopBusinessHour> shopHours =
+                businessHourRepository.findByShopIdInOrderByDayOfWeekAsc(List.of(shopId));
         String imageUrl = null;
         if (!shopImages.isEmpty()) {
             imageUrl = shopImages.getFirst().getUrl();
         }
-        MobileShopSummaryResult summary = assembler.toSummary(
+        MobileShopSummaryResult summary = summaryAssembler.toSummary(
                 shop,
                 imageUrl,
                 shopHours.stream()
                         .map(MobileShopSummaryAssembler::toOpenStatusHours)
                         .toList(),
                 null,
-                bookmarks.bookmarkedShopIds(userId, List.of(shopId)).contains(shopId));
-        MobileShopDetailResult detail =
-                MobileShopDetailResult.of(summary, shop, shopImages, shopHours, perks.findByShopIdOrderByIdAsc(shopId));
-        shops.incrementViewCount(shopId);
+                bookmarkPort.bookmarkedShopIds(userId, List.of(shopId)).contains(shopId));
+        MobileShopDetailResult detail = MobileShopDetailResult.of(
+                summary, shop, shopImages, shopHours, servicePerkRepository.findByShopIdOrderByIdAsc(shopId));
+        shopRepository.incrementViewCount(shopId);
         return detail;
     }
 
     /** 내 북마크 목록이다. 북마크한 매장은 모두 저장된 상태라 북마크 여부를 다시 읽지 않는다. */
     @Transactional(readOnly = true)
     public CursorPage<MobileShopSummaryResult> listBookmarked(Long userId, String rawCursor, int size) {
-        List<SavedShop> saved = bookmarks.saved(userId, Cursor.parse(rawCursor).orElse(null), size + 1);
+        List<SavedShop> saved =
+                bookmarkPort.saved(userId, Cursor.parse(rawCursor).orElse(null), size + 1);
         CursorPage<SavedShop> page = CursorPage.of(saved, size, SavedShop::position);
         List<Long> ids = page.items().stream().map(SavedShop::shopId).toList();
-        Map<Long, MobileShop> shopsById = assembler.findShopsById(ids);
-        List<MobileShopSummaryResult> items = assembler.summarize(
-                ids.stream().map(shopsById::get).toList(), assembler.findHoursByShopId(ids), Set.copyOf(ids), Map.of());
+        Map<Long, MobileShop> shopsById = summaryAssembler.findShopsById(ids);
+        List<MobileShopSummaryResult> items = summaryAssembler.summarize(
+                ids.stream().map(shopsById::get).toList(),
+                summaryAssembler.findHoursByShopId(ids),
+                Set.copyOf(ids),
+                Map.of());
         return new CursorPage<>(items, page.nextCursor(), page.hasNext());
     }
 }

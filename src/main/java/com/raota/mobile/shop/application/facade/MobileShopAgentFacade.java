@@ -25,15 +25,15 @@ import tools.jackson.databind.ObjectMapper;
 @RequiredArgsConstructor
 public class MobileShopAgentFacade {
 
-    private final MobileShopRecommendationQueryService shops;
+    private final MobileShopRecommendationQueryService recommendationQueryService;
 
-    private final MobileShopRepository repository;
+    private final MobileShopRepository shopRepository;
 
-    private final MobileShopServicePerkRepository perks;
+    private final MobileShopServicePerkRepository servicePerkRepository;
 
-    private final MobileShopBookmarkPort bookmarks;
+    private final MobileShopBookmarkPort bookmarkPort;
 
-    private final ObjectMapper mapper;
+    private final ObjectMapper objectMapper;
 
     /**
      * 추천 후보 매장 ID다. 추천해도 되는 매장 중 라멘 종류가 {@code ramenType}인(null이면 전부) 매장이고, 지역이 오면 그 지역
@@ -41,7 +41,7 @@ public class MobileShopAgentFacade {
      */
     public List<Long> recommendationCandidates(
             String ramenType, String region, BigDecimal latitude, BigDecimal longitude, int limit) {
-        return shops.findCandidateIds(ramenType, region, latitude, longitude, limit);
+        return recommendationQueryService.findCandidateIds(ramenType, region, latitude, longitude, limit);
     }
 
     /** 순위대로 받은 매장 ID 중 추천해도 되는 매장을 최대 {@code limit}개 요약한다. 좌표가 오면 거리를 채운다. */
@@ -50,18 +50,18 @@ public class MobileShopAgentFacade {
         if (rankedShopIds.isEmpty()) {
             return List.of();
         }
-        return shops.summarizeRecommendable(viewerId, rankedShopIds, latitude, longitude, limit);
+        return recommendationQueryService.summarizeRecommendable(viewerId, rankedShopIds, latitude, longitude, limit);
     }
 
     /** 라멘 종류(앱 종류 값 중 하나), 없으면 태그 키워드로 추천해도 되는 매장 중 조회수 1위를 고른다. */
     public Optional<MobileShopSummaryResult> mostPopular(Long viewerId, String ramenType, String tagKeyword) {
-        return shops.findMostViewedSummary(viewerId, ramenType, tagKeyword);
+        return recommendationQueryService.findMostViewedSummary(viewerId, ramenType, tagKeyword);
     }
 
     /** 추천 성과 집계용으로 이 회원들이 {@code [from, to)} 사이에 만든 북마크다. 해제한 북마크는 빠진다. */
     @Transactional(readOnly = true)
     public List<MobileShopActivity> bookmarksCreatedBetween(Collection<Long> userIds, Instant from, Instant to) {
-        return bookmarks.createdBetween(userIds, from, to).stream()
+        return bookmarkPort.createdBetween(userIds, from, to).stream()
                 .map(bookmark -> new MobileShopActivity(bookmark.userId(), bookmark.shopId(), bookmark.createdAt()))
                 .toList();
     }
@@ -72,7 +72,7 @@ public class MobileShopAgentFacade {
     @Transactional(readOnly = true)
     public Map<Long, MobileShopReasonFacts> reasonFacts(Collection<Long> shopIds) {
         Map<Long, List<String>> perksByShop = new HashMap<>();
-        for (MobileShopServicePerk perk : perks.findByShopIdInOrderByIdAsc(shopIds)) {
+        for (MobileShopServicePerk perk : servicePerkRepository.findByShopIdInOrderByIdAsc(shopIds)) {
             String label = perkLabel(perk);
             if (label != null) {
                 perksByShop
@@ -81,7 +81,7 @@ public class MobileShopAgentFacade {
             }
         }
         Map<Long, MobileShopReasonFacts> facts = new HashMap<>();
-        for (MobileShop shop : repository.findAllById(shopIds)) {
+        for (MobileShop shop : shopRepository.findAllById(shopIds)) {
             facts.put(
                     shop.getId(),
                     new MobileShopReasonFacts(
@@ -96,13 +96,14 @@ public class MobileShopAgentFacade {
 
     /** AI 요약이 아직 없는 공개 매장 ID를 {@code afterId} 다음부터 ID 순으로 돌려준다. */
     public List<Long> publishedShopIdsWithoutAiSummary(long afterId) {
-        return repository.findPublishedIdsWithoutAiSummaryAfter(afterId);
+        return shopRepository.findPublishedIdsWithoutAiSummaryAfter(afterId);
     }
 
     /** 삭제되지 않은 매장의 AI 요약을 바꾼다. 그런 매장이 없으면 {@code false}다. */
     @Transactional
     public boolean saveAiSummary(Long shopId, String summary, List<String> keywords, Instant generatedAt) {
-        return repository.updateAiSummary(shopId, summary, mapper.writeValueAsString(keywords), generatedAt) == 1;
+        return shopRepository.updateAiSummary(shopId, summary, objectMapper.writeValueAsString(keywords), generatedAt)
+                == 1;
     }
 
     private static String text(String value) {

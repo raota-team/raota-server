@@ -43,24 +43,24 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class MobileShopAdminService {
 
-    private final MobileShopRepository shops;
+    private final MobileShopRepository shopRepository;
 
-    private final MobileShopImageRepository images;
+    private final MobileShopImageRepository imageRepository;
 
-    private final MobileShopBusinessHourRepository hours;
+    private final MobileShopBusinessHourRepository businessHourRepository;
 
-    private final MobileShopServicePerkRepository perks;
+    private final MobileShopServicePerkRepository servicePerkRepository;
 
     private final Clock clock;
 
-    private final MobileShopSummaryAssembler assembler;
+    private final MobileShopSummaryAssembler summaryAssembler;
 
     @Transactional(readOnly = true)
     public OffsetPage<MobileAdminShopRowResult> list(String keyword, Boolean published, int page, int size) {
-        var found = shops.findLiveForAdmin(
+        var found = shopRepository.findLiveForAdmin(
                 blankToNull(keyword), published, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id")));
         List<Long> ids = found.getContent().stream().map(MobileShop::getId).toList();
-        Map<Long, String> thumbnails = assembler.findFirstImageUrls(ids);
+        Map<Long, String> thumbnails = summaryAssembler.findFirstImageUrls(ids);
         return OffsetPage.of(found, shop -> row(shop, thumbnails.get(shop.getId())));
     }
 
@@ -72,7 +72,7 @@ public class MobileShopAdminService {
     @Transactional
     public MobileAdminShopDetailResult create(MobileAdminShopCommand command) {
         validate(command.profile());
-        MobileShop shop = shops.saveAndFlush(MobileShop.create(command.profile(), now()));
+        MobileShop shop = shopRepository.saveAndFlush(MobileShop.create(command.profile(), now()));
         saveImages(shop.getId(), command.imageUrls(), Map.of());
         return detail(shop);
     }
@@ -83,10 +83,10 @@ public class MobileShopAdminService {
         MobileShop shop = liveForUpdate(shopId);
         shop.update(command.profile(), now());
         Map<String, ShopImageSource> sources = new HashMap<>();
-        for (MobileShopImage image : images.findByShopIdInOrderBySortOrderAscIdAsc(List.of(shopId))) {
+        for (MobileShopImage image : imageRepository.findByShopIdInOrderBySortOrderAscIdAsc(List.of(shopId))) {
             sources.putIfAbsent(image.getUrl(), image.getSource());
         }
-        images.deleteByShopId(shopId);
+        imageRepository.deleteByShopId(shopId);
         saveImages(shopId, command.imageUrls(), sources);
         return detail(shop);
     }
@@ -97,8 +97,8 @@ public class MobileShopAdminService {
             Long shopId, List<MobileAdminBusinessHourCommand> commands) {
         validateHours(commands);
         MobileShop shop = liveForUpdate(shopId);
-        hours.deleteByShopId(shopId);
-        hours.saveAll(commands.stream()
+        businessHourRepository.deleteByShopId(shopId);
+        businessHourRepository.saveAll(commands.stream()
                 .map(hour -> MobileShopBusinessHour.of(
                         shopId,
                         hour.dayOfWeek(),
@@ -118,8 +118,8 @@ public class MobileShopAdminService {
         validatePerks(commands);
         MobileShop shop = liveForUpdate(shopId);
         Instant now = now();
-        perks.deleteByShopId(shopId);
-        perks.saveAll(commands.stream()
+        servicePerkRepository.deleteByShopId(shopId);
+        servicePerkRepository.saveAll(commands.stream()
                 .map(perk -> MobileShopServicePerk.of(
                         shopId, perk.type(), perk.status(), perk.price(), perk.condition(), now))
                 .toList());
@@ -136,7 +136,7 @@ public class MobileShopAdminService {
     private void saveImages(Long shopId, List<String> urls, Map<String, ShopImageSource> previousSources) {
         for (int index = 0; index < urls.size(); index++) {
             String url = urls.get(index);
-            images.save(
+            imageRepository.save(
                     MobileShopImage.of(shopId, url, previousSources.getOrDefault(url, ShopImageSource.ADMIN), index));
         }
     }
@@ -188,36 +188,38 @@ public class MobileShopAdminService {
     }
 
     private MobileShop live(Long shopId) {
-        return shops.findByIdAndDeletedAtIsNull(shopId).orElseThrow(this::notFound);
+        return shopRepository.findByIdAndDeletedAtIsNull(shopId).orElseThrow(this::notFound);
     }
 
     private MobileShop liveForUpdate(Long shopId) {
-        return shops.findLiveForUpdate(shopId).orElseThrow(this::notFound);
+        return shopRepository.findLiveForUpdate(shopId).orElseThrow(this::notFound);
     }
 
     private MobileAdminShopDetailResult detail(MobileShop shop) {
         List<Long> ids = List.of(shop.getId());
-        List<String> imageUrls = images.findByShopIdInOrderBySortOrderAscIdAsc(ids).stream()
+        List<String> imageUrls = imageRepository.findByShopIdInOrderBySortOrderAscIdAsc(ids).stream()
                 .map(MobileShopImage::getUrl)
                 .toList();
-        List<MobileAdminShopDetailResult.Hour> shopHours = hours.findByShopIdInOrderByDayOfWeekAsc(ids).stream()
-                .map(hour -> new MobileAdminShopDetailResult.Hour(
-                        hour.getDayOfWeek(),
-                        hour.isClosed(),
-                        MobileShopBusinessHourResult.clockTime(hour.getOpensAt()),
-                        MobileShopBusinessHourResult.clockTime(hour.getClosesAt()),
-                        MobileShopBusinessHourResult.clockTime(hour.getBreakStart()),
-                        MobileShopBusinessHourResult.clockTime(hour.getBreakEnd()),
-                        MobileShopBusinessHourResult.clockTime(hour.getLastOrderAt())))
-                .toList();
-        List<MobileAdminShopDetailResult.Perk> shopPerks = perks.findByShopIdOrderByIdAsc(shop.getId()).stream()
-                .map(perk -> new MobileAdminShopDetailResult.Perk(
-                        perk.getPerkType(),
-                        perk.getStatus(),
-                        perk.getPrice(),
-                        perk.getConditionText(),
-                        perk.getVerifiedAt()))
-                .toList();
+        List<MobileAdminShopDetailResult.Hour> shopHours =
+                businessHourRepository.findByShopIdInOrderByDayOfWeekAsc(ids).stream()
+                        .map(hour -> new MobileAdminShopDetailResult.Hour(
+                                hour.getDayOfWeek(),
+                                hour.isClosed(),
+                                MobileShopBusinessHourResult.clockTime(hour.getOpensAt()),
+                                MobileShopBusinessHourResult.clockTime(hour.getClosesAt()),
+                                MobileShopBusinessHourResult.clockTime(hour.getBreakStart()),
+                                MobileShopBusinessHourResult.clockTime(hour.getBreakEnd()),
+                                MobileShopBusinessHourResult.clockTime(hour.getLastOrderAt())))
+                        .toList();
+        List<MobileAdminShopDetailResult.Perk> shopPerks =
+                servicePerkRepository.findByShopIdOrderByIdAsc(shop.getId()).stream()
+                        .map(perk -> new MobileAdminShopDetailResult.Perk(
+                                perk.getPerkType(),
+                                perk.getStatus(),
+                                perk.getPrice(),
+                                perk.getConditionText(),
+                                perk.getVerifiedAt()))
+                        .toList();
         return new MobileAdminShopDetailResult(
                 String.valueOf(shop.getId()),
                 shop.getName(),

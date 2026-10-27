@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class MobileShopController {
 
-    private final MobileShopQueryService shops;
+    private final MobileShopQueryService queryService;
 
     @GetMapping
     public MobileApiResponse<CursorPage<MobileShopSummaryResult>> list(
@@ -32,19 +32,19 @@ public class MobileShopController {
             @ModelAttribute MobileShopSearchRequest search,
             @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "20") @Min(1) @Max(CursorPage.MAX_SIZE) int size) {
-        return MobileApiResponse.success(shops.searchPage(userId, search.toCondition(), cursor, size));
+        return MobileApiResponse.success(queryService.searchPage(userId, search.toCondition(), cursor, size));
     }
 
     /** 지도 탭의 핀과 목록. 조건은 목록과 같고 페이지 없이 맞는 매장을 모두 준다. */
     @GetMapping("/map")
     public MobileApiResponse<List<MobileShopSummaryResult>> map(
             @LoginUser(required = false) Long userId, @ModelAttribute MobileShopSearchRequest search) {
-        return MobileApiResponse.success(shops.searchAll(userId, search.toCondition()));
+        return MobileApiResponse.success(queryService.searchAll(userId, search.toCondition()));
     }
 
     @GetMapping("/{shopId}")
     public MobileApiResponse<MobileShopDetailResult> detail(
             @LoginUser(required = false) Long userId, @PathVariable Long shopId) {
-        return MobileApiResponse.success(shops.viewDetail(userId, shopId));
+        return MobileApiResponse.success(queryService.viewDetail(userId, shopId));
     }
 }

@@ -32,7 +32,7 @@ public class MobileShopJdbcSearch implements MobileShopSearchPort {
 
     private static final Pattern DISTANCE_VALUE = Pattern.compile("[0-9]{1,8}(\\.[0-9]{1,6})?");
 
-    private final NamedParameterJdbcTemplate jdbc;
+    private final NamedParameterJdbcTemplate jdbcTemplate;
 
     @Override
     public List<RankedShop> search(MobileShopSearchCondition condition, Cursor cursor, Integer limit) {
@@ -95,7 +95,7 @@ public class MobileShopJdbcSearch implements MobileShopSearchPort {
             sql.append(" LIMIT :limit");
             params.addValue("limit", limit);
         }
-        return jdbc.query(sql.toString(), params, (rs, rowNum) -> {
+        return jdbcTemplate.query(sql.toString(), params, (rs, rowNum) -> {
             long id = rs.getLong("id");
             Cursor position = switch (sort) {
                 case POPULAR -> Cursor.of(rs.getLong("sort_value"), id);

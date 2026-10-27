@@ -19,9 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class MobileShopRecommendationQueryService {
 
-    private final MobileShopRepository shops;
+    private final MobileShopRepository shopRepository;
 
-    private final MobileShopSummaryAssembler assembler;
+    private final MobileShopSummaryAssembler summaryAssembler;
 
     /**
      * 추천 후보 ID다. 추천해도 되는 매장 중 라멘 종류가 {@code ramenType}인 매장(null이면 전부)이고, 지역이 오면 지역(구·시)이나
@@ -31,8 +31,8 @@ public class MobileShopRecommendationQueryService {
     @Transactional(readOnly = true)
     public List<Long> findCandidateIds(
             String ramenType, String region, BigDecimal latitude, BigDecimal longitude, int limit) {
-        List<Long> ids = shops.findRecommendableIds(ramenType);
-        Map<Long, MobileShop> shopsById = assembler.findShopsById(ids);
+        List<Long> ids = shopRepository.findRecommendableIds(ramenType);
+        Map<Long, MobileShop> shopsById = summaryAssembler.findShopsById(ids);
         List<MobileShop> candidates = ids.stream()
                 .map(shopsById::get)
                 .filter(shop -> shop != null && isInRegion(shop, region))
@@ -57,7 +57,7 @@ public class MobileShopRecommendationQueryService {
     @Transactional(readOnly = true)
     public List<MobileShopSummaryResult> summarizeRecommendable(
             Long userId, List<Long> rankedIds, BigDecimal latitude, BigDecimal longitude, int limit) {
-        Map<Long, MobileShop> shopsById = assembler.findShopsById(rankedIds);
+        Map<Long, MobileShop> shopsById = summaryAssembler.findShopsById(rankedIds);
         List<MobileShop> picked = new ArrayList<>(limit);
         Map<Long, BigDecimal> distances = new HashMap<>();
         for (Long id : rankedIds) {
@@ -76,7 +76,7 @@ public class MobileShopRecommendationQueryService {
                 break;
             }
         }
-        return assembler.loadAndSummarize(userId, picked, distances);
+        return summaryAssembler.loadAndSummarize(userId, picked, distances);
     }
 
     /**
@@ -85,9 +85,10 @@ public class MobileShopRecommendationQueryService {
      */
     @Transactional(readOnly = true)
     public Optional<MobileShopSummaryResult> findMostViewedSummary(Long userId, String ramenType, String tagKeyword) {
-        return shops.findMostViewedRecommendableId(ramenType, tagKeyword)
-                .flatMap(shops::findById)
-                .map(shop -> assembler
+        return shopRepository
+                .findMostViewedRecommendableId(ramenType, tagKeyword)
+                .flatMap(shopRepository::findById)
+                .map(shop -> summaryAssembler
                         .loadAndSummarize(userId, List.of(shop), Map.of())
                         .getFirst());
     }

@@ -34,13 +34,13 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 class MobileShopSummaryAssembler {
 
-    private final MobileShopRepository shops;
+    private final MobileShopRepository shopRepository;
 
-    private final MobileShopImageRepository images;
+    private final MobileShopImageRepository imageRepository;
 
-    private final MobileShopBusinessHourRepository hours;
+    private final MobileShopBusinessHourRepository businessHourRepository;
 
-    private final MobileShopBookmarkPort bookmarks;
+    private final MobileShopBookmarkPort bookmarkPort;
 
     private final MobileShopOpenStatus openStatus;
 
@@ -50,7 +50,7 @@ class MobileShopSummaryAssembler {
     List<MobileShopSummaryResult> loadAndSummarize(
             Long userId, List<MobileShop> orderedShops, Map<Long, BigDecimal> distances) {
         List<Long> ids = orderedShops.stream().map(MobileShop::getId).toList();
-        return summarize(orderedShops, findHoursByShopId(ids), bookmarks.bookmarkedShopIds(userId, ids), distances);
+        return summarize(orderedShops, findHoursByShopId(ids), bookmarkPort.bookmarkedShopIds(userId, ids), distances);
     }
 
     /** 이미 읽은 영업시간·북마크 여부로 받은 순서대로 요약한다. 첫 사진만 여기서 읽는다. */
@@ -98,13 +98,14 @@ class MobileShopSummaryAssembler {
         if (ids.isEmpty()) {
             return Map.of();
         }
-        return shops.findAllById(ids).stream().collect(Collectors.toMap(MobileShop::getId, Function.identity()));
+        return shopRepository.findAllById(ids).stream()
+                .collect(Collectors.toMap(MobileShop::getId, Function.identity()));
     }
 
     Map<Long, List<Hours>> findHoursByShopId(List<Long> ids) {
         Map<Long, List<Hours>> byShopId = new HashMap<>();
         if (!ids.isEmpty()) {
-            for (MobileShopBusinessHour hour : hours.findByShopIdInOrderByDayOfWeekAsc(ids)) {
+            for (MobileShopBusinessHour hour : businessHourRepository.findByShopIdInOrderByDayOfWeekAsc(ids)) {
                 byShopId.computeIfAbsent(hour.getShopId(), ignored -> new ArrayList<>())
                         .add(toOpenStatusHours(hour));
             }
@@ -127,7 +128,7 @@ class MobileShopSummaryAssembler {
     Map<Long, String> findFirstImageUrls(List<Long> ids) {
         Map<Long, String> first = new HashMap<>();
         if (!ids.isEmpty()) {
-            for (MobileShopImage image : images.findByShopIdInOrderBySortOrderAscIdAsc(ids)) {
+            for (MobileShopImage image : imageRepository.findByShopIdInOrderBySortOrderAscIdAsc(ids)) {
                 first.putIfAbsent(image.getShopId(), image.getUrl());
             }
         }
