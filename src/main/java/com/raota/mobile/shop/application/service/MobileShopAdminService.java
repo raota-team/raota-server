@@ -8,6 +8,7 @@ import com.raota.mobile.shop.application.command.MobileAdminServicePerkCommand;
 import com.raota.mobile.shop.application.command.MobileAdminShopCommand;
 import com.raota.mobile.shop.application.result.MobileAdminShopDetail;
 import com.raota.mobile.shop.application.result.MobileAdminShopRow;
+import com.raota.mobile.shop.application.result.MobileShopBusinessHourResult;
 import com.raota.mobile.shop.domain.model.MobileShop;
 import com.raota.mobile.shop.domain.model.MobileShopBusinessHour;
 import com.raota.mobile.shop.domain.model.MobileShopImage;
@@ -22,8 +23,6 @@ import com.raota.mobile.shop.domain.repository.MobileShopRepository;
 import com.raota.mobile.shop.domain.repository.MobileShopServicePerkRepository;
 import java.time.Clock;
 import java.time.Instant;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -43,8 +42,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class MobileShopAdminService {
-
-    private static final DateTimeFormatter CLOCK_TIME = DateTimeFormatter.ofPattern("HH:mm");
 
     private final MobileShopRepository shops;
 
@@ -207,11 +204,11 @@ public class MobileShopAdminService {
                 .map(hour -> new MobileAdminShopDetail.Hour(
                         hour.getDayOfWeek(),
                         hour.isClosed(),
-                        time(hour.getOpensAt()),
-                        time(hour.getClosesAt()),
-                        time(hour.getBreakStart()),
-                        time(hour.getBreakEnd()),
-                        time(hour.getLastOrderAt())))
+                        MobileShopBusinessHourResult.clockTime(hour.getOpensAt()),
+                        MobileShopBusinessHourResult.clockTime(hour.getClosesAt()),
+                        MobileShopBusinessHourResult.clockTime(hour.getBreakStart()),
+                        MobileShopBusinessHourResult.clockTime(hour.getBreakEnd()),
+                        MobileShopBusinessHourResult.clockTime(hour.getLastOrderAt())))
                 .toList();
         List<MobileAdminShopDetail.Perk> shopPerks = perks.findByShopIdOrderByIdAsc(shop.getId()).stream()
                 .map(perk -> new MobileAdminShopDetail.Perk(
@@ -272,13 +269,6 @@ public class MobileShopAdminService {
                 shop.getBookmarkCount(),
                 shop.getHoursVerifiedAt(),
                 shop.getUpdatedAt());
-    }
-
-    private static String time(LocalTime value) {
-        if (value == null) {
-            return null;
-        }
-        return value.format(CLOCK_TIME);
     }
 
     private static String blankToNull(String value) {

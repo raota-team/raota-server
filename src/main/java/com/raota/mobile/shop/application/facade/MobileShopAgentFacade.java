@@ -2,7 +2,7 @@ package com.raota.mobile.shop.application.facade;
 
 import com.raota.mobile.shop.application.port.MobileShopBookmarkPort;
 import com.raota.mobile.shop.application.result.MobileShopSummary;
-import com.raota.mobile.shop.application.service.MobileShopQueryService;
+import com.raota.mobile.shop.application.service.MobileShopRecommendationQueryService;
 import com.raota.mobile.shop.domain.model.MobileShop;
 import com.raota.mobile.shop.domain.model.MobileShopServicePerk;
 import com.raota.mobile.shop.domain.repository.MobileShopRepository;
@@ -25,7 +25,7 @@ import tools.jackson.databind.ObjectMapper;
 @RequiredArgsConstructor
 public class MobileShopAgentFacade {
 
-    private final MobileShopQueryService shops;
+    private final MobileShopRecommendationQueryService shops;
 
     private final MobileShopRepository repository;
 

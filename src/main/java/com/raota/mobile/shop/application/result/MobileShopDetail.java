@@ -1,6 +1,10 @@
 package com.raota.mobile.shop.application.result;
 
+import com.raota.mobile.shop.domain.model.MobileShop;
+import com.raota.mobile.shop.domain.model.MobileShopBusinessHour;
 import com.raota.mobile.shop.domain.model.MobileShopBusinessStatus;
+import com.raota.mobile.shop.domain.model.MobileShopImage;
+import com.raota.mobile.shop.domain.model.MobileShopServicePerk;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -41,4 +45,52 @@ public record MobileShopDetail(
         List<MobileShopServicePerkResult> servicePerks,
         String aiReviewSummary,
         List<String> aiSummaryKeywords,
-        Instant aiSummaryGeneratedAt) {}
+        Instant aiSummaryGeneratedAt) {
+
+    /** 카드 요약({@code summary})에 상세에만 있는 매장 정보·사진·영업시간·혜택을 더한다. 사진은 정렬 순서대로다. */
+    public static MobileShopDetail of(
+            MobileShopSummary summary,
+            MobileShop shop,
+            List<MobileShopImage> shopImages,
+            List<MobileShopBusinessHour> shopHours,
+            List<MobileShopServicePerk> shopPerks) {
+        return new MobileShopDetail(
+                summary.id(),
+                summary.name(),
+                summary.branchName(),
+                summary.address(),
+                summary.region(),
+                summary.latitude(),
+                summary.longitude(),
+                summary.imageUrl(),
+                summary.tagline(),
+                summary.ramenTypes(),
+                summary.tags(),
+                summary.logCount(),
+                summary.bookmarkCount(),
+                shop.averageSatisfaction(),
+                summary.isBookmarked(),
+                summary.businessStatus(),
+                summary.isOpen(),
+                summary.distanceMeters(),
+                shop.getDescription(),
+                shop.getPhone(),
+                shop.getInstagramUrl(),
+                shop.getReservationUrl(),
+                shop.getWebsiteUrl(),
+                shop.getNaverPlaceId(),
+                shop.getKakaoPlaceId(),
+                shop.getPriceMin(),
+                shop.getPriceMax(),
+                shop.getClosedDaysText(),
+                shop.getHoursVerifiedAt(),
+                shopImages.stream()
+                        .map(image -> new MobileShopImageResult(image.getUrl()))
+                        .toList(),
+                shopHours.stream().map(MobileShopBusinessHourResult::from).toList(),
+                shopPerks.stream().map(MobileShopServicePerkResult::from).toList(),
+                shop.getAiReviewSummary(),
+                shop.getAiSummaryKeywords(),
+                shop.getAiSummaryGeneratedAt());
+    }
+}

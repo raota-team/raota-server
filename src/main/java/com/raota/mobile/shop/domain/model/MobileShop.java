@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.List;
 import lombok.AccessLevel;
@@ -163,6 +164,26 @@ public class MobileShop {
     public void markHoursVerified(Instant now) {
         this.hoursVerifiedAt = now;
         this.updatedAt = now;
+    }
+
+    /**
+     * 추천·큐레이션에 내보내도 되는지다. 공개·미삭제이고 폐업·휴업이 아니어야 한다. {@code MobileShopRepository.findRecommendableIds}의 SQL
+     * 조건과 같아야 한다.
+     */
+    public boolean isRecommendable() {
+        return published
+                && deletedAt == null
+                && businessStatus != MobileShopBusinessStatus.CLOSED
+                && businessStatus != MobileShopBusinessStatus.TEMPORARILY_CLOSED;
+    }
+
+    /** 점수가 있는 기록이 3개 이상일 때만 소수점 한 자리 평균 만족도를 낸다. 그 전에는 {@code null}이다. */
+    public BigDecimal averageSatisfaction() {
+        if (scoredLogCount < 3) {
+            return null;
+        }
+        return BigDecimal.valueOf(satisfactionScoreSum)
+                .divide(BigDecimal.valueOf(scoredLogCount), 1, RoundingMode.HALF_UP);
     }
 
     private void apply(MobileShopProfile profile) {
