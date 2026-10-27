@@ -123,7 +123,8 @@ class MobileShopSummaryAssembler {
                 hour.isClosed());
     }
 
-    private Map<Long, String> findFirstImageUrls(List<Long> ids) {
+    /** 매장마다 정렬 순서상 첫 사진 주소다. 사진이 없는 매장은 빠진다. 관리자 목록 썸네일도 이걸 쓴다. */
+    Map<Long, String> findFirstImageUrls(List<Long> ids) {
         Map<Long, String> first = new HashMap<>();
         if (!ids.isEmpty()) {
             for (MobileShopImage image : images.findByShopIdInOrderBySortOrderAscIdAsc(ids)) {

@@ -53,15 +53,14 @@ public class MobileShopAdminService {
 
     private final Clock clock;
 
+    private final MobileShopSummaryAssembler assembler;
+
     @Transactional(readOnly = true)
     public OffsetPage<MobileAdminShopRowResult> list(String keyword, Boolean published, int page, int size) {
         var found = shops.findLiveForAdmin(
                 blankToNull(keyword), published, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id")));
         List<Long> ids = found.getContent().stream().map(MobileShop::getId).toList();
-        Map<Long, String> thumbnails = new HashMap<>();
-        for (MobileShopImage image : images.findByShopIdInOrderBySortOrderAscIdAsc(ids)) {
-            thumbnails.putIfAbsent(image.getShopId(), image.getUrl());
-        }
+        Map<Long, String> thumbnails = assembler.findFirstImageUrls(ids);
         return OffsetPage.of(found, shop -> row(shop, thumbnails.get(shop.getId())));
     }
 
