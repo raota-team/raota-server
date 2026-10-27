@@ -170,8 +170,10 @@ tasks.withType(Checkstyle).configureEach {
 }
 
 // 포맷은 Palantir Java Format(120자)으로 맞춘다. 커밋 전 spotlessApply, CI는 spotlessCheck.
+// 손으로 맞춘 모양을 지켜야 하는 곳만 // spotless:off ~ // spotless:on으로 감싼다.
 spotless {
     java {
+        toggleOffOn()
         target 'src/**/*.java'
         palantirJavaFormat('2.102.0')
         removeUnusedImports()

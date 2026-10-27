@@ -9,7 +9,7 @@ MySQL 8 + Flyway, Redis, Spring Security(OAuth2 + JWT), Spring AI(Oracle Vector 
 
 ```bash
 ./gradlew spotlessApply                        # Palantir Java Format 자동 적용 (커밋 전)
-./gradlew spotlessCheck                        # 포맷 검사 (CI·CD에서 실행)
+./gradlew spotlessCheck                        # 포맷 검사 (CI·CD에서 실행). 손으로 맞춘 모양은 // spotless:off ~ on으로만 지킨다
 ./gradlew checkstyleMain checkstyleTest        # v2 코드 규칙 검사 (CI·CD에서 실행)
 ./gradlew compileJava compileTestJava          # 빠른 컴파일 확인
 ./gradlew test --tests 'com.raota.system.ModulithArchitectureTest'
