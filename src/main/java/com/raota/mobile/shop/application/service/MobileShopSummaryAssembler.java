@@ -23,7 +23,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 /**
- * 매장을 앱 카드 요약으로 바꾼다. 사진·영업시간·북마크는 매장 수와 관계없이 종류마다 한 번에 읽는다.
+ * 매장을 앱 카드 요약({@code MobileShopSummaryResult})으로 조립한다. 사진·영업시간·북마크는 매장 수와 관계없이 종류마다 한 번에 읽는다.
+ * 서비스 안에서만 쓰는 조립기라 트랜잭션을 열지 않고, 부르는 서비스의 트랜잭션을 쓴다.
  *
  * <p>
  * 영업시간이나 북마크 여부를 호출한 쪽이 이미 알면({@code openNow} 필터, 내 북마크 목록) 다시 읽지 않도록 {@link #summarize}에 넘긴다.
@@ -31,7 +32,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @RequiredArgsConstructor
-class MobileShopSummaries {
+class MobileShopSummaryAssembler {
 
     private final MobileShopRepository shops;
 

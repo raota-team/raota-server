@@ -21,7 +21,7 @@ public class MobileShopRecommendationQueryService {
 
     private final MobileShopRepository shops;
 
-    private final MobileShopSummaries summaries;
+    private final MobileShopSummaryAssembler assembler;
 
     /**
      * 추천 후보 ID다. 추천해도 되는 매장 중 라멘 종류가 {@code ramenType}인 매장(null이면 전부)이고, 지역이 오면 지역(구·시)이나
@@ -32,7 +32,7 @@ public class MobileShopRecommendationQueryService {
     public List<Long> recommendationCandidates(
             String ramenType, String region, BigDecimal latitude, BigDecimal longitude, int limit) {
         List<Long> ids = shops.findRecommendableIds(ramenType);
-        Map<Long, MobileShop> byId = summaries.byId(ids);
+        Map<Long, MobileShop> byId = assembler.byId(ids);
         List<MobileShop> candidates = ids.stream()
                 .map(byId::get)
                 .filter(shop -> shop != null && inRegion(shop, region))
@@ -57,7 +57,7 @@ public class MobileShopRecommendationQueryService {
     @Transactional(readOnly = true)
     public List<MobileShopSummaryResult> recommendable(
             Long userId, List<Long> rankedIds, BigDecimal latitude, BigDecimal longitude, int limit) {
-        Map<Long, MobileShop> byId = summaries.byId(rankedIds);
+        Map<Long, MobileShop> byId = assembler.byId(rankedIds);
         List<MobileShop> picked = new ArrayList<>(limit);
         Map<Long, BigDecimal> distances = new HashMap<>();
         for (Long id : rankedIds) {
@@ -76,7 +76,7 @@ public class MobileShopRecommendationQueryService {
                 break;
             }
         }
-        return summaries.load(userId, picked, distances);
+        return assembler.load(userId, picked, distances);
     }
 
     /**
@@ -87,7 +87,7 @@ public class MobileShopRecommendationQueryService {
     public Optional<MobileShopSummaryResult> mostPopular(Long userId, String ramenType, String tagKeyword) {
         return shops.findMostViewedRecommendableId(ramenType, tagKeyword)
                 .flatMap(shops::findById)
-                .map(shop -> summaries.load(userId, List.of(shop), Map.of()).getFirst());
+                .map(shop -> assembler.load(userId, List.of(shop), Map.of()).getFirst());
     }
 
     private static boolean inRegion(MobileShop shop, String region) {

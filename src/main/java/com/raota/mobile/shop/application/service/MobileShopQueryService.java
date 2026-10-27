@@ -48,7 +48,7 @@ public class MobileShopQueryService {
 
     private final MobileShopOpenStatus openStatus;
 
-    private final MobileShopSummaries summaries;
+    private final MobileShopSummaryAssembler assembler;
 
     @Transactional(readOnly = true)
     public CursorPage<MobileShopSummaryResult> list(
@@ -88,8 +88,8 @@ public class MobileShopQueryService {
                 cursor,
                 limit);
         List<Long> ids = rows.stream().map(RankedShop::id).toList();
-        Map<Long, MobileShop> byId = summaries.byId(ids);
-        Map<Long, List<Hours>> byHours = summaries.hoursByShop(ids);
+        Map<Long, MobileShop> byId = assembler.byId(ids);
+        Map<Long, List<Hours>> byHours = assembler.hoursByShop(ids);
         if (condition.openNow()) {
             rows = rows.stream()
                     .filter(row -> Boolean.TRUE.equals(openStatus.isOpen(
@@ -107,7 +107,7 @@ public class MobileShopQueryService {
                 distances.put(row.id(), row.distance());
             }
         }
-        return summaries.summarize(
+        return assembler.summarize(
                 ids.stream().map(ranked.byId()::get).toList(),
                 ranked.byHours(),
                 bookmarks.bookmarkedShopIds(userId, ids),
@@ -127,10 +127,10 @@ public class MobileShopQueryService {
         if (!shopImages.isEmpty()) {
             imageUrl = shopImages.getFirst().getUrl();
         }
-        MobileShopSummaryResult summary = summaries.summary(
+        MobileShopSummaryResult summary = assembler.summary(
                 shop,
                 imageUrl,
-                shopHours.stream().map(MobileShopSummaries::toHours).toList(),
+                shopHours.stream().map(MobileShopSummaryAssembler::toHours).toList(),
                 null,
                 bookmarks.bookmarkedShopIds(userId, List.of(shopId)).contains(shopId));
         MobileShopDetailResult detail =
@@ -145,9 +145,9 @@ public class MobileShopQueryService {
         List<SavedShop> saved = bookmarks.saved(userId, Cursor.parse(rawCursor).orElse(null), size + 1);
         CursorPage<SavedShop> page = CursorPage.of(saved, size, SavedShop::position);
         List<Long> ids = page.items().stream().map(SavedShop::shopId).toList();
-        Map<Long, MobileShop> byId = summaries.byId(ids);
-        List<MobileShopSummaryResult> items = summaries.summarize(
-                ids.stream().map(byId::get).toList(), summaries.hoursByShop(ids), Set.copyOf(ids), Map.of());
+        Map<Long, MobileShop> byId = assembler.byId(ids);
+        List<MobileShopSummaryResult> items = assembler.summarize(
+                ids.stream().map(byId::get).toList(), assembler.hoursByShop(ids), Set.copyOf(ids), Map.of());
         return new CursorPage<>(items, page.nextCursor(), page.hasNext());
     }
 }
