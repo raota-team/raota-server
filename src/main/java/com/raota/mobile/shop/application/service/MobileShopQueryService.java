@@ -82,15 +82,7 @@ public class MobileShopQueryService {
      * 정렬된 매장 순위를 읽고, 그 매장들과 영업시간도 함께 읽어 둔다. 영업 중 필터에 쓴 매장·영업시간을 요약에도 그대로 쓰려는 것이다.
      */
     private RankedShops searchRanked(MobileShopSearchCondition condition, Cursor cursor, Integer limit) {
-        List<RankedShop> rows = search.search(
-                condition.sort(),
-                condition.query(),
-                condition.region(),
-                condition.ramenType(),
-                condition.latitude(),
-                condition.longitude(),
-                cursor,
-                limit);
+        List<RankedShop> rows = search.search(condition, cursor, limit);
         List<Long> ids = rows.stream().map(RankedShop::id).toList();
         Map<Long, MobileShop> shopsById = assembler.findShopsById(ids);
         Map<Long, List<Hours>> hoursByShopId = assembler.findHoursByShopId(ids);

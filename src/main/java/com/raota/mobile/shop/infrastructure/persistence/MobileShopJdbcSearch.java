@@ -4,6 +4,7 @@ import com.raota.mobile.common.cursor.Cursor;
 import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
 import com.raota.mobile.shop.application.port.MobileShopSearchPort;
+import com.raota.mobile.shop.application.query.MobileShopSearchCondition;
 import com.raota.mobile.shop.application.query.MobileShopSort;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -34,15 +35,13 @@ public class MobileShopJdbcSearch implements MobileShopSearchPort {
     private final NamedParameterJdbcTemplate jdbc;
 
     @Override
-    public List<RankedShop> search(
-            MobileShopSort sort,
-            String query,
-            String region,
-            String ramenType,
-            BigDecimal latitude,
-            BigDecimal longitude,
-            Cursor cursor,
-            Integer limit) {
+    public List<RankedShop> search(MobileShopSearchCondition condition, Cursor cursor, Integer limit) {
+        MobileShopSort sort = condition.sort();
+        BigDecimal latitude = condition.latitude();
+        BigDecimal longitude = condition.longitude();
+        String query = condition.query();
+        String region = condition.region();
+        String ramenType = condition.ramenType();
         String distance = HAVERSINE;
         if (latitude == null) {
             distance = "NULL";
