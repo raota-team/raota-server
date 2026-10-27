@@ -70,13 +70,6 @@ public interface MobileShopRepository extends JpaRepository<MobileShop, Long> {
             """)
     void recordSatisfactionChanged(Long id, int delta, int scoredDelta);
 
-    @Modifying
-    @Query("update MobileShop shop set shop.logCount = :logCount where shop.id = :id")
-    void updateLogCount(Long id, int logCount);
-
-    @Query("select shop.id from MobileShop shop")
-    List<Long> findAllIds();
-
     /** 엔티티의 오래된 조회수를 저장하지 않고 DB에서 원자적으로 증가시킨다. */
     @Modifying
     @Query("update MobileShop shop set shop.viewCount = shop.viewCount + 1 where shop.id = :id")

@@ -26,10 +26,6 @@ public interface MobileUserRepository extends JpaRepository<MobileUser, Long> {
             """)
     void decrementLogCount(Long id);
 
-    @Modifying
-    @Query("update MobileUser user set user.logCount = :logCount where user.id = :id")
-    void updateLogCount(Long id, int logCount);
-
     boolean existsByNicknameNormalizedAndIdNot(String nicknameNormalized, Long id);
 
     /** 같은 회원의 온보딩 완료 요청을 직렬화해 동의를 중복 기록하지 않는다. */

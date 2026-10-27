@@ -6,11 +6,9 @@ import com.raota.mobile.shop.domain.model.MobileShop;
 import com.raota.mobile.shop.domain.repository.MobileShopRepository;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,17 +56,6 @@ public class MobileShopRamenLogFacade {
             return;
         }
         shops.recordSatisfactionChanged(shopId, score(newScore) - score(oldScore), scored(newScore) - scored(oldScore));
-    }
-
-    /** v1 → v2 복사(#59)에서 매장이 v2에 있는지 판단할 전체 매장 ID다(숨김·삭제 매장 포함). */
-    public Set<Long> allShopIds() {
-        return new HashSet<>(shops.findAllIds());
-    }
-
-    /** v1 → v2 복사(#59) 뒤 매장별 기록 수를 실제 기록 수로 다시 맞춘다. 점수 합계는 v1 점수가 없어 건드리지 않는다. */
-    @Transactional
-    public void updateLogCounts(Map<Long, Integer> logCounts) {
-        logCounts.forEach(shops::updateLogCount);
     }
 
     /** 점수가 없는 기록(v1 복사분)은 합계에 0을 더한다. */
