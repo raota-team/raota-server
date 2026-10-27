@@ -3,3 +3,6 @@
 
 # style: 전체 소스에 Spring Java Format 적용
 7c841ba2b4f3fcecebb70b09420eb755a0e2002d
+
+# style: 포매터를 Spring Java Format에서 Palantir Java Format으로 교체
+dcf36b606dd1e671739b3819e55cca32a8c410fa
