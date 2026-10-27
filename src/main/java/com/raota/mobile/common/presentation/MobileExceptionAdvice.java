@@ -141,7 +141,11 @@ public class MobileExceptionAdvice {
                 .body(MobileApiResponse.failure(MobileError.of(code, message, fields)));
     }
 
+    /** 쿼리 파라미터를 객체로 받을 때 생기는 형 변환 오류는 @RequestParam의 형식 오류와 같은 코드·메시지로 보낸다. */
     private static MobileFieldError toFieldError(FieldError error) {
+        if (error.isBindingFailure()) {
+            return new MobileFieldError(error.getField(), "INVALID_FORMAT", INVALID_FORMAT);
+        }
         return new MobileFieldError(error.getField(), error.getCode(), error.getDefaultMessage());
     }
 

@@ -8,6 +8,7 @@ import com.raota.mobile.shop.application.port.MobileShopBookmarkPort;
 import com.raota.mobile.shop.application.port.MobileShopBookmarkPort.SavedShop;
 import com.raota.mobile.shop.application.port.MobileShopSearchPort;
 import com.raota.mobile.shop.application.port.MobileShopSearchPort.RankedShop;
+import com.raota.mobile.shop.application.query.MobileShopSearchCondition;
 import com.raota.mobile.shop.application.query.MobileShopSort;
 import com.raota.mobile.shop.application.result.MobileShopBusinessHourResult;
 import com.raota.mobile.shop.application.result.MobileShopDetail;
@@ -63,25 +64,16 @@ public class MobileShopQueryService {
 
     @Transactional(readOnly = true)
     public CursorPage<MobileShopSummary> list(
-            Long userId,
-            MobileShopSort sort,
-            String query,
-            String region,
-            String ramenType,
-            boolean openNow,
-            BigDecimal latitude,
-            BigDecimal longitude,
-            String rawCursor,
-            int size) {
-        validate(sort, latitude, longitude);
+            Long userId, MobileShopSearchCondition condition, String rawCursor, int size) {
+        validate(condition.sort(), condition.latitude(), condition.longitude());
         Cursor cursor = Cursor.parse(rawCursor).orElse(null);
         // 확인된 영업시간은 요일·휴식에 따라 달라져 SQL 정렬 이후 일괄 계산한다.
         // 매장은 약 550개라 openNow 요청만 후보 전체를 읽어 필터링한 뒤 페이지를 만든다.
         Integer limit = size + 1;
-        if (openNow) {
+        if (condition.openNow()) {
             limit = null;
         }
-        Ranked ranked = rank(sort, query, region, ramenType, openNow, latitude, longitude, cursor, limit);
+        Ranked ranked = rank(condition, cursor, limit);
         CursorPage<RankedShop> page =
                 CursorPage.of(ranked.rows().stream().limit(size + 1L).toList(), size, RankedShop::position);
         return new CursorPage<>(summaries(userId, page.items(), ranked), page.nextCursor(), page.hasNext());
@@ -92,36 +84,26 @@ public class MobileShopQueryService {
      * 공개 매장이 수백 곳이라 한 번에 보낸다.
      */
     @Transactional(readOnly = true)
-    public List<MobileShopSummary> all(
-            Long userId,
-            MobileShopSort sort,
-            String query,
-            String region,
-            String ramenType,
-            boolean openNow,
-            BigDecimal latitude,
-            BigDecimal longitude) {
-        validate(sort, latitude, longitude);
-        Ranked ranked = rank(sort, query, region, ramenType, openNow, latitude, longitude, null, null);
+    public List<MobileShopSummary> all(Long userId, MobileShopSearchCondition condition) {
+        validate(condition.sort(), condition.latitude(), condition.longitude());
+        Ranked ranked = rank(condition, null, null);
         return summaries(userId, ranked.rows(), ranked);
     }
 
-    private Ranked rank(
-            MobileShopSort sort,
-            String query,
-            String region,
-            String ramenType,
-            boolean openNow,
-            BigDecimal latitude,
-            BigDecimal longitude,
-            Cursor cursor,
-            Integer limit) {
+    private Ranked rank(MobileShopSearchCondition condition, Cursor cursor, Integer limit) {
         List<RankedShop> rows = search.search(
-                sort, query, region, ramenType, coordinate(latitude, 90), coordinate(longitude, 180), cursor, limit);
+                condition.sort(),
+                condition.query(),
+                condition.region(),
+                condition.ramenType(),
+                coordinate(condition.latitude(), 90),
+                coordinate(condition.longitude(), 180),
+                cursor,
+                limit);
         List<Long> ids = rows.stream().map(RankedShop::id).toList();
         Map<Long, MobileShop> byId = byId(ids);
         Map<Long, List<Hours>> byHours = hours(ids);
-        if (openNow) {
+        if (condition.openNow()) {
             rows = rows.stream()
                     .filter(row -> Boolean.TRUE.equals(openStatus.isOpen(
                             byId.get(row.id()).getHoursVerifiedAt(), byHours.getOrDefault(row.id(), List.of()))))

@@ -164,6 +164,21 @@ class MobileShopQueryIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
+    void 목록과_지도의_조건_형식이_틀리면_필드별_INVALID_FORMAT이다() throws Exception {
+        for (String path : List.of("/api/v2/shops", "/api/v2/shops/map")) {
+            for (String[] invalid :
+                    new String[][] {{"sort", "FOO"}, {"openNow", "maybe"}, {"latitude", "abc"}, {"longitude", "abc"}}) {
+                mvc.perform(get(path).param(invalid[0], invalid[1]))
+                        .andExpect(status().isBadRequest())
+                        .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
+                        .andExpect(jsonPath("$.error.fields[0].field").value(invalid[0]))
+                        .andExpect(jsonPath("$.error.fields[0].code").value("INVALID_FORMAT"))
+                        .andExpect(jsonPath("$.error.fields[0].message").value("형식이 올바르지 않습니다."));
+            }
+        }
+    }
+
+    @Test
     void 영업중_필터는_검증된_실제_영업_매장만_포함한다() throws Exception {
         assertThat(ids(list("/api/v2/shops?openNow=true"))).containsExactly(id(FIRST));
     }

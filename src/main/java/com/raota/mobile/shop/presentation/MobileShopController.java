@@ -3,16 +3,16 @@ package com.raota.mobile.shop.presentation;
 import com.raota.mobile.common.cursor.CursorPage;
 import com.raota.mobile.common.presentation.LoginUser;
 import com.raota.mobile.common.presentation.response.MobileApiResponse;
-import com.raota.mobile.shop.application.query.MobileShopSort;
 import com.raota.mobile.shop.application.result.MobileShopDetail;
 import com.raota.mobile.shop.application.result.MobileShopSummary;
 import com.raota.mobile.shop.application.service.MobileShopQueryService;
+import com.raota.mobile.shop.presentation.request.MobileShopSearchRequest;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import java.math.BigDecimal;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -29,32 +29,17 @@ public class MobileShopController {
     @GetMapping
     public MobileApiResponse<CursorPage<MobileShopSummary>> list(
             @LoginUser(required = false) Long userId,
-            @RequestParam(defaultValue = "POPULAR") MobileShopSort sort,
-            @RequestParam(required = false) String query,
-            @RequestParam(required = false) String region,
-            @RequestParam(required = false) String ramenType,
-            @RequestParam(defaultValue = "false") boolean openNow,
-            @RequestParam(required = false) BigDecimal latitude,
-            @RequestParam(required = false) BigDecimal longitude,
+            @ModelAttribute MobileShopSearchRequest search,
             @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "20") @Min(1) @Max(CursorPage.MAX_SIZE) int size) {
-        return MobileApiResponse.success(
-                shops.list(userId, sort, query, region, ramenType, openNow, latitude, longitude, cursor, size));
+        return MobileApiResponse.success(shops.list(userId, search.toCondition(), cursor, size));
     }
 
     /** 지도 탭의 핀과 목록. 조건은 목록과 같고 페이지 없이 맞는 매장을 모두 준다. */
     @GetMapping("/map")
     public MobileApiResponse<List<MobileShopSummary>> map(
-            @LoginUser(required = false) Long userId,
-            @RequestParam(defaultValue = "POPULAR") MobileShopSort sort,
-            @RequestParam(required = false) String query,
-            @RequestParam(required = false) String region,
-            @RequestParam(required = false) String ramenType,
-            @RequestParam(defaultValue = "false") boolean openNow,
-            @RequestParam(required = false) BigDecimal latitude,
-            @RequestParam(required = false) BigDecimal longitude) {
-        return MobileApiResponse.success(
-                shops.all(userId, sort, query, region, ramenType, openNow, latitude, longitude));
+            @LoginUser(required = false) Long userId, @ModelAttribute MobileShopSearchRequest search) {
+        return MobileApiResponse.success(shops.all(userId, search.toCondition()));
     }
 
     @GetMapping("/{shopId}")
