@@ -38,7 +38,7 @@ public class MobileContentReportAdminController {
         return MobileApiResponse.success(reports.list(status, page, size));
     }
 
-    @PostMapping("/{reportId:[0-9]+}/resolve")
+    @PostMapping("/{reportId}/resolve")
     public MobileApiResponse<MobileAdminReportResolutionResult> resolve(@PathVariable Long reportId,
             @RequestBody @Valid MobileResolveReportRequest request) {
         return MobileApiResponse.success(reports.resolve(reportId, request.action()));

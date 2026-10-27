@@ -19,12 +19,12 @@ public class MobileRamenLogLikeController {
 
     private final MobileRamenLogLikeService likes;
 
-    @PutMapping("/{logId:[0-9]+}/like")
+    @PutMapping("/{logId}/like")
     public MobileApiResponse<MobileRamenLogLikeResult> like(@LoginUser Long userId, @PathVariable Long logId) {
         return MobileApiResponse.success(likes.like(logId, userId));
     }
 
-    @DeleteMapping("/{logId:[0-9]+}/like")
+    @DeleteMapping("/{logId}/like")
     public MobileApiResponse<MobileRamenLogLikeResult> unlike(@LoginUser Long userId, @PathVariable Long logId) {
         return MobileApiResponse.success(likes.unlike(logId, userId));
     }

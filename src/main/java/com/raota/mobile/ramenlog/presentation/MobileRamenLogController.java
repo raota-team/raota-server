@@ -56,19 +56,19 @@ public class MobileRamenLogController {
             .body(MobileApiResponse.success(logs.create(userId, key, request.toCommand())));
     }
 
-    @GetMapping("/{logId:[0-9]+}")
+    @GetMapping("/{logId}")
     public MobileApiResponse<MobileRamenLogDetail> detail(@LoginUser(required = false) Long userId,
             @PathVariable Long logId) {
         return MobileApiResponse.success(logs.detail(logId, userId));
     }
 
-    @PatchMapping("/{logId:[0-9]+}")
+    @PatchMapping("/{logId}")
     public MobileApiResponse<MobileRamenLogDetail> update(@LoginUser Long userId, @PathVariable Long logId,
             @Valid @RequestBody MobileUpdateRamenLogRequest request) {
         return MobileApiResponse.success(logs.update(logId, userId, request.toCommand()));
     }
 
-    @DeleteMapping("/{logId:[0-9]+}")
+    @DeleteMapping("/{logId}")
     public ResponseEntity<Void> delete(@LoginUser Long userId, @PathVariable Long logId) {
         logs.delete(logId, userId);
         return ResponseEntity.noContent().build();

@@ -21,7 +21,7 @@ public class MobileShopAiSummaryAdminController {
 
     private final MobileShopAiSummaryService summaries;
 
-    @PostMapping("/{shopId:[0-9]+}/ai-summary")
+    @PostMapping("/{shopId}/ai-summary")
     public ResponseEntity<ApiResponse<Result>> summarize(@PathVariable Long shopId) {
         return ResponseEntity.ok(ApiResponse.success(summaries.summarize(shopId)));
     }

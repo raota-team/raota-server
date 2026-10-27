@@ -40,7 +40,7 @@ public class MobileRecommendationController {
     }
 
     /** 추천 결과에서 매장을 연 것을 남긴다. 처음 연 시각만 남고, 같은 매장을 다시 열어도 204다. */
-    @PostMapping("/recommendations/{recommendationId:[0-9]+}/shops/{shopId:[0-9]+}/open")
+    @PostMapping("/recommendations/{recommendationId}/shops/{shopId}/open")
     public ResponseEntity<Void> open(@LoginUser Long userId, @PathVariable Long recommendationId,
             @PathVariable Long shopId) {
         feedback.markOpened(userId, recommendationId, shopId);
