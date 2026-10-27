@@ -22,33 +22,35 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class MobileShopJdbcBookmarks implements MobileShopBookmarkPort {
 
-    private final JdbcTemplate jdbc;
+    private final JdbcTemplate jdbcTemplate;
 
-    private final NamedParameterJdbcTemplate namedJdbc;
+    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     @Override
     public void add(Long userId, Long shopId, Instant createdAt) {
-        int inserted = jdbc.update("""
+        int inserted = jdbcTemplate.update("""
                 INSERT IGNORE INTO tb_v2_shop_bookmark (user_id, shop_id, created_at) VALUES (?, ?, ?)
                 """, userId, shopId, Timestamp.from(createdAt));
         if (inserted == 1) {
-            jdbc.update("UPDATE tb_v2_shop SET bookmark_count = bookmark_count + 1 WHERE id = ?", shopId);
+            jdbcTemplate.update("UPDATE tb_v2_shop SET bookmark_count = bookmark_count + 1 WHERE id = ?", shopId);
         }
     }
 
     @Override
     public void remove(Long userId, Long shopId) {
-        int deleted = jdbc.update("DELETE FROM tb_v2_shop_bookmark WHERE user_id = ? AND shop_id = ?", userId, shopId);
+        int deleted = jdbcTemplate.update(
+                "DELETE FROM tb_v2_shop_bookmark WHERE user_id = ? AND shop_id = ?", userId, shopId);
         if (deleted == 1) {
-            jdbc.update("UPDATE tb_v2_shop SET bookmark_count = GREATEST(bookmark_count - 1, 0) WHERE id = ?", shopId);
+            jdbcTemplate.update(
+                    "UPDATE tb_v2_shop SET bookmark_count = GREATEST(bookmark_count - 1, 0) WHERE id = ?", shopId);
         }
     }
 
     @Override
     public void removeForPurgedUser(Long userId) {
         // 한 매장에 회원별 PK 하나만 있으므로 실제로 지워진 행에 대해서만 카운터를 줄인다.
-        List<Long> shopIds =
-                jdbc.queryForList("SELECT shop_id FROM tb_v2_shop_bookmark WHERE user_id = ?", Long.class, userId);
+        List<Long> shopIds = jdbcTemplate.queryForList(
+                "SELECT shop_id FROM tb_v2_shop_bookmark WHERE user_id = ?", Long.class, userId);
         for (Long shopId : shopIds) {
             remove(userId, shopId);
         }
@@ -59,7 +61,8 @@ public class MobileShopJdbcBookmarks implements MobileShopBookmarkPort {
         if (userId == null || shopIds.isEmpty()) {
             return Set.of();
         }
-        return new HashSet<>(namedJdbc.queryForList("""
+        return new HashSet<>(
+                namedParameterJdbcTemplate.queryForList("""
                 SELECT shop_id FROM tb_v2_shop_bookmark WHERE user_id = :userId AND shop_id IN (:shopIds)
                 """, Map.of("userId", userId, "shopIds", shopIds), Long.class));
     }
@@ -86,7 +89,7 @@ public class MobileShopJdbcBookmarks implements MobileShopBookmarkPort {
         if (at != null) {
             args = new Object[] {userId, Timestamp.from(at), Timestamp.from(at), cursor.id(), limit};
         }
-        return jdbc.query(
+        return jdbcTemplate.query(
                 sql.toString(),
                 (rs, index) -> new SavedShop(
                         rs.getLong("shop_id"),
@@ -99,7 +102,7 @@ public class MobileShopJdbcBookmarks implements MobileShopBookmarkPort {
         if (userIds.isEmpty()) {
             return List.of();
         }
-        return namedJdbc.query(
+        return namedParameterJdbcTemplate.query(
                 """
                 SELECT user_id, shop_id, created_at FROM tb_v2_shop_bookmark
                 WHERE user_id IN (:userIds) AND created_at >= :from AND created_at < :to
