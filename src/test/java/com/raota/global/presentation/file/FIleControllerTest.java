@@ -45,7 +45,9 @@ class FIleControllerTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
+        mvc = MockMvcBuilders.webAppContextSetup(context)
+                .apply(springSecurity())
+                .build();
     }
 
     @AfterEach
@@ -60,11 +62,14 @@ class FIleControllerTest extends BaseIntegrationTest {
     void 회원은_한_시간에_30장까지_받고_그다음은_429다() throws Exception {
         String token = token(MemberRole.USER);
         for (int ticket = 0; ticket < UploadTicketRateLimiter.FILES_PER_HOUR; ticket++) {
-            ticket(token, "BACKGROUND").andExpect(status().isOk()).andExpect(jsonPath("$.img_url").isNotEmpty());
+            ticket(token, "BACKGROUND")
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.img_url").isNotEmpty());
         }
 
-        ticket(token, "COMMUNITY").andExpect(status().isTooManyRequests())
-            .andExpect(jsonPath("$.success").value(false));
+        ticket(token, "COMMUNITY")
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.success").value(false));
     }
 
     @Test
@@ -78,20 +83,21 @@ class FIleControllerTest extends BaseIntegrationTest {
     @Test
     void 로그인하지_않으면_받을_수_없다() throws Exception {
         mvc.perform(get("/files/upload-ticket").param("type", "PROFILE").param("extension", "webp"))
-            .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized());
     }
 
     private ResultActions ticket(String token, String type) throws Exception {
-        return mvc.perform(get("/files/upload-ticket").header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-            .param("type", type)
-            .param("extension", "webp")
-            .param("contentType", "image/webp"));
+        return mvc.perform(get("/files/upload-ticket")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .param("type", type)
+                .param("extension", "webp")
+                .param("contentType", "image/webp"));
     }
 
     private String token(MemberRole role) {
-        MemberProfile member = members.saveAndFlush(MemberProfile.builder().nickname("업로드 회원").role(role).build());
+        MemberProfile member = members.saveAndFlush(
+                MemberProfile.builder().nickname("업로드 회원").role(role).build());
         created.add(member.getId());
         return tokens.createAccessToken(member.getId());
     }
-
 }

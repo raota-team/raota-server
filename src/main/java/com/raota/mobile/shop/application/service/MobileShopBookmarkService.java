@@ -16,23 +16,22 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class MobileShopBookmarkService {
 
-    private final MobileShopBookmarkPort bookmarks;
+    private final MobileShopBookmarkPort bookmarkPort;
 
-    private final MobileShopRepository shops;
+    private final MobileShopRepository shopRepository;
 
     private final Clock clock;
 
     @Transactional
     public void add(Long userId, Long shopId) {
-        if (shops.findByIdAndPublishedTrueAndDeletedAtIsNull(shopId).isEmpty()) {
+        if (shopRepository.findByIdAndPublishedTrueAndDeletedAtIsNull(shopId).isEmpty()) {
             throw new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "매장을 찾을 수 없습니다.");
         }
-        bookmarks.add(userId, shopId, Instant.now(clock).truncatedTo(ChronoUnit.MICROS));
+        bookmarkPort.add(userId, shopId, Instant.now(clock).truncatedTo(ChronoUnit.MICROS));
     }
 
     @Transactional
     public void remove(Long userId, Long shopId) {
-        bookmarks.remove(userId, shopId);
+        bookmarkPort.remove(userId, shopId);
     }
-
 }

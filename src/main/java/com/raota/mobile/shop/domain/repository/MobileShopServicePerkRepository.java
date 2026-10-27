@@ -16,5 +16,4 @@ public interface MobileShopServicePerkRepository extends JpaRepository<MobileSho
     @Modifying(flushAutomatically = true)
     @Query("delete from MobileShopServicePerk perk where perk.shopId = :shopId")
     void deleteByShopId(Long shopId);
-
 }

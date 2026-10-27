@@ -1,10 +1,10 @@
 package com.raota.web.ramenshop.presentation;
 
-import com.raota.web.ramenshop.presentation.response.VotingStatusResponse;
-import com.raota.web.ramenshop.presentation.contract.MenuVoteApi;
-import com.raota.web.ramenshop.application.service.MenuVoteService;
-import com.raota.web.account.infrastructure.auth.LoginMember;
 import com.raota.global.presentation.common.ApiResponse;
+import com.raota.web.account.infrastructure.auth.LoginMember;
+import com.raota.web.ramenshop.application.service.MenuVoteService;
+import com.raota.web.ramenshop.presentation.contract.MenuVoteApi;
+import com.raota.web.ramenshop.presentation.response.VotingStatusResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -23,18 +23,20 @@ public class MenuVoteController implements MenuVoteApi {
 
     @Override
     @GetMapping
-    public ResponseEntity<ApiResponse<VotingStatusResponse>> getVoteStatus(@PathVariable Long shopId,
-            @LoginMember(required = false) Long memberId, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<VotingStatusResponse>> getVoteStatus(
+            @PathVariable Long shopId, @LoginMember(required = false) Long memberId, HttpServletRequest request) {
         VotingStatusResponse response = menuVoteService.getVotingStatus(shopId, memberId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @Override
     @PostMapping("/menus/{menuId}")
-    public ResponseEntity<ApiResponse<VotingStatusResponse>> votingMenu(@PathVariable Long shopId,
-            @PathVariable Long menuId, @LoginMember Long memberId, HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<VotingStatusResponse>> votingMenu(
+            @PathVariable Long shopId,
+            @PathVariable Long menuId,
+            @LoginMember Long memberId,
+            HttpServletRequest request) {
         VotingStatusResponse response = menuVoteService.voteTheMenu(shopId, menuId, memberId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
-
 }

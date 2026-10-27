@@ -71,7 +71,10 @@ class MobileRamenLogLikeIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mvc = MockMvcBuilders.webAppContextSetup(context).addFilters(requestIdFilter).apply(springSecurity()).build();
+        mvc = MockMvcBuilders.webAppContextSetup(context)
+                .addFilters(requestIdFilter)
+                .apply(springSecurity())
+                .build();
         jdbc.update("""
                 INSERT INTO tb_v2_shop (id, name, branch_name, address, region, ramen_types, tags, business_status,
                     ai_summary_keywords, is_published, created_at, updated_at)
@@ -81,7 +84,8 @@ class MobileRamenLogLikeIntegrationTest extends BaseIntegrationTest {
         author = active();
         liker = active();
         MobileUser pending = MobileUser.onboarding("like-" + UUID.randomUUID() + "@example.com");
-        pending.completeOnboarding(Nickname.of("L" + UUID.randomUUID().toString().substring(0, 8)), Instant.now());
+        pending.completeOnboarding(
+                Nickname.of("L" + UUID.randomUUID().toString().substring(0, 8)), Instant.now());
         pending.requestWithdrawal(Instant.now(), Duration.ofDays(30));
         Long withdrawing = users.saveAndFlush(pending).getId();
         created.add(withdrawing);
@@ -102,30 +106,31 @@ class MobileRamenLogLikeIntegrationTest extends BaseIntegrationTest {
     @Test
     void 공감과_취소는_반복해도_한_번만_반영되고_상세의_공감_여부에_보인다() throws Exception {
         for (int attempt = 0; attempt < 2; attempt++) {
-            mvc.perform(
-                    put("/api/v2/ramen-logs/{logId}/like", PUBLIC_LOG).header(HttpHeaders.AUTHORIZATION, auth(liker)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.liked").value(true))
-                .andExpect(jsonPath("$.data.likeCount").value(1));
+            mvc.perform(put("/api/v2/ramen-logs/{logId}/like", PUBLIC_LOG)
+                            .header(HttpHeaders.AUTHORIZATION, auth(liker)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.liked").value(true))
+                    .andExpect(jsonPath("$.data.likeCount").value(1));
         }
         mvc.perform(get("/api/v2/ramen-logs/{logId}", PUBLIC_LOG).header(HttpHeaders.AUTHORIZATION, auth(liker)))
-            .andExpect(jsonPath("$.data.isLiked").value(true))
-            .andExpect(jsonPath("$.data.likeCount").value(1));
+                .andExpect(jsonPath("$.data.isLiked").value(true))
+                .andExpect(jsonPath("$.data.likeCount").value(1));
         mvc.perform(get("/api/v2/ramen-logs/{logId}", PUBLIC_LOG).header(HttpHeaders.AUTHORIZATION, auth(author)))
-            .andExpect(jsonPath("$.data.isLiked").value(false));
+                .andExpect(jsonPath("$.data.isLiked").value(false));
         mvc.perform(get("/api/v2/members/me/ramen-logs").header(HttpHeaders.AUTHORIZATION, auth(author)))
-            .andExpect(jsonPath("$.data.items[?(@.id == '%d')].likeCount".formatted(PUBLIC_LOG)).value(1));
+                .andExpect(jsonPath("$.data.items[?(@.id == '%d')].likeCount".formatted(PUBLIC_LOG))
+                        .value(1));
 
         for (int attempt = 0; attempt < 2; attempt++) {
-            mvc.perform(delete("/api/v2/ramen-logs/{logId}/like", PUBLIC_LOG).header(HttpHeaders.AUTHORIZATION,
-                    auth(liker)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.liked").value(false))
-                .andExpect(jsonPath("$.data.likeCount").value(0));
+            mvc.perform(delete("/api/v2/ramen-logs/{logId}/like", PUBLIC_LOG)
+                            .header(HttpHeaders.AUTHORIZATION, auth(liker)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.liked").value(false))
+                    .andExpect(jsonPath("$.data.likeCount").value(0));
         }
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_ramen_log_like WHERE ramen_log_id = ?",
-                Integer.class, PUBLIC_LOG))
-            .isZero();
+        assertThat(jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM tb_v2_ramen_log_like WHERE ramen_log_id = ?", Integer.class, PUBLIC_LOG))
+                .isZero();
     }
 
     @Test
@@ -138,12 +143,11 @@ class MobileRamenLogLikeIntegrationTest extends BaseIntegrationTest {
             for (int repeat = 0; repeat < 2; repeat++) {
                 results.add(executor.submit(() -> {
                     start.await();
-                    return mvc
-                        .perform(put("/api/v2/ramen-logs/{logId}/like", PUBLIC_LOG).header(HttpHeaders.AUTHORIZATION,
-                                auth(userId)))
-                        .andReturn()
-                        .getResponse()
-                        .getStatus();
+                    return mvc.perform(put("/api/v2/ramen-logs/{logId}/like", PUBLIC_LOG)
+                                    .header(HttpHeaders.AUTHORIZATION, auth(userId)))
+                            .andReturn()
+                            .getResponse()
+                            .getStatus();
                 }));
             }
         }
@@ -153,32 +157,32 @@ class MobileRamenLogLikeIntegrationTest extends BaseIntegrationTest {
         }
         executor.shutdown();
 
-        assertThat(
-                jdbc.queryForObject("SELECT like_count FROM tb_v2_ramen_log WHERE id = ?", Integer.class, PUBLIC_LOG))
-            .isEqualTo(likers.size());
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_ramen_log_like WHERE ramen_log_id = ?",
-                Integer.class, PUBLIC_LOG))
-            .isEqualTo(likers.size());
+        assertThat(jdbc.queryForObject(
+                        "SELECT like_count FROM tb_v2_ramen_log WHERE id = ?", Integer.class, PUBLIC_LOG))
+                .isEqualTo(likers.size());
+        assertThat(jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM tb_v2_ramen_log_like WHERE ramen_log_id = ?", Integer.class, PUBLIC_LOG))
+                .isEqualTo(likers.size());
     }
 
     @Test
     void 볼_수_없는_기록은_404이고_비회원은_401_가입_중인_회원은_403이다() throws Exception {
         for (long logId : List.of(PRIVATE_LOG, DELETED_LOG, WITHDRAWING_LOG, 900006499L)) {
             mvc.perform(put("/api/v2/ramen-logs/{logId}/like", logId).header(HttpHeaders.AUTHORIZATION, auth(liker)))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
         }
         mvc.perform(put("/api/v2/ramen-logs/{logId}/like", PUBLIC_LOG)).andExpect(status().isUnauthorized());
-        Long onboarding = users
-            .saveAndFlush(MobileUser.onboarding("like-onboarding-" + UUID.randomUUID() + "@example.com"))
-            .getId();
+        Long onboarding = users.saveAndFlush(
+                        MobileUser.onboarding("like-onboarding-" + UUID.randomUUID() + "@example.com"))
+                .getId();
         created.add(onboarding);
-        mvc.perform(
-                put("/api/v2/ramen-logs/{logId}/like", PUBLIC_LOG).header(HttpHeaders.AUTHORIZATION, auth(onboarding)))
-            .andExpect(status().isForbidden())
-            .andExpect(jsonPath("$.error.code").value("ONBOARDING_REQUIRED"));
+        mvc.perform(put("/api/v2/ramen-logs/{logId}/like", PUBLIC_LOG)
+                        .header(HttpHeaders.AUTHORIZATION, auth(onboarding)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("ONBOARDING_REQUIRED"));
         mvc.perform(put("/api/v2/ramen-logs/{logId}/like", PRIVATE_LOG).header(HttpHeaders.AUTHORIZATION, auth(author)))
-            .andExpect(status().isOk());
+                .andExpect(status().isOk());
     }
 
     private void insertLog(long id, Long userId, String visibility, boolean deleted) {
@@ -206,5 +210,4 @@ class MobileRamenLogLikeIntegrationTest extends BaseIntegrationTest {
     private String auth(Long userId) {
         return "Bearer " + tokens.issue(userId);
     }
-
 }

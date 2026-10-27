@@ -40,5 +40,4 @@ public interface MobileRamenLogLikeRepository extends JpaRepository<MobileRamenL
             where liked.ramenLogId in (select log.id from MobileRamenLog log where log.userId = :userId)
             """)
     void deleteOnLogsOf(Long userId);
-
 }

@@ -1,8 +1,8 @@
 package com.raota.mobile.account.infrastructure.auth;
 
-import com.raota.mobile.account.application.port.AccessTokenIssuer;
 import com.raota.global.security.jwt.InvalidJwtTokenException;
 import com.raota.global.security.jwt.JwtCodec;
+import com.raota.mobile.account.application.port.AccessTokenIssuer;
 import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
@@ -23,7 +23,9 @@ public class MobileAccessTokenService implements AccessTokenIssuer {
 
     @Override
     public String issue(Long userId) {
-        return codec.issue(String.valueOf(userId), Duration.ofSeconds(properties.accessTokenExpirySeconds()),
+        return codec.issue(
+                String.valueOf(userId),
+                Duration.ofSeconds(properties.accessTokenExpirySeconds()),
                 Map.of("jti", UUID.randomUUID().toString()));
     }
 
@@ -35,10 +37,8 @@ public class MobileAccessTokenService implements AccessTokenIssuer {
     public Long verify(String token) {
         try {
             return Long.valueOf(codec.verifySubject(token));
-        }
-        catch (NumberFormatException exception) {
+        } catch (NumberFormatException exception) {
             throw new InvalidJwtTokenException(exception);
         }
     }
-
 }

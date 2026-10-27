@@ -7,9 +7,9 @@ import com.raota.mobile.common.cursor.CursorPage;
 import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
 import com.raota.mobile.ramenlog.application.query.MobileRamenLogSort;
-import com.raota.mobile.ramenlog.application.result.MobileRamenLogSummary;
-import com.raota.mobile.ramenlog.application.result.MobileRamenLogSummaryItem;
-import com.raota.mobile.ramenlog.application.result.MobileTasteNoteDefinitions;
+import com.raota.mobile.ramenlog.application.result.MobileRamenLogSummaryItemResult;
+import com.raota.mobile.ramenlog.application.result.MobileRamenLogSummaryResult;
+import com.raota.mobile.ramenlog.application.result.MobileTasteNoteDefinitionsResult;
 import com.raota.mobile.ramenlog.domain.model.LogVisibility;
 import com.raota.mobile.ramenlog.domain.model.MobileRamenLog;
 import com.raota.mobile.ramenlog.domain.model.MobileRamenLogImage;
@@ -42,7 +42,7 @@ public class MobileRamenLogQueryService {
 
     private static final int SUMMARY_LIMIT = 2000;
 
-    private static final MobileTasteNoteDefinitions DEFINITIONS = definitionsFromEnum();
+    private static final MobileTasteNoteDefinitionsResult DEFINITIONS = definitionsFromEnum();
 
     /** 걸러낸 기록을 채우려고 한 요청에서 더 읽는 묶음 수의 상한이다. 요청당 최대 {@code 5 × (size + 1)}행을 읽는다. */
     static final int MAX_FEED_BATCHES = 5;
@@ -59,7 +59,7 @@ public class MobileRamenLogQueryService {
 
     /** 내 기록(비공개 포함)을 방문일·ID 역순으로 읽는다. {@code ramenType}이 오면 그 종류만이다. */
     @Transactional(readOnly = true)
-    public CursorPage<MobileRamenLogSummary> list(Long userId, String ramenType, String rawCursor, int size) {
+    public CursorPage<MobileRamenLogSummaryResult> list(Long userId, String ramenType, String rawCursor, int size) {
         Cursor cursor = Cursor.parse(rawCursor).orElse(null);
         LocalDate afterDate = null;
         Long afterId = null;
@@ -67,10 +67,10 @@ public class MobileRamenLogQueryService {
             afterDate = parseDate(cursor);
             afterId = cursor.id();
         }
-        List<MobileRamenLog> fetched = logs.findMine(userId, ramenType, afterDate, afterId,
-                PageRequest.of(0, size + 1));
-        CursorPage<MobileRamenLog> page = CursorPage.of(fetched, size,
-                log -> Cursor.of(log.getVisitedAt(), log.getId()));
+        List<MobileRamenLog> fetched =
+                logs.findMine(userId, ramenType, afterDate, afterId, PageRequest.of(0, size + 1));
+        CursorPage<MobileRamenLog> page =
+                CursorPage.of(fetched, size, log -> Cursor.of(log.getVisitedAt(), log.getId()));
         return summaries(page, accounts.authors(List.of(userId)), userId);
     }
 
@@ -80,17 +80,17 @@ public class MobileRamenLogQueryService {
      * 돌려준다.
      */
     @Transactional(readOnly = true)
-    public CursorPage<MobileRamenLogSummary> feed(Long viewerId, MobileRamenLogSort sort, String ramenType, Long shopId,
-            String rawCursor, int size) {
+    public CursorPage<MobileRamenLogSummaryResult> feed(
+            Long viewerId, MobileRamenLogSort sort, String ramenType, Long shopId, String rawCursor, int size) {
         Cursor after = Cursor.parse(rawCursor).orElse(null);
         List<MobileRamenLog> visible = new ArrayList<>();
         Map<Long, MobileAuthor> authors = new HashMap<>();
-        for (int batches = 1;; batches++) {
+        for (int batches = 1; ; batches++) {
             List<MobileRamenLog> batch = feedBatch(sort, ramenType, shopId, viewerId, after, size + 1);
             Set<Long> unknown = batch.stream()
-                .map(MobileRamenLog::getUserId)
-                .filter(id -> !authors.containsKey(id))
-                .collect(Collectors.toSet());
+                    .map(MobileRamenLog::getUserId)
+                    .filter(id -> !authors.containsKey(id))
+                    .collect(Collectors.toSet());
             authors.putAll(accounts.authors(unknown));
             for (MobileRamenLog log : batch) {
                 MobileAuthor author = authors.get(log.getUserId());
@@ -111,23 +111,23 @@ public class MobileRamenLogQueryService {
     }
 
     @Transactional(readOnly = true)
-    public List<MobileRamenLogSummaryItem> summary(Long userId) {
+    public List<MobileRamenLogSummaryItemResult> summary(Long userId) {
         List<MobileRamenLog> newest = logs.findMine(userId, null, null, null, PageRequest.of(0, SUMMARY_LIMIT));
         if (newest.isEmpty()) {
             return List.of();
         }
         Map<Long, MobileShopRef> shopRefs = shopRefs(newest);
         return newest.stream()
-            .map(log -> MobileRamenLogViews.summaryItem(log, requiredShop(shopRefs, log.getShopId())))
-            .toList();
+                .map(log -> MobileRamenLogResultAssembler.toSummaryItem(log, requiredShop(shopRefs, log.getShopId())))
+                .toList();
     }
 
-    public MobileTasteNoteDefinitions definitions() {
+    public MobileTasteNoteDefinitionsResult definitions() {
         return DEFINITIONS;
     }
 
-    private CursorPage<MobileRamenLogSummary> summaries(CursorPage<MobileRamenLog> page,
-            Map<Long, MobileAuthor> authors, Long viewerId) {
+    private CursorPage<MobileRamenLogSummaryResult> summaries(
+            CursorPage<MobileRamenLog> page, Map<Long, MobileAuthor> authors, Long viewerId) {
         if (page.items().isEmpty()) {
             return new CursorPage<>(List.of(), page.nextCursor(), page.hasNext());
         }
@@ -135,15 +135,19 @@ public class MobileRamenLogQueryService {
         Map<Long, MobileShopRef> shopRefs = shopRefs(page.items());
         Map<Long, List<String>> urls = new HashMap<>();
         for (MobileRamenLogImage image : images.findByRamenLogIdInOrderByRamenLogIdAscSortOrderAsc(ids)) {
-            urls.computeIfAbsent(image.getRamenLogId(), ignored -> new ArrayList<>()).add(image.getUrl());
+            urls.computeIfAbsent(image.getRamenLogId(), ignored -> new ArrayList<>())
+                    .add(image.getUrl());
         }
         Set<Long> liked = likedLogIds(viewerId, ids);
-        List<MobileRamenLogSummary> items = page.items()
-            .stream()
-            .map(log -> MobileRamenLogViews.summary(log, authors.get(log.getUserId()),
-                    requiredShop(shopRefs, log.getShopId()), urls.getOrDefault(log.getId(), List.of()),
-                    liked.contains(log.getId()), viewerId))
-            .toList();
+        List<MobileRamenLogSummaryResult> items = page.items().stream()
+                .map(log -> MobileRamenLogResultAssembler.toSummary(
+                        log,
+                        authors.get(log.getUserId()),
+                        requiredShop(shopRefs, log.getShopId()),
+                        urls.getOrDefault(log.getId(), List.of()),
+                        liked.contains(log.getId()),
+                        viewerId))
+                .toList();
         return new CursorPage<>(items, page.nextCursor(), page.hasNext());
     }
 
@@ -155,8 +159,8 @@ public class MobileRamenLogQueryService {
         return new HashSet<>(likes.findLikedLogIds(viewerId, ids));
     }
 
-    private List<MobileRamenLog> feedBatch(MobileRamenLogSort sort, String ramenType, Long shopId, Long viewerId,
-            Cursor after, int limit) {
+    private List<MobileRamenLog> feedBatch(
+            MobileRamenLogSort sort, String ramenType, Long shopId, Long viewerId, Cursor after, int limit) {
         PageRequest page = PageRequest.of(0, limit);
         if (after == null) {
             return switch (sort) {
@@ -165,10 +169,12 @@ public class MobileRamenLogQueryService {
             };
         }
         return switch (sort) {
-            case LATEST -> logs.findLatest(LogVisibility.PUBLIC, ramenType, shopId, viewerId, parseInstant(after),
-                    after.id(), page);
-            case LIKES -> logs.findMostLiked(LogVisibility.PUBLIC, ramenType, shopId, viewerId, parseLikes(after),
-                    after.id(), page);
+            case LATEST ->
+                logs.findLatest(
+                        LogVisibility.PUBLIC, ramenType, shopId, viewerId, parseInstant(after), after.id(), page);
+            case LIKES ->
+                logs.findMostLiked(
+                        LogVisibility.PUBLIC, ramenType, shopId, viewerId, parseLikes(after), after.id(), page);
         };
     }
 
@@ -198,8 +204,7 @@ public class MobileRamenLogQueryService {
         }
         try {
             return LocalDate.parse(cursor.sortValue());
-        }
-        catch (DateTimeParseException exception) {
+        } catch (DateTimeParseException exception) {
             throw invalidCursor();
         }
     }
@@ -207,8 +212,7 @@ public class MobileRamenLogQueryService {
     private Instant parseInstant(Cursor cursor) {
         try {
             return Instant.parse(cursor.sortValue());
-        }
-        catch (DateTimeParseException exception) {
+        } catch (DateTimeParseException exception) {
             throw invalidCursor();
         }
     }
@@ -216,8 +220,7 @@ public class MobileRamenLogQueryService {
     private Integer parseLikes(Cursor cursor) {
         try {
             return Integer.valueOf(cursor.sortValue());
-        }
-        catch (NumberFormatException exception) {
+        } catch (NumberFormatException exception) {
             throw invalidCursor();
         }
     }
@@ -226,17 +229,17 @@ public class MobileRamenLogQueryService {
         return new MobileException(MobileErrorCode.VALIDATION_ERROR, "커서가 올바르지 않습니다.");
     }
 
-    private static MobileTasteNoteDefinitions definitionsFromEnum() {
-        Map<String, List<MobileTasteNoteDefinitions.Note>> groups = new LinkedHashMap<>();
+    private static MobileTasteNoteDefinitionsResult definitionsFromEnum() {
+        Map<String, List<MobileTasteNoteDefinitionsResult.Note>> groups = new LinkedHashMap<>();
         for (MobileTasteNote note : MobileTasteNote.values()) {
             groups.computeIfAbsent(note.category(), ignored -> new ArrayList<>())
-                .add(new MobileTasteNoteDefinitions.Note(note.name(), note.label()));
+                    .add(new MobileTasteNoteDefinitionsResult.Note(note.name(), note.label()));
         }
-        return new MobileTasteNoteDefinitions("1",
-                groups.entrySet()
-                    .stream()
-                    .map(entry -> new MobileTasteNoteDefinitions.Group(entry.getKey(), List.copyOf(entry.getValue())))
-                    .toList());
+        return new MobileTasteNoteDefinitionsResult(
+                "1",
+                groups.entrySet().stream()
+                        .map(entry -> new MobileTasteNoteDefinitionsResult.Group(
+                                entry.getKey(), List.copyOf(entry.getValue())))
+                        .toList());
     }
-
 }

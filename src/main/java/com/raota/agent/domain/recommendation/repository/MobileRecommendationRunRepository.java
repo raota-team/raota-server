@@ -27,5 +27,4 @@ public interface MobileRecommendationRunRepository {
 
     /** {@code [from, to)} 사이 추천에서 보여준 매장 칸 전부다. */
     List<RecommendationImpression> findImpressions(Instant from, Instant to);
-
 }

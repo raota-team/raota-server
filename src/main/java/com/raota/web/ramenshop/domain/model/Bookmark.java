@@ -1,7 +1,6 @@
 package com.raota.web.ramenshop.domain.model;
 
 import com.raota.web.account.domain.member.model.MemberProfile;
-import com.raota.web.ramenshop.domain.model.RamenShop;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -49,5 +48,4 @@ public class Bookmark {
     public void changeStatus(boolean isDeleted) {
         this.isDeleted = isDeleted;
     }
-
 }

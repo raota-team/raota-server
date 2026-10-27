@@ -13,8 +13,8 @@ import org.springframework.util.StringUtils;
 @Component
 public class SpringAiMobileRecommendationReasonAdapter implements MobileRecommendationReasonPort {
 
-    private static final ParameterizedTypeReference<Map<String, String>> REASONS = new ParameterizedTypeReference<>() {
-    };
+    private static final ParameterizedTypeReference<Map<String, String>> REASONS =
+            new ParameterizedTypeReference<>() {};
 
     private final ChatClient chatClient;
 
@@ -32,7 +32,8 @@ public class SpringAiMobileRecommendationReasonAdapter implements MobileRecommen
      * 일은 깊이 생각할 필요가 없어 생각 정도를 낮추고(짧고 빨라진다) 출력 상한을 넉넉히 둔다. 생각 정도를 받지 않는 모델이면 빈 값으로 끈다.
      * </p>
      */
-    public SpringAiMobileRecommendationReasonAdapter(ChatClient.Builder chatClientBuilder,
+    public SpringAiMobileRecommendationReasonAdapter(
+            ChatClient.Builder chatClientBuilder,
             @Value("classpath:/prompts/taste-recommendation-reason.st") Resource reasonTemplate,
             @Value("${app.mobile.recommendation.reason.reasoning-effort:low}") String reasoningEffort,
             @Value("${app.mobile.recommendation.reason.max-completion-tokens:6000}") int maxCompletionTokens) {
@@ -53,15 +54,16 @@ public class SpringAiMobileRecommendationReasonAdapter implements MobileRecommen
 
     @Override
     public Map<String, String> reasons(String conditions, String shopContext) {
-        Map<String, String> reasons = chatClient.prompt()
-            .options(options())
-            .user(user -> user.text(reasonTemplate).param("query", conditions).param("context", shopContext))
-            .call()
-            .entity(REASONS);
+        Map<String, String> reasons = chatClient
+                .prompt()
+                .options(options())
+                .user(user ->
+                        user.text(reasonTemplate).param("query", conditions).param("context", shopContext))
+                .call()
+                .entity(REASONS);
         if (reasons == null) {
             return Map.of();
         }
         return reasons;
     }
-
 }

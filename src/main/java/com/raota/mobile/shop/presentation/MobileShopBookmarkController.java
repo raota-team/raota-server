@@ -16,18 +16,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class MobileShopBookmarkController {
 
-    private final MobileShopBookmarkService bookmarks;
+    private final MobileShopBookmarkService bookmarkService;
 
-    @PutMapping("/{shopId:[0-9]+}/bookmark")
+    @PutMapping("/{shopId}/bookmark")
     public ResponseEntity<Void> add(@PathVariable Long shopId, @LoginUser Long userId) {
-        bookmarks.add(userId, shopId);
+        bookmarkService.add(userId, shopId);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/{shopId:[0-9]+}/bookmark")
+    @DeleteMapping("/{shopId}/bookmark")
     public ResponseEntity<Void> remove(@PathVariable Long shopId, @LoginUser Long userId) {
-        bookmarks.remove(userId, shopId);
+        bookmarkService.remove(userId, shopId);
         return ResponseEntity.noContent().build();
     }
-
 }

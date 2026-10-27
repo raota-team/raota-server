@@ -81,13 +81,11 @@ class MobileShopRamenTypeSplitMigrationTest extends BaseIntegrationTest {
 
     private List<String> types(long id) {
         String json = jdbc.queryForObject("SELECT ramen_types FROM tb_v2_shop WHERE id = ?", String.class, id);
-        return mapper.readValue(json, new TypeReference<List<String>>() {
-        });
+        return mapper.readValue(json, new TypeReference<List<String>>() {});
     }
 
     private void runSplit() {
         new ResourceDatabasePopulator(new ClassPathResource("db/migration/V41__split_other_v2_shop_ramen_types.sql"))
-            .execute(dataSource);
+                .execute(dataSource);
     }
-
 }

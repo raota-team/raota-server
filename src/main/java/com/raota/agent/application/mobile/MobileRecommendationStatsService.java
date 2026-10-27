@@ -1,7 +1,7 @@
 package com.raota.agent.application.mobile;
 
-import com.raota.agent.application.mobile.result.MobileRecommendationStats;
-import com.raota.agent.application.mobile.result.MobileRecommendationStats.Row;
+import com.raota.agent.application.mobile.result.MobileRecommendationStatsResult;
+import com.raota.agent.application.mobile.result.MobileRecommendationStatsResult.Row;
 import com.raota.agent.domain.recommendation.model.RecommendationImpression;
 import com.raota.agent.domain.recommendation.repository.MobileRecommendationRunRepository;
 import com.raota.mobile.ramenlog.application.facade.MobileRamenLogAgentFacade;
@@ -58,7 +58,7 @@ public class MobileRecommendationStatsService {
     private final Clock clock;
 
     /** {@code from}·{@code to}가 없으면 오늘(KST)까지 최근 30일이다. 거꾸로이거나 92일을 넘으면 거절한다. */
-    public MobileRecommendationStats stats(LocalDate from, LocalDate to) {
+    public MobileRecommendationStatsResult stats(LocalDate from, LocalDate to) {
         LocalDate end = to;
         if (end == null) {
             end = LocalDate.now(clock.withZone(SEOUL));
@@ -79,15 +79,14 @@ public class MobileRecommendationStatsService {
         Set<Long> userIds = new HashSet<>();
         impressions.forEach(impression -> userIds.add(impression.userId()));
         Instant activityEnd = toInstant.plus(ATTRIBUTION);
-        Map<String, List<Instant>> bookmarks = byUserShop(
-                shops.bookmarksCreatedBetween(userIds, fromInstant, activityEnd)
-                    .stream()
-                    .map(bookmark -> new Activity(bookmark.userId(), bookmark.shopId(), bookmark.createdAt()))
-                    .toList());
-        Map<String, List<Instant>> written = byUserShop(logs.logsCreatedBetween(userIds, fromInstant, activityEnd)
-            .stream()
-            .map(log -> new Activity(log.userId(), log.shopId(), log.createdAt()))
-            .toList());
+        Map<String, List<Instant>> bookmarks =
+                byUserShop(shops.bookmarksCreatedBetween(userIds, fromInstant, activityEnd).stream()
+                        .map(bookmark -> new Activity(bookmark.userId(), bookmark.shopId(), bookmark.createdAt()))
+                        .toList());
+        Map<String, List<Instant>> written =
+                byUserShop(logs.logsCreatedBetween(userIds, fromInstant, activityEnd).stream()
+                        .map(log -> new Activity(log.userId(), log.shopId(), log.createdAt()))
+                        .toList());
 
         Tally overall = new Tally(OVERALL);
         Map<String, Tally> byVersion = new LinkedHashMap<>();
@@ -99,32 +98,31 @@ public class MobileRecommendationStatsService {
             boolean logged = within(written.get(key), impression.shownAt());
             overall.add(impression, bookmarked, logged);
             byVersion.computeIfAbsent(impression.algorithmVersion(), Tally::new).add(impression, bookmarked, logged);
-            bySoup.computeIfAbsent(soup(impression.conditionsJson()), Tally::new).add(impression, bookmarked, logged);
+            bySoup.computeIfAbsent(soup(impression.conditionsJson()), Tally::new)
+                    .add(impression, bookmarked, logged);
             byRank.computeIfAbsent(impression.rank(), rank -> new Tally(String.valueOf(rank)))
-                .add(impression, bookmarked, logged);
+                    .add(impression, bookmarked, logged);
         }
-        List<Row> ranks = byRank.entrySet()
-            .stream()
-            .sorted(Map.Entry.comparingByKey())
-            .map(entry -> entry.getValue().row())
-            .toList();
-        return new MobileRecommendationStats(start, end, ATTRIBUTION_DAYS, overall.row(), byRuns(byVersion),
-                byRuns(bySoup), ranks);
+        List<Row> ranks = byRank.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> entry.getValue().row())
+                .toList();
+        return new MobileRecommendationStatsResult(
+                start, end, ATTRIBUTION_DAYS, overall.row(), byRuns(byVersion), byRuns(bySoup), ranks);
     }
 
     private static List<Row> byRuns(Map<String, Tally> tallies) {
-        return tallies.values()
-            .stream()
-            .map(Tally::row)
-            .sorted(Comparator.comparingInt(Row::runs).reversed().thenComparing(Row::key))
-            .toList();
+        return tallies.values().stream()
+                .map(Tally::row)
+                .sorted(Comparator.comparingInt(Row::runs).reversed().thenComparing(Row::key))
+                .toList();
     }
 
     private static Map<String, List<Instant>> byUserShop(List<Activity> activities) {
         Map<String, List<Instant>> result = new HashMap<>();
         for (Activity activity : activities) {
             result.computeIfAbsent(userShop(activity.userId(), activity.shopId()), key -> new ArrayList<>())
-                .add(activity.createdAt());
+                    .add(activity.createdAt());
         }
         return result;
     }
@@ -139,8 +137,7 @@ public class MobileRecommendationStatsService {
     }
 
     private String soup(String conditionsJson) {
-        Map<String, String> conditions = mapper.readValue(conditionsJson, new TypeReference<Map<String, String>>() {
-        });
+        Map<String, String> conditions = mapper.readValue(conditionsJson, new TypeReference<Map<String, String>>() {});
         String soup = conditions.get("soup");
         if (soup == null || soup.isBlank()) {
             return NO_SOUP;
@@ -152,8 +149,7 @@ public class MobileRecommendationStatsService {
         return userId + ":" + shopId;
     }
 
-    private record Activity(Long userId, Long shopId, Instant createdAt) {
-    }
+    private record Activity(Long userId, Long shopId, Instant createdAt) {}
 
     /** 한 묶음의 건수다. 추천 수는 서로 다른 추천 ID로 센다. */
     private static final class Tally {
@@ -196,7 +192,5 @@ public class MobileRecommendationStatsService {
         Row row() {
             return new Row(key, runIds.size(), impressions, opened, topOpened, bookmarked, logged);
         }
-
     }
-
 }

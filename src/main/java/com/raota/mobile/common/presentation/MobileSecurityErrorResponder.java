@@ -17,8 +17,8 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
@@ -37,8 +37,9 @@ public class MobileSecurityErrorResponder implements SecurityErrorResponder {
     }
 
     @Override
-    public void unauthorized(HttpServletRequest request, HttpServletResponse response,
-            AuthenticationException exception) throws IOException {
+    public void unauthorized(
+            HttpServletRequest request, HttpServletResponse response, AuthenticationException exception)
+            throws IOException {
         for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
             if (cause instanceof ExpiredJwtTokenException) {
                 write(request, response, MobileErrorCode.TOKEN_EXPIRED, "액세스 토큰이 만료되었습니다.");
@@ -46,7 +47,8 @@ public class MobileSecurityErrorResponder implements SecurityErrorResponder {
             }
         }
         String message = "인증이 필요합니다.";
-        if (exception instanceof BearerTokenAuthenticationException && exception.getMessage() != null
+        if (exception instanceof BearerTokenAuthenticationException
+                && exception.getMessage() != null
                 && !exception.getMessage().isBlank()) {
             message = exception.getMessage();
         }
@@ -57,9 +59,9 @@ public class MobileSecurityErrorResponder implements SecurityErrorResponder {
     public void forbidden(HttpServletRequest request, HttpServletResponse response, AccessDeniedException exception)
             throws IOException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getAuthorities()
-            .stream()
-            .anyMatch(authority -> MobileAuthorities.ONBOARDING.equals(authority.getAuthority()))) {
+        if (authentication != null
+                && authentication.getAuthorities().stream()
+                        .anyMatch(authority -> MobileAuthorities.ONBOARDING.equals(authority.getAuthority()))) {
             write(request, response, MobileErrorCode.ONBOARDING_REQUIRED, "온보딩을 먼저 완료해 주세요.");
             return;
         }
@@ -71,8 +73,9 @@ public class MobileSecurityErrorResponder implements SecurityErrorResponder {
         response.setStatus(code.httpStatus().value());
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        objectMapper.writeValue(response.getWriter(), MobileApiResponse.failure(MobileError.of(code, message))
-            .withRequestId(RequestIdFilter.currentRequestId(request)));
+        objectMapper.writeValue(
+                response.getWriter(),
+                MobileApiResponse.failure(MobileError.of(code, message))
+                        .withRequestId(RequestIdFilter.currentRequestId(request)));
     }
-
 }

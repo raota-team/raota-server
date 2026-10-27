@@ -64,8 +64,11 @@ public class MobileShopOpenStatus {
     }
 
     /** 특정 ISO 요일의 영업·휴식 시간을 가진 순수 값이다. */
-    public record Hours(int dayOfWeek, LocalTime opensAt, LocalTime closesAt, LocalTime breakStart, LocalTime breakEnd,
-            boolean closed) {
-    }
-
+    public record Hours(
+            int dayOfWeek,
+            LocalTime opensAt,
+            LocalTime closesAt,
+            LocalTime breakStart,
+            LocalTime breakEnd,
+            boolean closed) {}
 }

@@ -25,8 +25,12 @@ public class BusinessHoursDto {
         if (businessHours == null) {
             return null;
         }
-        return new BusinessHoursDto(businessHours.closedDays(), businessHours.openTime(), businessHours.closeTime(),
-                businessHours.breakStart(), businessHours.breakEnd(), businessHours.parkingInfo());
+        return new BusinessHoursDto(
+                businessHours.closedDays(),
+                businessHours.openTime(),
+                businessHours.closeTime(),
+                businessHours.breakStart(),
+                businessHours.breakEnd(),
+                businessHours.parkingInfo());
     }
-
 }

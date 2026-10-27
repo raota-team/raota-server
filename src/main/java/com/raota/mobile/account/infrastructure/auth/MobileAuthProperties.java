@@ -11,9 +11,12 @@ import org.springframework.validation.annotation.Validated;
  */
 @ConfigurationProperties("app.mobile.auth")
 @Validated
-public record MobileAuthProperties(@NotBlank String issuer,
-        @NotBlank @Pattern(regexp = "^(?!.*\\$\\{).*$",
-                message = "해석되지 않은 placeholder는 서명 키로 쓸 수 없습니다.") String accessTokenSecret,
-        @DefaultValue("1800") long accessTokenExpirySeconds, @DefaultValue("1209600") long refreshTokenExpirySeconds,
-        @DefaultValue("v2:refresh:") String refreshTokenKeyPrefix) {
-}
+public record MobileAuthProperties(
+        @NotBlank String issuer,
+
+        @NotBlank @Pattern(regexp = "^(?!.*\\$\\{).*$", message = "해석되지 않은 placeholder는 서명 키로 쓸 수 없습니다.")
+        String accessTokenSecret,
+
+        @DefaultValue("1800") long accessTokenExpirySeconds,
+        @DefaultValue("1209600") long refreshTokenExpirySeconds,
+        @DefaultValue("v2:refresh:") String refreshTokenKeyPrefix) {}

@@ -44,8 +44,7 @@ public class RequestIdFilter extends OncePerRequestFilter {
         MDC.put(MDC_KEY, requestId);
         try {
             filterChain.doFilter(request, response);
-        }
-        finally {
+        } finally {
             MDC.remove(MDC_KEY);
         }
     }
@@ -68,5 +67,4 @@ public class RequestIdFilter extends OncePerRequestFilter {
         String existing = currentRequestId(request);
         return existing != null ? existing : UUID.randomUUID().toString();
     }
-
 }

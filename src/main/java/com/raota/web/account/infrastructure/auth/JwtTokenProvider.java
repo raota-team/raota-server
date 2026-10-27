@@ -19,15 +19,16 @@ public class JwtTokenProvider {
     }
 
     public String createAccessToken(Long memberId) {
-        return codec.issue(String.valueOf(memberId), Duration.ofSeconds(authProperties.accessTokenExpirySeconds()),
+        return codec.issue(
+                String.valueOf(memberId),
+                Duration.ofSeconds(authProperties.accessTokenExpirySeconds()),
                 Map.of("memberId", memberId));
     }
 
     public Long getMemberId(String token) {
         try {
             return Long.valueOf(codec.verifySubject(token));
-        }
-        catch (JwtTokenException | NumberFormatException exception) {
+        } catch (JwtTokenException | NumberFormatException exception) {
             throw new JwtAuthenticationException("유효하지 않은 액세스 토큰입니다.", exception);
         }
     }
@@ -39,5 +40,4 @@ public class JwtTokenProvider {
     public long refreshTokenExpirySeconds() {
         return authProperties.refreshTokenExpirySeconds();
     }
-
 }

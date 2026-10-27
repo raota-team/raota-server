@@ -66,8 +66,10 @@ class MobileRamenLogFacadesIntegrationTest extends BaseIntegrationTest {
         assertThat(accounts.authors(List.of(userId, userId + 1))).containsOnlyKeys(userId);
         assertThat(accounts.authors(List.of(userId)).get(userId).active()).isTrue();
         jdbc.update("UPDATE tb_v2_shop SET is_published = FALSE WHERE id = ?", SHOP_ID);
-        assertThatThrownBy(() -> shops.findPublishedShopRef(SHOP_ID)).isInstanceOfSatisfying(MobileException.class,
-                exception -> assertThat(exception.code()).isEqualTo(MobileErrorCode.RESOURCE_NOT_FOUND));
+        assertThatThrownBy(() -> shops.findPublishedShopRef(SHOP_ID))
+                .isInstanceOfSatisfying(
+                        MobileException.class,
+                        exception -> assertThat(exception.code()).isEqualTo(MobileErrorCode.RESOURCE_NOT_FOUND));
         assertThat(shops.findShopRefs(List.of(SHOP_ID)).get(SHOP_ID).name()).isEqualTo("기록 매장");
     }
 
@@ -95,27 +97,28 @@ class MobileRamenLogFacadesIntegrationTest extends BaseIntegrationTest {
             second.get(20, TimeUnit.SECONDS);
         }
         assertThat(jdbc.queryForMap(
-                "SELECT log_count, satisfaction_score_sum, scored_log_count FROM tb_v2_shop WHERE id = ?", SHOP_ID))
-            .containsEntry("log_count", 20)
-            .containsEntry("satisfaction_score_sum", 100)
-            .containsEntry("scored_log_count", 20);
+                        "SELECT log_count, satisfaction_score_sum, scored_log_count FROM tb_v2_shop WHERE id = ?",
+                        SHOP_ID))
+                .containsEntry("log_count", 20)
+                .containsEntry("satisfaction_score_sum", 100)
+                .containsEntry("scored_log_count", 20);
         assertThat(accounts.authors(List.of(userId)).get(userId).logCount()).isEqualTo(20);
 
         shops.recordSatisfactionChanged(SHOP_ID, 5, 3);
-        assertThat(jdbc.queryForObject("SELECT satisfaction_score_sum FROM tb_v2_shop WHERE id = ?", Integer.class,
-                SHOP_ID))
-            .isEqualTo(98);
+        assertThat(jdbc.queryForObject(
+                        "SELECT satisfaction_score_sum FROM tb_v2_shop WHERE id = ?", Integer.class, SHOP_ID))
+                .isEqualTo(98);
         shops.recordLogRemoved(SHOP_ID, 3);
         for (int index = 0; index < 21; index++) {
             shops.recordLogRemoved(SHOP_ID, 5);
             accounts.decrementLogCount(userId);
         }
         assertThat(jdbc.queryForMap(
-                "SELECT log_count, satisfaction_score_sum, scored_log_count FROM tb_v2_shop WHERE id = ?", SHOP_ID))
-            .containsEntry("log_count", 0)
-            .containsEntry("satisfaction_score_sum", 0)
-            .containsEntry("scored_log_count", 0);
+                        "SELECT log_count, satisfaction_score_sum, scored_log_count FROM tb_v2_shop WHERE id = ?",
+                        SHOP_ID))
+                .containsEntry("log_count", 0)
+                .containsEntry("satisfaction_score_sum", 0)
+                .containsEntry("scored_log_count", 0);
         assertThat(accounts.authors(List.of(userId)).get(userId).logCount()).isZero();
     }
-
 }

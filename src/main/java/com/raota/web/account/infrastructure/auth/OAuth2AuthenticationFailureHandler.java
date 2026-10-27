@@ -17,19 +17,22 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
 
     private final AuthProperties authProperties;
 
-    private final com.raota.web.account.infrastructure.auth.repository.HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository; // 추가
+    private final com.raota.web.account.infrastructure.auth.repository.HttpCookieOAuth2AuthorizationRequestRepository
+            httpCookieOAuth2AuthorizationRequestRepository; // 추가
 
     @Override
-    public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
-            AuthenticationException exception) throws IOException, ServletException {
+    public void onAuthenticationFailure(
+            HttpServletRequest request, HttpServletResponse response, AuthenticationException exception)
+            throws IOException, ServletException {
         // 임시 쿠키 삭제 전 타겟 URI 획득
-        String targetUri = java.util.Arrays
-            .stream(request.getCookies() != null ? request.getCookies() : new jakarta.servlet.http.Cookie[0])
-            .filter(cookie -> com.raota.web.account.infrastructure.auth.repository.HttpCookieOAuth2AuthorizationRequestRepository.REDIRECT_URI_PARAM_COOKIE_NAME
-                .equals(cookie.getName()))
-            .map(jakarta.servlet.http.Cookie::getValue)
-            .findFirst()
-            .orElse(authProperties.oauth2().failureRedirectUri());
+        String targetUri = java.util.Arrays.stream(
+                        request.getCookies() != null ? request.getCookies() : new jakarta.servlet.http.Cookie[0])
+                .filter(cookie -> com.raota.web.account.infrastructure.auth.repository
+                        .HttpCookieOAuth2AuthorizationRequestRepository.REDIRECT_URI_PARAM_COOKIE_NAME
+                        .equals(cookie.getName()))
+                .map(jakarta.servlet.http.Cookie::getValue)
+                .findFirst()
+                .orElse(authProperties.oauth2().failureRedirectUri());
 
         httpCookieOAuth2AuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
 
@@ -43,5 +46,4 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
         int lastSlashIndex = uri.lastIndexOf('/');
         return lastSlashIndex >= 0 ? uri.substring(lastSlashIndex + 1) : "unknown";
     }
-
 }

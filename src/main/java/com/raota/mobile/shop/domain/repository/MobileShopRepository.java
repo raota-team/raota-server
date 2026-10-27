@@ -121,5 +121,4 @@ public interface MobileShopRepository extends JpaRepository<MobileShop, Long> {
             ORDER BY view_count DESC, id DESC
             """, nativeQuery = true)
     List<Long> findRecommendableIds(String ramenType);
-
 }

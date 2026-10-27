@@ -8,5 +8,4 @@ public enum MobileReportResolution {
 
     /** 대상은 두고 같은 대상의 열린 신고를 기각으로 닫는다. */
     DISMISS
-
 }

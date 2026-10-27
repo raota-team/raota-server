@@ -13,5 +13,4 @@ public interface RamenShopSearchDocumentPort {
      * {@code shopIds} 매장마다 매장 소개·리뷰 문서 중 {@code query}와 가장 비슷한 문서의 유사도다. 문서가 없는 매장은 빠진다.
      */
     Map<Long, Double> shopSimilarities(String query, Collection<Long> shopIds);
-
 }

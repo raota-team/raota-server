@@ -33,5 +33,4 @@ public class VoteResultsDto {
         }
         this.isVoted = true;
     }
-
 }

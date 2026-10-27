@@ -3,7 +3,8 @@ package com.raota.global.presentation.file.response;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 
-public record PresignedUrlResponse(@JsonProperty("upload_url") String uploadUrl,
+public record PresignedUrlResponse(
+        @JsonProperty("upload_url") String uploadUrl,
 
         @JsonProperty("img_url") String imgUrl,
 

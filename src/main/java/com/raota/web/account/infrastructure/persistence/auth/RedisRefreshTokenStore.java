@@ -69,5 +69,4 @@ public class RedisRefreshTokenStore implements RefreshTokenStore {
     private String memberKey(Long memberId) {
         return authRedisProperties.refreshMemberKeyPrefix() + memberId;
     }
-
 }

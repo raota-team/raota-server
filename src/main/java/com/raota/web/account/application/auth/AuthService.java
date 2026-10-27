@@ -1,10 +1,10 @@
 package com.raota.web.account.application.auth;
 
-import com.raota.web.account.domain.auth.model.SocialAccount;
 import com.raota.web.account.application.member.MemberProvisioningService;
+import com.raota.web.account.domain.auth.model.SocialAccount;
 import com.raota.web.account.domain.member.model.MemberProfile;
-import com.raota.web.account.infrastructure.auth.WithdrawnMemberException;
 import com.raota.web.account.infrastructure.auth.JwtTokenProvider;
+import com.raota.web.account.infrastructure.auth.WithdrawnMemberException;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,8 +31,8 @@ public class AuthService {
     public OAuth2LoginResult login(OAuth2UserInfo userInfo) {
         // 소셜 제공자(provider)와 고유 ID로 우리 DB에서 계정을 찾는다.
         Optional<SocialAccount> socialAccountOptional = authAccountService.findSocialAccount(userInfo);
-        Optional<MemberProfile> existingMemberProfile = socialAccountOptional
-            .flatMap(socialAccount -> memberProvisioningService.findById(socialAccount.getMemberId()));
+        Optional<MemberProfile> existingMemberProfile = socialAccountOptional.flatMap(
+                socialAccount -> memberProvisioningService.findById(socialAccount.getMemberId()));
 
         existingMemberProfile.filter(MemberProfile::isDeleted).ifPresent(member -> {
             throw new WithdrawnMemberException(
@@ -56,8 +56,7 @@ public class AuthService {
         String refreshTokenValue;
         try {
             refreshTokenValue = authAccountService.login(userInfo, normalizedNickname, memberProfile.getId());
-        }
-        catch (RuntimeException exception) {
+        } catch (RuntimeException exception) {
             // 토큰 저장 중 실패 시, 새로 생성한 회원 정보가 남아있지 않도록 롤백 처리를 수행한다.
             if (newMember) {
                 memberProvisioningService.deleteById(memberProfile.getId());
@@ -65,8 +64,12 @@ public class AuthService {
             throw exception;
         }
 
-        return new OAuth2LoginResult(memberProfile.getId(), newMember, accessToken,
-                jwtTokenProvider.accessTokenExpirySeconds(), refreshTokenValue);
+        return new OAuth2LoginResult(
+                memberProfile.getId(),
+                newMember,
+                accessToken,
+                jwtTokenProvider.accessTokenExpirySeconds(),
+                refreshTokenValue);
     }
 
     /**
@@ -75,9 +78,11 @@ public class AuthService {
     public TokenRefreshResult refresh(String refreshTokenValue) {
         AuthRefreshSession refreshSession = authAccountService.refresh(refreshTokenValue);
 
-        return new TokenRefreshResult(refreshSession.memberId(),
+        return new TokenRefreshResult(
+                refreshSession.memberId(),
                 jwtTokenProvider.createAccessToken(refreshSession.memberId()),
-                jwtTokenProvider.accessTokenExpirySeconds(), refreshSession.refreshToken());
+                jwtTokenProvider.accessTokenExpirySeconds(),
+                refreshSession.refreshToken());
     }
 
     /**
@@ -95,5 +100,4 @@ public class AuthService {
         String normalized = candidate.trim();
         return normalized.length() > 20 ? normalized.substring(0, 20) : normalized;
     }
-
 }

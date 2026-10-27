@@ -14,7 +14,5 @@ public interface ImageObjectStore {
     /**
      * @param url 앱과 DB가 쓰는 CDN 주소
      */
-    record StoredImage(String key, String url, Instant lastModified) {
-    }
-
+    record StoredImage(String key, String url, Instant lastModified) {}
 }

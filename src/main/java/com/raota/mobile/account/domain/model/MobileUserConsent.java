@@ -42,8 +42,8 @@ public class MobileUserConsent {
     @Column(name = "decided_at", nullable = false)
     private Instant decidedAt;
 
-    private MobileUserConsent(Long userId, ConsentType type, String documentVersion, boolean granted,
-            Instant decidedAt) {
+    private MobileUserConsent(
+            Long userId, ConsentType type, String documentVersion, boolean granted, Instant decidedAt) {
         this.userId = userId;
         this.consentType = type;
         this.documentVersion = documentVersion;
@@ -51,9 +51,8 @@ public class MobileUserConsent {
         this.decidedAt = decidedAt;
     }
 
-    public static MobileUserConsent decide(Long userId, ConsentType type, String documentVersion, boolean granted,
-            Instant decidedAt) {
+    public static MobileUserConsent decide(
+            Long userId, ConsentType type, String documentVersion, boolean granted, Instant decidedAt) {
         return new MobileUserConsent(userId, type, documentVersion, granted, decidedAt);
     }
-
 }

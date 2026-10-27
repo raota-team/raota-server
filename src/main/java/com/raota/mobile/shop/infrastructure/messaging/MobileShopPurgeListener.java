@@ -11,11 +11,10 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class MobileShopPurgeListener {
 
-    private final MobileShopBookmarkPort bookmarks;
+    private final MobileShopBookmarkPort bookmarkPort;
 
     @EventListener
     public void onMemberPurged(MobileMemberPurgedEvent event) {
-        bookmarks.removeForPurgedUser(event.userId());
+        bookmarkPort.removeForPurgedUser(event.userId());
     }
-
 }

@@ -7,5 +7,4 @@ public interface MessagePublisher {
      * @param payload 전송할 데이터 객체
      */
     void publish(String topic, Object payload);
-
 }

@@ -74,23 +74,31 @@ class RagEvaluationStaleRunRecoveryIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("테스트 프로필에서는 주기 복구 스케줄러를 등록하지 않는다")
     void schedulerDisabledInTestProfile() {
-        assertThat(applicationContext.getBeanNamesForType(RagEvaluationStaleRunScheduler.class)).isEmpty();
+        assertThat(applicationContext.getBeanNamesForType(RagEvaluationStaleRunScheduler.class))
+                .isEmpty();
     }
 
     private String saveRunning(LocalDateTime heartbeatAt) {
         String runId = runRepository.saveAndFlush(queued()).getRunId();
         transactionTemplate.execute(status -> runRepository.markRunning(runId, heartbeatAt));
         transactionTemplate.execute(status -> entityManager
-            .createNativeQuery("UPDATE tb_rag_evaluation_run SET heartbeat_at = ?1 WHERE run_id = ?2")
-            .setParameter(1, heartbeatAt)
-            .setParameter(2, runId)
-            .executeUpdate());
+                .createNativeQuery("UPDATE tb_rag_evaluation_run SET heartbeat_at = ?1 WHERE run_id = ?2")
+                .setParameter(1, heartbeatAt)
+                .setParameter(2, runId)
+                .executeUpdate());
         return runId;
     }
 
     private static RagEvaluationRunEntity queued() {
-        return RagEvaluationRunEntity.queued(UUID.randomUUID().toString(), "rag-mobile-v1.1", RagEvaluationSplit.DEV,
-                UUID.randomUUID().toString(), LocalDateTime.now().plusHours(24), "test", "v1", "test", "{}");
+        return RagEvaluationRunEntity.queued(
+                UUID.randomUUID().toString(),
+                "rag-mobile-v1.1",
+                RagEvaluationSplit.DEV,
+                UUID.randomUUID().toString(),
+                LocalDateTime.now().plusHours(24),
+                "test",
+                "v1",
+                "test",
+                "{}");
     }
-
 }

@@ -9,5 +9,4 @@ package com.raota.agent.application.ramenshop.command;
  * constructing presentation DTOs.
  * </p>
  */
-public record AiRamenShopSearchCommand(String query, Long memberId) {
-}
+public record AiRamenShopSearchCommand(String query, Long memberId) {}

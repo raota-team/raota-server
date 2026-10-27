@@ -1,13 +1,13 @@
 package com.raota.agent.application.recommendation;
 
+import com.raota.agent.application.ramenshop.search.RamenShopReader;
 import com.raota.agent.application.recommendation.dto.AiReviewSummaryResult;
 import com.raota.agent.application.recommendation.query.ReviewSummaryQuery;
-import com.raota.agent.application.ramenshop.search.RamenShopReader;
-import com.raota.web.ramenshop.domain.model.RamenShop;
 import com.raota.agent.domain.retrieval.document.RetrievalDocumentFilters;
 import com.raota.agent.domain.retrieval.document.RetrievalMetadataKeys;
-import com.raota.global.file.FileUploader;
 import com.raota.agent.presentation.recommendation.response.ReviewSummaryResponse;
+import com.raota.global.file.FileUploader;
+import com.raota.web.ramenshop.domain.model.RamenShop;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.ai.chat.client.ChatClient;
@@ -35,8 +35,11 @@ public class ReviewSummaryService {
 
     private final Resource reviewSummaryTemplate;
 
-    public ReviewSummaryService(RamenShopReader ramenShopReader, VectorStore vectorStore,
-            ChatClient.Builder chatClientBuilder, FileUploader fileUploader,
+    public ReviewSummaryService(
+            RamenShopReader ramenShopReader,
+            VectorStore vectorStore,
+            ChatClient.Builder chatClientBuilder,
+            FileUploader fileUploader,
             @Value("classpath:/prompts/system-persona.st") Resource systemPersona,
             @Value("classpath:/prompts/review-summary.st") Resource reviewSummaryTemplate) {
         this.ramenShopReader = ramenShopReader;
@@ -68,8 +71,8 @@ public class ReviewSummaryService {
 
         AiReviewSummaryResult aiResult = generateReviewSummaryResult(focus, ramenShop, reviewDocuments);
 
-        return new ReviewSummaryExecution(buildReviewSummaryResponse(ramenShop, reviewDocuments, aiResult),
-                reviewDocuments);
+        return new ReviewSummaryExecution(
+                buildReviewSummaryResponse(ramenShop, reviewDocuments, aiResult), reviewDocuments);
     }
 
     private void validateReviewSummaryRequest(ReviewSummaryQuery request) {
@@ -86,15 +89,20 @@ public class ReviewSummaryService {
         return new ReviewSummaryResponse(buildShopInfo(shop), 0, buildFallbackSummary(), List.of());
     }
 
-    private ReviewSummaryResponse buildReviewSummaryResponse(RamenShop shop, List<Document> reviewDocuments,
-            AiReviewSummaryResult aiResult) {
-        return new ReviewSummaryResponse(buildShopInfo(shop), reviewDocuments.size(), toSummary(aiResult),
-                toSampleReviews(reviewDocuments));
+    private ReviewSummaryResponse buildReviewSummaryResponse(
+            RamenShop shop, List<Document> reviewDocuments, AiReviewSummaryResult aiResult) {
+        return new ReviewSummaryResponse(
+                buildShopInfo(shop), reviewDocuments.size(), toSummary(aiResult), toSampleReviews(reviewDocuments));
     }
 
     private ReviewSummaryResponse.AiShopBasicInfo buildShopInfo(RamenShop shop) {
-        return new ReviewSummaryResponse.AiShopBasicInfo(shop.getId(), shop.getName(), ramenShopReader.primaryTag(shop),
-                ramenShopReader.addressText(shop), fileUploader.getAccessibleUrl(shop.getImageUrl()), false);
+        return new ReviewSummaryResponse.AiShopBasicInfo(
+                shop.getId(),
+                shop.getName(),
+                ramenShopReader.primaryTag(shop),
+                ramenShopReader.addressText(shop),
+                fileUploader.getAccessibleUrl(shop.getImageUrl()),
+                false);
     }
 
     private ReviewSummaryResponse.AiSummary buildFallbackSummary() {
@@ -112,27 +120,33 @@ public class ReviewSummaryService {
         return new ReviewSummaryResponse.AiSummary(
                 toSummaryDetail(aiResult.summary().pros(), "장점 정보 부족", "장점을 판단할 수 있는 리뷰 데이터가 충분하지 않습니다."),
                 toSummaryDetail(aiResult.summary().cons(), "단점 정보 부족", "단점을 판단할 수 있는 리뷰 데이터가 충분하지 않습니다."),
-                toSummaryDetail(aiResult.summary().recommendedMenu(), "추천 메뉴 정보 부족",
-                        "추천 메뉴를 판단할 수 있는 리뷰 데이터가 충분하지 않습니다."));
+                toSummaryDetail(
+                        aiResult.summary().recommendedMenu(), "추천 메뉴 정보 부족", "추천 메뉴를 판단할 수 있는 리뷰 데이터가 충분하지 않습니다."));
     }
 
-    private ReviewSummaryResponse.SummaryDetail toSummaryDetail(AiReviewSummaryResult.AiSummaryDetail detail,
-            String fallbackTitle, String fallbackBody) {
+    private ReviewSummaryResponse.SummaryDetail toSummaryDetail(
+            AiReviewSummaryResult.AiSummaryDetail detail, String fallbackTitle, String fallbackBody) {
         if (detail == null || !ramenShopReader.hasText(detail.title()) || !ramenShopReader.hasText(detail.body())) {
             return new ReviewSummaryResponse.SummaryDetail(fallbackTitle, fallbackBody);
         }
 
-        return new ReviewSummaryResponse.SummaryDetail(detail.title().trim(), detail.body().trim());
+        return new ReviewSummaryResponse.SummaryDetail(
+                detail.title().trim(), detail.body().trim());
     }
 
     private List<ReviewSummaryResponse.SampleReview> toSampleReviews(List<Document> reviewDocuments) {
-        return reviewDocuments.stream().limit(SAMPLE_REVIEW_LIMIT).map(this::toSampleReview).toList();
+        return reviewDocuments.stream()
+                .limit(SAMPLE_REVIEW_LIMIT)
+                .map(this::toSampleReview)
+                .toList();
     }
 
     private ReviewSummaryResponse.SampleReview toSampleReview(Document document) {
         Object sourceId = document.getMetadata().get(RetrievalMetadataKeys.SOURCE_ID);
 
-        return new ReviewSummaryResponse.SampleReview(sourceId == null ? "익명 리뷰" : "리뷰 " + sourceId, null,
+        return new ReviewSummaryResponse.SampleReview(
+                sourceId == null ? "익명 리뷰" : "리뷰 " + sourceId,
+                null,
                 truncate(document.getText(), SAMPLE_REVIEW_MAX_LENGTH));
     }
 
@@ -153,11 +167,11 @@ public class ReviewSummaryService {
         String query = buildReviewSummaryQuery(shop, focus);
 
         return vectorStore.similaritySearch(SearchRequest.builder()
-            .query(query)
-            .topK(12)
-            .similarityThreshold(0.45)
-            .filterExpression(RetrievalDocumentFilters.externalReviewChunksForShop(shop.getId()))
-            .build());
+                .query(query)
+                .topK(12)
+                .similarityThreshold(0.45)
+                .filterExpression(RetrievalDocumentFilters.externalReviewChunksForShop(shop.getId()))
+                .build());
     }
 
     private String buildReviewSummaryQuery(RamenShop shop, String focus) {
@@ -172,15 +186,16 @@ public class ReviewSummaryService {
         return reviewDocuments == null || reviewDocuments.isEmpty();
     }
 
-    private AiReviewSummaryResult generateReviewSummaryResult(String focus, RamenShop shop,
-            List<Document> reviewDocuments) {
-        return chatClient.prompt()
-            .user(user -> user.text(reviewSummaryTemplate)
-                .param("focus", ramenShopReader.hasText(focus) ? focus : "전반적인 리뷰 요약")
-                .param("shopInfo", ramenShopReader.buildShopInfoContext(shop))
-                .param("reviewContext", buildReviewContext(reviewDocuments)))
-            .call()
-            .entity(AiReviewSummaryResult.class);
+    private AiReviewSummaryResult generateReviewSummaryResult(
+            String focus, RamenShop shop, List<Document> reviewDocuments) {
+        return chatClient
+                .prompt()
+                .user(user -> user.text(reviewSummaryTemplate)
+                        .param("focus", ramenShopReader.hasText(focus) ? focus : "전반적인 리뷰 요약")
+                        .param("shopInfo", ramenShopReader.buildShopInfoContext(shop))
+                        .param("reviewContext", buildReviewContext(reviewDocuments)))
+                .call()
+                .entity(AiReviewSummaryResult.class);
     }
 
     private String buildReviewContext(List<Document> reviewDocuments) {
@@ -195,8 +210,8 @@ public class ReviewSummaryService {
                 - 리뷰ID: %s
                   작성일: %s
                   내용: %s
-                """.formatted(sourceId == null ? "UNKNOWN" : sourceId, createdAt == null ? "UNKNOWN" : createdAt,
-                document.getText());
+                """.formatted(
+                sourceId == null ? "UNKNOWN" : sourceId, createdAt == null ? "UNKNOWN" : createdAt, document.getText());
     }
 
     public record ReviewSummaryExecution(ReviewSummaryResponse response, List<Document> evidence) {
@@ -204,5 +219,4 @@ public class ReviewSummaryService {
             evidence = evidence == null ? List.of() : List.copyOf(evidence);
         }
     }
-
 }

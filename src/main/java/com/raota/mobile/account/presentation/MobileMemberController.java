@@ -8,14 +8,14 @@ import com.raota.mobile.account.presentation.request.MobileConsentsRequest;
 import com.raota.mobile.account.presentation.request.MobileOnboardingRequest;
 import com.raota.mobile.account.presentation.request.MobileProfileUpdateRequest;
 import com.raota.mobile.account.presentation.request.MobileWithdrawalRequest;
-import com.raota.mobile.common.presentation.response.MobileApiResponse;
 import com.raota.mobile.common.presentation.LoginUser;
+import com.raota.mobile.common.presentation.response.MobileApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -35,35 +35,34 @@ public class MobileMemberController {
     }
 
     @PatchMapping("/me")
-    public MobileApiResponse<MobileMemberResult> updateProfile(@LoginUser Long userId,
-            @Valid @RequestBody MobileProfileUpdateRequest request) {
-        return MobileApiResponse.success(members.updateProfile(userId, request.email(), request.avatarUrl(),
-                request.bio(), request.favoriteRamenType()));
+    public MobileApiResponse<MobileMemberResult> updateProfile(
+            @LoginUser Long userId, @Valid @RequestBody MobileProfileUpdateRequest request) {
+        return MobileApiResponse.success(members.updateProfile(
+                userId, request.email(), request.avatarUrl(), request.bio(), request.favoriteRamenType()));
     }
 
     @GetMapping("/nickname-availability")
-    public MobileApiResponse<MobileNicknameAvailabilityResult> nicknameAvailability(@LoginUser Long userId,
-            @RequestParam String nickname) {
+    public MobileApiResponse<MobileNicknameAvailabilityResult> nicknameAvailability(
+            @LoginUser Long userId, @RequestParam String nickname) {
         return MobileApiResponse.success(members.nicknameAvailability(userId, nickname));
     }
 
     @PutMapping("/me/onboarding")
-    public MobileApiResponse<MobileMemberResult> onboard(@LoginUser Long userId,
-            @Valid @RequestBody MobileOnboardingRequest request) {
+    public MobileApiResponse<MobileMemberResult> onboard(
+            @LoginUser Long userId, @Valid @RequestBody MobileOnboardingRequest request) {
         return MobileApiResponse.success(members.onboard(userId, request.toCommand()));
     }
 
     /** v1에서 옮긴 회원이나 문서 개정 뒤 {@code consentRequired}인 회원이 현재 약관·처리방침에 동의한다. */
     @PutMapping("/me/consents")
-    public MobileApiResponse<MobileMemberResult> decideConsents(@LoginUser Long userId,
-            @Valid @RequestBody MobileConsentsRequest request) {
+    public MobileApiResponse<MobileMemberResult> decideConsents(
+            @LoginUser Long userId, @Valid @RequestBody MobileConsentsRequest request) {
         return MobileApiResponse.success(members.decideConsents(userId, request.toDecisions()));
     }
 
     @PostMapping("/me/withdrawal")
-    public MobileApiResponse<MobileWithdrawalResult> requestWithdrawal(@LoginUser Long userId,
-            @Valid @RequestBody MobileWithdrawalRequest request) {
+    public MobileApiResponse<MobileWithdrawalResult> requestWithdrawal(
+            @LoginUser Long userId, @Valid @RequestBody MobileWithdrawalRequest request) {
         return MobileApiResponse.success(members.requestWithdrawal(userId));
     }
-
 }

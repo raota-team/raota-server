@@ -1,15 +1,15 @@
 package com.raota.mobile.account.domain.repository;
 
-import com.raota.mobile.account.domain.model.MobileUserStatus;
 import com.raota.mobile.account.domain.model.MobileUser;
+import com.raota.mobile.account.domain.model.MobileUserStatus;
 import jakarta.persistence.LockModeType;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 public interface MobileUserRepository extends JpaRepository<MobileUser, Long> {
@@ -47,15 +47,13 @@ public interface MobileUserRepository extends JpaRepository<MobileUser, Long> {
                 or (user.purgeScheduledAt = :afterScheduledAt and user.id > :afterId))
             order by user.purgeScheduledAt, user.id
             """)
-    List<DueUser> findDueForPurgeAfter(MobileUserStatus status, Instant now, Instant afterScheduledAt, Long afterId,
-            Pageable pageable);
+    List<DueUser> findDueForPurgeAfter(
+            MobileUserStatus status, Instant now, Instant afterScheduledAt, Long afterId, Pageable pageable);
 
     interface DueUser {
 
         Long getId();
 
         Instant getPurgeScheduledAt();
-
     }
-
 }

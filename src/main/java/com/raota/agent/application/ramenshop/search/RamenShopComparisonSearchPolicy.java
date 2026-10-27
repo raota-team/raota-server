@@ -34,5 +34,4 @@ public class RamenShopComparisonSearchPolicy {
     public double similarityThreshold() {
         return SIMILARITY_THRESHOLD;
     }
-
 }

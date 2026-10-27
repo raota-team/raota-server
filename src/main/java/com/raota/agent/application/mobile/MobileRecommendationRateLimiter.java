@@ -32,8 +32,7 @@ class MobileRecommendationRateLimiter {
         try {
             count = redis.opsForValue().increment(key);
             redis.expire(key, KEY_TTL);
-        }
-        catch (RuntimeException exception) {
+        } catch (RuntimeException exception) {
             log.warn("추천 횟수 제한을 확인하지 못해 허용합니다: userId={}", userId, exception);
             return;
         }
@@ -41,5 +40,4 @@ class MobileRecommendationRateLimiter {
             throw new MobileException(MobileErrorCode.RATE_LIMITED, "추천은 1분에 10번까지 받을 수 있습니다.");
         }
     }
-
 }

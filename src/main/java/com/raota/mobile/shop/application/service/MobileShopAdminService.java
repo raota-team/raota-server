@@ -6,8 +6,9 @@ import com.raota.mobile.common.page.OffsetPage;
 import com.raota.mobile.shop.application.command.MobileAdminBusinessHourCommand;
 import com.raota.mobile.shop.application.command.MobileAdminServicePerkCommand;
 import com.raota.mobile.shop.application.command.MobileAdminShopCommand;
-import com.raota.mobile.shop.application.result.MobileAdminShopDetail;
-import com.raota.mobile.shop.application.result.MobileAdminShopRow;
+import com.raota.mobile.shop.application.result.MobileAdminShopDetailResult;
+import com.raota.mobile.shop.application.result.MobileAdminShopRowResult;
+import com.raota.mobile.shop.application.result.MobileShopBusinessHourResult;
 import com.raota.mobile.shop.domain.model.MobileShop;
 import com.raota.mobile.shop.domain.model.MobileShopBusinessHour;
 import com.raota.mobile.shop.domain.model.MobileShopImage;
@@ -22,8 +23,6 @@ import com.raota.mobile.shop.domain.repository.MobileShopRepository;
 import com.raota.mobile.shop.domain.repository.MobileShopServicePerkRepository;
 import java.time.Clock;
 import java.time.Instant;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -44,86 +43,91 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class MobileShopAdminService {
 
-    private static final DateTimeFormatter CLOCK_TIME = DateTimeFormatter.ofPattern("HH:mm");
+    private final MobileShopRepository shopRepository;
 
-    private final MobileShopRepository shops;
+    private final MobileShopImageRepository imageRepository;
 
-    private final MobileShopImageRepository images;
+    private final MobileShopBusinessHourRepository businessHourRepository;
 
-    private final MobileShopBusinessHourRepository hours;
-
-    private final MobileShopServicePerkRepository perks;
+    private final MobileShopServicePerkRepository servicePerkRepository;
 
     private final Clock clock;
 
+    private final MobileShopSummaryAssembler summaryAssembler;
+
     @Transactional(readOnly = true)
-    public OffsetPage<MobileAdminShopRow> list(String keyword, Boolean published, int page, int size) {
-        var found = shops.findLiveForAdmin(blankToNull(keyword), published,
-                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id")));
+    public OffsetPage<MobileAdminShopRowResult> list(String keyword, Boolean published, int page, int size) {
+        var found = shopRepository.findLiveForAdmin(
+                blankToNull(keyword), published, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id")));
         List<Long> ids = found.getContent().stream().map(MobileShop::getId).toList();
-        Map<Long, String> thumbnails = new HashMap<>();
-        for (MobileShopImage image : images.findByShopIdInOrderBySortOrderAscIdAsc(ids)) {
-            thumbnails.putIfAbsent(image.getShopId(), image.getUrl());
-        }
+        Map<Long, String> thumbnails = summaryAssembler.findFirstImageUrls(ids);
         return OffsetPage.of(found, shop -> row(shop, thumbnails.get(shop.getId())));
     }
 
     @Transactional(readOnly = true)
-    public MobileAdminShopDetail detail(Long shopId) {
+    public MobileAdminShopDetailResult detail(Long shopId) {
         return detail(live(shopId));
     }
 
     @Transactional
-    public MobileAdminShopDetail create(MobileAdminShopCommand command) {
+    public MobileAdminShopDetailResult create(MobileAdminShopCommand command) {
         validate(command.profile());
-        MobileShop shop = shops.saveAndFlush(MobileShop.create(command.profile(), now()));
+        MobileShop shop = shopRepository.saveAndFlush(MobileShop.create(command.profile(), now()));
         saveImages(shop.getId(), command.imageUrls(), Map.of());
         return detail(shop);
     }
 
     @Transactional
-    public MobileAdminShopDetail update(Long shopId, MobileAdminShopCommand command) {
+    public MobileAdminShopDetailResult update(Long shopId, MobileAdminShopCommand command) {
         validate(command.profile());
         MobileShop shop = liveForUpdate(shopId);
         shop.update(command.profile(), now());
         Map<String, ShopImageSource> sources = new HashMap<>();
-        for (MobileShopImage image : images.findByShopIdInOrderBySortOrderAscIdAsc(List.of(shopId))) {
+        for (MobileShopImage image : imageRepository.findByShopIdInOrderBySortOrderAscIdAsc(List.of(shopId))) {
             sources.putIfAbsent(image.getUrl(), image.getSource());
         }
-        images.deleteByShopId(shopId);
+        imageRepository.deleteByShopId(shopId);
         saveImages(shopId, command.imageUrls(), sources);
         return detail(shop);
     }
 
     /** 저장하면 영업시간을 지금 확인한 것으로 기록한다. 빈 목록이면 영업시간 정보를 지운다. */
     @Transactional
-    public MobileAdminShopDetail replaceBusinessHours(Long shopId, List<MobileAdminBusinessHourCommand> commands) {
+    public MobileAdminShopDetailResult replaceBusinessHours(
+            Long shopId, List<MobileAdminBusinessHourCommand> commands) {
         validateHours(commands);
         MobileShop shop = liveForUpdate(shopId);
-        hours.deleteByShopId(shopId);
-        hours.saveAll(commands.stream()
-            .map(hour -> MobileShopBusinessHour.of(shopId, hour.dayOfWeek(), hour.closed(), hour.opensAt(),
-                    hour.closesAt(), hour.breakStart(), hour.breakEnd(), hour.lastOrderAt()))
-            .toList());
+        businessHourRepository.deleteByShopId(shopId);
+        businessHourRepository.saveAll(commands.stream()
+                .map(hour -> MobileShopBusinessHour.of(
+                        shopId,
+                        hour.dayOfWeek(),
+                        hour.closed(),
+                        hour.opensAt(),
+                        hour.closesAt(),
+                        hour.breakStart(),
+                        hour.breakEnd(),
+                        hour.lastOrderAt()))
+                .toList());
         shop.markHoursVerified(now());
         return detail(shop);
     }
 
     @Transactional
-    public MobileAdminShopDetail replaceServicePerks(Long shopId, List<MobileAdminServicePerkCommand> commands) {
+    public MobileAdminShopDetailResult replaceServicePerks(Long shopId, List<MobileAdminServicePerkCommand> commands) {
         validatePerks(commands);
         MobileShop shop = liveForUpdate(shopId);
         Instant now = now();
-        perks.deleteByShopId(shopId);
-        perks.saveAll(commands.stream()
-            .map(perk -> MobileShopServicePerk.of(shopId, perk.type(), perk.status(), perk.price(), perk.condition(),
-                    now))
-            .toList());
+        servicePerkRepository.deleteByShopId(shopId);
+        servicePerkRepository.saveAll(commands.stream()
+                .map(perk -> MobileShopServicePerk.of(
+                        shopId, perk.type(), perk.status(), perk.price(), perk.condition(), now))
+                .toList());
         return detail(shop);
     }
 
     @Transactional
-    public MobileAdminShopDetail changeVisibility(Long shopId, boolean published) {
+    public MobileAdminShopDetailResult changeVisibility(Long shopId, boolean published) {
         MobileShop shop = live(shopId);
         shop.changeVisibility(published, now());
         return detail(shop);
@@ -132,8 +136,8 @@ public class MobileShopAdminService {
     private void saveImages(Long shopId, List<String> urls, Map<String, ShopImageSource> previousSources) {
         for (int index = 0; index < urls.size(); index++) {
             String url = urls.get(index);
-            images
-                .save(MobileShopImage.of(shopId, url, previousSources.getOrDefault(url, ShopImageSource.ADMIN), index));
+            imageRepository.save(
+                    MobileShopImage.of(shopId, url, previousSources.getOrDefault(url, ShopImageSource.ADMIN), index));
         }
     }
 
@@ -153,8 +157,11 @@ public class MobileShopAdminService {
                 throw invalid("같은 요일을 두 번 넣을 수 없습니다: " + hour.dayOfWeek());
             }
             if (hour.closed()) {
-                if (hour.opensAt() != null || hour.closesAt() != null || hour.breakStart() != null
-                        || hour.breakEnd() != null || hour.lastOrderAt() != null) {
+                if (hour.opensAt() != null
+                        || hour.closesAt() != null
+                        || hour.breakStart() != null
+                        || hour.breakEnd() != null
+                        || hour.lastOrderAt() != null) {
                     throw invalid("휴무일에는 시간을 넣지 않습니다: " + hour.dayOfWeek());
                 }
                 continue;
@@ -181,51 +188,89 @@ public class MobileShopAdminService {
     }
 
     private MobileShop live(Long shopId) {
-        return shops.findByIdAndDeletedAtIsNull(shopId).orElseThrow(this::notFound);
+        return shopRepository.findByIdAndDeletedAtIsNull(shopId).orElseThrow(this::notFound);
     }
 
     private MobileShop liveForUpdate(Long shopId) {
-        return shops.findLiveForUpdate(shopId).orElseThrow(this::notFound);
+        return shopRepository.findLiveForUpdate(shopId).orElseThrow(this::notFound);
     }
 
-    private MobileAdminShopDetail detail(MobileShop shop) {
+    private MobileAdminShopDetailResult detail(MobileShop shop) {
         List<Long> ids = List.of(shop.getId());
-        List<String> imageUrls = images.findByShopIdInOrderBySortOrderAscIdAsc(ids)
-            .stream()
-            .map(MobileShopImage::getUrl)
-            .toList();
-        List<MobileAdminShopDetail.Hour> shopHours = hours.findByShopIdInOrderByDayOfWeekAsc(ids)
-            .stream()
-            .map(hour -> new MobileAdminShopDetail.Hour(hour.getDayOfWeek(), hour.isClosed(), time(hour.getOpensAt()),
-                    time(hour.getClosesAt()), time(hour.getBreakStart()), time(hour.getBreakEnd()),
-                    time(hour.getLastOrderAt())))
-            .toList();
-        List<MobileAdminShopDetail.Perk> shopPerks = perks.findByShopIdOrderByIdAsc(shop.getId())
-            .stream()
-            .map(perk -> new MobileAdminShopDetail.Perk(perk.getPerkType(), perk.getStatus(), perk.getPrice(),
-                    perk.getConditionText(), perk.getVerifiedAt()))
-            .toList();
-        return new MobileAdminShopDetail(String.valueOf(shop.getId()), shop.getName(), shop.getBranchName(),
-                shop.getAddress(), shop.getRegion(), shop.getLatitude(), shop.getLongitude(), shop.getPhone(),
-                shop.getTagline(), shop.getDescription(), shop.getRamenTypes(), shop.getTags(), shop.getInstagramUrl(),
-                shop.getReservationUrl(), shop.getWebsiteUrl(), shop.getNaverPlaceId(), shop.getKakaoPlaceId(),
-                shop.getPriceMin(), shop.getPriceMax(), shop.getBusinessStatus(), shop.getClosedDaysText(), imageUrls,
-                shop.isPublished(), shop.getHoursVerifiedAt(), shopHours, shopPerks, shop.getAiReviewSummary(),
-                shop.getAiSummaryKeywords(), shop.getAiSummaryGeneratedAt(), shop.getViewCount(), shop.getLogCount(),
-                shop.getBookmarkCount(), shop.getCreatedAt(), shop.getUpdatedAt());
+        List<String> imageUrls = imageRepository.findByShopIdInOrderBySortOrderAscIdAsc(ids).stream()
+                .map(MobileShopImage::getUrl)
+                .toList();
+        List<MobileAdminShopDetailResult.Hour> shopHours =
+                businessHourRepository.findByShopIdInOrderByDayOfWeekAsc(ids).stream()
+                        .map(hour -> new MobileAdminShopDetailResult.Hour(
+                                hour.getDayOfWeek(),
+                                hour.isClosed(),
+                                MobileShopBusinessHourResult.clockTime(hour.getOpensAt()),
+                                MobileShopBusinessHourResult.clockTime(hour.getClosesAt()),
+                                MobileShopBusinessHourResult.clockTime(hour.getBreakStart()),
+                                MobileShopBusinessHourResult.clockTime(hour.getBreakEnd()),
+                                MobileShopBusinessHourResult.clockTime(hour.getLastOrderAt())))
+                        .toList();
+        List<MobileAdminShopDetailResult.Perk> shopPerks =
+                servicePerkRepository.findByShopIdOrderByIdAsc(shop.getId()).stream()
+                        .map(perk -> new MobileAdminShopDetailResult.Perk(
+                                perk.getPerkType(),
+                                perk.getStatus(),
+                                perk.getPrice(),
+                                perk.getConditionText(),
+                                perk.getVerifiedAt()))
+                        .toList();
+        return new MobileAdminShopDetailResult(
+                String.valueOf(shop.getId()),
+                shop.getName(),
+                shop.getBranchName(),
+                shop.getAddress(),
+                shop.getRegion(),
+                shop.getLatitude(),
+                shop.getLongitude(),
+                shop.getPhone(),
+                shop.getTagline(),
+                shop.getDescription(),
+                shop.getRamenTypes(),
+                shop.getTags(),
+                shop.getInstagramUrl(),
+                shop.getReservationUrl(),
+                shop.getWebsiteUrl(),
+                shop.getNaverPlaceId(),
+                shop.getKakaoPlaceId(),
+                shop.getPriceMin(),
+                shop.getPriceMax(),
+                shop.getBusinessStatus(),
+                shop.getClosedDaysText(),
+                imageUrls,
+                shop.isPublished(),
+                shop.getHoursVerifiedAt(),
+                shopHours,
+                shopPerks,
+                shop.getAiReviewSummary(),
+                shop.getAiSummaryKeywords(),
+                shop.getAiSummaryGeneratedAt(),
+                shop.getViewCount(),
+                shop.getLogCount(),
+                shop.getBookmarkCount(),
+                shop.getCreatedAt(),
+                shop.getUpdatedAt());
     }
 
-    private static MobileAdminShopRow row(MobileShop shop, String thumbnailUrl) {
-        return new MobileAdminShopRow(String.valueOf(shop.getId()), shop.getName(), shop.getBranchName(),
-                shop.getAddress(), shop.getRegion(), shop.getBusinessStatus(), shop.isPublished(), thumbnailUrl,
-                shop.getLogCount(), shop.getBookmarkCount(), shop.getHoursVerifiedAt(), shop.getUpdatedAt());
-    }
-
-    private static String time(LocalTime value) {
-        if (value == null) {
-            return null;
-        }
-        return value.format(CLOCK_TIME);
+    private static MobileAdminShopRowResult row(MobileShop shop, String thumbnailUrl) {
+        return new MobileAdminShopRowResult(
+                String.valueOf(shop.getId()),
+                shop.getName(),
+                shop.getBranchName(),
+                shop.getAddress(),
+                shop.getRegion(),
+                shop.getBusinessStatus(),
+                shop.isPublished(),
+                thumbnailUrl,
+                shop.getLogCount(),
+                shop.getBookmarkCount(),
+                shop.getHoursVerifiedAt(),
+                shop.getUpdatedAt());
     }
 
     private static String blankToNull(String value) {
@@ -246,5 +291,4 @@ public class MobileShopAdminService {
     private static MobileException invalid(String message) {
         return new MobileException(MobileErrorCode.VALIDATION_ERROR, message);
     }
-
 }

@@ -46,8 +46,7 @@ public class RedisLockClient {
         try {
             Boolean acquired = redisTemplate.opsForValue().setIfAbsent(key, token, ttl);
             return Boolean.TRUE.equals(acquired) ? Optional.of(new LockToken(key, token)) : Optional.empty();
-        }
-        catch (DataAccessException exception) {
+        } catch (DataAccessException exception) {
             throw new RedisLockUnavailableException("Redis 락을 획득할 수 없습니다: " + key, exception);
         }
     }
@@ -61,13 +60,10 @@ public class RedisLockClient {
         try {
             Long deleted = redisTemplate.execute(RELEASE_SCRIPT, List.of(lock.key()), lock.token());
             return deleted != null && deleted > 0;
-        }
-        catch (DataAccessException exception) {
+        } catch (DataAccessException exception) {
             throw new RedisLockUnavailableException("Redis 락을 해제할 수 없습니다: " + lock.key(), exception);
         }
     }
 
-    public record LockToken(String key, String token) {
-    }
-
+    public record LockToken(String key, String token) {}
 }

@@ -4,6 +4,7 @@ import com.raota.mobile.common.cursor.Cursor;
 import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
 import com.raota.mobile.shop.application.port.MobileShopSearchPort;
+import com.raota.mobile.shop.application.query.MobileShopSearchCondition;
 import com.raota.mobile.shop.application.query.MobileShopSort;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -31,11 +32,16 @@ public class MobileShopJdbcSearch implements MobileShopSearchPort {
 
     private static final Pattern DISTANCE_VALUE = Pattern.compile("[0-9]{1,8}(\\.[0-9]{1,6})?");
 
-    private final NamedParameterJdbcTemplate jdbc;
+    private final NamedParameterJdbcTemplate jdbcTemplate;
 
     @Override
-    public List<RankedShop> search(MobileShopSort sort, String query, String region, String ramenType,
-            BigDecimal latitude, BigDecimal longitude, Cursor cursor, Integer limit) {
+    public List<RankedShop> search(MobileShopSearchCondition condition, Cursor cursor, Integer limit) {
+        MobileShopSort sort = condition.sort();
+        BigDecimal latitude = condition.latitude();
+        BigDecimal longitude = condition.longitude();
+        String query = condition.query();
+        String region = condition.region();
+        String ramenType = condition.ramenType();
         String distance = HAVERSINE;
         if (latitude == null) {
             distance = "NULL";
@@ -45,10 +51,11 @@ public class MobileShopJdbcSearch implements MobileShopSearchPort {
             case LATEST -> "s.created_at";
             case DISTANCE -> "COALESCE(" + HAVERSINE + ", 99999999.000000)";
         };
-        StringBuilder sql = new StringBuilder("SELECT ranked.* FROM (SELECT s.id, ").append(sortValue)
-            .append(" AS sort_value, ")
-            .append(distance)
-            .append(" AS distance_value FROM tb_v2_shop s WHERE s.is_published = TRUE AND s.deleted_at IS NULL");
+        StringBuilder sql = new StringBuilder("SELECT ranked.* FROM (SELECT s.id, ")
+                .append(sortValue)
+                .append(" AS sort_value, ")
+                .append(distance)
+                .append(" AS distance_value FROM tb_v2_shop s WHERE s.is_published = TRUE AND s.deleted_at IS NULL");
         var params = new MapSqlParameterSource();
         if (latitude != null) {
             params.addValue("latitude", latitude).addValue("longitude", longitude);
@@ -74,18 +81,21 @@ public class MobileShopJdbcSearch implements MobileShopSearchPort {
         }
         if (cursor != null) {
             sql.append(" AND (ranked.sort_value ")
-                .append(operator)
-                .append(" :position OR (ranked.sort_value = :position AND ranked.id ")
-                .append(operator)
-                .append(" :cursorId))");
+                    .append(operator)
+                    .append(" :position OR (ranked.sort_value = :position AND ranked.id ")
+                    .append(operator)
+                    .append(" :cursorId))");
             params.addValue("position", position(sort, cursor)).addValue("cursorId", cursor.id());
         }
-        sql.append(" ORDER BY ranked.sort_value ").append(direction).append(", ranked.id ").append(direction);
+        sql.append(" ORDER BY ranked.sort_value ")
+                .append(direction)
+                .append(", ranked.id ")
+                .append(direction);
         if (limit != null) {
             sql.append(" LIMIT :limit");
             params.addValue("limit", limit);
         }
-        return jdbc.query(sql.toString(), params, (rs, rowNum) -> {
+        return jdbcTemplate.query(sql.toString(), params, (rs, rowNum) -> {
             long id = rs.getLong("id");
             Cursor position = switch (sort) {
                 case POPULAR -> Cursor.of(rs.getLong("sort_value"), id);
@@ -111,10 +121,8 @@ public class MobileShopJdbcSearch implements MobileShopSearchPort {
                 case LATEST -> Timestamp.from(Instant.parse(cursor.sortValue()));
                 case DISTANCE -> distance(cursor.sortValue());
             };
-        }
-        catch (NumberFormatException | DateTimeParseException exception) {
+        } catch (NumberFormatException | DateTimeParseException exception) {
             throw new MobileException(MobileErrorCode.VALIDATION_ERROR, "커서가 올바르지 않습니다.");
         }
     }
-
 }

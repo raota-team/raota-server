@@ -4,5 +4,4 @@ package com.raota.global.security;
 public interface IdentifiedPrincipal {
 
     Long memberId();
-
 }

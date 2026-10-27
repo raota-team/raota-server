@@ -14,10 +14,9 @@ import org.springframework.http.ResponseEntity;
 public interface AiRamenShopApi {
 
     @Operation(summary = "AI 가게 검색")
-    ResponseEntity<ApiResponse<AiRamenShopSearchResponse>> search(AiRamenShopSearchRequest request,
-            @Parameter(hidden = true) Long memberId);
+    ResponseEntity<ApiResponse<AiRamenShopSearchResponse>> search(
+            AiRamenShopSearchRequest request, @Parameter(hidden = true) Long memberId);
 
     @Operation(summary = "라멘 가게 1:1 비교")
     ResponseEntity<ApiResponse<RamenShopComparisonResponse>> compare(RamenShopComparisonRequest request);
-
 }

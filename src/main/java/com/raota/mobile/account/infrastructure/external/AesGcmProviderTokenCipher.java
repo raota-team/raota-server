@@ -41,10 +41,13 @@ public class AesGcmProviderTokenCipher implements ProviderTokenCipher {
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             cipher.init(Cipher.ENCRYPT_MODE, key, new GCMParameterSpec(TAG_BITS, iv));
             byte[] encrypted = cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
-            return VERSION + Base64.getEncoder()
-                .encodeToString(ByteBuffer.allocate(iv.length + encrypted.length).put(iv).put(encrypted).array());
-        }
-        catch (GeneralSecurityException exception) {
+            return VERSION
+                    + Base64.getEncoder()
+                            .encodeToString(ByteBuffer.allocate(iv.length + encrypted.length)
+                                    .put(iv)
+                                    .put(encrypted)
+                                    .array());
+        } catch (GeneralSecurityException exception) {
             throw new IllegalStateException("제공자 토큰 암호화에 실패했습니다.", exception);
         }
     }
@@ -62,10 +65,8 @@ public class AesGcmProviderTokenCipher implements ProviderTokenCipher {
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             cipher.init(Cipher.DECRYPT_MODE, key, new GCMParameterSpec(TAG_BITS, data, 0, IV_LENGTH));
             return new String(cipher.doFinal(data, IV_LENGTH, data.length - IV_LENGTH), StandardCharsets.UTF_8);
-        }
-        catch (GeneralSecurityException | IllegalArgumentException exception) {
+        } catch (GeneralSecurityException | IllegalArgumentException exception) {
             throw new IllegalStateException("암호화된 제공자 토큰이 올바르지 않습니다.", exception);
         }
     }
-
 }

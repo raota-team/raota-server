@@ -62,7 +62,10 @@ class MobileCurationIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mvc = MockMvcBuilders.webAppContextSetup(context).addFilters(requestIdFilter).apply(springSecurity()).build();
+        mvc = MockMvcBuilders.webAppContextSetup(context)
+                .addFilters(requestIdFilter)
+                .apply(springSecurity())
+                .build();
         redis.delete("curation:daily:latest");
         insertShop(POPULAR, "[\"돈코츠\"]", "[]", 9, "OPERATIONAL", true);
         insertShop(LESS_POPULAR, "[\"돈코츠\", \"쇼유\"]", "[]", 5, "OPERATIONAL", true);
@@ -74,7 +77,8 @@ class MobileCurationIntegrationTest extends BaseIntegrationTest {
         member = users.saveAndFlush(user).getId();
         jdbc.update(
                 "INSERT INTO tb_v2_shop_bookmark (user_id, shop_id, created_at) VALUES (?, ?, CURRENT_TIMESTAMP(6))",
-                member, POPULAR);
+                member,
+                POPULAR);
     }
 
     @AfterEach
@@ -92,14 +96,14 @@ class MobileCurationIntegrationTest extends BaseIntegrationTest {
         insertCuration("돈코츠 라멘 ");
 
         mvc.perform(get("/api/v2/curations/today"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.shop.id").value(String.valueOf(POPULAR)))
-            .andExpect(jsonPath("$.data.shop.isBookmarked").value(false))
-            .andExpect(jsonPath("$.data.title").value("비 오는 날의 돈코츠"))
-            .andExpect(jsonPath("$.data.reason").value("진한 국물이 어울립니다."))
-            .andExpect(jsonPath("$.meta.requestId").isNotEmpty());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.shop.id").value(String.valueOf(POPULAR)))
+                .andExpect(jsonPath("$.data.shop.isBookmarked").value(false))
+                .andExpect(jsonPath("$.data.title").value("비 오는 날의 돈코츠"))
+                .andExpect(jsonPath("$.data.reason").value("진한 국물이 어울립니다."))
+                .andExpect(jsonPath("$.meta.requestId").isNotEmpty());
         mvc.perform(get("/api/v2/curations/today").header(HttpHeaders.AUTHORIZATION, "Bearer " + tokens.issue(member)))
-            .andExpect(jsonPath("$.data.shop.isBookmarked").value(true));
+                .andExpect(jsonPath("$.data.shop.isBookmarked").value(true));
     }
 
     @Test
@@ -107,8 +111,8 @@ class MobileCurationIntegrationTest extends BaseIntegrationTest {
         insertCuration("차슈멘");
 
         mvc.perform(get("/api/v2/curations/today"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.shop.id").value(String.valueOf(TAGGED)));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.shop.id").value(String.valueOf(TAGGED)));
     }
 
     @Test
@@ -116,13 +120,15 @@ class MobileCurationIntegrationTest extends BaseIntegrationTest {
         insertCuration("중화소바");
 
         mvc.perform(get("/api/v2/curations/today"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.success").value(true))
-            .andExpect(jsonPath("$.data").doesNotExist());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").doesNotExist());
     }
 
     private void insertCuration(String ramenTypeName) {
-        jdbc.update("INSERT INTO tb_ramen_type (id, name, sub_title, image_url) VALUES (?, ?, '', '')", RAMEN_TYPE,
+        jdbc.update(
+                "INSERT INTO tb_ramen_type (id, name, sub_title, image_url) VALUES (?, ?, '', '')",
+                RAMEN_TYPE,
                 ramenTypeName);
         jdbc.update("""
                 INSERT INTO tb_daily_curation (date_key, ramen_type_id, title, reason, created_at)
@@ -138,5 +144,4 @@ class MobileCurationIntegrationTest extends BaseIntegrationTest {
                     '2026-09-01 00:00:00')
                 """, id, ramenTypes, tags, status, views, published);
     }
-
 }

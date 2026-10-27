@@ -5,11 +5,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.raota.support.BaseIntegrationTest;
 import com.raota.web.account.domain.member.model.MemberProfile;
 import com.raota.web.account.domain.member.model.MemberRole;
 import com.raota.web.account.domain.member.repository.MemberRepository;
 import com.raota.web.account.infrastructure.auth.JwtTokenProvider;
-import com.raota.support.BaseIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,14 +41,16 @@ class AdminAccessPolicyIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).apply(springSecurity()).build();
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                .apply(springSecurity())
+                .build();
     }
 
     @Test
     void 익명은_관리자_API에_접근할_수_없다() throws Exception {
         mockMvc.perform(get(ADMIN_RESOURCE))
-            .andExpect(status().isUnauthorized())
-            .andExpect(jsonPath("$.status").value("FAIL"));
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value("FAIL"));
     }
 
     @Test
@@ -56,8 +58,8 @@ class AdminAccessPolicyIntegrationTest extends BaseIntegrationTest {
         String token = createAccessToken(MemberRole.USER);
 
         mockMvc.perform(get(ADMIN_RESOURCE).header(HttpHeaders.AUTHORIZATION, bearer(token)))
-            .andExpect(status().isForbidden())
-            .andExpect(jsonPath("$.status").value("FAIL"));
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value("FAIL"));
     }
 
     @Test
@@ -65,7 +67,7 @@ class AdminAccessPolicyIntegrationTest extends BaseIntegrationTest {
         String token = createAccessToken(MemberRole.ADMIN);
 
         mockMvc.perform(get(ADMIN_RESOURCE).header(HttpHeaders.AUTHORIZATION, bearer(token)))
-            .andExpect(status().isOk());
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -88,7 +90,8 @@ class AdminAccessPolicyIntegrationTest extends BaseIntegrationTest {
     }
 
     private MemberProfile saveMember(MemberRole role) {
-        return memberRepository.saveAndFlush(MemberProfile.builder().nickname("보안 정책 테스트 회원").role(role).build());
+        return memberRepository.saveAndFlush(
+                MemberProfile.builder().nickname("보안 정책 테스트 회원").role(role).build());
     }
 
     private void updateRole(Long memberId, MemberRole role) {
@@ -97,11 +100,10 @@ class AdminAccessPolicyIntegrationTest extends BaseIntegrationTest {
 
     private void assertAdminStatus(String token, int expectedStatus) throws Exception {
         mockMvc.perform(get(ADMIN_RESOURCE).header(HttpHeaders.AUTHORIZATION, bearer(token)))
-            .andExpect(status().is(expectedStatus));
+                .andExpect(status().is(expectedStatus));
     }
 
     private String bearer(String token) {
         return "Bearer " + token;
     }
-
 }

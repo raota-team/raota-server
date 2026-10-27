@@ -22,5 +22,4 @@ public record Nickname(String display, String normalized) {
         }
         return new Nickname(display, display.toLowerCase(Locale.ROOT));
     }
-
 }

@@ -33,8 +33,11 @@ public class LoginMemberArgumentResolver implements HandlerMethodArgumentResolve
      * AuthenticatedMember의 memberId를 반환한다.
      */
     @Override
-    public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
-            NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
+    public Object resolveArgument(
+            MethodParameter parameter,
+            ModelAndViewContainer mavContainer,
+            NativeWebRequest webRequest,
+            WebDataBinderFactory binderFactory) {
         // 1. 보안 컨텍스트(SecurityContext)에서 현재의 인증 정보를 가져온다.
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -52,5 +55,4 @@ public class LoginMemberArgumentResolver implements HandlerMethodArgumentResolve
         // 3. 인증 정보에서 실제 사용자 고유 ID(memberId)를 반환하여 컨트롤러 파라미터로 주입한다.
         return member.memberId();
     }
-
 }

@@ -2,8 +2,6 @@ package com.raota.mobile.shop;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.ObjectMapper;
 import com.raota.support.BaseIntegrationTest;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 /** 배포 후 같은 복사 SQL을 다시 실행해도 v2에서 수정한 데이터는 유지되어야 한다. */
 class MobileShopCopyMigrationTest extends BaseIntegrationTest {
@@ -52,41 +52,42 @@ class MobileShopCopyMigrationTest extends BaseIntegrationTest {
 
             runCopy();
             Map<String, Object> shop = jdbc.queryForMap("SELECT * FROM tb_v2_shop WHERE id = ?", PUBLISHED);
-            assertThat(shop).containsEntry("name", "밤 라멘")
-                .containsEntry("branch_name", "본점")
-                .containsEntry("address", "서울 마포구 망원로")
-                .containsEntry("region", "마포구")
-                .containsEntry("naver_place_id", "place-1")
-                .containsEntry("reservation_url", "https://reservation")
-                .containsEntry("tagline", "한 줄")
-                .containsEntry("description", "긴 소개")
-                .containsEntry("closed_days_text", "수요일")
-                .containsEntry("view_count", 17)
-                .containsEntry("log_count", 0)
-                .containsEntry("bookmark_count", 0)
-                .containsEntry("business_status", "OPERATIONAL");
+            assertThat(shop)
+                    .containsEntry("name", "밤 라멘")
+                    .containsEntry("branch_name", "본점")
+                    .containsEntry("address", "서울 마포구 망원로")
+                    .containsEntry("region", "마포구")
+                    .containsEntry("naver_place_id", "place-1")
+                    .containsEntry("reservation_url", "https://reservation")
+                    .containsEntry("tagline", "한 줄")
+                    .containsEntry("description", "긴 소개")
+                    .containsEntry("closed_days_text", "수요일")
+                    .containsEntry("view_count", 17)
+                    .containsEntry("log_count", 0)
+                    .containsEntry("bookmark_count", 0)
+                    .containsEntry("business_status", "OPERATIONAL");
             assertThat(shop.get("hours_verified_at")).isNull();
-            assertThat(mapper.readValue(shop.get("ramen_types").toString(), new TypeReference<List<String>>() {
-            })).containsExactlyInAnyOrder("쇼유", "돈코츠", "탄탄멘", "시오", "미소", "츠케멘", "마제소바", "아부라소바");
+            assertThat(mapper.readValue(shop.get("ramen_types").toString(), new TypeReference<List<String>>() {}))
+                    .containsExactlyInAnyOrder("쇼유", "돈코츠", "탄탄멘", "시오", "미소", "츠케멘", "마제소바", "아부라소바");
             assertThat(jdbc.queryForObject("SELECT business_status FROM tb_v2_shop WHERE id = ?", String.class, HIDDEN))
-                .isEqualTo("UNKNOWN");
+                    .isEqualTo("UNKNOWN");
             assertThat(jdbc.queryForObject("SELECT region FROM tb_v2_shop WHERE id = ?", String.class, HIDDEN))
-                .isEqualTo("부산");
+                    .isEqualTo("부산");
             assertThat(jdbc.queryForObject("SELECT ramen_types FROM tb_v2_shop WHERE id = ?", String.class, HIDDEN))
-                .isEqualTo("[]");
+                    .isEqualTo("[]");
             assertThat(jdbc.queryForObject("SELECT tags FROM tb_v2_shop WHERE id = ?", String.class, HIDDEN))
-                .isEqualTo("[]");
+                    .isEqualTo("[]");
             assertThat(jdbc.queryForObject("SELECT is_published FROM tb_v2_shop WHERE id = ?", Boolean.class, HIDDEN))
-                .isFalse();
-            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_shop_image WHERE shop_id = ?", Integer.class,
-                    PUBLISHED))
-                .isEqualTo(1);
-            assertThat(jdbc.queryForObject("SELECT source FROM tb_v2_shop_image WHERE shop_id = ?", String.class,
-                    PUBLISHED))
-                .isEqualTo("ADMIN");
-            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_shop_image WHERE shop_id = ?", Integer.class,
-                    HIDDEN))
-                .isZero();
+                    .isFalse();
+            assertThat(jdbc.queryForObject(
+                            "SELECT COUNT(*) FROM tb_v2_shop_image WHERE shop_id = ?", Integer.class, PUBLISHED))
+                    .isEqualTo(1);
+            assertThat(jdbc.queryForObject(
+                            "SELECT source FROM tb_v2_shop_image WHERE shop_id = ?", String.class, PUBLISHED))
+                    .isEqualTo("ADMIN");
+            assertThat(jdbc.queryForObject(
+                            "SELECT COUNT(*) FROM tb_v2_shop_image WHERE shop_id = ?", Integer.class, HIDDEN))
+                    .isZero();
             assertThat(jdbc.queryForList("""
                     SELECT day_of_week FROM tb_v2_shop_business_hour WHERE shop_id = ? ORDER BY day_of_week
                     """, Integer.class, PUBLISHED)).containsExactly(1, 2, 3, 4, 5, 6, 7);
@@ -94,33 +95,37 @@ class MobileShopCopyMigrationTest extends BaseIntegrationTest {
                     SELECT TIME_FORMAT(closes_at, '%H:%i') FROM tb_v2_shop_business_hour
                     WHERE shop_id = ? AND day_of_week = 1
                     """, String.class, PUBLISHED)).isEqualTo("02:00");
-            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_shop_business_hour WHERE shop_id = ?",
-                    Integer.class, HIDDEN))
-                .isZero();
+            assertThat(jdbc.queryForObject(
+                            "SELECT COUNT(*) FROM tb_v2_shop_business_hour WHERE shop_id = ?", Integer.class, HIDDEN))
+                    .isZero();
 
             jdbc.update("UPDATE tb_v2_shop SET name = 'v2 수정', business_status = 'CLOSED' WHERE id = ?", PUBLISHED);
             runCopy();
             assertThat(jdbc.queryForObject("SELECT name FROM tb_v2_shop WHERE id = ?", String.class, PUBLISHED))
-                .isEqualTo("v2 수정");
-            assertThat(
-                    jdbc.queryForObject("SELECT business_status FROM tb_v2_shop WHERE id = ?", String.class, PUBLISHED))
-                .isEqualTo("CLOSED");
-            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_shop WHERE id IN (?, ?)", Integer.class,
-                    PUBLISHED, HIDDEN))
-                .isEqualTo(2);
-            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_shop_image WHERE shop_id IN (?, ?)",
-                    Integer.class, PUBLISHED, HIDDEN))
-                .isEqualTo(1);
-            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_shop_business_hour WHERE shop_id IN (?, ?)",
-                    Integer.class, PUBLISHED, HIDDEN))
-                .isEqualTo(7);
-        }
-        finally {
+                    .isEqualTo("v2 수정");
+            assertThat(jdbc.queryForObject(
+                            "SELECT business_status FROM tb_v2_shop WHERE id = ?", String.class, PUBLISHED))
+                    .isEqualTo("CLOSED");
+            assertThat(jdbc.queryForObject(
+                            "SELECT COUNT(*) FROM tb_v2_shop WHERE id IN (?, ?)", Integer.class, PUBLISHED, HIDDEN))
+                    .isEqualTo(2);
+            assertThat(jdbc.queryForObject(
+                            "SELECT COUNT(*) FROM tb_v2_shop_image WHERE shop_id IN (?, ?)",
+                            Integer.class,
+                            PUBLISHED,
+                            HIDDEN))
+                    .isEqualTo(1);
+            assertThat(jdbc.queryForObject(
+                            "SELECT COUNT(*) FROM tb_v2_shop_business_hour WHERE shop_id IN (?, ?)",
+                            Integer.class,
+                            PUBLISHED,
+                            HIDDEN))
+                    .isEqualTo(7);
+        } finally {
             jdbc.update("DELETE FROM tb_ramen_shop WHERE ramen_shop_id IN (?, ?)", PUBLISHED, HIDDEN);
-            List<Long> copiedShops = jdbc.queryForList("SELECT id FROM tb_v2_shop", Long.class)
-                .stream()
-                .filter(id -> !existingShops.contains(id))
-                .toList();
+            List<Long> copiedShops = jdbc.queryForList("SELECT id FROM tb_v2_shop", Long.class).stream()
+                    .filter(id -> !existingShops.contains(id))
+                    .toList();
             for (Long shopId : copiedShops) {
                 for (String table : List.of("tb_v2_shop_image", "tb_v2_shop_business_hour")) {
                     jdbc.update("DELETE FROM " + table + " WHERE shop_id = ?", shopId);
@@ -132,7 +137,6 @@ class MobileShopCopyMigrationTest extends BaseIntegrationTest {
 
     private void runCopy() {
         new ResourceDatabasePopulator(new ClassPathResource("db/migration/V29__copy_v1_shops_to_v2.sql"))
-            .execute(dataSource);
+                .execute(dataSource);
     }
-
 }

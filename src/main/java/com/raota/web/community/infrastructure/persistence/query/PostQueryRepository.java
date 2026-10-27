@@ -1,7 +1,7 @@
 package com.raota.web.community.infrastructure.persistence.query;
 
-import com.raota.web.community.application.query.PostSearchQuery;
 import com.raota.web.community.application.port.PostQueryPort;
+import com.raota.web.community.application.query.PostSearchQuery;
 import com.raota.web.community.application.result.HomePostResult;
 import com.raota.web.community.application.result.PopularPostResult;
 import com.raota.web.community.application.result.PostCardResult;
@@ -30,7 +30,9 @@ public class PostQueryRepository implements PostQueryPort {
     private EntityManager entityManager;
 
     public Page<PostCardResult> searchPostCards(PostSearchQuery request, Pageable pageable) {
-        log.info("Searching posts with category filter: {}, ramenShopId filter: {}", request.category(),
+        log.info(
+                "Searching posts with category filter: {}, ramenShopId filter: {}",
+                request.category(),
                 request.ramenShopId());
 
         boolean popularOnly = isPopularCategory(request.category());
@@ -46,12 +48,12 @@ public class PostQueryRepository implements PostQueryPort {
                 """;
 
         Long totalCount = entityManager
-            .createQuery("select count(p) from PostEntity p left join p.ramenShop rs " + whereClause, Long.class)
-            .setParameter("category", category)
-            .setParameter("ramenShopId", request.ramenShopId())
-            .setParameter("popularOnly", popularOnly)
-            .setParameter("popularMinLikeCount", POPULAR_POST_MIN_LIKE_COUNT)
-            .getSingleResult();
+                .createQuery("select count(p) from PostEntity p left join p.ramenShop rs " + whereClause, Long.class)
+                .setParameter("category", category)
+                .setParameter("ramenShopId", request.ramenShopId())
+                .setParameter("popularOnly", popularOnly)
+                .setParameter("popularMinLikeCount", POPULAR_POST_MIN_LIKE_COUNT)
+                .getSingleResult();
 
         TypedQuery<PostCardRow> query = entityManager.createQuery("""
                 select new com.raota.web.community.infrastructure.persistence.query.PostQueryRepository$PostCardRow(
@@ -69,12 +71,12 @@ public class PostQueryRepository implements PostQueryPort {
                 """, PostCardRow.class);
 
         List<PostCardRow> rows = query.setParameter("category", category)
-            .setParameter("ramenShopId", request.ramenShopId())
-            .setParameter("popularOnly", popularOnly)
-            .setParameter("popularMinLikeCount", POPULAR_POST_MIN_LIKE_COUNT)
-            .setFirstResult((int) pageable.getOffset())
-            .setMaxResults(pageable.getPageSize())
-            .getResultList();
+                .setParameter("ramenShopId", request.ramenShopId())
+                .setParameter("popularOnly", popularOnly)
+                .setParameter("popularMinLikeCount", POPULAR_POST_MIN_LIKE_COUNT)
+                .setFirstResult((int) pageable.getOffset())
+                .setMaxResults(pageable.getPageSize())
+                .getResultList();
 
         List<PostCardResult> items = rows.stream().map(PostCardRow::toResult).toList();
 
@@ -83,15 +85,19 @@ public class PostQueryRepository implements PostQueryPort {
 
     @Override
     public Page<PostCardResult> findPostCardsByAuthor(Long authorId, Pageable pageable) {
-        Long totalCount = entityManager.createQuery("""
+        Long totalCount = entityManager
+                .createQuery("""
                 select count(p)
                 from PostEntity p
                 where p.author.id = :authorId
                   and p.author.deletedAt is null
                   and p.isDeleted = false
-                """, Long.class).setParameter("authorId", authorId).getSingleResult();
+                """, Long.class)
+                .setParameter("authorId", authorId)
+                .getSingleResult();
 
-        List<PostCardResult> items = entityManager.createQuery("""
+        List<PostCardResult> items = entityManager
+                .createQuery("""
                 select new com.raota.web.community.infrastructure.persistence.query.PostQueryRepository$PostCardRow(
                        p.id, p.category, rs.id, rs.name, p.title, p.content,
                        p.thumbnailUrl, a.nickname, a.id, a.imageUrl, p.createdAt,
@@ -107,19 +113,20 @@ public class PostQueryRepository implements PostQueryPort {
                   and p.isDeleted = false
                 order by p.createdAt desc
                 """, PostCardRow.class)
-            .setParameter("authorId", authorId)
-            .setFirstResult((int) pageable.getOffset())
-            .setMaxResults(pageable.getPageSize())
-            .getResultList()
-            .stream()
-            .map(PostCardRow::toResult)
-            .toList();
+                .setParameter("authorId", authorId)
+                .setFirstResult((int) pageable.getOffset())
+                .setMaxResults(pageable.getPageSize())
+                .getResultList()
+                .stream()
+                .map(PostCardRow::toResult)
+                .toList();
 
         return new PageImpl<>(items, pageable, totalCount);
     }
 
     public PostDetailResult getPostDetail(Long postId, Long memberId) {
-        List<PostDetailRow> rows = entityManager.createQuery("""
+        List<PostDetailRow> rows = entityManager
+                .createQuery("""
                 select new com.raota.web.community.infrastructure.persistence.query.PostQueryRepository$PostDetailRow(
                        p.category, rs.name, p.title, a.nickname, a.id, a.imageUrl, p.createdAt,
                        p.contentFormat, p.content,
@@ -133,9 +140,9 @@ public class PostQueryRepository implements PostQueryPort {
                 join p.author a
                 where p.id = :postId and p.isDeleted = false
                 """, PostDetailRow.class)
-            .setParameter("postId", postId)
-            .setParameter("memberId", memberId == null ? -1L : memberId)
-            .getResultList();
+                .setParameter("postId", postId)
+                .setParameter("memberId", memberId == null ? -1L : memberId)
+                .getResultList();
 
         if (rows.isEmpty()) {
             return null;
@@ -147,7 +154,8 @@ public class PostQueryRepository implements PostQueryPort {
     public Page<RamenShopOptionResult> getRamenShopOptions(String keyword, Pageable pageable) {
         String normalizedKeyword = normalizeKeyword(keyword);
 
-        Long totalCount = entityManager.createQuery("""
+        Long totalCount = entityManager
+                .createQuery("""
                 select count(rs)
                 from RamenShop rs
                 where rs.published = true
@@ -155,11 +163,12 @@ public class PostQueryRepository implements PostQueryPort {
                        or rs.name like :keyword
                        or rs.address.city like :keyword
                        or rs.address.district like :keyword)
-                """, Long.class).setParameter("keyword", normalizedKeyword).getSingleResult();
+                """, Long.class)
+                .setParameter("keyword", normalizedKeyword)
+                .getSingleResult();
 
         List<RamenShopOptionRow> rows = entityManager
-            .createQuery(
-                    """
+                .createQuery("""
                             select new com.raota.web.community.infrastructure.persistence.query.PostQueryRepository$RamenShopOptionRow(
                                    rs.id, rs.name, concat(rs.address.city, ' ', rs.address.district), rs.imageUrl
                             )
@@ -170,14 +179,14 @@ public class PostQueryRepository implements PostQueryPort {
                                    or rs.address.city like :keyword
                                    or rs.address.district like :keyword)
                             order by rs.name asc
-                            """,
-                    RamenShopOptionRow.class)
-            .setParameter("keyword", normalizedKeyword)
-            .setFirstResult((int) pageable.getOffset())
-            .setMaxResults(pageable.getPageSize())
-            .getResultList();
+                            """, RamenShopOptionRow.class)
+                .setParameter("keyword", normalizedKeyword)
+                .setFirstResult((int) pageable.getOffset())
+                .setMaxResults(pageable.getPageSize())
+                .getResultList();
 
-        List<RamenShopOptionResult> items = rows.stream().map(RamenShopOptionRow::toResult).toList();
+        List<RamenShopOptionResult> items =
+                rows.stream().map(RamenShopOptionRow::toResult).toList();
 
         return new PageImpl<>(items, pageable, totalCount);
     }
@@ -200,16 +209,14 @@ public class PostQueryRepository implements PostQueryPort {
                 order by p.createdAt desc
                 """, HomePostRow.class);
 
-        return query.setParameter("category", category)
-            .setMaxResults(limit)
-            .getResultList()
-            .stream()
-            .map(HomePostRow::toResult)
-            .toList();
+        return query.setParameter("category", category).setMaxResults(limit).getResultList().stream()
+                .map(HomePostRow::toResult)
+                .toList();
     }
 
     public List<PopularPostResult> findRecentPopularPosts(int limit) {
-        return entityManager.createQuery("""
+        return entityManager
+                .createQuery("""
                 select new com.raota.web.community.infrastructure.persistence.query.PostQueryRepository$PopularPostRow(
                        p.id, p.category, p.title,
                        (select count(pl) from PostLikeEntity pl where pl.postId = p.id),
@@ -222,12 +229,12 @@ public class PostQueryRepository implements PostQueryPort {
                       >= :popularMinLikeCount
                 order by p.createdAt desc
                 """, PopularPostRow.class)
-            .setParameter("popularMinLikeCount", POPULAR_POST_MIN_LIKE_COUNT)
-            .setMaxResults(limit)
-            .getResultList()
-            .stream()
-            .map(PopularPostRow::toResult)
-            .toList();
+                .setParameter("popularMinLikeCount", POPULAR_POST_MIN_LIKE_COUNT)
+                .setMaxResults(limit)
+                .getResultList()
+                .stream()
+                .map(PopularPostRow::toResult)
+                .toList();
     }
 
     private PostCategory parseCategory(String category) {
@@ -236,8 +243,7 @@ public class PostQueryRepository implements PostQueryPort {
         }
         try {
             return PostCategory.valueOf(category.toUpperCase());
-        }
-        catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             return null;
         }
     }
@@ -253,21 +259,69 @@ public class PostQueryRepository implements PostQueryPort {
         return "%" + keyword + "%";
     }
 
-    private record PostCardRow(Long postId, PostCategory category, Long ramenShopId, String storeName, String title,
-            String contentPreview, String imageUrl, String authorName, Long authorId, String authorImageUrl,
-            LocalDateTime createdAt, Long likeCount, Long commentCount, Integer viewCount) {
+    private record PostCardRow(
+            Long postId,
+            PostCategory category,
+            Long ramenShopId,
+            String storeName,
+            String title,
+            String contentPreview,
+            String imageUrl,
+            String authorName,
+            Long authorId,
+            String authorImageUrl,
+            LocalDateTime createdAt,
+            Long likeCount,
+            Long commentCount,
+            Integer viewCount) {
         private PostCardResult toResult() {
-            return new PostCardResult(postId, category.name(), ramenShopId, storeName, title, contentPreview, imageUrl,
-                    authorName, authorId, authorImageUrl, createdAt, likeCount, commentCount, viewCount);
+            return new PostCardResult(
+                    postId,
+                    category.name(),
+                    ramenShopId,
+                    storeName,
+                    title,
+                    contentPreview,
+                    imageUrl,
+                    authorName,
+                    authorId,
+                    authorImageUrl,
+                    createdAt,
+                    likeCount,
+                    commentCount,
+                    viewCount);
         }
     }
 
-    private record PostDetailRow(PostCategory category, String storeName, String title, String authorName,
-            Long authorId, String authorImageUrl, LocalDateTime createdAt, String contentFormat, String content,
-            Long likeCount, Long commentCount, Integer viewCount, Long likedCount) {
+    private record PostDetailRow(
+            PostCategory category,
+            String storeName,
+            String title,
+            String authorName,
+            Long authorId,
+            String authorImageUrl,
+            LocalDateTime createdAt,
+            String contentFormat,
+            String content,
+            Long likeCount,
+            Long commentCount,
+            Integer viewCount,
+            Long likedCount) {
         private PostDetailResult toResult(boolean hasMemberContext) {
-            return new PostDetailResult(category.name(), storeName, title, authorName, authorId, authorImageUrl,
-                    createdAt, Collections.emptyList(), contentFormat, content, likeCount, commentCount, viewCount,
+            return new PostDetailResult(
+                    category.name(),
+                    storeName,
+                    title,
+                    authorName,
+                    authorId,
+                    authorImageUrl,
+                    createdAt,
+                    Collections.emptyList(),
+                    contentFormat,
+                    content,
+                    likeCount,
+                    commentCount,
+                    viewCount,
                     hasMemberContext && likedCount > 0);
         }
     }
@@ -278,19 +332,37 @@ public class PostQueryRepository implements PostQueryPort {
         }
     }
 
-    private record HomePostRow(Long id, String title, String contentSnippet, String nickname, String profileImageUrl,
-            Long commentCount, Integer viewCount, LocalDateTime createdAt) {
+    private record HomePostRow(
+            Long id,
+            String title,
+            String contentSnippet,
+            String nickname,
+            String profileImageUrl,
+            Long commentCount,
+            Integer viewCount,
+            LocalDateTime createdAt) {
         private HomePostResult toResult() {
-            return new HomePostResult(id, title, contentSnippet,
-                    new HomePostResult.AuthorSummary(nickname, profileImageUrl), commentCount, viewCount, createdAt);
+            return new HomePostResult(
+                    id,
+                    title,
+                    contentSnippet,
+                    new HomePostResult.AuthorSummary(nickname, profileImageUrl),
+                    commentCount,
+                    viewCount,
+                    createdAt);
         }
     }
 
-    private record PopularPostRow(Long postId, PostCategory category, String title, Long likeCount, Long commentCount,
+    private record PopularPostRow(
+            Long postId,
+            PostCategory category,
+            String title,
+            Long likeCount,
+            Long commentCount,
             LocalDateTime createdAt) {
         private PopularPostResult toResult() {
-            return new PopularPostResult(postId, category.name(), categoryDisplayName(category), title, likeCount,
-                    commentCount, createdAt);
+            return new PopularPostResult(
+                    postId, category.name(), categoryDisplayName(category), title, likeCount, commentCount, createdAt);
         }
 
         private static String categoryDisplayName(PostCategory category) {
@@ -302,5 +374,4 @@ public class PostQueryRepository implements PostQueryPort {
             };
         }
     }
-
 }

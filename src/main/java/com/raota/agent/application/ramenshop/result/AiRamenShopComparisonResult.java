@@ -4,6 +4,5 @@ import java.util.List;
 
 public record AiRamenShopComparisonResult(List<AiComparisonNarrative> narratives) {
 
-    public record AiComparisonNarrative(String title, String body) {
-    }
+    public record AiComparisonNarrative(String title, String body) {}
 }

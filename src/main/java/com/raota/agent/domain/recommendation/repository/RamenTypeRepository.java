@@ -11,5 +11,4 @@ public interface RamenTypeRepository {
     List<RamenType> findAll();
 
     RamenType save(RamenType ramenType);
-
 }

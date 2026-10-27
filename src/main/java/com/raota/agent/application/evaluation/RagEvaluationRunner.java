@@ -11,5 +11,4 @@ package com.raota.agent.application.evaluation;
 public interface RagEvaluationRunner {
 
     void execute(String runId, RagEvaluationDataset dataset, RagEvaluationSplit split);
-
 }

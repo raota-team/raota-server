@@ -82,7 +82,10 @@ class MobileLoungeSafetyIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mvc = MockMvcBuilders.webAppContextSetup(context).addFilters(requestIdFilter).apply(springSecurity()).build();
+        mvc = MockMvcBuilders.webAppContextSetup(context)
+                .addFilters(requestIdFilter)
+                .apply(springSecurity())
+                .build();
         jdbc.update("""
                 INSERT INTO tb_v2_shop (id, name, branch_name, address, region, ramen_types, tags, business_status,
                     ai_summary_keywords, is_published, created_at, updated_at)
@@ -120,9 +123,12 @@ class MobileLoungeSafetyIntegrationTest extends BaseIntegrationTest {
             report(reporter, "RAMEN_LOG", AUTHOR_LOG, "SPAM").andExpect(status().isNoContent());
         }
         report(reporter, "RAMEN_LOG_COMMENT", COMMENT, "ABUSE").andExpect(status().isNoContent());
-        assertThat(jdbc.queryForList("SELECT CONCAT(target_type, ':', reason, ':', status) FROM tb_v2_content_report"
-                + " WHERE reporter_id = ? ORDER BY target_type", String.class, reporter))
-            .containsExactly("RAMEN_LOG:SPAM:OPEN", "RAMEN_LOG_COMMENT:ABUSE:OPEN");
+        assertThat(jdbc.queryForList(
+                        "SELECT CONCAT(target_type, ':', reason, ':', status) FROM tb_v2_content_report"
+                                + " WHERE reporter_id = ? ORDER BY target_type",
+                        String.class,
+                        reporter))
+                .containsExactly("RAMEN_LOG:SPAM:OPEN", "RAMEN_LOG_COMMENT:ABUSE:OPEN");
 
         assertThat(feedIds(reporter)).containsExactly(REPORTER_LOG, OTHER_LOG);
         assertThat(feedIds(bystander)).containsExactly(REPORTER_LOG, OTHER_LOG, AUTHOR_LOG);
@@ -138,19 +144,21 @@ class MobileLoungeSafetyIntegrationTest extends BaseIntegrationTest {
         report(reporter, "RAMEN_LOG", PRIVATE_LOG, "SPAM").andExpect(status().isNotFound());
         report(reporter, "RAMEN_LOG_COMMENT", DELETED_COMMENT, "SPAM").andExpect(status().isNotFound());
         report(reporter, "RAMEN_LOG", 900006699L, "SPAM").andExpect(status().isNotFound());
-        for (String body : List.of("{\"targetType\":\"SHOP\",\"targetId\":\"1\",\"reason\":\"SPAM\"}",
+        for (String body : List.of(
+                "{\"targetType\":\"SHOP\",\"targetId\":\"1\",\"reason\":\"SPAM\"}",
                 "{\"targetType\":\"RAMEN_LOG\",\"targetId\":\"abc\",\"reason\":\"SPAM\"}",
                 "{\"targetType\":\"RAMEN_LOG\",\"targetId\":\"" + AUTHOR_LOG + "\",\"reason\":\"BORING\"}",
                 "{\"targetType\":\"RAMEN_LOG\",\"targetId\":\"" + AUTHOR_LOG + "\"}")) {
-            mvc.perform(post("/api/v2/reports").header(HttpHeaders.AUTHORIZATION, auth(reporter))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+            mvc.perform(post("/api/v2/reports")
+                            .header(HttpHeaders.AUTHORIZATION, auth(reporter))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
         }
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_content_report WHERE reporter_id = ?", Integer.class,
-                reporter))
-            .isZero();
+        assertThat(jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM tb_v2_content_report WHERE reporter_id = ?", Integer.class, reporter))
+                .isZero();
     }
 
     @Test
@@ -159,15 +167,15 @@ class MobileLoungeSafetyIntegrationTest extends BaseIntegrationTest {
             block(reporter, author).andExpect(status().isNoContent());
         }
         block(reporter, other).andExpect(status().isNoContent());
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_user_block WHERE blocker_id = ?", Integer.class,
-                reporter))
-            .isEqualTo(2);
+        assertThat(jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM tb_v2_user_block WHERE blocker_id = ?", Integer.class, reporter))
+                .isEqualTo(2);
 
         assertThat(feedIds(reporter)).containsExactly(REPORTER_LOG);
         assertThat(feedIds(bystander)).containsExactly(REPORTER_LOG, OTHER_LOG, AUTHOR_LOG);
-        JsonNode blocked = data(
-                mvc.perform(get("/api/v2/members/me/blocks").header(HttpHeaders.AUTHORIZATION, auth(reporter)))
-                    .andExpect(status().isOk()));
+        JsonNode blocked =
+                data(mvc.perform(get("/api/v2/members/me/blocks").header(HttpHeaders.AUTHORIZATION, auth(reporter)))
+                        .andExpect(status().isOk()));
         assertThat(blocked.size()).isEqualTo(2);
         assertThat(blocked.get(0).get("id").asString()).isEqualTo(String.valueOf(other));
         assertThat(blocked.get(1).get("id").asString()).isEqualTo(String.valueOf(author));
@@ -176,9 +184,9 @@ class MobileLoungeSafetyIntegrationTest extends BaseIntegrationTest {
 
         block(reporter, other).andExpect(status().isNoContent());
         for (int attempt = 0; attempt < 2; attempt++) {
-            mvc.perform(
-                    delete("/api/v2/members/{memberId}/block", other).header(HttpHeaders.AUTHORIZATION, auth(reporter)))
-                .andExpect(status().isNoContent());
+            mvc.perform(delete("/api/v2/members/{memberId}/block", other)
+                            .header(HttpHeaders.AUTHORIZATION, auth(reporter)))
+                    .andExpect(status().isNoContent());
         }
         assertThat(feedIds(reporter)).containsExactly(REPORTER_LOG, OTHER_LOG);
         assertThat(commentIds(reporter)).containsExactly(REPORTER_COMMENT);
@@ -190,15 +198,16 @@ class MobileLoungeSafetyIntegrationTest extends BaseIntegrationTest {
         block(reporter, author).andExpect(status().isNoContent());
         jdbc.update("UPDATE tb_v2_user SET status = 'WITHDRAW_PENDING' WHERE id = ?", other);
 
-        block(bystander, other).andExpect(status().isNotFound())
-            .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tb_v2_user_block WHERE blocker_id = ?", Integer.class,
-                bystander))
-            .isZero();
+        block(bystander, other)
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+        assertThat(jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM tb_v2_user_block WHERE blocker_id = ?", Integer.class, bystander))
+                .isZero();
         mvc.perform(get("/api/v2/members/me/blocks").header(HttpHeaders.AUTHORIZATION, auth(reporter)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.length()").value(1))
-            .andExpect(jsonPath("$.data[0].id").value(String.valueOf(author)));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(1))
+                .andExpect(jsonPath("$.data[0].id").value(String.valueOf(author)));
     }
 
     @Test
@@ -206,34 +215,38 @@ class MobileLoungeSafetyIntegrationTest extends BaseIntegrationTest {
         block(reporter, reporter).andExpect(status().isBadRequest());
         block(reporter, 900006698L).andExpect(status().isNotFound());
 
-        mvc.perform(post("/api/v2/reports").contentType(MediaType.APPLICATION_JSON)
-            .content("{\"targetType\":\"RAMEN_LOG\",\"targetId\":\"" + AUTHOR_LOG + "\",\"reason\":\"SPAM\"}"))
-            .andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/v2/reports")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"targetType\":\"RAMEN_LOG\",\"targetId\":\"" + AUTHOR_LOG
+                                + "\",\"reason\":\"SPAM\"}"))
+                .andExpect(status().isUnauthorized());
         mvc.perform(put("/api/v2/members/{memberId}/block", author)).andExpect(status().isUnauthorized());
         mvc.perform(get("/api/v2/members/me/blocks")).andExpect(status().isUnauthorized());
 
-        Long onboarding = users
-            .saveAndFlush(MobileUser.onboarding("safety-onboarding-" + UUID.randomUUID() + "@example.com"))
-            .getId();
+        Long onboarding = users.saveAndFlush(
+                        MobileUser.onboarding("safety-onboarding-" + UUID.randomUUID() + "@example.com"))
+                .getId();
         created.add(onboarding);
-        report(onboarding, "RAMEN_LOG", AUTHOR_LOG, "SPAM").andExpect(status().isForbidden())
-            .andExpect(jsonPath("$.error.code").value("ONBOARDING_REQUIRED"));
+        report(onboarding, "RAMEN_LOG", AUTHOR_LOG, "SPAM")
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("ONBOARDING_REQUIRED"));
         block(onboarding, author).andExpect(status().isForbidden());
         mvc.perform(get("/api/v2/members/me/blocks").header(HttpHeaders.AUTHORIZATION, auth(onboarding)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.length()").value(0));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(0));
     }
 
     private ResultActions report(Long userId, String type, long targetId, String reason) throws Exception {
-        return mvc.perform(post("/api/v2/reports").header(HttpHeaders.AUTHORIZATION, auth(userId))
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(
-                    "{\"targetType\":\"%s\",\"targetId\":\"%d\",\"reason\":\"%s\"}".formatted(type, targetId, reason)));
+        return mvc.perform(post("/api/v2/reports")
+                .header(HttpHeaders.AUTHORIZATION, auth(userId))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"targetType\":\"%s\",\"targetId\":\"%d\",\"reason\":\"%s\"}"
+                        .formatted(type, targetId, reason)));
     }
 
     private ResultActions block(Long userId, long memberId) throws Exception {
-        return mvc
-            .perform(put("/api/v2/members/{memberId}/block", memberId).header(HttpHeaders.AUTHORIZATION, auth(userId)));
+        return mvc.perform(
+                put("/api/v2/members/{memberId}/block", memberId).header(HttpHeaders.AUTHORIZATION, auth(userId)));
     }
 
     private List<Long> feedIds(Long viewer) throws Exception {
@@ -245,14 +258,15 @@ class MobileLoungeSafetyIntegrationTest extends BaseIntegrationTest {
     }
 
     private List<Long> commentIds(Long viewer) throws Exception {
-        return ids(data(mvc
-            .perform(get("/api/v2/ramen-logs/{logId}/comments", OTHER_LOG).header(HttpHeaders.AUTHORIZATION,
-                    auth(viewer)))
-            .andExpect(status().isOk())).get("items"));
+        return ids(data(mvc.perform(get("/api/v2/ramen-logs/{logId}/comments", OTHER_LOG)
+                                .header(HttpHeaders.AUTHORIZATION, auth(viewer)))
+                        .andExpect(status().isOk()))
+                .get("items"));
     }
 
     private JsonNode data(ResultActions result) throws Exception {
-        return mapper.readTree(result.andReturn().getResponse().getContentAsByteArray()).get("data");
+        return mapper.readTree(result.andReturn().getResponse().getContentAsByteArray())
+                .get("data");
     }
 
     private List<Long> ids(JsonNode items) {
@@ -285,8 +299,8 @@ class MobileLoungeSafetyIntegrationTest extends BaseIntegrationTest {
 
     private Long active() {
         MobileUser user = MobileUser.onboarding("safety-" + UUID.randomUUID() + "@example.com");
-        user.completeOnboarding(Nickname.of("S" + UUID.randomUUID().toString().substring(0, 8)),
-                java.time.Instant.now());
+        user.completeOnboarding(
+                Nickname.of("S" + UUID.randomUUID().toString().substring(0, 8)), java.time.Instant.now());
         Long id = users.saveAndFlush(user).getId();
         created.add(id);
         return id;
@@ -295,5 +309,4 @@ class MobileLoungeSafetyIntegrationTest extends BaseIntegrationTest {
     private String auth(Long userId) {
         return "Bearer " + tokens.issue(userId);
     }
-
 }

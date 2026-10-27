@@ -1,12 +1,12 @@
 package com.raota.agent.domain.retrieval.document.factory;
 
-import com.raota.web.community.domain.model.Post;
-import com.raota.web.community.domain.model.PostCategory;
-import com.raota.web.ramenshop.domain.model.RamenShop;
 import com.raota.agent.domain.retrieval.document.RetrievalDocumentFactory;
 import com.raota.agent.domain.retrieval.document.RetrievalDocumentSource;
 import com.raota.agent.domain.retrieval.document.RetrievalDocumentType;
 import com.raota.agent.domain.retrieval.document.RetrievalMetadataKeys;
+import com.raota.web.community.domain.model.Post;
+import com.raota.web.community.domain.model.PostCategory;
+import com.raota.web.ramenshop.domain.model.RamenShop;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +20,8 @@ public class PostReviewChunkDocumentFactory implements RetrievalDocumentFactory<
 
     private static final int MIN_INDEXABLE_TEXT_LENGTH = 30;
 
-    private final TokenTextSplitter tokenTextSplitter = TokenTextSplitter.builder().build();
+    private final TokenTextSplitter tokenTextSplitter =
+            TokenTextSplitter.builder().build();
 
     @Override
     public List<Document> create(Post post) {
@@ -43,8 +44,9 @@ public class PostReviewChunkDocumentFactory implements RetrievalDocumentFactory<
         List<Document> splitDocuments = tokenTextSplitter.split(document);
 
         return IntStream.range(0, splitDocuments.size())
-            .mapToObj(index -> withChunkMetadata(splitDocuments.get(index), post.getId(), index, splitDocuments.size()))
-            .toList();
+                .mapToObj(index ->
+                        withChunkMetadata(splitDocuments.get(index), post.getId(), index, splitDocuments.size()))
+                .toList();
     }
 
     private int normalizedLength(String content) {
@@ -69,7 +71,8 @@ public class PostReviewChunkDocumentFactory implements RetrievalDocumentFactory<
         if (shop != null) {
             metadata.put(RetrievalMetadataKeys.SHOP_ID, String.valueOf(shop.getId()));
             metadata.put(RetrievalMetadataKeys.SHOP_NAME, shop.getName());
-            metadata.put(RetrievalMetadataKeys.REGION,
+            metadata.put(
+                    RetrievalMetadataKeys.REGION,
                     shop.getAddress() != null ? shop.getAddress().simpleAddress() : "위치 정보 없음");
         }
 
@@ -97,5 +100,4 @@ public class PostReviewChunkDocumentFactory implements RetrievalDocumentFactory<
         }
         return value;
     }
-
 }

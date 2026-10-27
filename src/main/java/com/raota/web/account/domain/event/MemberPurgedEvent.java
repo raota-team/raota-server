@@ -1,4 +1,3 @@
 package com.raota.web.account.domain.event;
 
-public record MemberPurgedEvent(Long memberId) {
-}
+public record MemberPurgedEvent(Long memberId) {}

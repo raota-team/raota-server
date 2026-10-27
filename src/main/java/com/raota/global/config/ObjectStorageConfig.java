@@ -36,28 +36,35 @@ public class ObjectStorageConfig {
 
     @Bean
     public PresignedPostSigner presignedPostSigner(ObjectMapper objectMapper, Clock clock) {
-        return new PresignedPostSigner(compatEndpoint(), required("oci.storage.bucket", bucket),
-                required("oci.storage.region", region), required("oci.storage.access-key", accessKey),
-                required("oci.storage.secret-key", secretKey), objectMapper, clock);
+        return new PresignedPostSigner(
+                compatEndpoint(),
+                required("oci.storage.bucket", bucket),
+                required("oci.storage.region", region),
+                required("oci.storage.access-key", accessKey),
+                required("oci.storage.secret-key", secretKey),
+                objectMapper,
+                clock);
     }
 
     @Bean
     public S3Client s3Client() {
         return S3Client.builder()
-            .endpointOverride(URI.create(compatEndpoint()))
-            .region(Region.of(required("oci.storage.region", region)))
-            .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
-            .credentialsProvider(credentialsProvider())
-            .build();
+                .endpointOverride(URI.create(compatEndpoint()))
+                .region(Region.of(required("oci.storage.region", region)))
+                .serviceConfiguration(
+                        S3Configuration.builder().pathStyleAccessEnabled(true).build())
+                .credentialsProvider(credentialsProvider())
+                .build();
     }
 
     private StaticCredentialsProvider credentialsProvider() {
-        return StaticCredentialsProvider.create(AwsBasicCredentials
-            .create(required("oci.storage.access-key", accessKey), required("oci.storage.secret-key", secretKey)));
+        return StaticCredentialsProvider.create(AwsBasicCredentials.create(
+                required("oci.storage.access-key", accessKey), required("oci.storage.secret-key", secretKey)));
     }
 
     private String compatEndpoint() {
-        return String.format("https://%s.compat.objectstorage.%s.oraclecloud.com",
+        return String.format(
+                "https://%s.compat.objectstorage.%s.oraclecloud.com",
                 required("oci.storage.namespace", namespace), required("oci.storage.region", region));
     }
 
@@ -67,5 +74,4 @@ public class ObjectStorageConfig {
         }
         return value.trim();
     }
-
 }

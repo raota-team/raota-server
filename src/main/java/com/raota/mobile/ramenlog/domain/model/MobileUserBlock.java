@@ -30,7 +30,5 @@ public class MobileUserBlock {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    public record Key(Long blockerId, Long blockedId) implements Serializable {
-    }
-
+    public record Key(Long blockerId, Long blockedId) implements Serializable {}
 }

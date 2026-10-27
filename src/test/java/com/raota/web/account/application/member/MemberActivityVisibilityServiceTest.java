@@ -5,10 +5,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
-import com.raota.web.account.application.member.MemberActivityVisibilityService;
+import com.raota.global.cache.CacheInvalidationPublisher;
 import com.raota.web.account.domain.member.model.MemberProfile;
 import com.raota.web.account.domain.member.repository.MemberRepository;
-import com.raota.global.cache.CacheInvalidationPublisher;
 import com.raota.web.account.presentation.member.request.ActivityVisibilityUpdateRequest;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -50,8 +49,9 @@ class MemberActivityVisibilityServiceTest {
         member.updateActivityVisibility(false, true, true, true);
         given(memberRepository.findByIdAndDeletedAtIsNull(1L)).willReturn(Optional.of(member));
 
-        assertThatThrownBy(() -> service.requireLogsVisible(1L, 2L)).isInstanceOf(AccessDeniedException.class)
-            .hasMessage("비공개 활동입니다.");
+        assertThatThrownBy(() -> service.requireLogsVisible(1L, 2L))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("비공개 활동입니다.");
     }
 
     @Test
@@ -68,5 +68,4 @@ class MemberActivityVisibilityServiceTest {
     private MemberProfile member(Long id) {
         return MemberProfile.builder().id(id).nickname("공개설정테스터").build();
     }
-
 }

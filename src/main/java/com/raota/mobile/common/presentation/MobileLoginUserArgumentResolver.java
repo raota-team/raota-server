@@ -22,8 +22,11 @@ public class MobileLoginUserArgumentResolver implements HandlerMethodArgumentRes
     }
 
     @Override
-    public Long resolveArgument(MethodParameter parameter, ModelAndViewContainer modelAndViewContainer,
-            NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
+    public Long resolveArgument(
+            MethodParameter parameter,
+            ModelAndViewContainer modelAndViewContainer,
+            NativeWebRequest webRequest,
+            WebDataBinderFactory binderFactory) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !(authentication.getPrincipal() instanceof MobilePrincipal principal)) {
             if (!parameter.getParameterAnnotation(LoginUser.class).required()) {
@@ -33,5 +36,4 @@ public class MobileLoginUserArgumentResolver implements HandlerMethodArgumentRes
         }
         return principal.userId();
     }
-
 }

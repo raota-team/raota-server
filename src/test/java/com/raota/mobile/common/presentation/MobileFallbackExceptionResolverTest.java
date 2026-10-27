@@ -29,28 +29,32 @@ class MobileFallbackExceptionResolverTest {
         MockHttpServletRequest request = request("/api/v2/missing");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        assertThat(resolver.resolveException(request, response, null, noResource("/api/v2/missing"))).isNotNull();
+        assertThat(resolver.resolveException(request, response, null, noResource("/api/v2/missing")))
+                .isNotNull();
 
         JsonNode body = body(response);
         assertThat(response.getStatus()).isEqualTo(404);
         assertThat(MediaType.parseMediaType(response.getContentType()).isCompatibleWith(MediaType.APPLICATION_JSON))
-            .isTrue();
+                .isTrue();
         assertThat(body.get("success").asBoolean()).isFalse();
         assertThat(body.get("error").get("code").asString()).isEqualTo("RESOURCE_NOT_FOUND");
         assertThat(body.get("error").get("message").asString()).isEqualTo("요청한 API를 찾을 수 없습니다.");
         assertThat(body.get("data").isNull()).isTrue();
         assertThat(body.get("error").get("fields").isEmpty()).isTrue();
         assertThat(body.get("meta").get("requestId").asString())
-            .isEqualTo(request.getAttribute(RequestIdFilter.ATTRIBUTE));
+                .isEqualTo(request.getAttribute(RequestIdFilter.ATTRIBUTE));
     }
 
     @Test
     void 컨트롤러가_없는_v2_경로의_지원하지_않는_메서드는_405와_Allow를_반환한다() throws Exception {
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        assertThat(resolver.resolveException(request("/api/v2/missing"), response, null,
-                new HttpRequestMethodNotSupportedException("POST", List.of("GET"))))
-            .isNotNull();
+        assertThat(resolver.resolveException(
+                        request("/api/v2/missing"),
+                        response,
+                        null,
+                        new HttpRequestMethodNotSupportedException("POST", List.of("GET"))))
+                .isNotNull();
 
         assertThat(response.getStatus()).isEqualTo(405);
         assertThat(body(response).get("error").get("code").asString()).isEqualTo("METHOD_NOT_ALLOWED");
@@ -62,9 +66,13 @@ class MobileFallbackExceptionResolverTest {
     void 컨트롤러가_없는_v2_경로의_지원하지_않는_Content_Type은_400_응답을_반환한다() throws Exception {
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        assertThat(resolver.resolveException(request("/api/v2/missing"), response, null,
-                new HttpMediaTypeNotSupportedException(MediaType.TEXT_PLAIN, List.of(MediaType.APPLICATION_JSON))))
-            .isNotNull();
+        assertThat(resolver.resolveException(
+                        request("/api/v2/missing"),
+                        response,
+                        null,
+                        new HttpMediaTypeNotSupportedException(
+                                MediaType.TEXT_PLAIN, List.of(MediaType.APPLICATION_JSON))))
+                .isNotNull();
 
         assertThat(response.getStatus()).isEqualTo(400);
         assertThat(body(response).get("error").get("code").asString()).isEqualTo("VALIDATION_ERROR");
@@ -75,7 +83,8 @@ class MobileFallbackExceptionResolverTest {
     void 정확히_api_v2인_경로도_v2로_처리한다() throws Exception {
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        assertThat(resolver.resolveException(request("/api/v2"), response, null, noResource("/api/v2"))).isNotNull();
+        assertThat(resolver.resolveException(request("/api/v2"), response, null, noResource("/api/v2")))
+                .isNotNull();
         assertThat(response.getStatus()).isEqualTo(404);
         assertThat(body(response).get("error").get("code").asString()).isEqualTo("RESOURCE_NOT_FOUND");
     }
@@ -86,7 +95,8 @@ class MobileFallbackExceptionResolverTest {
         request.setContextPath("/app");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        assertThat(resolver.resolveException(request, response, null, noResource("/app/api/v2/missing"))).isNotNull();
+        assertThat(resolver.resolveException(request, response, null, noResource("/app/api/v2/missing")))
+                .isNotNull();
         assertThat(response.getStatus()).isEqualTo(404);
     }
 
@@ -94,9 +104,12 @@ class MobileFallbackExceptionResolverTest {
     void 핸들러가_없는_v2_경로도_404로_처리한다() throws Exception {
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        assertThat(resolver.resolveException(request("/api/v2/missing"), response, null,
-                new NoHandlerFoundException("GET", "/api/v2/missing", new HttpHeaders())))
-            .isNotNull();
+        assertThat(resolver.resolveException(
+                        request("/api/v2/missing"),
+                        response,
+                        null,
+                        new NoHandlerFoundException("GET", "/api/v2/missing", new HttpHeaders())))
+                .isNotNull();
         assertThat(body(response).get("error").get("code").asString()).isEqualTo("RESOURCE_NOT_FOUND");
     }
 
@@ -112,8 +125,8 @@ class MobileFallbackExceptionResolverTest {
 
     @Test
     void v2_컨트롤러_메서드가_결정된_요청은_advice에_맡긴다() throws Exception {
-        HandlerMethod handler = new HandlerMethod(new ExampleHandler(),
-                ExampleHandler.class.getDeclaredMethod("handle"));
+        HandlerMethod handler =
+                new HandlerMethod(new ExampleHandler(), ExampleHandler.class.getDeclaredMethod("handle"));
         assertDeclined(request("/api/v2/missing"), handler, noResource("/api/v2/missing"));
     }
 
@@ -125,7 +138,8 @@ class MobileFallbackExceptionResolverTest {
     private void assertDeclined(MockHttpServletRequest request, Object handler, Exception exception) {
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        assertThat(resolver.resolveException(request, response, handler, exception)).isNull();
+        assertThat(resolver.resolveException(request, response, handler, exception))
+                .isNull();
         assertThat(response.getStatus()).isEqualTo(200);
         assertThat(response.getContentAsByteArray()).isEmpty();
         assertThat(response.getContentType()).isNull();
@@ -147,9 +161,6 @@ class MobileFallbackExceptionResolverTest {
 
     private static class ExampleHandler {
 
-        public void handle() {
-        }
-
+        public void handle() {}
     }
-
 }

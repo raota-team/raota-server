@@ -30,11 +30,11 @@ public class MobileProfileStoredImages implements StoredImageReferences {
         Set<String> referenced = new HashSet<>();
         for (int start = 0; start < distinct.size(); start += BATCH_SIZE) {
             List<String> batch = distinct.subList(start, Math.min(start + BATCH_SIZE, distinct.size()));
-            referenced
-                .addAll(namedJdbc.queryForList("SELECT DISTINCT avatar_url FROM tb_v2_user WHERE avatar_url IN (:urls)",
-                        Map.of("urls", batch), String.class));
+            referenced.addAll(namedJdbc.queryForList(
+                    "SELECT DISTINCT avatar_url FROM tb_v2_user WHERE avatar_url IN (:urls)",
+                    Map.of("urls", batch),
+                    String.class));
         }
         return referenced;
     }
-
 }

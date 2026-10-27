@@ -1,7 +1,7 @@
 package com.raota.agent.infrastructure.messaging.redis;
 
-import com.raota.web.community.domain.event.PostIndexingEvent;
 import com.raota.agent.application.retrieval.RetrievalIndexingService;
+import com.raota.web.community.domain.event.PostIndexingEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.stream.MapRecord;
@@ -31,14 +31,22 @@ public class PostIndexingStreamListener implements StreamListener<String, MapRec
                 case UPSERT -> retrievalIndexingService.indexPost(event.postId());
                 case DELETE -> retrievalIndexingService.deletePost(event.postId());
             }
-            log.info("비동기 게시글 인덱싱 완료: messageId={}, postId={}, action={}, durationMs={}", messageId, event.postId(),
-                    event.action(), System.currentTimeMillis() - startedAt);
-        }
-        catch (Exception e) {
-            log.error("비동기 게시글 인덱싱 실패: messageId={}, postId={}, action={}, durationMs={}, payload={}", messageId,
-                    event.postId(), event.action(), System.currentTimeMillis() - startedAt, jsonPayload, e);
+            log.info(
+                    "비동기 게시글 인덱싱 완료: messageId={}, postId={}, action={}, durationMs={}",
+                    messageId,
+                    event.postId(),
+                    event.action(),
+                    System.currentTimeMillis() - startedAt);
+        } catch (Exception e) {
+            log.error(
+                    "비동기 게시글 인덱싱 실패: messageId={}, postId={}, action={}, durationMs={}, payload={}",
+                    messageId,
+                    event.postId(),
+                    event.action(),
+                    System.currentTimeMillis() - startedAt,
+                    jsonPayload,
+                    e);
             throw e;
         }
     }
-
 }

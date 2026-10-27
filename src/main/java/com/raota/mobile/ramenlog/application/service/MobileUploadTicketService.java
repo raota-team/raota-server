@@ -6,7 +6,7 @@ import com.raota.global.presentation.file.response.PresignedUrlResponse;
 import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
 import com.raota.mobile.ramenlog.application.command.MobileUploadTicketCommand;
-import com.raota.mobile.ramenlog.application.result.MobileUploadTickets;
+import com.raota.mobile.ramenlog.application.result.MobileUploadTicketsResult;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,8 +25,9 @@ public class MobileUploadTicketService {
 
     private final UploadTicketRateLimiter rateLimiter;
 
-    public MobileUploadTickets issue(Long userId, MobileUploadTicketCommand command) {
-        if (command.purpose() == MobileUploadTicketCommand.Purpose.PROFILE && command.files().size() != 1) {
+    public MobileUploadTicketsResult issue(Long userId, MobileUploadTicketCommand command) {
+        if (command.purpose() == MobileUploadTicketCommand.Purpose.PROFILE
+                && command.files().size() != 1) {
             throw new MobileException(MobileErrorCode.VALIDATION_ERROR, "프로필 사진은 한 장만 업로드할 수 있습니다.");
         }
         String directory = switch (command.purpose()) {
@@ -40,26 +41,27 @@ public class MobileUploadTicketService {
         }
         // 형식 검사를 통과한 요청만 센다.
         if (!rateLimiter.tryAcquire("v2", userId, command.files().size())) {
-            throw new MobileException(MobileErrorCode.RATE_LIMITED,
+            throw new MobileException(
+                    MobileErrorCode.RATE_LIMITED,
                     "사진은 1시간에 " + UploadTicketRateLimiter.FILES_PER_HOUR + "장까지 올릴 수 있습니다.");
         }
-        List<MobileUploadTickets.Upload> uploads = command.files()
-            .stream()
-            .map(file -> upload(uploader.getPresignedUrl(directory, "." + file.extension(), file.contentType()),
-                    file.contentType()))
-            .toList();
-        return new MobileUploadTickets(uploads);
+        List<MobileUploadTicketsResult.Upload> uploads = command.files().stream()
+                .map(file -> upload(
+                        uploader.getPresignedUrl(directory, "." + file.extension(), file.contentType()),
+                        file.contentType()))
+                .toList();
+        return new MobileUploadTicketsResult(uploads);
     }
 
     /** 서명에 form 필드가 있으면 POST 업로드(운영 저장소), 없으면 PUT 업로드(로컬 개발)다. */
-    private static MobileUploadTickets.Upload upload(PresignedUrlResponse signed, String contentType) {
+    private static MobileUploadTicketsResult.Upload upload(PresignedUrlResponse signed, String contentType) {
         if (signed.uploadParams() == null || signed.uploadParams().isEmpty()) {
-            return new MobileUploadTickets.Upload("PUT", signed.uploadUrl(), null, Map.of("Content-Type", contentType),
-                    signed.imgUrl());
+            return new MobileUploadTicketsResult.Upload(
+                    "PUT", signed.uploadUrl(), null, Map.of("Content-Type", contentType), signed.imgUrl());
         }
         Map<String, String> fields = new LinkedHashMap<>();
         signed.uploadParams().forEach((name, value) -> fields.put(name, String.valueOf(value)));
-        return new MobileUploadTickets.Upload("POST", signed.uploadUrl(), fields, null, signed.imgUrl());
+        return new MobileUploadTicketsResult.Upload("POST", signed.uploadUrl(), fields, null, signed.imgUrl());
     }
 
     private boolean validExtension(String contentType, String extension) {
@@ -70,5 +72,4 @@ public class MobileUploadTicketService {
             default -> false;
         };
     }
-
 }

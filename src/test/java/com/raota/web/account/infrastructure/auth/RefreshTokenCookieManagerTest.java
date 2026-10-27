@@ -2,8 +2,6 @@ package com.raota.web.account.infrastructure.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.raota.web.account.infrastructure.auth.AuthProperties;
-import com.raota.web.account.infrastructure.auth.RefreshTokenCookieManager;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseCookie;
@@ -16,15 +14,16 @@ class RefreshTokenCookieManagerTest {
 
         ResponseCookie cookie = cookieManager.createRefreshTokenCookie("refresh-token");
 
-        assertThat(cookie.toString()).contains("raota_refresh_token=refresh-token")
-            .contains("Path=/")
-            .contains("Domain=.raota.net")
-            .contains("Max-Age=1209600")
-            .contains("Expires=")
-            .contains("Secure")
-            .contains("HttpOnly")
-            .contains("SameSite=None")
-            .doesNotContain("SameSite='None'");
+        assertThat(cookie.toString())
+                .contains("raota_refresh_token=refresh-token")
+                .contains("Path=/")
+                .contains("Domain=.raota.net")
+                .contains("Max-Age=1209600")
+                .contains("Expires=")
+                .contains("Secure")
+                .contains("HttpOnly")
+                .contains("SameSite=None")
+                .doesNotContain("SameSite='None'");
     }
 
     @Test
@@ -33,20 +32,24 @@ class RefreshTokenCookieManagerTest {
 
         ResponseCookie cookie = cookieManager.clearRefreshTokenCookie();
 
-        assertThat(cookie.toString()).contains("raota_refresh_token=")
-            .contains("Path=/")
-            .contains("Domain=.raota.net")
-            .contains("Max-Age=0")
-            .contains("Secure")
-            .contains("HttpOnly")
-            .contains("SameSite=None");
+        assertThat(cookie.toString())
+                .contains("raota_refresh_token=")
+                .contains("Path=/")
+                .contains("Domain=.raota.net")
+                .contains("Max-Age=0")
+                .contains("Secure")
+                .contains("HttpOnly")
+                .contains("SameSite=None");
     }
 
     private AuthProperties authProperties() {
-        return new AuthProperties("raota", "access-token-secret", 1800, 1209600,
+        return new AuthProperties(
+                "raota",
+                "access-token-secret",
+                1800,
+                1209600,
                 new AuthProperties.OAuth2("http://localhost:3000/auth/callback", "http://localhost:3000/auth/callback"),
                 new AuthProperties.Cookie("raota_refresh_token", true, "None", ".raota.net"),
                 new AuthProperties.Cors(List.of("http://localhost:3000")));
     }
-
 }

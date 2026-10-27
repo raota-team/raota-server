@@ -1,10 +1,10 @@
 package com.raota.agent.infrastructure.vector;
 
 import com.zaxxer.hikari.HikariDataSource;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.oracle.OracleVectorStore;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -28,17 +28,19 @@ public class VectorStoreConfig {
     }
 
     @Bean
-    public VectorStore vectorStore(@Qualifier("oracleVectorJdbcTemplate") JdbcTemplate oracleVectorJdbcTemplate,
-            EmbeddingModel embeddingModel, OracleVectorProperties properties) {
+    public VectorStore vectorStore(
+            @Qualifier("oracleVectorJdbcTemplate") JdbcTemplate oracleVectorJdbcTemplate,
+            EmbeddingModel embeddingModel,
+            OracleVectorProperties properties) {
         return OracleVectorStore.builder(oracleVectorJdbcTemplate, embeddingModel)
-            .indexType(parseIndexType(properties.indexType()))
-            .distanceType(parseDistanceType(properties.distanceType()))
-            .dimensions(properties.dimensions())
-            .searchAccuracy(properties.searchAccuracy())
-            .initializeSchema(properties.initializeSchema())
-            .forcedNormalization(properties.forcedNormalization())
-            .removeExistingVectorStoreTable(properties.removeExistingVectorStoreTable())
-            .build();
+                .indexType(parseIndexType(properties.indexType()))
+                .distanceType(parseDistanceType(properties.distanceType()))
+                .dimensions(properties.dimensions())
+                .searchAccuracy(properties.searchAccuracy())
+                .initializeSchema(properties.initializeSchema())
+                .forcedNormalization(properties.forcedNormalization())
+                .removeExistingVectorStoreTable(properties.removeExistingVectorStoreTable())
+                .build();
     }
 
     private OracleVectorStore.OracleVectorStoreIndexType parseIndexType(String value) {
@@ -54,5 +56,4 @@ public class VectorStoreConfig {
         }
         return OracleVectorStore.OracleVectorStoreDistanceType.valueOf(value.toUpperCase());
     }
-
 }

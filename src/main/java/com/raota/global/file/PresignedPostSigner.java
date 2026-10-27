@@ -26,14 +26,14 @@ import tools.jackson.databind.ObjectMapper;
  */
 public class PresignedPostSigner {
 
-    private static final DateTimeFormatter AMZ_DATE = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'")
-        .withZone(ZoneOffset.UTC);
+    private static final DateTimeFormatter AMZ_DATE =
+            DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'").withZone(ZoneOffset.UTC);
 
-    private static final DateTimeFormatter SCOPE_DATE = DateTimeFormatter.ofPattern("yyyyMMdd")
-        .withZone(ZoneOffset.UTC);
+    private static final DateTimeFormatter SCOPE_DATE =
+            DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZoneOffset.UTC);
 
-    private static final DateTimeFormatter EXPIRATION = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
-        .withZone(ZoneOffset.UTC);
+    private static final DateTimeFormatter EXPIRATION =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'").withZone(ZoneOffset.UTC);
 
     private static final String ALGORITHM = "AWS4-HMAC-SHA256";
 
@@ -51,8 +51,14 @@ public class PresignedPostSigner {
 
     private final Clock clock;
 
-    public PresignedPostSigner(String endpoint, String bucket, String region, String accessKey, String secretKey,
-            ObjectMapper mapper, Clock clock) {
+    public PresignedPostSigner(
+            String endpoint,
+            String bucket,
+            String region,
+            String accessKey,
+            String secretKey,
+            ObjectMapper mapper,
+            Clock clock) {
         this.bucketUrl = endpoint + "/" + bucket;
         this.bucket = bucket;
         this.region = region;
@@ -71,12 +77,18 @@ public class PresignedPostSigner {
 
         Map<String, Object> policy = new LinkedHashMap<>();
         policy.put("expiration", EXPIRATION.format(now.plus(validity)));
-        policy.put("conditions",
-                List.of(Map.of("bucket", bucket), Map.of("key", objectKey), Map.of("Content-Type", contentType),
-                        List.of("content-length-range", 1, maxBytes), Map.of("x-amz-algorithm", ALGORITHM),
-                        Map.of("x-amz-credential", credential), Map.of("x-amz-date", amzDate)));
+        policy.put(
+                "conditions",
+                List.of(
+                        Map.of("bucket", bucket),
+                        Map.of("key", objectKey),
+                        Map.of("Content-Type", contentType),
+                        List.of("content-length-range", 1, maxBytes),
+                        Map.of("x-amz-algorithm", ALGORITHM),
+                        Map.of("x-amz-credential", credential),
+                        Map.of("x-amz-date", amzDate)));
         String encodedPolicy = Base64.getEncoder()
-            .encodeToString(mapper.writeValueAsString(policy).getBytes(StandardCharsets.UTF_8));
+                .encodeToString(mapper.writeValueAsString(policy).getBytes(StandardCharsets.UTF_8));
 
         Map<String, String> fields = new LinkedHashMap<>();
         fields.put("key", objectKey);
@@ -101,13 +113,10 @@ public class PresignedPostSigner {
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(key, "HmacSHA256"));
             return mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
-        }
-        catch (GeneralSecurityException exception) {
+        } catch (GeneralSecurityException exception) {
             throw new IllegalStateException("업로드 서명을 만들 수 없습니다.", exception);
         }
     }
 
-    public record PresignedPost(String url, Map<String, String> fields) {
-    }
-
+    public record PresignedPost(String url, Map<String, String> fields) {}
 }

@@ -33,8 +33,10 @@ public class FIleController {
      * @param extension 파일 확장자 (jpg, png 등)
      */
     @GetMapping("/upload-ticket")
-    public ResponseEntity<PresignedUrlResponse> getUploadTicket(@AuthenticationPrincipal IdentifiedPrincipal member,
-            @RequestParam String type, @RequestParam String extension,
+    public ResponseEntity<PresignedUrlResponse> getUploadTicket(
+            @AuthenticationPrincipal IdentifiedPrincipal member,
+            @RequestParam String type,
+            @RequestParam String extension,
             @RequestParam(required = false) String contentType) {
         String dirName = resolveDirectory(type);
         if (!isAdmin() && !rateLimiter.tryAcquire("v1", member.memberId(), 1)) {
@@ -46,9 +48,9 @@ public class FIleController {
 
     private static boolean isAdmin() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return authentication != null && authentication.getAuthorities()
-            .stream()
-            .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
+        return authentication != null
+                && authentication.getAuthorities().stream()
+                        .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
     }
 
     private String resolveDirectory(String type) {
@@ -67,5 +69,4 @@ public class FIleController {
     public ResponseEntity<Void> mockUpload() {
         return ResponseEntity.status(HttpStatus.OK).build();
     }
-
 }

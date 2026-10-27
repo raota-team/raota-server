@@ -20,7 +20,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
  * ({@code com.raota.agent.presentation.mobile})로 범위를 제한한다.
  * </p>
  */
-@RestControllerAdvice(basePackages = { "com.raota.mobile", "com.raota.agent.presentation.mobile" })
+@RestControllerAdvice(basePackages = {"com.raota.mobile", "com.raota.agent.presentation.mobile"})
 public class MobileResponseMetaAdvice implements ResponseBodyAdvice<Object> {
 
     // 선언된 반환 타입은 ResponseEntity<...>일 수 있어 여기서는 거르지 않고 실제 본문으로 판단한다.
@@ -30,8 +30,12 @@ public class MobileResponseMetaAdvice implements ResponseBodyAdvice<Object> {
     }
 
     @Override
-    public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType,
-            Class<? extends HttpMessageConverter<?>> selectedConverterType, ServerHttpRequest request,
+    public Object beforeBodyWrite(
+            Object body,
+            MethodParameter returnType,
+            MediaType selectedContentType,
+            Class<? extends HttpMessageConverter<?>> selectedConverterType,
+            ServerHttpRequest request,
             ServerHttpResponse response) {
         if (!(body instanceof MobileApiResponse<?> mobileResponse)) {
             return body;
@@ -39,5 +43,4 @@ public class MobileResponseMetaAdvice implements ResponseBodyAdvice<Object> {
         HttpServletRequest servletRequest = ((ServletServerHttpRequest) request).getServletRequest();
         return mobileResponse.withRequestId(RequestIdFilter.currentRequestId(servletRequest));
     }
-
 }

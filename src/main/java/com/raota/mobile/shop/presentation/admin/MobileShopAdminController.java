@@ -2,8 +2,8 @@ package com.raota.mobile.shop.presentation.admin;
 
 import com.raota.mobile.common.page.OffsetPage;
 import com.raota.mobile.common.presentation.response.MobileApiResponse;
-import com.raota.mobile.shop.application.result.MobileAdminShopDetail;
-import com.raota.mobile.shop.application.result.MobileAdminShopRow;
+import com.raota.mobile.shop.application.result.MobileAdminShopDetailResult;
+import com.raota.mobile.shop.application.result.MobileAdminShopRowResult;
 import com.raota.mobile.shop.application.service.MobileShopAdminService;
 import com.raota.mobile.shop.presentation.admin.request.MobileAdminBusinessHoursRequest;
 import com.raota.mobile.shop.presentation.admin.request.MobileAdminServicePerksRequest;
@@ -33,49 +33,50 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class MobileShopAdminController {
 
-    private final MobileShopAdminService shops;
+    private final MobileShopAdminService adminService;
 
     @GetMapping
-    public MobileApiResponse<OffsetPage<MobileAdminShopRow>> list(@RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Boolean published, @RequestParam(defaultValue = "0") @Min(0) int page,
+    public MobileApiResponse<OffsetPage<MobileAdminShopRowResult>> list(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Boolean published,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(OffsetPage.MAX_SIZE) int size) {
-        return MobileApiResponse.success(shops.list(keyword, published, page, size));
+        return MobileApiResponse.success(adminService.list(keyword, published, page, size));
     }
 
-    @GetMapping("/{shopId:[0-9]+}")
-    public MobileApiResponse<MobileAdminShopDetail> detail(@PathVariable Long shopId) {
-        return MobileApiResponse.success(shops.detail(shopId));
+    @GetMapping("/{shopId}")
+    public MobileApiResponse<MobileAdminShopDetailResult> detail(@PathVariable Long shopId) {
+        return MobileApiResponse.success(adminService.detail(shopId));
     }
 
     @PostMapping
-    public ResponseEntity<MobileApiResponse<MobileAdminShopDetail>> create(
+    public ResponseEntity<MobileApiResponse<MobileAdminShopDetailResult>> create(
             @RequestBody @Valid MobileAdminShopRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(MobileApiResponse.success(shops.create(request.toCommand())));
+                .body(MobileApiResponse.success(adminService.create(request.toCommand())));
     }
 
-    @PutMapping("/{shopId:[0-9]+}")
-    public MobileApiResponse<MobileAdminShopDetail> update(@PathVariable Long shopId,
-            @RequestBody @Valid MobileAdminShopRequest request) {
-        return MobileApiResponse.success(shops.update(shopId, request.toCommand()));
+    @PutMapping("/{shopId}")
+    public MobileApiResponse<MobileAdminShopDetailResult> update(
+            @PathVariable Long shopId, @RequestBody @Valid MobileAdminShopRequest request) {
+        return MobileApiResponse.success(adminService.update(shopId, request.toCommand()));
     }
 
-    @PutMapping("/{shopId:[0-9]+}/business-hours")
-    public MobileApiResponse<MobileAdminShopDetail> replaceBusinessHours(@PathVariable Long shopId,
-            @RequestBody @Valid MobileAdminBusinessHoursRequest request) {
-        return MobileApiResponse.success(shops.replaceBusinessHours(shopId, request.toCommands()));
+    @PutMapping("/{shopId}/business-hours")
+    public MobileApiResponse<MobileAdminShopDetailResult> replaceBusinessHours(
+            @PathVariable Long shopId, @RequestBody @Valid MobileAdminBusinessHoursRequest request) {
+        return MobileApiResponse.success(adminService.replaceBusinessHours(shopId, request.toCommands()));
     }
 
-    @PutMapping("/{shopId:[0-9]+}/service-perks")
-    public MobileApiResponse<MobileAdminShopDetail> replaceServicePerks(@PathVariable Long shopId,
-            @RequestBody @Valid MobileAdminServicePerksRequest request) {
-        return MobileApiResponse.success(shops.replaceServicePerks(shopId, request.toCommands()));
+    @PutMapping("/{shopId}/service-perks")
+    public MobileApiResponse<MobileAdminShopDetailResult> replaceServicePerks(
+            @PathVariable Long shopId, @RequestBody @Valid MobileAdminServicePerksRequest request) {
+        return MobileApiResponse.success(adminService.replaceServicePerks(shopId, request.toCommands()));
     }
 
-    @PatchMapping("/{shopId:[0-9]+}/visibility")
-    public MobileApiResponse<MobileAdminShopDetail> changeVisibility(@PathVariable Long shopId,
-            @RequestBody @Valid MobileAdminVisibilityRequest request) {
-        return MobileApiResponse.success(shops.changeVisibility(shopId, request.published()));
+    @PatchMapping("/{shopId}/visibility")
+    public MobileApiResponse<MobileAdminShopDetailResult> changeVisibility(
+            @PathVariable Long shopId, @RequestBody @Valid MobileAdminVisibilityRequest request) {
+        return MobileApiResponse.success(adminService.changeVisibility(shopId, request.published()));
     }
-
 }

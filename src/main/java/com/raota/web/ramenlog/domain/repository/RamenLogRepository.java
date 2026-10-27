@@ -16,12 +16,12 @@ import org.springframework.data.repository.query.Param;
 
 public interface RamenLogRepository extends JpaRepository<RamenLog, Long>, JpaSpecificationExecutor<RamenLog> {
 
-    @EntityGraph(attributePaths = { "author", "ramenShop" })
+    @EntityGraph(attributePaths = {"author", "ramenShop"})
     Optional<RamenLog> findByIdAndIsDeletedFalse(Long id);
 
-    @EntityGraph(attributePaths = { "author", "ramenShop" })
-    Page<RamenLog> findAll(org.springframework.data.jpa.domain.Specification<RamenLog> specification,
-            Pageable pageable);
+    @EntityGraph(attributePaths = {"author", "ramenShop"})
+    Page<RamenLog> findAll(
+            org.springframework.data.jpa.domain.Specification<RamenLog> specification, Pageable pageable);
 
     long countByAuthorIdAndIsDeletedFalse(Long memberId);
 
@@ -128,7 +128,5 @@ public interface RamenLogRepository extends JpaRepository<RamenLog, Long>, JpaSp
         String getImageUrl();
 
         long getRamenLogCount();
-
     }
-
 }

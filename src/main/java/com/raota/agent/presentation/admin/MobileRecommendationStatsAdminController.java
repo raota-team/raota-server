@@ -1,7 +1,7 @@
 package com.raota.agent.presentation.admin;
 
 import com.raota.agent.application.mobile.MobileRecommendationStatsService;
-import com.raota.agent.application.mobile.result.MobileRecommendationStats;
+import com.raota.agent.application.mobile.result.MobileRecommendationStatsResult;
 import com.raota.global.presentation.common.ApiResponse;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
@@ -22,10 +22,9 @@ public class MobileRecommendationStatsAdminController {
 
     /** {@code from}·{@code to}는 한국 날짜(양 끝 포함)다. 없으면 오늘까지 최근 30일이다. */
     @GetMapping("/stats")
-    public ResponseEntity<ApiResponse<MobileRecommendationStats>> stats(
+    public ResponseEntity<ApiResponse<MobileRecommendationStatsResult>> stats(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         return ResponseEntity.ok(ApiResponse.success(stats.stats(from, to)));
     }
-
 }

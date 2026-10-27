@@ -53,5 +53,4 @@ public class NormalMenu {
     public Boolean getIsSignature() {
         return isSignature != null && isSignature;
     }
-
 }

@@ -15,7 +15,8 @@ public class RagEvaluationStaleRunScheduler {
 
     private final RagEvaluationStaleRunRecoveryService recoveryService;
 
-    @Scheduled(initialDelayString = "${app.rag.evaluation.stale-check-interval:PT1M}",
+    @Scheduled(
+            initialDelayString = "${app.rag.evaluation.stale-check-interval:PT1M}",
             fixedDelayString = "${app.rag.evaluation.stale-check-interval:PT1M}")
     public void recoverStaleRuns() {
         try {
@@ -23,10 +24,8 @@ public class RagEvaluationStaleRunScheduler {
             if (recovered > 0) {
                 log.warn("Marked {} stale RAG evaluation runs as FAILED", recovered);
             }
-        }
-        catch (Exception exception) {
+        } catch (Exception exception) {
             log.error("Failed to recover stale RAG evaluation runs", exception);
         }
     }
-
 }

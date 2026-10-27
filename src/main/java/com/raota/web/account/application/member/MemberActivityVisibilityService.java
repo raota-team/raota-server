@@ -1,9 +1,9 @@
 package com.raota.web.account.application.member;
 
+import com.raota.global.cache.CacheInvalidationPublisher;
 import com.raota.web.account.domain.member.model.MemberActivityVisibility;
 import com.raota.web.account.domain.member.model.MemberProfile;
 import com.raota.web.account.domain.member.repository.MemberRepository;
-import com.raota.global.cache.CacheInvalidationPublisher;
 import com.raota.web.account.presentation.member.request.ActivityVisibilityUpdateRequest;
 import com.raota.web.account.presentation.member.response.ActivityVisibilityResponse;
 import jakarta.persistence.EntityNotFoundException;
@@ -60,26 +60,28 @@ public class MemberActivityVisibilityService {
         }
 
         MemberActivityVisibility visibility = requireMember(targetMemberId).getActivityVisibility();
-        boolean visible = visibility == null || switch (category) {
-            case LOGS -> visibility.isLogsPublic();
-            case VISITS -> visibility.isVisitsPublic();
-            case POSTS -> visibility.isPostsPublic();
-            case COMMENTS -> visibility.isCommentsPublic();
-        };
+        boolean visible = visibility == null
+                || switch (category) {
+                    case LOGS -> visibility.isLogsPublic();
+                    case VISITS -> visibility.isVisitsPublic();
+                    case POSTS -> visibility.isPostsPublic();
+                    case COMMENTS -> visibility.isCommentsPublic();
+                };
         if (!visible) {
             throw new AccessDeniedException("비공개 활동입니다.");
         }
     }
 
     private MemberProfile requireMember(Long memberId) {
-        return memberRepository.findByIdAndDeletedAtIsNull(memberId)
-            .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
+        return memberRepository
+                .findByIdAndDeletedAtIsNull(memberId)
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
     }
 
     private enum Category {
-
-        LOGS, VISITS, POSTS, COMMENTS
-
+        LOGS,
+        VISITS,
+        POSTS,
+        COMMENTS
     }
-
 }

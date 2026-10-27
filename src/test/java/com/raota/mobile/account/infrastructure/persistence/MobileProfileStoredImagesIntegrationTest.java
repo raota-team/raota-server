@@ -58,9 +58,8 @@ class MobileProfileStoredImagesIntegrationTest extends BaseIntegrationTest {
         assertThat(contributors).contains(references);
         assertThat(references.prefix()).isEqualTo("v2/profiles/");
 
-        assertThat(references.referencedUrls(
-                List.of(BASE + "active.png", BASE + "withdrawing.png", BASE + "replaced.png", BASE + "active.png")))
-            .containsExactlyInAnyOrder(BASE + "active.png", BASE + "withdrawing.png");
+        assertThat(references.referencedUrls(List.of(
+                        BASE + "active.png", BASE + "withdrawing.png", BASE + "replaced.png", BASE + "active.png")))
+                .containsExactlyInAnyOrder(BASE + "active.png", BASE + "withdrawing.png");
     }
-
 }

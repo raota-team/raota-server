@@ -58,5 +58,4 @@ public class EventMenu {
     public void setShop(RamenShop ramenShop) {
         this.ramenShop = ramenShop;
     }
-
 }

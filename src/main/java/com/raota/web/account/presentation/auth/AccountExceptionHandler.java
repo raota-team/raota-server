@@ -1,7 +1,7 @@
 package com.raota.web.account.presentation.auth;
 
-import com.raota.web.account.infrastructure.auth.AuthenticationRequiredException;
 import com.raota.global.presentation.common.ApiResponse;
+import com.raota.web.account.infrastructure.auth.AuthenticationRequiredException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
@@ -25,11 +25,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class AccountExceptionHandler {
 
     @ExceptionHandler(AuthenticationRequiredException.class)
-    public ResponseEntity<ApiResponse<Void>> handleAuthenticationRequired(AuthenticationRequiredException exception,
-            HttpServletRequest request) {
-        log.warn("Authentication required. method={}, uri={}, query={}, message={}", request.getMethod(),
-                request.getRequestURI(), request.getQueryString(), exception.getMessage());
+    public ResponseEntity<ApiResponse<Void>> handleAuthenticationRequired(
+            AuthenticationRequiredException exception, HttpServletRequest request) {
+        log.warn(
+                "Authentication required. method={}, uri={}, query={}, message={}",
+                request.getMethod(),
+                request.getRequestURI(),
+                request.getQueryString(),
+                exception.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.fail(exception.getMessage()));
     }
-
 }

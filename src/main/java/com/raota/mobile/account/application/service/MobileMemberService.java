@@ -1,18 +1,18 @@
 package com.raota.mobile.account.application.service;
 
+import com.raota.mobile.account.application.command.MobileOnboardingCommand;
 import com.raota.mobile.account.application.config.MobileAccountProperties;
 import com.raota.mobile.account.application.port.RefreshTokenStore;
-import com.raota.mobile.account.application.command.MobileOnboardingCommand;
 import com.raota.mobile.account.application.result.MobileMemberResult;
 import com.raota.mobile.account.application.result.MobileNicknameAvailabilityResult;
 import com.raota.mobile.account.application.result.MobileWithdrawalResult;
-import com.raota.mobile.account.domain.model.Nickname;
-import com.raota.mobile.account.domain.model.MobileUser;
 import com.raota.mobile.account.domain.model.ConsentType;
+import com.raota.mobile.account.domain.model.MobileUser;
 import com.raota.mobile.account.domain.model.MobileUserConsent;
 import com.raota.mobile.account.domain.model.MobileUserStatus;
-import com.raota.mobile.account.domain.repository.MobileUserRepository;
+import com.raota.mobile.account.domain.model.Nickname;
 import com.raota.mobile.account.domain.repository.MobileUserConsentRepository;
+import com.raota.mobile.account.domain.repository.MobileUserRepository;
 import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
 import java.time.Instant;
@@ -43,9 +43,13 @@ public class MobileMemberService {
 
     private final TransactionTemplate accountTransaction;
 
-    public MobileMemberService(MobileUserRepository users, MobileUserConsentRepository consents,
-            PlatformTransactionManager transactionManager, RefreshTokenStore refreshTokens,
-            MobileAccountProperties accountProperties, MobileConsentPolicy consentPolicy) {
+    public MobileMemberService(
+            MobileUserRepository users,
+            MobileUserConsentRepository consents,
+            PlatformTransactionManager transactionManager,
+            RefreshTokenStore refreshTokens,
+            MobileAccountProperties accountProperties,
+            MobileConsentPolicy consentPolicy) {
         this.users = users;
         this.consents = consents;
         this.refreshTokens = refreshTokens;
@@ -61,8 +65,8 @@ public class MobileMemberService {
     }
 
     @Transactional
-    public MobileMemberResult updateProfile(Long userId, String email, String avatarUrl, String bio,
-            String favoriteRamenType) {
+    public MobileMemberResult updateProfile(
+            Long userId, String email, String avatarUrl, String bio, String favoriteRamenType) {
         MobileUser user = availableUser(users.findByIdForUpdate(userId));
         user.updateProfile(email, avatarUrl, bio, favoriteRamenType);
         return result(user);
@@ -72,8 +76,8 @@ public class MobileMemberService {
     public MobileNicknameAvailabilityResult nicknameAvailability(Long userId, String rawNickname) {
         availableUser(userId);
         Nickname nickname = Nickname.of(rawNickname);
-        return new MobileNicknameAvailabilityResult(nickname.display(),
-                !users.existsByNicknameNormalizedAndIdNot(nickname.normalized(), userId));
+        return new MobileNicknameAvailabilityResult(
+                nickname.display(), !users.existsByNicknameNormalizedAndIdNot(nickname.normalized(), userId));
     }
 
     public MobileMemberResult onboard(Long userId, MobileOnboardingCommand command) {
@@ -92,15 +96,13 @@ public class MobileMemberService {
                 Instant now = Instant.now();
                 user.completeOnboarding(nickname, now);
                 users.saveAndFlush(user);
-                consents.saveAll(command.consents()
-                    .stream()
-                    .map(decision -> MobileUserConsent.decide(userId, decision.type(), decision.documentVersion(),
-                            decision.granted(), now))
-                    .toList());
+                consents.saveAll(command.consents().stream()
+                        .map(decision -> MobileUserConsent.decide(
+                                userId, decision.type(), decision.documentVersion(), decision.granted(), now))
+                        .toList());
                 return result(user);
             });
-        }
-        catch (DataIntegrityViolationException exception) {
+        } catch (DataIntegrityViolationException exception) {
             String message = exception.getMostSpecificCause().getMessage();
             if (message != null && message.contains("uk_v2_user_nickname_normalized")) {
                 throw new MobileException(MobileErrorCode.CONFLICT, "이미 사용 중인 닉네임입니다.");
@@ -122,25 +124,25 @@ public class MobileMemberService {
                 throw new MobileException(MobileErrorCode.VALIDATION_ERROR, "동의 유형은 한 번만 제출할 수 있습니다.");
             }
             if (consentPolicy.isRequiredType(decision.type()) && !decision.granted()) {
-                throw new MobileException(MobileErrorCode.VALIDATION_ERROR,
-                        "이용약관과 개인정보 처리방침 동의는 철회할 수 없습니다. 탈퇴로 진행해 주세요.");
+                throw new MobileException(
+                        MobileErrorCode.VALIDATION_ERROR, "이용약관과 개인정보 처리방침 동의는 철회할 수 없습니다. 탈퇴로 진행해 주세요.");
             }
         }
         Instant now = Instant.now().truncatedTo(ChronoUnit.MICROS);
         consents.saveAll(decisions.stream()
-            .map(decision -> MobileUserConsent.decide(userId, decision.type(), decision.documentVersion(),
-                    decision.granted(), now))
-            .toList());
+                .map(decision -> MobileUserConsent.decide(
+                        userId, decision.type(), decision.documentVersion(), decision.granted(), now))
+                .toList());
         return result(user);
     }
 
     public MobileWithdrawalResult requestWithdrawal(Long userId) {
         MobileWithdrawalResult result = accountTransaction.execute(status -> {
             MobileUser user = users.findByIdForUpdate(userId)
-                .orElseThrow(() -> new MobileException(MobileErrorCode.UNAUTHORIZED, "사용할 수 없는 계정입니다."));
+                    .orElseThrow(() -> new MobileException(MobileErrorCode.UNAUTHORIZED, "사용할 수 없는 계정입니다."));
             // 응답의 삭제 예정 시각이 DATETIME(6)에 저장되는 값과 같도록 마이크로초로 자른다.
-            user.requestWithdrawal(Instant.now().truncatedTo(ChronoUnit.MICROS),
-                    accountProperties.withdrawalGracePeriod());
+            user.requestWithdrawal(
+                    Instant.now().truncatedTo(ChronoUnit.MICROS), accountProperties.withdrawalGracePeriod());
             return new MobileWithdrawalResult(user.getStatus(), user.getPurgeScheduledAt());
         });
         refreshTokens.revokeAll(userId);
@@ -178,5 +180,4 @@ public class MobileMemberService {
         }
         return user;
     }
-
 }

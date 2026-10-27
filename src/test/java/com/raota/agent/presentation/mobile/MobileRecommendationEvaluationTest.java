@@ -108,24 +108,29 @@ class MobileRecommendationEvaluationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mvc = MockMvcBuilders.webAppContextSetup(context).addFilters(requestIdFilter).apply(springSecurity()).build();
+        mvc = MockMvcBuilders.webAppContextSetup(context)
+                .addFilters(requestIdFilter)
+                .apply(springSecurity())
+                .build();
         List<Document> documents = new ArrayList<>();
         for (int index = 0; index < DATA.shops().size(); index++) {
             FixtureShop shop = DATA.shops().get(index);
             long id = FIRST_SHOP_ID + index;
             insertShop(id, shop);
             documents.add(Document.builder()
-                .text(shop.key())
-                .metadata(Map.of("documentType", "SHOP_PROFILE", "shopId", String.valueOf(id)))
-                .score(shop.similarity())
-                .build());
+                    .text(shop.key())
+                    .metadata(Map.of("documentType", "SHOP_PROFILE", "shopId", String.valueOf(id)))
+                    .score(shop.similarity())
+                    .build());
         }
         when(vectorStore.similaritySearch(any(SearchRequest.class))).thenReturn(documents);
     }
 
     @AfterEach
     void cleanUp() {
-        jdbc.update("DELETE FROM tb_v2_shop WHERE id BETWEEN ? AND ?", FIRST_SHOP_ID,
+        jdbc.update(
+                "DELETE FROM tb_v2_shop WHERE id BETWEEN ? AND ?",
+                FIRST_SHOP_ID,
                 FIRST_SHOP_ID + DATA.shops().size() - 1);
         for (Long userId : created) {
             runs.deleteByUserId(userId);
@@ -138,7 +143,8 @@ class MobileRecommendationEvaluationTest extends BaseIntegrationTest {
     void 평가셋_케이스(EvaluationCase evaluation) throws Exception {
         JsonNode data = recommend(evaluation);
         List<String> shown = new ArrayList<>();
-        data.get("shops").forEach(shop -> shown.add(keyOf(Long.parseLong(shop.get("id").asString()))));
+        data.get("shops")
+                .forEach(shop -> shown.add(keyOf(Long.parseLong(shop.get("id").asString()))));
 
         if (Boolean.TRUE.equals(evaluation.expect().empty())) {
             assertThat(shown).as("%s: 고를 매장이 없어 비어야 한다", evaluation.caseId()).isEmpty();
@@ -146,30 +152,35 @@ class MobileRecommendationEvaluationTest extends BaseIntegrationTest {
         }
         List<FixtureShop> eligible = eligible(evaluation);
         Set<String> eligibleKeys = eligible.stream().map(FixtureShop::key).collect(Collectors.toSet());
-        assertThat(shown).as("%s: 고를 수 있는 만큼(최대 %d곳) 채운다", evaluation.caseId(), MAX_SHOPS)
-            .hasSize(Math.min(MAX_SHOPS, eligible.size()));
+        assertThat(shown)
+                .as("%s: 고를 수 있는 만큼(최대 %d곳) 채운다", evaluation.caseId(), MAX_SHOPS)
+                .hasSize(Math.min(MAX_SHOPS, eligible.size()));
         assertThat(eligibleKeys)
-            .as("%s: 고른 국물의 추천해도 되는 매장(좌표가 있으면 가까운 %d곳)만 보여준다", evaluation.caseId(), NEAREST_CANDIDATES)
-            .containsAll(shown);
+                .as("%s: 고른 국물의 추천해도 되는 매장(좌표가 있으면 가까운 %d곳)만 보여준다", evaluation.caseId(), NEAREST_CANDIDATES)
+                .containsAll(shown);
         if (evaluation.expect().top1() != null) {
-            assertThat(shown.getFirst()).as("%s: 1위", evaluation.caseId()).isEqualTo(evaluation.expect().top1());
+            assertThat(shown.getFirst())
+                    .as("%s: 1위", evaluation.caseId())
+                    .isEqualTo(evaluation.expect().top1());
         }
         if (evaluation.expect().excluded() != null) {
-            assertThat(shown).as("%s: 빠져야 할 매장", evaluation.caseId())
-                .doesNotContainAnyElementsOf(evaluation.expect().excluded());
+            assertThat(shown)
+                    .as("%s: 빠져야 할 매장", evaluation.caseId())
+                    .doesNotContainAnyElementsOf(evaluation.expect().excluded());
         }
     }
 
     /** 평가셋 정의대로 이 케이스에서 고를 수 있는 매장이다. 구현을 따라 하지 않고 규칙만 적는다. */
     private static List<FixtureShop> eligible(EvaluationCase evaluation) {
         String soup = evaluation.request().get("soup");
-        Stream<FixtureShop> matching = DATA.shops()
-            .stream()
-            .filter(shop -> shop.recommendable() && shop.ramenTypes().contains(soup));
+        Stream<FixtureShop> matching = DATA.shops().stream()
+                .filter(shop -> shop.recommendable() && shop.ramenTypes().contains(soup));
         if (!evaluation.located()) {
             return matching.toList();
         }
-        return matching.sorted(Comparator.comparingInt(FixtureShop::northMeters)).limit(NEAREST_CANDIDATES).toList();
+        return matching.sorted(Comparator.comparingInt(FixtureShop::northMeters))
+                .limit(NEAREST_CANDIDATES)
+                .toList();
     }
 
     private JsonNode recommend(EvaluationCase evaluation) throws Exception {
@@ -179,34 +190,42 @@ class MobileRecommendationEvaluationTest extends BaseIntegrationTest {
             body.put("latitude", DATA.origin().latitude());
             body.put("longitude", DATA.origin().longitude());
         }
-        byte[] response = mvc
-            .perform(post("/api/v2/ai/recommendations")
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokens.issue(active()))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(JSON.writeValueAsString(body)))
-            .andExpect(status().isOk())
-            .andReturn()
-            .getResponse()
-            .getContentAsByteArray();
+        byte[] response = mvc.perform(post("/api/v2/ai/recommendations")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokens.issue(active()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(JSON.writeValueAsString(body)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsByteArray();
         return JSON.readTree(response).get("data");
     }
 
     private void insertShop(long id, FixtureShop shop) {
         BigDecimal latitude = DATA.origin()
-            .latitude()
-            .add(BigDecimal.valueOf(shop.northMeters() / METERS_PER_LATITUDE_DEGREE))
-            .setScale(8, RoundingMode.HALF_UP);
+                .latitude()
+                .add(BigDecimal.valueOf(shop.northMeters() / METERS_PER_LATITUDE_DEGREE))
+                .setScale(8, RoundingMode.HALF_UP);
         String deletedAt = null;
         if (Boolean.TRUE.equals(shop.deleted())) {
             deletedAt = "2026-09-02 00:00:00";
         }
-        jdbc.update("""
+        jdbc.update(
+                """
                 INSERT INTO tb_v2_shop (id, name, branch_name, address, region, latitude, longitude, ramen_types, tags,
                     business_status, ai_summary_keywords, is_published, created_at, updated_at, deleted_at)
                 VALUES (?, ?, NULL, ?, ?, ?, ?, ?, '[]', ?, '[]', ?, '2026-09-01 00:00:00', '2026-09-01 00:00:00', ?)
-                """, id, shop.key(), "서울 " + DATA.region() + " 평가로 " + id, DATA.region(), latitude,
-                DATA.origin().longitude(), JSON.writeValueAsString(shop.ramenTypes()), shop.statusOrDefault(),
-                !Boolean.FALSE.equals(shop.published()), deletedAt);
+                """,
+                id,
+                shop.key(),
+                "서울 " + DATA.region() + " 평가로 " + id,
+                DATA.region(),
+                latitude,
+                DATA.origin().longitude(),
+                JSON.writeValueAsString(shop.ramenTypes()),
+                shop.statusOrDefault(),
+                !Boolean.FALSE.equals(shop.published()),
+                deletedAt);
     }
 
     private String keyOf(long shopId) {
@@ -226,24 +245,33 @@ class MobileRecommendationEvaluationTest extends BaseIntegrationTest {
             Dataset dataset = JSON.readValue(input, Dataset.class);
             Map<String, Integer> keys = new HashMap<>();
             dataset.shops().forEach(shop -> keys.merge(shop.key(), 1, Integer::sum));
-            keys.forEach((key, count) -> assertThat(count).as("평가셋 매장 키 중복: %s", key).isEqualTo(1));
+            keys.forEach(
+                    (key, count) -> assertThat(count).as("평가셋 매장 키 중복: %s", key).isEqualTo(1));
             return dataset;
-        }
-        catch (IOException exception) {
+        } catch (IOException exception) {
             throw new UncheckedIOException(exception);
         }
     }
 
-    record Dataset(String version, String description, String region, Origin origin, List<FixtureShop> shops,
-            List<EvaluationCase> cases) {
-    }
+    record Dataset(
+            String version,
+            String description,
+            String region,
+            Origin origin,
+            List<FixtureShop> shops,
+            List<EvaluationCase> cases) {}
 
-    record Origin(BigDecimal latitude, BigDecimal longitude) {
-    }
+    record Origin(BigDecimal latitude, BigDecimal longitude) {}
 
     /** {@code status}·{@code published}·{@code deleted}를 비우면 영업 중·공개·미삭제다. */
-    record FixtureShop(String key, List<String> ramenTypes, int northMeters, double similarity, String status,
-            Boolean published, Boolean deleted) {
+    record FixtureShop(
+            String key,
+            List<String> ramenTypes,
+            int northMeters,
+            double similarity,
+            String status,
+            Boolean published,
+            Boolean deleted) {
 
         String statusOrDefault() {
             if (status == null) {
@@ -253,10 +281,11 @@ class MobileRecommendationEvaluationTest extends BaseIntegrationTest {
         }
 
         boolean recommendable() {
-            return !Boolean.FALSE.equals(published) && !Boolean.TRUE.equals(deleted)
-                    && !"CLOSED".equals(statusOrDefault()) && !"TEMPORARILY_CLOSED".equals(statusOrDefault());
+            return !Boolean.FALSE.equals(published)
+                    && !Boolean.TRUE.equals(deleted)
+                    && !"CLOSED".equals(statusOrDefault())
+                    && !"TEMPORARILY_CLOSED".equals(statusOrDefault());
         }
-
     }
 
     record EvaluationCase(String caseId, Map<String, String> request, boolean located, Expect expect, String note) {
@@ -265,10 +294,7 @@ class MobileRecommendationEvaluationTest extends BaseIntegrationTest {
         public String toString() {
             return caseId;
         }
-
     }
 
-    record Expect(String top1, List<String> excluded, Boolean empty) {
-    }
-
+    record Expect(String top1, List<String> excluded, Boolean empty) {}
 }

@@ -9,5 +9,4 @@ public record MobileAdminShopCommand(MobileShopProfile profile, List<String> ima
     public MobileAdminShopCommand {
         imageUrls = List.copyOf(imageUrls);
     }
-
 }

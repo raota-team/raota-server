@@ -1,12 +1,12 @@
 package com.raota.agent.application.evaluation;
 
-import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.Resource;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.ObjectMapper;
 
 @Component
 @RequiredArgsConstructor
@@ -40,10 +40,8 @@ public class RagEvaluationDatasetLoader {
     private RagEvaluationDataset read(Resource resource) {
         try (InputStream inputStream = resource.getInputStream()) {
             return objectMapper.readValue(inputStream, RagEvaluationDataset.class);
-        }
-        catch (IOException exception) {
+        } catch (IOException exception) {
             throw new IllegalStateException("RAG 평가셋을 읽을 수 없습니다.", exception);
         }
     }
-
 }

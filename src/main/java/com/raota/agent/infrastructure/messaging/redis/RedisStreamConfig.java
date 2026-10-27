@@ -1,6 +1,5 @@
 package com.raota.agent.infrastructure.messaging.redis;
 
-import com.raota.agent.infrastructure.messaging.redis.PostIndexingStreamListener;
 import com.raota.agent.infrastructure.messaging.MessagingTopics;
 import com.raota.global.redis.RedisStreamErrorHandler;
 import java.time.Duration;
@@ -40,19 +39,21 @@ public class RedisStreamConfig {
     private long pollTimeoutSeconds;
 
     @Bean(destroyMethod = "stop")
-    public StreamMessageListenerContainer<String, MapRecord<String, String, String>> postIndexingStreamListenerContainer() {
-        StreamMessageListenerContainer.StreamMessageListenerContainerOptions<String, MapRecord<String, String, String>> options = StreamMessageListenerContainer.StreamMessageListenerContainerOptions
-            .builder()
-            .pollTimeout(Duration.ofSeconds(pollTimeoutSeconds))
-            .errorHandler(redisStreamErrorHandler)
-            .build();
+    public StreamMessageListenerContainer<String, MapRecord<String, String, String>>
+            postIndexingStreamListenerContainer() {
+        StreamMessageListenerContainer.StreamMessageListenerContainerOptions<String, MapRecord<String, String, String>>
+                options = StreamMessageListenerContainer.StreamMessageListenerContainerOptions.builder()
+                        .pollTimeout(Duration.ofSeconds(pollTimeoutSeconds))
+                        .errorHandler(redisStreamErrorHandler)
+                        .build();
 
         return StreamMessageListenerContainer.create(redisConnectionFactory, options);
     }
 
     @Bean
     public Subscription postIndexingSubscription(
-            StreamMessageListenerContainer<String, MapRecord<String, String, String>> postIndexingStreamListenerContainer) {
+            StreamMessageListenerContainer<String, MapRecord<String, String, String>>
+                    postIndexingStreamListenerContainer) {
         initConsumerGroup(MessagingTopics.POST_INDEXING, CONSUMER_GROUP);
         Subscription subscription = postIndexingStreamListenerContainer.receive(
                 Consumer.from(CONSUMER_GROUP, consumerName),
@@ -61,7 +62,10 @@ public class RedisStreamConfig {
 
         log.info(
                 "Redis Stream listener started. streamKey={}, consumerGroup={}, consumerName={}, pollTimeoutSeconds={}",
-                MessagingTopics.POST_INDEXING, CONSUMER_GROUP, consumerName, pollTimeoutSeconds);
+                MessagingTopics.POST_INDEXING,
+                CONSUMER_GROUP,
+                consumerName,
+                pollTimeoutSeconds);
         postIndexingStreamListenerContainer.start();
         return subscription;
     }
@@ -76,12 +80,10 @@ public class RedisStreamConfig {
 
             stringRedisTemplate.opsForStream().createGroup(streamKey, groupName);
             log.info("Consumer Group 초기화 완료: {}", groupName);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             if (isBusyGroupException(e)) {
                 log.info("Consumer Group이 이미 존재합니다: {}", groupName);
-            }
-            else {
+            } else {
                 log.error("Redis Stream Consumer Group 초기화 중 에러 발생", e);
             }
         }
@@ -98,5 +100,4 @@ public class RedisStreamConfig {
         }
         return false;
     }
-
 }

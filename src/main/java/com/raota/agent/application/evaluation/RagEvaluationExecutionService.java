@@ -1,7 +1,5 @@
 package com.raota.agent.application.evaluation;
 
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
 import com.raota.agent.infrastructure.persistence.evaluation.RagEvaluationCaseResultJpaRepository;
 import com.raota.agent.infrastructure.persistence.evaluation.RagEvaluationRunJpaRepository;
 import com.raota.agent.infrastructure.persistence.evaluation.entity.RagEvaluationCaseResultEntity;
@@ -17,16 +15,18 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.IntSupplier;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 @Slf4j
 @Service
@@ -54,10 +54,15 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
 
     private final Duration heartbeatInterval;
 
-    public RagEvaluationExecutionService(RagEvaluationRunJpaRepository runRepository,
-            RagEvaluationCaseResultJpaRepository caseRepository, RagEvaluationCaseExecutor caseExecutor,
-            RagEvaluationJudge judge, RagEvaluationDatasetReferenceValidator datasetReferenceValidator,
-            RamenShopRepository ramenShopRepository, ObjectMapper objectMapper, TransactionTemplate transactionTemplate,
+    public RagEvaluationExecutionService(
+            RagEvaluationRunJpaRepository runRepository,
+            RagEvaluationCaseResultJpaRepository caseRepository,
+            RagEvaluationCaseExecutor caseExecutor,
+            RagEvaluationJudge judge,
+            RagEvaluationDatasetReferenceValidator datasetReferenceValidator,
+            RamenShopRepository ramenShopRepository,
+            ObjectMapper objectMapper,
+            TransactionTemplate transactionTemplate,
             @Value("${app.rag.evaluation.heartbeat-interval:PT30S}") Duration heartbeatInterval) {
         this.runRepository = runRepository;
         this.caseRepository = caseRepository;
@@ -95,15 +100,17 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
                     return;
                 }
                 persistCaseStarted(runId, evaluationCase);
-                RagExecutionResult executionResult = classifyOutcome(evaluationCase,
-                        executeWithTimeoutAndRetry(evaluationCase));
+                RagExecutionResult executionResult =
+                        classifyOutcome(evaluationCase, executeWithTimeoutAndRetry(evaluationCase));
                 Map<String, Double> metrics = calculateMetrics(evaluationCase, executionResult);
-                RagEvaluationJudgeResult judgeResult = isGenerated(evaluationCase)
-                        && executionResult.status() == RagEvaluationCaseStatus.COMPLETED
-                                ? judge.suggest(evaluationCase, executionResult) : null;
+                RagEvaluationJudgeResult judgeResult =
+                        isGenerated(evaluationCase) && executionResult.status() == RagEvaluationCaseStatus.COMPLETED
+                                ? judge.suggest(evaluationCase, executionResult)
+                                : null;
 
                 persistCaseResult(runId, evaluationCase, executionResult, metrics, judgeResult);
-                if (isGenerated(evaluationCase) && executionResult.status() == RagEvaluationCaseStatus.COMPLETED
+                if (isGenerated(evaluationCase)
+                        && executionResult.status() == RagEvaluationCaseStatus.COMPLETED
                         && metrics.getOrDefault("schemaValid", 1.0) < 1.0) {
                     throw new RagEvaluationSafetyException("생성 응답 스키마 검증에 실패했습니다: " + evaluationCase.caseId());
                 }
@@ -111,7 +118,8 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
                         && executionResult.status() == RagEvaluationCaseStatus.COMPLETED) {
                     ensurePublishedShops(executionResult.returnedShopIds());
                 }
-                if (!evaluationCase.contractOnly() && evaluationCase.expectedError() == null
+                if (!evaluationCase.contractOnly()
+                        && evaluationCase.expectedError() == null
                         && executionResult.status() == RagEvaluationCaseStatus.COMPLETED) {
                     metricRows.add(metrics);
                 }
@@ -122,13 +130,15 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
 
             Map<String, Object> aggregate = new LinkedHashMap<>();
             aggregate.put("caseCount", dataset.casesFor(split).size());
-            aggregate.put("completedCaseCount",
+            aggregate.put(
+                    "completedCaseCount",
                     caseRepository.countByRunIdAndStatus(runId, RagEvaluationCaseStatus.COMPLETED));
-            aggregate.put("expectedErrorCaseCount",
+            aggregate.put(
+                    "expectedErrorCaseCount",
                     caseRepository.countByRunIdAndStatus(runId, RagEvaluationCaseStatus.EXPECTED_ERROR));
             aggregate.put("errorCaseCount", caseRepository.countByRunIdAndStatus(runId, RagEvaluationCaseStatus.ERROR));
-            aggregate.put("skippedCaseCount",
-                    caseRepository.countByRunIdAndStatus(runId, RagEvaluationCaseStatus.SKIPPED));
+            aggregate.put(
+                    "skippedCaseCount", caseRepository.countByRunIdAndStatus(runId, RagEvaluationCaseStatus.SKIPPED));
             aggregate.put("averageLatencyMs", averageLatency(runId));
             aggregate.put("metrics", RagEvaluationMetricCalculator.average(metricRows));
             aggregate.put("expectedErrorMetrics", RagEvaluationMetricCalculator.average(expectedErrorMetricRows));
@@ -136,13 +146,11 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
             if (updateRun(() -> runRepository.markReviewRequired(runId, aggregateJson, LocalDateTime.now())) == 0) {
                 log.warn("RAG evaluation run was not running at completion; result not applied. runId={}", runId);
             }
-        }
-        catch (Exception exception) {
+        } catch (Exception exception) {
             if (updateRun(() -> runRepository.markFailed(runId, errorMessage(exception), LocalDateTime.now())) == 0) {
                 log.warn("RAG evaluation run was already finished when failure occurred. runId={}", runId, exception);
             }
-        }
-        finally {
+        } finally {
             if (heartbeat != null) {
                 heartbeat.shutdownNow();
             }
@@ -150,19 +158,22 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
     }
 
     private ScheduledExecutorService startHeartbeat(String runId, AtomicBoolean inactive) {
-        ScheduledExecutorService scheduler = Executors
-            .newSingleThreadScheduledExecutor(Thread.ofVirtual().name("rag-evaluation-heartbeat-", 0).factory());
+        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(
+                Thread.ofVirtual().name("rag-evaluation-heartbeat-", 0).factory());
         long intervalMillis = heartbeatInterval.toMillis();
-        scheduler.scheduleWithFixedDelay(() -> {
-            try {
-                if (updateRun(() -> runRepository.touchHeartbeat(runId, LocalDateTime.now())) == 0) {
-                    inactive.set(true);
-                }
-            }
-            catch (Exception exception) {
-                log.warn("Failed to update RAG evaluation heartbeat. runId={}", runId, exception);
-            }
-        }, intervalMillis, intervalMillis, TimeUnit.MILLISECONDS);
+        scheduler.scheduleWithFixedDelay(
+                () -> {
+                    try {
+                        if (updateRun(() -> runRepository.touchHeartbeat(runId, LocalDateTime.now())) == 0) {
+                            inactive.set(true);
+                        }
+                    } catch (Exception exception) {
+                        log.warn("Failed to update RAG evaluation heartbeat. runId={}", runId, exception);
+                    }
+                },
+                intervalMillis,
+                intervalMillis,
+                TimeUnit.MILLISECONDS);
         return scheduler;
     }
 
@@ -173,21 +184,37 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
 
     private void persistCaseStarted(String runId, RagEvaluationCase evaluationCase) {
         transactionTemplate.executeWithoutResult(status -> {
-            RagEvaluationCaseResultEntity entity = caseRepository.findByRunIdAndCaseId(runId, evaluationCase.caseId())
-                .orElseGet(() -> RagEvaluationCaseResultEntity.pending(runId, evaluationCase.caseId(),
-                        evaluationCase.type(), toJson(evaluationCase.request()), toJson(expectedJson(evaluationCase))));
+            RagEvaluationCaseResultEntity entity = caseRepository
+                    .findByRunIdAndCaseId(runId, evaluationCase.caseId())
+                    .orElseGet(() -> RagEvaluationCaseResultEntity.pending(
+                            runId,
+                            evaluationCase.caseId(),
+                            evaluationCase.type(),
+                            toJson(evaluationCase.request()),
+                            toJson(expectedJson(evaluationCase))));
             entity.markRunning();
             caseRepository.save(entity);
         });
     }
 
-    private void persistCaseResult(String runId, RagEvaluationCase evaluationCase, RagExecutionResult result,
-            Map<String, Double> metrics, RagEvaluationJudgeResult judgeResult) {
+    private void persistCaseResult(
+            String runId,
+            RagEvaluationCase evaluationCase,
+            RagExecutionResult result,
+            Map<String, Double> metrics,
+            RagEvaluationJudgeResult judgeResult) {
         transactionTemplate.executeWithoutResult(status -> {
-            RagEvaluationCaseResultEntity entity = caseRepository.findByRunIdAndCaseId(runId, evaluationCase.caseId())
-                .orElseThrow(() -> new IllegalStateException("평가 사례 저장 행을 찾을 수 없습니다."));
-            entity.recordExecution(result.status(), toJson(result.response()), toJson(result.evidence()),
-                    toJson(metrics), toJson(judgeResult), result.latencyMs(), result.errorType(),
+            RagEvaluationCaseResultEntity entity = caseRepository
+                    .findByRunIdAndCaseId(runId, evaluationCase.caseId())
+                    .orElseThrow(() -> new IllegalStateException("평가 사례 저장 행을 찾을 수 없습니다."));
+            entity.recordExecution(
+                    result.status(),
+                    toJson(result.response()),
+                    toJson(result.evidence()),
+                    toJson(metrics),
+                    toJson(judgeResult),
+                    result.latencyMs(),
+                    result.errorType(),
                     result.errorMessage());
             caseRepository.save(entity);
         });
@@ -208,20 +235,16 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
         Future<RagExecutionResult> future = executor.submit(() -> caseExecutor.execute(evaluationCase));
         try {
             return future.get(CASE_TIMEOUT.toSeconds(), TimeUnit.SECONDS);
-        }
-        catch (TimeoutException exception) {
+        } catch (TimeoutException exception) {
             future.cancel(true);
             return RagExecutionResult.error(CASE_TIMEOUT.toMillis(), exception);
-        }
-        catch (InterruptedException exception) {
+        } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             return RagExecutionResult.error(0, exception);
-        }
-        catch (ExecutionException exception) {
+        } catch (ExecutionException exception) {
             Throwable cause = exception.getCause() == null ? exception : exception.getCause();
             return RagExecutionResult.error(0, cause);
-        }
-        finally {
+        } finally {
             executor.shutdownNow();
         }
     }
@@ -231,30 +254,41 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
             return false;
         }
         String text = (result.errorType() + " " + result.errorMessage()).toLowerCase();
-        return text.contains("timeout") || text.contains("429") || text.contains("5xx") || text.contains("500")
-                || text.contains("502") || text.contains("503") || text.contains("504")
-                || text.contains("toomanyrequests") || text.contains("badgateway")
-                || text.contains("serviceunavailable") || text.contains("gatewaytimeout");
+        return text.contains("timeout")
+                || text.contains("429")
+                || text.contains("5xx")
+                || text.contains("500")
+                || text.contains("502")
+                || text.contains("503")
+                || text.contains("504")
+                || text.contains("toomanyrequests")
+                || text.contains("badgateway")
+                || text.contains("serviceunavailable")
+                || text.contains("gatewaytimeout");
     }
 
     private Map<String, Double> calculateMetrics(RagEvaluationCase evaluationCase, RagExecutionResult result) {
         if (evaluationCase.expectedError() != null) {
-            return RagEvaluationMetricCalculator
-                .calculateExpectedError(result.status() == RagEvaluationCaseStatus.EXPECTED_ERROR);
+            return RagEvaluationMetricCalculator.calculateExpectedError(
+                    result.status() == RagEvaluationCaseStatus.EXPECTED_ERROR);
         }
         if (result.status() != RagEvaluationCaseStatus.COMPLETED) {
             return Map.of();
         }
         if (evaluationCase.type() == RagEvaluationCaseType.SEARCH) {
-            return RagEvaluationMetricCalculator.calculateSearch(result.returnedShopIds(),
-                    evaluationCase.relevantShops(), evaluationCase.expectsEmpty(), evaluationCase.primaryK(),
+            return RagEvaluationMetricCalculator.calculateSearch(
+                    result.returnedShopIds(),
+                    evaluationCase.relevantShops(),
+                    evaluationCase.expectsEmpty(),
+                    evaluationCase.primaryK(),
                     evaluationCase.diagnosticK());
         }
         return RagEvaluationMetricCalculator.calculateGeneration(evaluationCase, result.response(), result.fallback());
     }
 
     private boolean isGenerated(RagEvaluationCase evaluationCase) {
-        return evaluationCase.type() != RagEvaluationCaseType.SEARCH && !evaluationCase.contractOnly()
+        return evaluationCase.type() != RagEvaluationCaseType.SEARCH
+                && !evaluationCase.contractOnly()
                 && evaluationCase.expectedError() == null;
     }
 
@@ -267,9 +301,10 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
 
     private void ensurePublishedShops(List<Long> shopIds) {
         List<Long> unsafeIds = shopIds.stream()
-            .filter(id -> id == null || ramenShopRepository.findByIdAndPublishedTrue(id).isEmpty())
-            .distinct()
-            .toList();
+                .filter(id -> id == null
+                        || ramenShopRepository.findByIdAndPublishedTrue(id).isEmpty())
+                .distinct()
+                .toList();
         if (!unsafeIds.isEmpty()) {
             throw new RagEvaluationSafetyException("비공개 또는 존재하지 않는 매장이 검색 결과에 포함되었습니다: " + unsafeIds);
         }
@@ -294,16 +329,15 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
     }
 
     private double averageLatency(String runId) {
-        return caseRepository.findByRunIdOrderByIdAsc(runId)
-            .stream()
-            .filter(item -> item.getStatus() == RagEvaluationCaseStatus.COMPLETED
-                    || item.getStatus() == RagEvaluationCaseStatus.EXPECTED_ERROR
-                    || item.getStatus() == RagEvaluationCaseStatus.ERROR)
-            .map(RagEvaluationCaseResultEntity::getLatencyMs)
-            .filter(Objects::nonNull)
-            .mapToLong(Long::longValue)
-            .average()
-            .orElse(0.0);
+        return caseRepository.findByRunIdOrderByIdAsc(runId).stream()
+                .filter(item -> item.getStatus() == RagEvaluationCaseStatus.COMPLETED
+                        || item.getStatus() == RagEvaluationCaseStatus.EXPECTED_ERROR
+                        || item.getStatus() == RagEvaluationCaseStatus.ERROR)
+                .map(RagEvaluationCaseResultEntity::getLatencyMs)
+                .filter(Objects::nonNull)
+                .mapToLong(Long::longValue)
+                .average()
+                .orElse(0.0);
     }
 
     private String toJson(Object value) {
@@ -312,17 +346,17 @@ public class RagEvaluationExecutionService implements RagEvaluationRunner {
         }
         try {
             return objectMapper.writeValueAsString(value);
-        }
-        catch (JacksonException exception) {
+        } catch (JacksonException exception) {
             return "{}";
         }
     }
 
     private String errorMessage(Exception exception) {
-        if (exception == null || exception.getMessage() == null || exception.getMessage().isBlank()) {
+        if (exception == null
+                || exception.getMessage() == null
+                || exception.getMessage().isBlank()) {
             return "평가 실행에 치명적 오류가 발생했습니다.";
         }
         return exception.getMessage();
     }
-
 }

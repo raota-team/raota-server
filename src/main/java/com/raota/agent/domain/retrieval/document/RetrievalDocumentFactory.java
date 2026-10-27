@@ -6,5 +6,4 @@ import org.springframework.ai.document.Document;
 public interface RetrievalDocumentFactory<T> {
 
     List<Document> create(T source);
-
 }

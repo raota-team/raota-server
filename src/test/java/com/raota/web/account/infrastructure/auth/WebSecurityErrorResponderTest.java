@@ -22,8 +22,8 @@ class WebSecurityErrorResponderTest {
 
     private final WebSecurityErrorResponder responder = new WebSecurityErrorResponder(objectMapper);
 
-    private final DelegatingAuthenticationEntryPoint entryPoint = new DelegatingAuthenticationEntryPoint(
-            List.of(responder));
+    private final DelegatingAuthenticationEntryPoint entryPoint =
+            new DelegatingAuthenticationEntryPoint(List.of(responder));
 
     private final DelegatingAccessDeniedHandler deniedHandler = new DelegatingAccessDeniedHandler(List.of(responder));
 
@@ -31,8 +31,8 @@ class WebSecurityErrorResponderTest {
     void 인증되지_않은_요청은_기존_401_JSON을_반환한다() throws Exception {
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        entryPoint.commence(new MockHttpServletRequest(), response,
-                new InsufficientAuthenticationException("내부 예외 메시지"));
+        entryPoint.commence(
+                new MockHttpServletRequest(), response, new InsufficientAuthenticationException("내부 예외 메시지"));
 
         assertThat(response.getStatus()).isEqualTo(401);
         assertThat(response.getHeader(HttpHeaders.WWW_AUTHENTICATE)).isEqualTo("Bearer");
@@ -54,7 +54,9 @@ class WebSecurityErrorResponderTest {
     void 서버가_판정한_인증_실패_메시지는_보존한다() throws Exception {
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        entryPoint.commence(new MockHttpServletRequest(), response,
+        entryPoint.commence(
+                new MockHttpServletRequest(),
+                response,
                 new JwtAuthenticationException("탈퇴 처리된 계정입니다.", new IllegalStateException()));
 
         assertErrorResponse(response, "탈퇴 처리된 계정입니다.");
@@ -64,8 +66,11 @@ class WebSecurityErrorResponderTest {
     void 만료된_v1_토큰은_기존_메시지를_유지한다() throws Exception {
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        entryPoint.commence(new MockHttpServletRequest(), response, new JwtAuthenticationException("유효하지 않은 액세스 토큰입니다.",
-                new ExpiredJwtTokenException(new IllegalStateException())));
+        entryPoint.commence(
+                new MockHttpServletRequest(),
+                response,
+                new JwtAuthenticationException(
+                        "유효하지 않은 액세스 토큰입니다.", new ExpiredJwtTokenException(new IllegalStateException())));
 
         assertErrorResponse(response, "유효하지 않은 액세스 토큰입니다.");
     }
@@ -78,5 +83,4 @@ class WebSecurityErrorResponderTest {
         assertThat(body.get("message").stringValue()).isEqualTo(expectedMessage);
         assertThat(body.get("success").booleanValue()).isFalse();
     }
-
 }

@@ -5,7 +5,6 @@ import java.util.List;
 
 public interface RamenShopComparisonDocumentPort {
 
-    List<RamenShopComparisonDocument> searchComparisonDocuments(Long shopId, String query, int topK,
-            double similarityThreshold);
-
+    List<RamenShopComparisonDocument> searchComparisonDocuments(
+            Long shopId, String query, int topK, double similarityThreshold);
 }

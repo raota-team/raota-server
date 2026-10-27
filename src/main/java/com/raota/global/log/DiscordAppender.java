@@ -56,15 +56,14 @@ public class DiscordAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
             String jsonPayload = objectMapper.writeValueAsString(payload);
 
             HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(webHookUrl))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
-                .build();
+                    .uri(URI.create(webHookUrl))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                    .build();
 
             httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString());
 
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             addError("Failed to send log to Discord", e);
         }
     }
@@ -84,51 +83,59 @@ public class DiscordAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         String summary = truncate(event.getFormattedMessage(), 300);
 
         List<EmbedField> fields = new ArrayList<>();
-        fields.add(EmbedField.builder().name("Logger").value("`" + event.getLoggerName() + "`").inline(true).build());
-        fields.add(EmbedField.builder().name("Thread").value("`" + event.getThreadName() + "`").inline(true).build());
+        fields.add(EmbedField.builder()
+                .name("Logger")
+                .value("`" + event.getLoggerName() + "`")
+                .inline(true)
+                .build());
+        fields.add(EmbedField.builder()
+                .name("Thread")
+                .value("`" + event.getThreadName() + "`")
+                .inline(true)
+                .build());
         if (throwableProxy != null) {
             fields.add(EmbedField.builder()
-                .name("Exception")
-                .value("`" + truncate(throwableProxy.getClassName(), STACK_FIELD_LIMIT - 2) + "`")
-                .inline(false)
-                .build());
+                    .name("Exception")
+                    .value("`" + truncate(throwableProxy.getClassName(), STACK_FIELD_LIMIT - 2) + "`")
+                    .inline(false)
+                    .build());
         }
 
         List<DiscordEmbed> embeds = new ArrayList<>();
         embeds.add(DiscordEmbed.builder()
-            .title(truncate(levelIcon + " [" + levelName + "] " + event.getFormattedMessage(), EMBED_TITLE_LIMIT))
-            .description(summary)
-            .color(color)
-            .timestamp(Instant.ofEpochMilli(event.getTimeStamp()).toString())
-            .fields(fields)
-            .build());
+                .title(truncate(levelIcon + " [" + levelName + "] " + event.getFormattedMessage(), EMBED_TITLE_LIMIT))
+                .description(summary)
+                .color(color)
+                .timestamp(Instant.ofEpochMilli(event.getTimeStamp()).toString())
+                .fields(fields)
+                .build());
 
         List<String> stackChunks = splitByLength(stackTrace, STACK_EMBED_LIMIT);
         int chunkCount = Math.min(stackChunks.size(), MAX_STACK_EMBEDS);
         for (int i = 0; i < chunkCount; i++) {
             embeds.add(DiscordEmbed.builder()
-                .title("Stack Trace" + (stackChunks.size() > 1 ? " (" + (i + 1) + "/" + stackChunks.size() + ")" : ""))
-                .description(toCodeBlock(stackChunks.get(i)))
-                .color(color)
-                .timestamp(Instant.ofEpochMilli(event.getTimeStamp()).toString())
-                .build());
+                    .title("Stack Trace"
+                            + (stackChunks.size() > 1 ? " (" + (i + 1) + "/" + stackChunks.size() + ")" : ""))
+                    .description(toCodeBlock(stackChunks.get(i)))
+                    .color(color)
+                    .timestamp(Instant.ofEpochMilli(event.getTimeStamp()).toString())
+                    .build());
         }
 
         if (stackChunks.size() > MAX_STACK_EMBEDS) {
             embeds.add(DiscordEmbed.builder()
-                .title("Stack Trace (truncated)")
-                .description("Remaining stack trace omitted due to Discord payload limits.")
-                .color(color)
-                .timestamp(Instant.ofEpochMilli(event.getTimeStamp()).toString())
-                .build());
+                    .title("Stack Trace (truncated)")
+                    .description("Remaining stack trace omitted due to Discord payload limits.")
+                    .color(color)
+                    .timestamp(Instant.ofEpochMilli(event.getTimeStamp()).toString())
+                    .build());
         }
 
         return DiscordMessage.builder().embeds(embeds).build();
     }
 
     private String truncate(String str, int maxLength) {
-        if (str == null || str.length() <= maxLength)
-            return str;
+        if (str == null || str.length() <= maxLength) return str;
         return str.substring(0, maxLength - 3) + "...";
     }
 
@@ -167,5 +174,4 @@ public class DiscordAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
         return chunks;
     }
-
 }

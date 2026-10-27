@@ -12,6 +12,5 @@ public record FollowUpChatQuery(String contextType, List<Long> shopIds, List<Mes
         messages = messages == null ? null : Collections.unmodifiableList(new ArrayList<>(messages));
     }
 
-    public record Message(String role, String content) {
-    }
+    public record Message(String role, String content) {}
 }

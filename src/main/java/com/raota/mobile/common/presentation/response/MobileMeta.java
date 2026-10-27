@@ -1,4 +1,3 @@
 package com.raota.mobile.common.presentation.response;
 
-public record MobileMeta(String requestId) {
-}
+public record MobileMeta(String requestId) {}

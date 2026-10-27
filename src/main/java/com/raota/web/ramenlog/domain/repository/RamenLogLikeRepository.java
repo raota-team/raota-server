@@ -15,5 +15,4 @@ public interface RamenLogLikeRepository extends JpaRepository<RamenLogLike, Long
     void deleteAllByMemberId(Long memberId);
 
     void deleteAllByRamenLogAuthorId(Long memberId);
-
 }

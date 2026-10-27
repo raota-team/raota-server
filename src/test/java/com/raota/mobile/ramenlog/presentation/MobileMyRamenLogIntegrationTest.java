@@ -63,7 +63,10 @@ class MobileMyRamenLogIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mvc = MockMvcBuilders.webAppContextSetup(context).addFilters(requestIdFilter).apply(springSecurity()).build();
+        mvc = MockMvcBuilders.webAppContextSetup(context)
+                .addFilters(requestIdFilter)
+                .apply(springSecurity())
+                .build();
         jdbc.update("""
                 INSERT INTO tb_v2_shop (id, name, branch_name, address, region, ramen_types, tags, business_status,
                     ai_summary_keywords, is_published, created_at, updated_at)
@@ -93,10 +96,10 @@ class MobileMyRamenLogIntegrationTest extends BaseIntegrationTest {
         String deleted = create(owner, "deleted", "2026-09-03", "PUBLIC");
         String stranger = create(other, "other", "2026-09-04", "PUBLIC");
         mvc.perform(delete("/api/v2/ramen-logs/{logId}", deleted).header(HttpHeaders.AUTHORIZATION, auth(owner)))
-            .andExpect(status().isNoContent());
+                .andExpect(status().isNoContent());
         jdbc.update("UPDATE tb_v2_shop SET is_published = FALSE, deleted_at = CURRENT_TIMESTAMP(6) WHERE id = ?", SHOP);
         mvc.perform(get("/api/v2/ramen-logs/{logId}", latest).header(HttpHeaders.AUTHORIZATION, auth(owner)))
-            .andExpect(status().isOk());
+                .andExpect(status().isOk());
 
         List<String> ids = new ArrayList<>();
         String cursor = null;
@@ -114,8 +117,7 @@ class MobileMyRamenLogIntegrationTest extends BaseIntegrationTest {
                 cursor = page.get("nextCursor").asString();
             }
             assertThat(page.get("hasNext").asBoolean()).isEqualTo(cursor != null);
-        }
-        while (cursor != null);
+        } while (cursor != null);
         assertThat(ids).containsExactly(latest, second, older).doesNotContain(deleted, stranger);
 
         JsonNode summary = data("/api/v2/members/me/ramen-logs/summary");
@@ -123,11 +125,9 @@ class MobileMyRamenLogIntegrationTest extends BaseIntegrationTest {
         assertThat(summary.get(0).get("id").asString()).isEqualTo(latest);
         assertThat(summary.get(2).get("id").asString()).isEqualTo(older);
         assertThat(summary.get(0).get("scores").get("revisit").asInt()).isEqualTo(3);
-        Map<String, Object> item = mapper.readValue(summary.get(0).toString(), new TypeReference<>() {
-        });
+        Map<String, Object> item = mapper.readValue(summary.get(0).toString(), new TypeReference<>() {});
         assertThat(item).containsOnlyKeys("id", "visitedAt", "shop", "menuName", "ramenType", "scores");
-        Map<String, Object> shop = mapper.readValue(summary.get(0).get("shop").toString(), new TypeReference<>() {
-        });
+        Map<String, Object> shop = mapper.readValue(summary.get(0).get("shop").toString(), new TypeReference<>() {});
         assertThat(shop).containsOnlyKeys("id", "name", "branchName");
     }
 
@@ -135,11 +135,15 @@ class MobileMyRamenLogIntegrationTest extends BaseIntegrationTest {
     void 목록은_인증과_크기_및_커서_형식을_검증한다() throws Exception {
         mvc.perform(get("/api/v2/members/me/ramen-logs")).andExpect(status().isUnauthorized());
         for (String size : List.of("0", "51")) {
-            mvc.perform(get("/api/v2/members/me/ramen-logs").header(HttpHeaders.AUTHORIZATION, auth(owner))
-                .param("size", size)).andExpect(status().isBadRequest());
+            mvc.perform(get("/api/v2/members/me/ramen-logs")
+                            .header(HttpHeaders.AUTHORIZATION, auth(owner))
+                            .param("size", size))
+                    .andExpect(status().isBadRequest());
         }
-        mvc.perform(get("/api/v2/members/me/ramen-logs").header(HttpHeaders.AUTHORIZATION, auth(owner))
-            .param("cursor", "not-a-cursor")).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/v2/members/me/ramen-logs")
+                        .header(HttpHeaders.AUTHORIZATION, auth(owner))
+                        .param("cursor", "not-a-cursor"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -157,18 +161,18 @@ class MobileMyRamenLogIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void 맛_태그_정의는_네_그룹에_각_다섯_개씩_앱_순서대로_제공한다() throws Exception {
-        JsonNode definitions = mapper
-            .readTree(mvc.perform(get("/api/v2/taste-note-definitions"))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsByteArray())
-            .get("data");
+        JsonNode definitions = mapper.readTree(mvc.perform(get("/api/v2/taste-note-definitions"))
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsByteArray())
+                .get("data");
         assertThat(definitions.get("version").asString()).isEqualTo("1");
         JsonNode groups = definitions.get("groups");
         assertThat(groups.size()).isEqualTo(4);
         List<String> categories = List.of("BROTH", "NOODLE", "SEASONING", "TOPPING");
-        List<List<String>> labels = List.of(List.of("진해요", "깔끔해요", "감칠맛 좋아요", "기름져요", "어패류 향"),
+        List<List<String>> labels = List.of(
+                List.of("진해요", "깔끔해요", "감칠맛 좋아요", "기름져요", "어패류 향"),
                 List.of("탄력 있어요", "단단해요", "부드러워요", "국물이 잘 배어요", "양 많아요"),
                 List.of("딱 좋아요", "슴슴해요", "짭짤해요", "매콤해요", "밥 생각나요"),
                 List.of("차슈 좋아요", "계란 좋아요", "멘마 좋아요", "파 향 좋아요", "구성 알차요"));
@@ -178,8 +182,9 @@ class MobileMyRamenLogIntegrationTest extends BaseIntegrationTest {
             assertThat(group.get("notes").size()).isEqualTo(5);
             for (int code = 0; code < 5; code++) {
                 assertThat(group.get("notes").get(code).get("code").asString())
-                    .isEqualTo(categories.get(index) + "_0" + (code + 1));
-                assertThat(group.get("notes").get(code).get("label").asString()).isEqualTo(labels.get(index).get(code));
+                        .isEqualTo(categories.get(index) + "_0" + (code + 1));
+                assertThat(group.get("notes").get(code).get("label").asString())
+                        .isEqualTo(labels.get(index).get(code));
             }
         }
     }
@@ -190,8 +195,8 @@ class MobileMyRamenLogIntegrationTest extends BaseIntegrationTest {
         mvc.perform(get("/api/v2/taste-note-definitions")).andExpect(status().isOk());
         for (Long userId : List.of(owner, other)) {
             mvc.perform(get("/api/v2/taste-note-definitions").header(HttpHeaders.AUTHORIZATION, auth(userId)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.groups.length()").value(4));
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.groups.length()").value(4));
         }
     }
 
@@ -206,14 +211,18 @@ class MobileMyRamenLogIntegrationTest extends BaseIntegrationTest {
                 "revisitIntention":"SOMETIMES","note":"방문했어요","tasteNoteCodes":[],
                 "visibility":"%s","imageUrls":["https://mock.cdn.com/v2/ramen-logs/photo.png"]}
                 """.formatted(SHOP, date, ramenType, visibility);
-        return mapper
-            .readTree(mvc.perform(post("/api/v2/ramen-logs").header(HttpHeaders.AUTHORIZATION, auth(userId))
-                .header("Idempotency-Key", key)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body)).andExpect(status().isCreated()).andReturn().getResponse().getContentAsByteArray())
-            .get("data")
-            .get("id")
-            .asString();
+        return mapper.readTree(mvc.perform(post("/api/v2/ramen-logs")
+                                .header(HttpHeaders.AUTHORIZATION, auth(userId))
+                                .header("Idempotency-Key", key)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(body))
+                        .andExpect(status().isCreated())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsByteArray())
+                .get("data")
+                .get("id")
+                .asString();
     }
 
     /** 한 쪽에 하나씩 끝까지 읽어 커서가 종류 조건을 유지하는지도 함께 본다. */
@@ -229,8 +238,7 @@ class MobileMyRamenLogIntegrationTest extends BaseIntegrationTest {
             if (!page.get("nextCursor").isNull()) {
                 cursor = page.get("nextCursor").asString();
             }
-        }
-        while (cursor != null);
+        } while (cursor != null);
         return ids;
     }
 
@@ -239,27 +247,30 @@ class MobileMyRamenLogIntegrationTest extends BaseIntegrationTest {
     }
 
     private JsonNode page(String cursor, int size, String ramenType) throws Exception {
-        var request = get("/api/v2/members/me/ramen-logs").header(HttpHeaders.AUTHORIZATION, auth(owner))
-            .param("size", Integer.toString(size));
+        var request = get("/api/v2/members/me/ramen-logs")
+                .header(HttpHeaders.AUTHORIZATION, auth(owner))
+                .param("size", Integer.toString(size));
         if (cursor != null) {
             request.param("cursor", cursor);
         }
         if (ramenType != null) {
             request.param("ramenType", ramenType);
         }
-        return mapper
-            .readTree(mvc.perform(request).andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray())
-            .get("data");
+        return mapper.readTree(mvc.perform(request)
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsByteArray())
+                .get("data");
     }
 
     private JsonNode data(String path) throws Exception {
-        return mapper
-            .readTree(mvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, auth(owner)))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsByteArray())
-            .get("data");
+        return mapper.readTree(mvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, auth(owner)))
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsByteArray())
+                .get("data");
     }
 
     private Long active() {
@@ -271,5 +282,4 @@ class MobileMyRamenLogIntegrationTest extends BaseIntegrationTest {
     private String auth(Long userId) {
         return "Bearer " + tokens.issue(userId);
     }
-
 }

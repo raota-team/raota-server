@@ -6,14 +6,11 @@ import static org.mockito.Mockito.verify;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.raota.web.ramenshop.application.service.RamenShopCacheService;
-import com.raota.web.ramenshop.application.service.RamenShopInfoService;
-import com.raota.web.ramenshop.application.service.RamenShopViewRankingService;
-import com.raota.web.ramenshop.domain.repository.BookmarkRepository;
-import com.raota.web.ramenshop.domain.model.RamenShop;
-import com.raota.web.ramenlog.domain.repository.RamenLogRepository;
-import com.raota.web.ramenshop.domain.repository.RamenShopRepository;
 import com.raota.global.cache.CacheInvalidationPublisher;
+import com.raota.web.ramenlog.domain.repository.RamenLogRepository;
+import com.raota.web.ramenshop.domain.model.RamenShop;
+import com.raota.web.ramenshop.domain.repository.BookmarkRepository;
+import com.raota.web.ramenshop.domain.repository.RamenShopRepository;
 import com.raota.web.ramenshop.presentation.response.RamenShopBasicInfoResponse;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -51,16 +48,16 @@ class RamenShopInfoServiceTest {
         Long shopId = 1L;
         Long memberId = 10L;
         RamenShopBasicInfoResponse cachedResponse = RamenShopBasicInfoResponse.builder()
-            .id(shopId)
-            .name("멘야 하쿠")
-            .is_bookmarked(false)
-            .build();
+                .id(shopId)
+                .name("멘야 하쿠")
+                .is_bookmarked(false)
+                .build();
 
         given(ramenShopRepository.findByIdAndPublishedTrue(shopId))
-            .willReturn(Optional.of(RamenShop.builder().name("멘야 하쿠").build()));
+                .willReturn(Optional.of(RamenShop.builder().name("멘야 하쿠").build()));
         given(ramenShopCacheService.getShopDetail(shopId)).willReturn(cachedResponse);
         given(bookmarkRepository.existsByMemberProfileIdAndRamenShopIdAndIsDeletedFalse(memberId, shopId))
-            .willReturn(true);
+                .willReturn(true);
 
         RamenShopBasicInfoResponse response = ramenShopInfoService.getShopDetailInfo(shopId, memberId);
 
@@ -85,15 +82,14 @@ class RamenShopInfoServiceTest {
     @Test
     void shopDetailResponseSerializesSnakeCaseBookmarkFieldOnly() throws Exception {
         RamenShopBasicInfoResponse response = RamenShopBasicInfoResponse.builder()
-            .id(1L)
-            .name("멘야 하쿠")
-            .is_bookmarked(true)
-            .build();
+                .id(1L)
+                .name("멘야 하쿠")
+                .is_bookmarked(true)
+                .build();
 
         JsonNode json = new ObjectMapper().readTree(new ObjectMapper().writeValueAsString(response));
 
         assertThat(json.get("is_bookmarked").asBoolean()).isTrue();
         assertThat(json.has("isBookmarked")).isFalse();
     }
-
 }

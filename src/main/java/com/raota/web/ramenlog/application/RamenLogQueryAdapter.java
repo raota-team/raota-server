@@ -1,8 +1,8 @@
 package com.raota.web.ramenlog.application;
 
+import com.raota.web.ramenlog.domain.repository.RamenLogRepository;
 import com.raota.web.ramenlog.domain.repository.RecentVerifiedShopProjection;
 import com.raota.web.ramenshop.application.port.RamenLogQueryPort;
-import com.raota.web.ramenlog.domain.repository.RamenLogRepository;
 import java.util.Collection;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -17,23 +17,20 @@ public class RamenLogQueryAdapter implements RamenLogQueryPort {
 
     @Override
     public List<Preview> findPreviewRowsByShopIds(Collection<Long> shopIds) {
-        return ramenLogRepository.findPreviewRowsByShopIds(shopIds)
-            .stream()
-            .map(row -> new Preview(row.getRamenShopId(), row.getImageUrl(), row.getRamenLogCount()))
-            .toList();
+        return ramenLogRepository.findPreviewRowsByShopIds(shopIds).stream()
+                .map(row -> new Preview(row.getRamenShopId(), row.getImageUrl(), row.getRamenLogCount()))
+                .toList();
     }
 
     @Override
     public List<RecentVerifiedShop> findRecentVerifiedShops(int limit) {
-        return ramenLogRepository.findRecentVerifiedShops(PageRequest.of(0, limit))
-            .stream()
-            .map(this::toRecentVerifiedShop)
-            .toList();
+        return ramenLogRepository.findRecentVerifiedShops(PageRequest.of(0, limit)).stream()
+                .map(this::toRecentVerifiedShop)
+                .toList();
     }
 
     private RecentVerifiedShop toRecentVerifiedShop(RecentVerifiedShopProjection response) {
-        return new RecentVerifiedShop(response.id(), response.name(), response.location(), response.imageUrl(),
-                response.photoCount());
+        return new RecentVerifiedShop(
+                response.id(), response.name(), response.location(), response.imageUrl(), response.photoCount());
     }
-
 }

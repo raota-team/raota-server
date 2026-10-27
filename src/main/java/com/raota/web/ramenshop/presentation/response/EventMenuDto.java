@@ -19,8 +19,11 @@ public class EventMenuDto {
     private String badge_text;
 
     public static EventMenuDto from(EventMenu eventMenu) {
-        return new EventMenuDto(eventMenu.getId(), eventMenu.getName(), eventMenu.getDescription(),
-                eventMenu.getPrice(), eventMenu.getBadgeText());
+        return new EventMenuDto(
+                eventMenu.getId(),
+                eventMenu.getName(),
+                eventMenu.getDescription(),
+                eventMenu.getPrice(),
+                eventMenu.getBadgeText());
     }
-
 }

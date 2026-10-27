@@ -22,5 +22,4 @@ public class MemberPurgedRamenLogCleanupListener {
         ramenLogLikeRepository.deleteAllByRamenLogAuthorId(memberId);
         ramenLogRepository.deleteAllByAuthorId(memberId);
     }
-
 }

@@ -1,13 +1,10 @@
 package com.raota.system;
 
-import org.junit.jupiter.api.Test;
-
 import com.raota.support.BaseIntegrationTest;
+import org.junit.jupiter.api.Test;
 
 class RaotaApplicationTests extends BaseIntegrationTest {
 
     @Test
-    void contextLoads() {
-    }
-
+    void contextLoads() {}
 }

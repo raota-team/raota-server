@@ -23,7 +23,8 @@ public class RoutingFileUploader implements FileUploader {
 
     private static final String RAMEN_PROOF_DIR = "ramen-proof";
 
-    public RoutingFileUploader(@Qualifier("imageBucketFileUploader") FileUploader ociUploader,
+    public RoutingFileUploader(
+            @Qualifier("imageBucketFileUploader") FileUploader ociUploader,
             @Qualifier("cloudinaryFileUploader") FileUploader cloudinaryUploader) {
         this.ociUploader = ociUploader;
         this.cloudinaryUploader = cloudinaryUploader;
@@ -51,8 +52,7 @@ public class RoutingFileUploader implements FileUploader {
     public void delete(String filePath) {
         if (filePath != null && filePath.contains("cloudinary")) {
             cloudinaryUploader.delete(filePath);
-        }
-        else {
+        } else {
             ociUploader.delete(filePath);
         }
     }
@@ -64,5 +64,4 @@ public class RoutingFileUploader implements FileUploader {
         }
         return ociUploader;
     }
-
 }

@@ -35,7 +35,10 @@ class MobileRecommendationLogger {
 
     private final String modelVersion;
 
-    MobileRecommendationLogger(MobileRecommendationRunRepository runs, ObjectMapper mapper, Clock clock,
+    MobileRecommendationLogger(
+            MobileRecommendationRunRepository runs,
+            ObjectMapper mapper,
+            Clock clock,
             @Value("${app.rag.evaluation.vector-index-version:unknown}") String indexVersion,
             @Value("${spring.ai.openai.embedding.model:unknown}") String modelVersion) {
         this.runs = runs;
@@ -46,17 +49,27 @@ class MobileRecommendationLogger {
     }
 
     /** 기록 ID를 돌려준다. 저장하지 못하면 {@code null}이다. */
-    String record(Long userId, MobileRecommendationCommand command, int candidateCount,
-            List<MobileRecommendationRun.Item> shown, long latencyMs) {
+    String record(
+            Long userId,
+            MobileRecommendationCommand command,
+            int candidateCount,
+            List<MobileRecommendationRun.Item> shown,
+            long latencyMs) {
         try {
-            return runs
-                .save(new MobileRecommendationRun(userId, conditions(command), coarse(command.latitude(), 2),
-                        coarse(command.longitude(), 2), candidateCount, ALGORITHM_VERSION, indexVersion, modelVersion,
-                        Math.toIntExact(Math.min(latencyMs, Integer.MAX_VALUE)),
-                        Instant.now(clock).truncatedTo(ChronoUnit.MICROS), shown))
-                .toString();
-        }
-        catch (RuntimeException exception) {
+            return runs.save(new MobileRecommendationRun(
+                            userId,
+                            conditions(command),
+                            coarse(command.latitude(), 2),
+                            coarse(command.longitude(), 2),
+                            candidateCount,
+                            ALGORITHM_VERSION,
+                            indexVersion,
+                            modelVersion,
+                            Math.toIntExact(Math.min(latencyMs, Integer.MAX_VALUE)),
+                            Instant.now(clock).truncatedTo(ChronoUnit.MICROS),
+                            shown))
+                    .toString();
+        } catch (RuntimeException exception) {
             log.warn("추천 노출 기록을 남기지 못했습니다: userId={}", userId, exception);
             return null;
         }
@@ -79,5 +92,4 @@ class MobileRecommendationLogger {
         }
         return value.setScale(scale, RoundingMode.HALF_UP);
     }
-
 }

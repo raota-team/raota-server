@@ -1,11 +1,11 @@
 package com.raota.web.account.domain.member.repository;
 
+import com.raota.web.account.domain.member.model.MemberProfile;
+import com.raota.web.account.domain.member.model.MemberRole;
 import com.raota.web.account.presentation.member.response.BookmarkSummaryResponse;
 import com.raota.web.account.presentation.member.response.MyProfileResponse;
 import com.raota.web.account.presentation.member.response.PhotoSummaryResponse;
 import com.raota.web.account.presentation.member.response.VisitSummaryResponse;
-import com.raota.web.account.domain.member.model.MemberProfile;
-import com.raota.web.account.domain.member.model.MemberRole;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -95,10 +95,15 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
                    or (:emailPresent = true and m.email is not null and m.email <> '')
                    or (:emailPresent = false and (m.email is null or m.email = '')))
             """, nativeQuery = true)
-    Page<MemberProfile> findAdminUsers(@Param("keywordBlank") boolean keywordBlank, @Param("keyword") String keyword,
+    Page<MemberProfile> findAdminUsers(
+            @Param("keywordBlank") boolean keywordBlank,
+            @Param("keyword") String keyword,
             @Param("keywordMemberId") Long keywordMemberId,
-            @Param("registrationCompleted") Boolean registrationCompleted, @Param("deleted") Boolean deleted,
-            @Param("provider") String provider, @Param("emailPresent") Boolean emailPresent, Pageable pageable);
+            @Param("registrationCompleted") Boolean registrationCompleted,
+            @Param("deleted") Boolean deleted,
+            @Param("provider") String provider,
+            @Param("emailPresent") Boolean emailPresent,
+            Pageable pageable);
 
     @Query(value = """
             select new com.raota.web.account.presentation.member.response.VisitSummaryResponse(
@@ -167,5 +172,4 @@ public interface MemberRepository extends JpaRepository<MemberProfile, Long> {
                   and p.isDeleted = false
             """)
     Page<PhotoSummaryResponse> findMyPhotos(@Param("memberId") Long memberId, Pageable pageable);
-
 }

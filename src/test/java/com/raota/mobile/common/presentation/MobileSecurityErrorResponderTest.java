@@ -24,8 +24,8 @@ class MobileSecurityErrorResponderTest {
 
     private final MobileSecurityErrorResponder responder = new MobileSecurityErrorResponder(objectMapper);
 
-    private final DelegatingAuthenticationEntryPoint entryPoint = new DelegatingAuthenticationEntryPoint(
-            List.of(responder));
+    private final DelegatingAuthenticationEntryPoint entryPoint =
+            new DelegatingAuthenticationEntryPoint(List.of(responder));
 
     private final DelegatingAccessDeniedHandler deniedHandler = new DelegatingAccessDeniedHandler(List.of(responder));
 
@@ -63,7 +63,8 @@ class MobileSecurityErrorResponderTest {
     @Test
     void 원인_체인에_만료_토큰이_있으면_TOKEN_EXPIRED를_반환한다() throws Exception {
         MockHttpServletResponse response = new MockHttpServletResponse();
-        var exception = new BearerTokenAuthenticationException("유효하지 않은 액세스 토큰입니다.",
+        var exception = new BearerTokenAuthenticationException(
+                "유효하지 않은 액세스 토큰입니다.",
                 new IllegalStateException(new ExpiredJwtTokenException(new IllegalStateException())));
 
         entryPoint.commence(mobileRequest("/api/v2/anything"), response, exception);
@@ -78,13 +79,21 @@ class MobileSecurityErrorResponderTest {
     @Test
     void 안전한_인증_메시지는_그대로_반환하고_그_외에는_기본_메시지를_사용한다() throws Exception {
         MockHttpServletResponse response = new MockHttpServletResponse();
-        entryPoint.commence(mobileRequest("/api/v2/anything"), response,
+        entryPoint.commence(
+                mobileRequest("/api/v2/anything"),
+                response,
                 new BearerTokenAuthenticationException("사용할 수 없는 계정입니다.", null));
-        assertThat(objectMapper.readTree(response.getContentAsByteArray()).get("error").get("message").stringValue())
-            .isEqualTo("사용할 수 없는 계정입니다.");
+        assertThat(objectMapper
+                        .readTree(response.getContentAsByteArray())
+                        .get("error")
+                        .get("message")
+                        .stringValue())
+                .isEqualTo("사용할 수 없는 계정입니다.");
 
         MockHttpServletResponse defaultResponse = new MockHttpServletResponse();
-        entryPoint.commence(mobileRequest("/api/v2/anything"), defaultResponse,
+        entryPoint.commence(
+                mobileRequest("/api/v2/anything"),
+                defaultResponse,
                 new InsufficientAuthenticationException("내부 예외 메시지"));
         JsonNode body = objectMapper.readTree(defaultResponse.getContentAsByteArray());
         assertThat(body.get("error").get("code").stringValue()).isEqualTo("UNAUTHORIZED");
@@ -96,5 +105,4 @@ class MobileSecurityErrorResponderTest {
         request.setServletPath(path);
         return request;
     }
-
 }

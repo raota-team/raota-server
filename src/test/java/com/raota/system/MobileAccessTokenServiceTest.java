@@ -4,9 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.raota.global.security.jwt.ExpiredJwtTokenException;
+import com.raota.global.security.jwt.InvalidJwtTokenException;
 import com.raota.mobile.account.infrastructure.auth.MobileAccessTokenService;
 import com.raota.mobile.account.infrastructure.auth.MobileAuthProperties;
-import com.raota.global.security.jwt.InvalidJwtTokenException;
 import com.raota.web.account.infrastructure.auth.AuthProperties;
 import com.raota.web.account.infrastructure.auth.JwtTokenProvider;
 import java.util.List;
@@ -25,9 +25,14 @@ class MobileAccessTokenServiceTest {
 
     @Test
     void 기존_웹_토큰은_모바일_토큰으로_사용할_수_없다() {
-        var v1Properties = new AuthProperties("raota-test", "test-raota-access-token-secret-key-1234567890", 1800,
-                1209600, new AuthProperties.OAuth2("/oauth2", "/oauth2/failure"),
-                new AuthProperties.Cookie("refreshToken", false, "Lax", null), new AuthProperties.Cors(List.of()));
+        var v1Properties = new AuthProperties(
+                "raota-test",
+                "test-raota-access-token-secret-key-1234567890",
+                1800,
+                1209600,
+                new AuthProperties.OAuth2("/oauth2", "/oauth2/failure"),
+                new AuthProperties.Cookie("refreshToken", false, "Lax", null),
+                new AuthProperties.Cors(List.of()));
         String webToken = new JwtTokenProvider(v1Properties).createAccessToken(42L);
 
         assertThatThrownBy(() -> mobileTokens(1800).verify(webToken)).isInstanceOf(InvalidJwtTokenException.class);
@@ -44,5 +49,4 @@ class MobileAccessTokenServiceTest {
         return new MobileAccessTokenService(
                 new MobileAuthProperties("raota-mobile-test", MOBILE_SECRET, expirySeconds, 1209600, "v2:refresh:"));
     }
-
 }

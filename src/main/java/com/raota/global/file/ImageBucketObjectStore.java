@@ -39,17 +39,19 @@ public class ImageBucketObjectStore implements ImageObjectStore {
         String marker = null;
         while (true) {
             ListObjectsRequest.Builder request = ListObjectsRequest.builder()
-                .bucket(bucketName)
-                .prefix(prefix)
-                .maxKeys(PAGE_SIZE);
+                    .bucket(bucketName)
+                    .prefix(prefix)
+                    .maxKeys(PAGE_SIZE);
             if (marker != null) {
                 request.marker(marker);
             }
             ListObjectsResponse page = s3Client.listObjects(request.build());
             for (S3Object object : page.contents()) {
                 if (object.lastModified() != null && object.lastModified().isBefore(cutoff)) {
-                    images.add(new StoredImage(object.key(),
-                            ImageBucketFileUploader.CLOUDFLARE_IMAGE_DOMAIN + object.key(), object.lastModified()));
+                    images.add(new StoredImage(
+                            object.key(),
+                            ImageBucketFileUploader.CLOUDFLARE_IMAGE_DOMAIN + object.key(),
+                            object.lastModified()));
                 }
             }
             if (!Boolean.TRUE.equals(page.isTruncated()) || page.contents().isEmpty()) {
@@ -67,5 +69,4 @@ public class ImageBucketObjectStore implements ImageObjectStore {
         }
         s3Client.deleteObject(builder -> builder.bucket(bucketName).key(key));
     }
-
 }

@@ -1,7 +1,7 @@
 package com.raota.web.community.infrastructure.persistence.entity;
 
-import com.raota.web.community.domain.model.Comment;
 import com.raota.web.account.domain.member.model.MemberProfile;
+import com.raota.web.community.domain.model.Comment;
 import jakarta.persistence.Column;
 import jakarta.persistence.ConstraintMode;
 import jakarta.persistence.Entity;
@@ -66,16 +66,15 @@ public class CommentEntity {
         return Comment.of(id, post.getId(), member.getId(), content, createdAt);
     }
 
-    public static CommentEntity fromDomain(Comment comment, PostEntity post, MemberProfile member,
-            CommentEntity parent) {
+    public static CommentEntity fromDomain(
+            Comment comment, PostEntity post, MemberProfile member, CommentEntity parent) {
         return CommentEntity.builder()
-            .id(comment.getId())
-            .post(post)
-            .member(member)
-            .content(comment.getContent())
-            .parent(parent)
-            .createdAt(comment.getCreatedAt())
-            .build();
+                .id(comment.getId())
+                .post(post)
+                .member(member)
+                .content(comment.getContent())
+                .parent(parent)
+                .createdAt(comment.getCreatedAt())
+                .build();
     }
-
 }

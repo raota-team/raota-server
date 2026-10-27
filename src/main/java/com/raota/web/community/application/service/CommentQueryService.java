@@ -24,10 +24,9 @@ public class CommentQueryService {
 
     public Page<CommentThreadResult> getCommentThreads(Long postId, Pageable pageable) {
         Page<CommentItemResult> parents = commentQueryPort.getParentComments(postId, pageable);
-        List<CommentThreadResult> threads = parents.getContent()
-            .stream()
-            .map(parent -> CommentThreadResult.of(parent, commentQueryPort.getReplies(parent.commentId())))
-            .toList();
+        List<CommentThreadResult> threads = parents.getContent().stream()
+                .map(parent -> CommentThreadResult.of(parent, commentQueryPort.getReplies(parent.commentId())))
+                .toList();
 
         return new PageImpl<>(threads, pageable, parents.getTotalElements());
     }
@@ -35,5 +34,4 @@ public class CommentQueryService {
     public Page<CommentItemResult> findCommentsByAuthor(Long authorId, Pageable pageable) {
         return commentQueryPort.findCommentsByAuthor(authorId, pageable);
     }
-
 }

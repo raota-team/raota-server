@@ -12,5 +12,4 @@ public interface RefreshTokenStore {
     void revoke(String refreshToken, Long userId);
 
     void revokeAll(Long userId);
-
 }

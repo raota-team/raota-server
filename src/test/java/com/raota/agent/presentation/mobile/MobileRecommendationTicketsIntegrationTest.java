@@ -78,14 +78,17 @@ class MobileRecommendationTicketsIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mvc = MockMvcBuilders.webAppContextSetup(context).addFilters(requestIdFilter).apply(springSecurity()).build();
+        mvc = MockMvcBuilders.webAppContextSetup(context)
+                .addFilters(requestIdFilter)
+                .apply(springSecurity())
+                .build();
         insertShop(SHOYU, "[\"쇼유\"]");
         insertShop(SHIO, "[\"시오\"]");
         List<Document> documents = List.of(Document.builder()
-            .text("매장 " + SHOYU)
-            .metadata(Map.of("documentType", "SHOP_PROFILE", "shopId", String.valueOf(SHOYU)))
-            .score(0.9)
-            .build());
+                .text("매장 " + SHOYU)
+                .metadata(Map.of("documentType", "SHOP_PROFILE", "shopId", String.valueOf(SHOYU)))
+                .score(0.9)
+                .build());
         when(vectorStore.similaritySearch(any(SearchRequest.class))).thenReturn(documents);
     }
 
@@ -101,16 +104,18 @@ class MobileRecommendationTicketsIntegrationTest extends BaseIntegrationTest {
         Long member = active();
 
         // 고른 국물의 매장이 없어 아무것도 보여주지 못한 추천은 식권을 쓰지 않는다
-        recommend(member, "{\"soup\":\"지로\"}").andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.shops.length()").value(0));
+        recommend(member, "{\"soup\":\"지로\"}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.shops.length()").value(0));
         assertThat(remaining(member)).isEqualTo(3);
         for (int remaining = 2; remaining >= 0; remaining--) {
             recommend(member, "{\"soup\":\"쇼유\",\"mood\":\"혼밥\"}").andExpect(status().isOk());
             assertThat(remaining(member)).isEqualTo(remaining);
         }
 
-        recommend(member, "{\"soup\":\"쇼유\"}").andExpect(status().isTooManyRequests())
-            .andExpect(jsonPath("$.error.code").value("DAILY_LIMIT_EXCEEDED"));
+        recommend(member, "{\"soup\":\"쇼유\"}")
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.error.code").value("DAILY_LIMIT_EXCEEDED"));
         // 다른 회원의 식권은 따로 센다
         Long other = active();
         recommend(other, "{\"soup\":\"쇼유\"}").andExpect(status().isOk());
@@ -123,8 +128,10 @@ class MobileRecommendationTicketsIntegrationTest extends BaseIntegrationTest {
         for (int index = 0; index < 3; index++) {
             recommend(member, "{\"soup\":\"쇼유\"}").andExpect(status().isOk());
         }
-        jdbc.update("UPDATE tb_v2_recommendation_run SET created_at = ? WHERE user_id = ?",
-                Timestamp.from(Instant.now().minus(2, ChronoUnit.DAYS)), member);
+        jdbc.update(
+                "UPDATE tb_v2_recommendation_run SET created_at = ? WHERE user_id = ?",
+                Timestamp.from(Instant.now().minus(2, ChronoUnit.DAYS)),
+                member);
 
         recommend(member, "{\"soup\":\"쇼유\"}").andExpect(status().isOk());
         assertThat(remaining(member)).isEqualTo(2);
@@ -134,20 +141,22 @@ class MobileRecommendationTicketsIntegrationTest extends BaseIntegrationTest {
     void 오늘_뽑은_식권을_최신순으로_그때의_매장_조건_추천_이유와_함께_다시_보여준다() throws Exception {
         Long member = active();
         when(reasonWriter.reasons(any(), any())).thenReturn(Map.of(String.valueOf(SHOYU), "맑은 쇼유 국물이 혼밥에 잘 맞아요."));
-        String first = data(recommend(member, "{\"soup\":\"쇼유\",\"mood\":\"혼밥\"}").andExpect(status().isOk()))
-            .get("recommendationId")
-            .asString();
+        String first = data(recommend(member, "{\"soup\":\"쇼유\",\"mood\":\"혼밥\"}")
+                        .andExpect(status().isOk()))
+                .get("recommendationId")
+                .asString();
         when(reasonWriter.reasons(any(), any())).thenReturn(Map.of());
-        String second = data(
-                recommend(member, "{\"soup\":\"시오\",\"region\":\"마포구\",\"latitude\":37.5563,\"longitude\":126.9236}")
-                    .andExpect(status().isOk()))
-            .get("recommendationId")
-            .asString();
+        String second = data(recommend(
+                                member,
+                                "{\"soup\":\"시오\",\"region\":\"마포구\",\"latitude\":37.5563,\"longitude\":126.9236}")
+                        .andExpect(status().isOk()))
+                .get("recommendationId")
+                .asString();
         recommend(active(), "{\"soup\":\"쇼유\"}").andExpect(status().isOk());
 
         JsonNode today = data(
                 mvc.perform(get("/api/v2/ai/recommendations/today").header(HttpHeaders.AUTHORIZATION, auth(member)))
-                    .andExpect(status().isOk()));
+                        .andExpect(status().isOk()));
 
         assertThat(today.get("dailyLimit").asInt()).isEqualTo(3);
         assertThat(today.get("remaining").asInt()).isEqualTo(1);
@@ -168,20 +177,22 @@ class MobileRecommendationTicketsIntegrationTest extends BaseIntegrationTest {
     }
 
     private ResultActions recommend(Long userId, String body) throws Exception {
-        return mvc.perform(post("/api/v2/ai/recommendations").header(HttpHeaders.AUTHORIZATION, auth(userId))
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(body));
+        return mvc.perform(post("/api/v2/ai/recommendations")
+                .header(HttpHeaders.AUTHORIZATION, auth(userId))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body));
     }
 
     private int remaining(Long userId) throws Exception {
-        return data(
-                mvc.perform(get("/api/v2/ai/recommendations/today").header(HttpHeaders.AUTHORIZATION, auth(userId))))
-            .get("remaining")
-            .asInt();
+        return data(mvc.perform(
+                        get("/api/v2/ai/recommendations/today").header(HttpHeaders.AUTHORIZATION, auth(userId))))
+                .get("remaining")
+                .asInt();
     }
 
     private JsonNode data(ResultActions result) throws Exception {
-        return mapper.readTree(result.andReturn().getResponse().getContentAsByteArray()).get("data");
+        return mapper.readTree(result.andReturn().getResponse().getContentAsByteArray())
+                .get("data");
     }
 
     private void insertShop(long id, String ramenTypes) {
@@ -204,5 +215,4 @@ class MobileRecommendationTicketsIntegrationTest extends BaseIntegrationTest {
     private String auth(Long userId) {
         return "Bearer " + tokens.issue(userId);
     }
-
 }

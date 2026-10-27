@@ -2,10 +2,10 @@ package com.raota.web.account.integration.persistence.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.raota.support.BaseIntegrationTest;
 import com.raota.web.account.infrastructure.auth.AuthRedisProperties;
 import com.raota.web.account.infrastructure.persistence.auth.RedisRefreshTokenStore;
 import com.raota.web.account.infrastructure.persistence.auth.RefreshTokenStore;
-import com.raota.support.BaseIntegrationTest;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,8 +33,8 @@ public class RedisRefreshTokensStoreTest extends BaseIntegrationTest {
         factory.afterPropertiesSet();
 
         this.redisTemplate = new StringRedisTemplate(factory);
-        this.refreshTokenStore = new RedisRefreshTokenStore(this.redisTemplate,
-                new AuthRedisProperties(REFRESH_TOKEN_KEY_PREFIX, REFRESH_MEMBER_KEY_PREFIX));
+        this.refreshTokenStore = new RedisRefreshTokenStore(
+                this.redisTemplate, new AuthRedisProperties(REFRESH_TOKEN_KEY_PREFIX, REFRESH_MEMBER_KEY_PREFIX));
     }
 
     @Test
@@ -49,5 +49,4 @@ public class RedisRefreshTokensStoreTest extends BaseIntegrationTest {
         assertThat(raw).isNotNull();
         assertThat(raw).contains(String.valueOf(memberId));
     }
-
 }

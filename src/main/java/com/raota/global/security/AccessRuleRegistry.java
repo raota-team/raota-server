@@ -16,15 +16,16 @@ public class AccessRuleRegistry {
 
     public AccessRuleRegistry(List<AccessRuleContributor> contributors) {
         List<AccessRule> rules = contributors.stream()
-            .flatMap(contributor -> contributor.accessRules().stream())
-            .toList();
+                .flatMap(contributor -> contributor.accessRules().stream())
+                .toList();
         Map<AccessLevel, RequestMatcher[]> matchers = new EnumMap<>(AccessLevel.class);
         for (AccessLevel level : AccessLevel.values()) {
-            matchers.put(level,
+            matchers.put(
+                    level,
                     rules.stream()
-                        .filter(rule -> rule.level() == level)
-                        .map(AccessRule::matcher)
-                        .toArray(RequestMatcher[]::new));
+                            .filter(rule -> rule.level() == level)
+                            .map(AccessRule::matcher)
+                            .toArray(RequestMatcher[]::new));
         }
         this.matchers = Map.copyOf(matchers);
     }
@@ -45,5 +46,4 @@ public class AccessRuleRegistry {
         }
         return Set.copyOf(matches);
     }
-
 }

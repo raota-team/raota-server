@@ -33,26 +33,28 @@ public class MobileRamenLogCommentController {
 
     private final MobileRamenLogCommentService comments;
 
-    @GetMapping("/ramen-logs/{logId:[0-9]+}/comments")
-    public MobileApiResponse<CursorPage<MobileRamenLogCommentResult>> list(@LoginUser(required = false) Long userId,
-            @PathVariable Long logId, @RequestParam(required = false) String cursor,
+    @GetMapping("/ramen-logs/{logId}/comments")
+    public MobileApiResponse<CursorPage<MobileRamenLogCommentResult>> list(
+            @LoginUser(required = false) Long userId,
+            @PathVariable Long logId,
+            @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "20") @Min(1) @Max(CursorPage.MAX_SIZE) int size) {
         return MobileApiResponse.success(comments.list(logId, userId, cursor, size));
     }
 
-    @PostMapping("/ramen-logs/{logId:[0-9]+}/comments")
-    public ResponseEntity<MobileApiResponse<MobileRamenLogCommentResult>> create(@LoginUser Long userId,
+    @PostMapping("/ramen-logs/{logId}/comments")
+    public ResponseEntity<MobileApiResponse<MobileRamenLogCommentResult>> create(
+            @LoginUser Long userId,
             @PathVariable Long logId,
             @RequestHeader("Idempotency-Key") @NotBlank @Size(max = 64) @Pattern(regexp = "[A-Za-z0-9_-]+") String key,
             @Valid @RequestBody MobileCreateCommentRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(MobileApiResponse.success(comments.create(logId, userId, key, request.content())));
+                .body(MobileApiResponse.success(comments.create(logId, userId, key, request.content())));
     }
 
-    @DeleteMapping("/ramen-log-comments/{commentId:[0-9]+}")
+    @DeleteMapping("/ramen-log-comments/{commentId}")
     public ResponseEntity<Void> delete(@LoginUser Long userId, @PathVariable Long commentId) {
         comments.delete(commentId, userId);
         return ResponseEntity.noContent().build();
     }
-
 }

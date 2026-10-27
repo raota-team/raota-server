@@ -12,5 +12,4 @@ public class ProofPictureUploadRequest {
     private String description;
 
     private String menuName;
-
 }

@@ -72,7 +72,10 @@ class MobileRecommendationFeedbackIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mvc = MockMvcBuilders.webAppContextSetup(context).addFilters(requestIdFilter).apply(springSecurity()).build();
+        mvc = MockMvcBuilders.webAppContextSetup(context)
+                .addFilters(requestIdFilter)
+                .apply(springSecurity())
+                .build();
     }
 
     @AfterEach
@@ -98,12 +101,14 @@ class MobileRecommendationFeedbackIntegrationTest extends BaseIntegrationTest {
         assertThat(openedAt(runId, SHOP_B)).isEqualTo(first);
         assertThat(openedAt(runId, SHOP_A)).isNull();
 
-        open(other, runId, SHOP_B).andExpect(status().isNotFound())
-            .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
-        open(member, runId, SHOP_C).andExpect(status().isNotFound())
-            .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+        open(other, runId, SHOP_B)
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+        open(member, runId, SHOP_C)
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
         mvc.perform(post("/api/v2/ai/recommendations/{id}/shops/{shopId}/open", runId, SHOP_B))
-            .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -113,56 +118,71 @@ class MobileRecommendationFeedbackIntegrationTest extends BaseIntegrationTest {
         insertRun(member, SHOWN_AT.plusSeconds(60), "{\"text\":\"돈코츠\"}", SHOP_C);
         // 기간(10/01~10/15) 밖 추천은 세지 않는다.
         insertRun(member, Instant.parse("2026-09-01T03:00:00Z"), "{\"soup\":\"쇼유\"}", SHOP_A);
-        jdbc.update("UPDATE tb_v2_recommendation_item SET opened_at = ? WHERE run_id = ? AND shop_id = ?",
-                Timestamp.from(SHOWN_AT.plusSeconds(5)), shoyu, SHOP_A);
+        jdbc.update(
+                "UPDATE tb_v2_recommendation_item SET opened_at = ? WHERE run_id = ? AND shop_id = ?",
+                Timestamp.from(SHOWN_AT.plusSeconds(5)),
+                shoyu,
+                SHOP_A);
         // B는 하루 뒤 찜, A는 8일 뒤 기록(7일 밖), C는 이틀 뒤 기록.
-        jdbc.update("INSERT INTO tb_v2_shop_bookmark (user_id, shop_id, created_at) VALUES (?, ?, ?)", member, SHOP_B,
+        jdbc.update(
+                "INSERT INTO tb_v2_shop_bookmark (user_id, shop_id, created_at) VALUES (?, ?, ?)",
+                member,
+                SHOP_B,
                 Timestamp.from(SHOWN_AT.plusSeconds(86_400)));
         insertLog(LOG_ID, member, SHOP_A, SHOWN_AT.plusSeconds(8 * 86_400L));
         insertLog(LOG_ID + 1, member, SHOP_C, SHOWN_AT.plusSeconds(2 * 86_400L));
 
-        mvc.perform(get("/admin/api/v2/recommendations/stats").param("from", "2026-10-01")
-            .param("to", "2026-10-15")
-            .with(ADMIN))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.attributionDays").value(7))
-            .andExpect(jsonPath("$.data.overall.runs").value(2))
-            .andExpect(jsonPath("$.data.overall.impressions").value(3))
-            .andExpect(jsonPath("$.data.overall.opened").value(1))
-            .andExpect(jsonPath("$.data.overall.topOpened").value(1))
-            .andExpect(jsonPath("$.data.overall.bookmarked").value(1))
-            .andExpect(jsonPath("$.data.overall.logged").value(1))
-            .andExpect(jsonPath("$.data.bySoup[0].key").value("(국물 없음)"))
-            .andExpect(jsonPath("$.data.bySoup[1].key").value("쇼유"))
-            .andExpect(jsonPath("$.data.bySoup[1].bookmarked").value(1))
-            .andExpect(jsonPath("$.data.bySoup[1].logged").value(0))
-            .andExpect(jsonPath("$.data.byRank[0].key").value("1"))
-            .andExpect(jsonPath("$.data.byRank[0].impressions").value(2))
-            .andExpect(jsonPath("$.data.byRank[1].key").value("2"))
-            .andExpect(jsonPath("$.data.byRank[1].bookmarked").value(1))
-            .andExpect(jsonPath("$.data.byAlgorithmVersion[0].key").value("test-version"));
+        mvc.perform(get("/admin/api/v2/recommendations/stats")
+                        .param("from", "2026-10-01")
+                        .param("to", "2026-10-15")
+                        .with(ADMIN))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.attributionDays").value(7))
+                .andExpect(jsonPath("$.data.overall.runs").value(2))
+                .andExpect(jsonPath("$.data.overall.impressions").value(3))
+                .andExpect(jsonPath("$.data.overall.opened").value(1))
+                .andExpect(jsonPath("$.data.overall.topOpened").value(1))
+                .andExpect(jsonPath("$.data.overall.bookmarked").value(1))
+                .andExpect(jsonPath("$.data.overall.logged").value(1))
+                .andExpect(jsonPath("$.data.bySoup[0].key").value("(국물 없음)"))
+                .andExpect(jsonPath("$.data.bySoup[1].key").value("쇼유"))
+                .andExpect(jsonPath("$.data.bySoup[1].bookmarked").value(1))
+                .andExpect(jsonPath("$.data.bySoup[1].logged").value(0))
+                .andExpect(jsonPath("$.data.byRank[0].key").value("1"))
+                .andExpect(jsonPath("$.data.byRank[0].impressions").value(2))
+                .andExpect(jsonPath("$.data.byRank[1].key").value("2"))
+                .andExpect(jsonPath("$.data.byRank[1].bookmarked").value(1))
+                .andExpect(jsonPath("$.data.byAlgorithmVersion[0].key").value("test-version"));
     }
 
     @Test
     void 관리자_성과_기간이_거꾸로이거나_92일을_넘으면_400이고_관리자만_본다() throws Exception {
-        mvc.perform(get("/admin/api/v2/recommendations/stats").param("from", "2026-10-15")
-            .param("to", "2026-10-01")
-            .with(ADMIN)).andExpect(status().isBadRequest());
-        mvc.perform(get("/admin/api/v2/recommendations/stats").param("from", "2026-01-01")
-            .param("to", "2026-10-01")
-            .with(ADMIN)).andExpect(status().isBadRequest());
-        mvc.perform(get("/admin/api/v2/recommendations/stats").with(user("member").roles("USER")))
-            .andExpect(status().isForbidden());
+        mvc.perform(get("/admin/api/v2/recommendations/stats")
+                        .param("from", "2026-10-15")
+                        .param("to", "2026-10-01")
+                        .with(ADMIN))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/admin/api/v2/recommendations/stats")
+                        .param("from", "2026-01-01")
+                        .param("to", "2026-10-01")
+                        .with(ADMIN))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/admin/api/v2/recommendations/stats")
+                        .with(user("member").roles("USER")))
+                .andExpect(status().isForbidden());
     }
 
     private ResultActions open(Long userId, long runId, long shopId) throws Exception {
         return mvc.perform(post("/api/v2/ai/recommendations/{id}/shops/{shopId}/open", runId, shopId)
-            .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokens.issue(userId)));
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokens.issue(userId)));
     }
 
     private Timestamp openedAt(long runId, long shopId) {
-        return jdbc.queryForObject("SELECT opened_at FROM tb_v2_recommendation_item WHERE run_id = ? AND shop_id = ?",
-                Timestamp.class, runId, shopId);
+        return jdbc.queryForObject(
+                "SELECT opened_at FROM tb_v2_recommendation_item WHERE run_id = ? AND shop_id = ?",
+                Timestamp.class,
+                runId,
+                shopId);
     }
 
     private long insertRun(Long userId, Instant createdAt, String conditions, long... shopIds) {
@@ -171,12 +191,14 @@ class MobileRecommendationFeedbackIntegrationTest extends BaseIntegrationTest {
                     index_version, model_version, latency_ms, created_at)
                 VALUES (?, ?, 10, 'test-version', 'index', 'model', 100, ?)
                 """, userId, conditions, Timestamp.from(createdAt));
-        Long runId = jdbc.queryForObject("SELECT MAX(id) FROM tb_v2_recommendation_run WHERE user_id = ?", Long.class,
-                userId);
+        Long runId = jdbc.queryForObject(
+                "SELECT MAX(id) FROM tb_v2_recommendation_run WHERE user_id = ?", Long.class, userId);
         for (int index = 0; index < shopIds.length; index++) {
             jdbc.update(
                     "INSERT INTO tb_v2_recommendation_item (run_id, item_rank, shop_id, score) VALUES (?, ?, ?, 0.5)",
-                    runId, index + 1, shopIds[index]);
+                    runId,
+                    index + 1,
+                    shopIds[index]);
         }
         return runId;
     }
@@ -196,5 +218,4 @@ class MobileRecommendationFeedbackIntegrationTest extends BaseIntegrationTest {
         created.add(id);
         return id;
     }
-
 }

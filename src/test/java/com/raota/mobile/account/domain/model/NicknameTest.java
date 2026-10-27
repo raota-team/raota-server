@@ -19,7 +19,8 @@ class NicknameTest {
 
     @Test
     void 대문자와_소문자는_중복_판별에_같은_닉네임이다() {
-        assertThat(Nickname.of("Ramen").normalized()).isEqualTo(Nickname.of("ramen").normalized());
+        assertThat(Nickname.of("Ramen").normalized())
+                .isEqualTo(Nickname.of("ramen").normalized());
     }
 
     @Test
@@ -42,5 +43,4 @@ class NicknameTest {
             assertThat(exception.getMessage()).isEqualTo("닉네임은 2~12자의 한글·영문·숫자·밑줄만 쓸 수 있습니다.");
         });
     }
-
 }

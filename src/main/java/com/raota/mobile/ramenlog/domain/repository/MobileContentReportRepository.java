@@ -59,5 +59,4 @@ public interface MobileContentReportRepository extends JpaRepository<MobileConte
                             or comment.ramenLogId in (select log.id from MobileRamenLog log where log.userId = :userId)))
             """)
     void deleteTargetingContentOf(Long userId);
-
 }

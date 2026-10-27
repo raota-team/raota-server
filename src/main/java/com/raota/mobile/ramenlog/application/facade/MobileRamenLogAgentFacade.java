@@ -21,14 +21,11 @@ public class MobileRamenLogAgentFacade {
         if (userIds.isEmpty()) {
             return List.of();
         }
-        return logs.findLiveCreatedBetween(userIds, from, to)
-            .stream()
-            .map(log -> new MobileRamenLogActivity(log.getUserId(), log.getShopId(), log.getCreatedAt()))
-            .toList();
+        return logs.findLiveCreatedBetween(userIds, from, to).stream()
+                .map(log -> new MobileRamenLogActivity(log.getUserId(), log.getShopId(), log.getCreatedAt()))
+                .toList();
     }
 
     /** 회원이 매장에 쓴 기록과 그 작성 시각이다. */
-    public record MobileRamenLogActivity(Long userId, Long shopId, Instant createdAt) {
-    }
-
+    public record MobileRamenLogActivity(Long userId, Long shopId, Instant createdAt) {}
 }

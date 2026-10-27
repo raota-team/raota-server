@@ -21,10 +21,9 @@ public class DelegatingAuthenticationEntryPoint implements AuthenticationEntryPo
             throws IOException {
         response.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer");
         responders.stream()
-            .filter(responder -> responder.supports(request))
-            .findFirst()
-            .orElseThrow(() -> new IllegalStateException("인증 오류 응답기가 없습니다."))
-            .unauthorized(request, response, exception);
+                .filter(responder -> responder.supports(request))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("인증 오류 응답기가 없습니다."))
+                .unauthorized(request, response, exception);
     }
-
 }

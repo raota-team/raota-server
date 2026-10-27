@@ -1,7 +1,7 @@
 package com.raota.global.file;
 
-import com.raota.global.presentation.file.response.PresignedUrlResponse;
 import com.cloudinary.Cloudinary;
+import com.raota.global.presentation.file.response.PresignedUrlResponse;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
@@ -20,8 +20,7 @@ public class CloudinaryFileUploader implements FileUploader {
         try {
             Map uploadResult = cloudinary.uploader().upload(file.getBytes(), Map.of("folder", dirName));
             return (String) uploadResult.get("secure_url");
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new IllegalArgumentException("Cloudinary 이미지 업로드 실패", e);
         }
     }
@@ -43,9 +42,10 @@ public class CloudinaryFileUploader implements FileUploader {
         uploadParams.put("api_key", cloudinary.config.apiKey);
         uploadParams.put("signature", signature);
 
-        String uploadUrl = String.format("https://api.cloudinary.com/v1_1/%s/image/upload",
-                cloudinary.config.cloudName);
-        String finalImageUrl = String.format("https://res.cloudinary.com/%s/image/upload/%s/%s",
+        String uploadUrl =
+                String.format("https://api.cloudinary.com/v1_1/%s/image/upload", cloudinary.config.cloudName);
+        String finalImageUrl = String.format(
+                "https://res.cloudinary.com/%s/image/upload/%s/%s",
                 cloudinary.config.cloudName, dirName, uniqueId + normalizedExtension);
 
         return new PresignedUrlResponse(uploadUrl, finalImageUrl, uploadParams);
@@ -64,8 +64,7 @@ public class CloudinaryFileUploader implements FileUploader {
         try {
             String publicId = extractPublicId(filePath);
             cloudinary.uploader().destroy(publicId, Map.of());
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
         }
     }
 
@@ -81,5 +80,4 @@ public class CloudinaryFileUploader implements FileUploader {
         }
         return pathWithoutVersion;
     }
-
 }

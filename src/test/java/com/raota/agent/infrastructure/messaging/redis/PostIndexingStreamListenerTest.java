@@ -3,9 +3,8 @@ package com.raota.agent.infrastructure.messaging.redis;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.raota.web.community.domain.event.PostIndexingEvent;
-import com.raota.agent.infrastructure.messaging.redis.PostIndexingStreamListener;
 import com.raota.agent.application.retrieval.RetrievalIndexingService;
+import com.raota.web.community.domain.event.PostIndexingEvent;
 import java.util.Collections;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,8 +34,8 @@ class PostIndexingStreamListenerTest {
         String jsonPayload = "{\"postId\": 1}";
         PostIndexingEvent event = PostIndexingEvent.upsert(1L);
 
-        MapRecord<String, String, String> mockRecord = MapRecord.create("stream:key",
-                Collections.singletonMap("payload", jsonPayload));
+        MapRecord<String, String, String> mockRecord =
+                MapRecord.create("stream:key", Collections.singletonMap("payload", jsonPayload));
 
         when(redisObjectMapper.readValue(jsonPayload, PostIndexingEvent.class)).thenReturn(event);
 
@@ -54,8 +53,8 @@ class PostIndexingStreamListenerTest {
         String jsonPayload = "{\"postId\": 1, \"action\": \"DELETE\"}";
         PostIndexingEvent event = PostIndexingEvent.delete(1L);
 
-        MapRecord<String, String, String> mockRecord = MapRecord.create("stream:key",
-                Collections.singletonMap("payload", jsonPayload));
+        MapRecord<String, String, String> mockRecord =
+                MapRecord.create("stream:key", Collections.singletonMap("payload", jsonPayload));
 
         when(redisObjectMapper.readValue(jsonPayload, PostIndexingEvent.class)).thenReturn(event);
 
@@ -65,5 +64,4 @@ class PostIndexingStreamListenerTest {
         // then
         verify(retrievalIndexingService).deletePost(1L);
     }
-
 }

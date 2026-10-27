@@ -22,10 +22,7 @@ public interface MobileShopBookmarkPort {
     /** 이 회원들이 {@code [from, to)} 사이에 만든 북마크다. 해제한 북마크는 행이 없어 빠진다. */
     List<CreatedBookmark> createdBetween(Collection<Long> userIds, Instant from, Instant to);
 
-    record SavedShop(Long shopId, Cursor position) {
-    }
+    record SavedShop(Long shopId, Cursor position) {}
 
-    record CreatedBookmark(Long userId, Long shopId, Instant createdAt) {
-    }
-
+    record CreatedBookmark(Long userId, Long shopId, Instant createdAt) {}
 }

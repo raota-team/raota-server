@@ -51,10 +51,9 @@ public class MobileUserBlockService {
     /** 최근에 차단한 순서다. */
     @Transactional(readOnly = true)
     public List<MobileBlockedMemberResult> blocked(Long blockerId) {
-        List<Long> ids = blocks.findByBlockerIdOrderByCreatedAtDescBlockedIdDesc(blockerId)
-            .stream()
-            .map(MobileUserBlock::getBlockedId)
-            .toList();
+        List<Long> ids = blocks.findByBlockerIdOrderByCreatedAtDescBlockedIdDesc(blockerId).stream()
+                .map(MobileUserBlock::getBlockedId)
+                .toList();
         Map<Long, MobileAuthor> members = accounts.authors(ids);
         List<MobileBlockedMemberResult> result = new ArrayList<>(ids.size());
         for (Long id : ids) {
@@ -65,5 +64,4 @@ public class MobileUserBlockService {
         }
         return result;
     }
-
 }

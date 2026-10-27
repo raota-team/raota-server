@@ -1,17 +1,17 @@
 package com.raota.web.ramenshop.presentation;
 
-import com.raota.web.ramenshop.application.service.BookmarkService;
-import com.raota.web.ramenshop.presentation.contract.RamenShopInfoApi;
-import com.raota.web.ramenshop.presentation.request.RamenShopReportRequest;
-import com.raota.web.ramenshop.presentation.response.RamenShopMenuOptionsResponse;
-import com.raota.web.ramenshop.presentation.response.RamenShopResponse;
-import com.raota.web.ramenshop.presentation.request.RamenShopSearchRequest;
-import com.raota.web.ramenshop.presentation.response.RamenShopBasicInfoResponse;
-import com.raota.web.ramenshop.application.service.RamenShopInfoService;
-import com.raota.web.ramenshop.application.service.RamenShopReportService;
-import com.raota.web.account.infrastructure.auth.LoginMember;
 import com.raota.global.presentation.common.ApiResponse;
 import com.raota.global.presentation.common.PageResponse;
+import com.raota.web.account.infrastructure.auth.LoginMember;
+import com.raota.web.ramenshop.application.service.BookmarkService;
+import com.raota.web.ramenshop.application.service.RamenShopInfoService;
+import com.raota.web.ramenshop.application.service.RamenShopReportService;
+import com.raota.web.ramenshop.presentation.contract.RamenShopInfoApi;
+import com.raota.web.ramenshop.presentation.request.RamenShopReportRequest;
+import com.raota.web.ramenshop.presentation.request.RamenShopSearchRequest;
+import com.raota.web.ramenshop.presentation.response.RamenShopBasicInfoResponse;
+import com.raota.web.ramenshop.presentation.response.RamenShopMenuOptionsResponse;
+import com.raota.web.ramenshop.presentation.response.RamenShopResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -38,8 +38,8 @@ public class RamenShopInfoController implements RamenShopInfoApi {
 
     @Override
     @GetMapping("/{shopId}")
-    public ResponseEntity<ApiResponse<RamenShopBasicInfoResponse>> getShopDetailInfo(@PathVariable Long shopId,
-            @LoginMember(required = false) Long memberId) {
+    public ResponseEntity<ApiResponse<RamenShopBasicInfoResponse>> getShopDetailInfo(
+            @PathVariable Long shopId, @LoginMember(required = false) Long memberId) {
         RamenShopBasicInfoResponse response = ramenShopInfoService.getShopDetailInfo(shopId, memberId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -60,11 +60,17 @@ public class RamenShopInfoController implements RamenShopInfoApi {
     @GetMapping
     @Override
     public ResponseEntity<ApiResponse<PageResponse<RamenShopResponse>>> getShopList(
-            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "12") int size,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size,
             RamenShopSearchRequest request) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<RamenShopResponse> response = ramenShopInfoService.getRamenShopList(request.getCity(),
-                request.getDistrict(), request.getKeyword(), request.getTag(), request.getSort(), pageable);
+        Page<RamenShopResponse> response = ramenShopInfoService.getRamenShopList(
+                request.getCity(),
+                request.getDistrict(),
+                request.getKeyword(),
+                request.getTag(),
+                request.getSort(),
+                pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(response)));
     }
 
@@ -77,10 +83,9 @@ public class RamenShopInfoController implements RamenShopInfoApi {
 
     @Override
     @PostMapping("/{shopId}/reports")
-    public ResponseEntity<ApiResponse<Void>> reportShop(@PathVariable Long shopId, @LoginMember Long memberId,
-            @RequestBody RamenShopReportRequest request) {
+    public ResponseEntity<ApiResponse<Void>> reportShop(
+            @PathVariable Long shopId, @LoginMember Long memberId, @RequestBody RamenShopReportRequest request) {
         reportService.reportShop(shopId, memberId, request);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
-
 }

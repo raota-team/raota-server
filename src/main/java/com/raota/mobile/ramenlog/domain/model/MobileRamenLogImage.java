@@ -37,5 +37,4 @@ public class MobileRamenLogImage {
         image.sortOrder = order;
         return image;
     }
-
 }

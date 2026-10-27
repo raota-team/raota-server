@@ -31,8 +31,9 @@ public class WebSecurityErrorResponder implements SecurityErrorResponder {
     }
 
     @Override
-    public void unauthorized(HttpServletRequest request, HttpServletResponse response,
-            AuthenticationException exception) throws IOException {
+    public void unauthorized(
+            HttpServletRequest request, HttpServletResponse response, AuthenticationException exception)
+            throws IOException {
         write(response, HttpServletResponse.SC_UNAUTHORIZED, responseMessage(exception));
     }
 
@@ -43,7 +44,8 @@ public class WebSecurityErrorResponder implements SecurityErrorResponder {
     }
 
     private String responseMessage(AuthenticationException exception) {
-        if (exception instanceof JwtAuthenticationException && exception.getMessage() != null
+        if (exception instanceof JwtAuthenticationException
+                && exception.getMessage() != null
                 && !exception.getMessage().isBlank()) {
             return exception.getMessage();
         }
@@ -57,7 +59,5 @@ public class WebSecurityErrorResponder implements SecurityErrorResponder {
         objectMapper.writeValue(response.getWriter(), new SecurityErrorBody("FAIL", message, false));
     }
 
-    private record SecurityErrorBody(String status, String message, boolean success) {
-    }
-
+    private record SecurityErrorBody(String status, String message, boolean success) {}
 }

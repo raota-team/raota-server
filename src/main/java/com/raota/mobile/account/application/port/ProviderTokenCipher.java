@@ -6,5 +6,4 @@ public interface ProviderTokenCipher {
     String encrypt(String plaintext);
 
     String decrypt(String encrypted);
-
 }

@@ -22,8 +22,14 @@ public class DailyCuration {
     private final LocalDateTime createdAt;
 
     @Builder
-    public DailyCuration(Long id, Integer dateKey, RamenType ramenType, String title, String reason,
-            String customImageUrl, LocalDateTime createdAt) {
+    public DailyCuration(
+            Long id,
+            Integer dateKey,
+            RamenType ramenType,
+            String title,
+            String reason,
+            String customImageUrl,
+            LocalDateTime createdAt) {
         this.id = id;
         this.dateKey = dateKey;
         this.ramenType = ramenType;
@@ -36,5 +42,4 @@ public class DailyCuration {
     public String getEffectiveImageUrl() {
         return (customImageUrl != null && !customImageUrl.isBlank()) ? customImageUrl : ramenType.getImageUrl();
     }
-
 }

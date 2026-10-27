@@ -47,5 +47,4 @@ class MobileRamenLogVisibility {
     private static MobileException notFound() {
         return new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "기록을 찾을 수 없습니다.");
     }
-
 }

@@ -25,10 +25,12 @@ public class RagEvaluationStaleRunRecoveryService {
 
     private final Duration staleThreshold;
 
-    public RagEvaluationStaleRunRecoveryService(RagEvaluationRunJpaRepository runRepository,
+    public RagEvaluationStaleRunRecoveryService(
+            RagEvaluationRunJpaRepository runRepository,
             @Value("${app.rag.evaluation.stale-threshold:PT10M}") Duration staleThreshold,
             @Value("${app.rag.evaluation.heartbeat-interval:PT30S}") Duration heartbeatInterval) {
-        if (staleThreshold == null || heartbeatInterval == null
+        if (staleThreshold == null
+                || heartbeatInterval == null
                 || staleThreshold.compareTo(heartbeatInterval.multipliedBy(MIN_THRESHOLD_TO_HEARTBEAT_RATIO)) < 0) {
             throw new IllegalArgumentException("app.rag.evaluation.stale-threshold는 heartbeat-interval의 3배 이상이어야 합니다.");
         }
@@ -41,5 +43,4 @@ public class RagEvaluationStaleRunRecoveryService {
         LocalDateTime now = LocalDateTime.now();
         return runRepository.failStale(now.minus(staleThreshold), STALE_HEARTBEAT_ERROR, now);
     }
-
 }

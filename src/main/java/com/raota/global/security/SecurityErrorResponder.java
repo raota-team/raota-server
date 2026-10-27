@@ -15,5 +15,4 @@ public interface SecurityErrorResponder {
 
     void forbidden(HttpServletRequest request, HttpServletResponse response, AccessDeniedException exception)
             throws IOException;
-
 }

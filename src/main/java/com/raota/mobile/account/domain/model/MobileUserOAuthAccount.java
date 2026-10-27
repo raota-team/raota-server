@@ -48,8 +48,8 @@ public class MobileUserOAuthAccount {
     @Column(name = "last_login_at", nullable = false)
     private Instant lastLoginAt;
 
-    private MobileUserOAuthAccount(Long userId, OAuthProvider provider, String providerSubject, String providerEmail,
-            Instant now) {
+    private MobileUserOAuthAccount(
+            Long userId, OAuthProvider provider, String providerSubject, String providerEmail, Instant now) {
         this.userId = userId;
         this.provider = provider;
         this.providerSubject = providerSubject;
@@ -58,8 +58,8 @@ public class MobileUserOAuthAccount {
         this.lastLoginAt = now;
     }
 
-    public static MobileUserOAuthAccount link(Long userId, OAuthProvider provider, String providerSubject,
-            String providerEmail, Instant now) {
+    public static MobileUserOAuthAccount link(
+            Long userId, OAuthProvider provider, String providerSubject, String providerEmail, Instant now) {
         return new MobileUserOAuthAccount(userId, provider, providerSubject, providerEmail, now);
     }
 
@@ -74,5 +74,4 @@ public class MobileUserOAuthAccount {
         }
         this.appleRefreshTokenEncrypted = encrypted;
     }
-
 }

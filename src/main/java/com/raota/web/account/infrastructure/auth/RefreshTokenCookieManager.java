@@ -29,16 +29,20 @@ public class RefreshTokenCookieManager {
         boolean secure = authProperties.cookie().secure();
         String domain = authProperties.cookie().domain();
 
-        log.info("Creating refresh token cookie: name={}, domain={}, secure={}, sameSite={}",
-                authProperties.cookie().refreshTokenName(), domain, secure, sameSite);
+        log.info(
+                "Creating refresh token cookie: name={}, domain={}, secure={}, sameSite={}",
+                authProperties.cookie().refreshTokenName(),
+                domain,
+                secure,
+                sameSite);
 
-        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie
-            .from(authProperties.cookie().refreshTokenName(), refreshToken)
-            .httpOnly(true)
-            .secure(secure)
-            .path("/") // 모든 경로에서 쿠키 전송 가능
-            .sameSite(sameSite)
-            .maxAge(authProperties.refreshTokenExpirySeconds());
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(
+                        authProperties.cookie().refreshTokenName(), refreshToken)
+                .httpOnly(true)
+                .secure(secure)
+                .path("/") // 모든 경로에서 쿠키 전송 가능
+                .sameSite(sameSite)
+                .maxAge(authProperties.refreshTokenExpirySeconds());
 
         // 특정 도메인이 설정되어 있다면 추가한다.
         if (domain != null && !domain.isBlank()) {
@@ -51,15 +55,16 @@ public class RefreshTokenCookieManager {
      * 로그아웃 등을 위해 Refresh Token 쿠키를 삭제하기 위한 만료된 쿠키를 생성한다.
      */
     public ResponseCookie clearRefreshTokenCookie() {
-        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie
-            .from(authProperties.cookie().refreshTokenName(), "")
-            .httpOnly(true)
-            .secure(authProperties.cookie().secure())
-            .path("/")
-            .sameSite(authProperties.cookie().sameSite())
-            .maxAge(0); // 즉시 만료되도록 설정하여 삭제 유도
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(
+                        authProperties.cookie().refreshTokenName(), "")
+                .httpOnly(true)
+                .secure(authProperties.cookie().secure())
+                .path("/")
+                .sameSite(authProperties.cookie().sameSite())
+                .maxAge(0); // 즉시 만료되도록 설정하여 삭제 유도
 
-        if (authProperties.cookie().domain() != null && !authProperties.cookie().domain().isBlank()) {
+        if (authProperties.cookie().domain() != null
+                && !authProperties.cookie().domain().isBlank()) {
             builder.domain(authProperties.cookie().domain());
         }
         return builder.build();
@@ -72,5 +77,4 @@ public class RefreshTokenCookieManager {
         Cookie cookie = WebUtils.getCookie(request, authProperties.cookie().refreshTokenName());
         return cookie == null ? null : cookie.getValue();
     }
-
 }

@@ -28,8 +28,8 @@ public class ImageBucketFileUploader implements FileUploader {
 
     private static final Duration UPLOAD_VALIDITY = Duration.ofMinutes(5);
 
-    private static final Map<String, String> IMAGE_TYPES = Map.of("jpg", "image/jpeg", "jpeg", "image/jpeg", "png",
-            "image/png", "webp", "image/webp", "gif", "image/gif");
+    private static final Map<String, String> IMAGE_TYPES = Map.of(
+            "jpg", "image/jpeg", "jpeg", "image/jpeg", "png", "image/png", "webp", "image/webp", "gif", "image/gif");
 
     private final PresignedPostSigner postSigner;
 
@@ -53,15 +53,14 @@ public class ImageBucketFileUploader implements FileUploader {
     public String upload(MultipartFile file, String dirName) {
         String objectKey = createObjectKey(dirName, resolveExtension(file));
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-            .bucket(bucketName)
-            .key(objectKey)
-            .contentType(file.getContentType())
-            .build();
+                .bucket(bucketName)
+                .key(objectKey)
+                .contentType(file.getContentType())
+                .build();
 
         try {
             s3Client.putObject(putObjectRequest, RequestBody.fromBytes(file.getBytes()));
-        }
-        catch (IOException exception) {
+        } catch (IOException exception) {
             throw new IllegalArgumentException("이미지 업로드에 실패했습니다.", exception);
         }
 
@@ -77,8 +76,8 @@ public class ImageBucketFileUploader implements FileUploader {
     public PresignedUrlResponse getPresignedUrl(String dirName, String extension, String contentType) {
         String imageType = imageType(extension, contentType);
         String objectKey = createObjectKey(dirName, extension);
-        PresignedPostSigner.PresignedPost post = postSigner.sign(objectKey, imageType, MAX_IMAGE_BYTES,
-                UPLOAD_VALIDITY);
+        PresignedPostSigner.PresignedPost post =
+                postSigner.sign(objectKey, imageType, MAX_IMAGE_BYTES, UPLOAD_VALIDITY);
         return new PresignedUrlResponse(post.url(), toImageUrl(objectKey), new LinkedHashMap<>(post.fields()));
     }
 
@@ -152,8 +151,7 @@ public class ImageBucketFileUploader implements FileUploader {
             }
 
             return filePath;
-        }
-        catch (Exception exception) {
+        } catch (Exception exception) {
             return filePath;
         }
     }
@@ -162,5 +160,4 @@ public class ImageBucketFileUploader implements FileUploader {
         String extension = StringUtils.getFilenameExtension(file.getOriginalFilename());
         return extension == null || extension.isBlank() ? ".png" : "." + extension;
     }
-
 }

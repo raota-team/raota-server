@@ -14,5 +14,4 @@ public interface MobileShopBusinessHourRepository extends JpaRepository<MobileSh
     @Modifying(flushAutomatically = true)
     @Query("delete from MobileShopBusinessHour hour where hour.shopId = :shopId")
     void deleteByShopId(Long shopId);
-
 }

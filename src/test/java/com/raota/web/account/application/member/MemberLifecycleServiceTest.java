@@ -7,20 +7,18 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import com.raota.web.account.application.auth.AuthAccountService;
-import com.raota.web.account.application.member.MemberLifecycleService;
-import com.raota.web.account.application.member.MemberProvisioningService;
 import com.raota.web.account.domain.auth.repository.SocialAccountRepository;
 import com.raota.web.account.domain.member.model.MemberProfile;
 import com.raota.web.account.domain.member.repository.MemberRepository;
 import java.time.LocalDateTime;
 import java.util.List;
-import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
 class MemberLifecycleServiceTest {
@@ -58,7 +56,8 @@ class MemberLifecycleServiceTest {
     @Test
     @DisplayName("30일이 지난 탈퇴 회원은 커뮤니티 데이터는 남기고 프로필을 익명화한다")
     void purgeExpiredMembers() {
-        MemberProfile expiredMember = MemberProfile.builder().id(10L).nickname("expired").build();
+        MemberProfile expiredMember =
+                MemberProfile.builder().id(10L).nickname("expired").build();
         expiredMember.softDelete(LocalDateTime.now().minusDays(91));
 
         given(memberRepository.findSoftDeletedMembersDueForPurge(any())).willReturn(List.of(expiredMember));
@@ -87,5 +86,4 @@ class MemberLifecycleServiceTest {
         verify(authAccountService, never()).logoutByMemberId(any());
         verify(memberRepository, never()).delete(any(MemberProfile.class));
     }
-
 }

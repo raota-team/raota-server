@@ -50,7 +50,7 @@ class RagEvaluationRunStateTransitionIntegrationTest extends BaseIntegrationTest
         runRepository.saveAndFlush(queued());
 
         assertThatThrownBy(() -> runRepository.saveAndFlush(queued()))
-            .isInstanceOf(DataIntegrityViolationException.class);
+                .isInstanceOf(DataIntegrityViolationException.class);
         assertThat(runRepository.count()).isEqualTo(1);
     }
 
@@ -61,7 +61,8 @@ class RagEvaluationRunStateTransitionIntegrationTest extends BaseIntegrationTest
         LocalDateTime now = LocalDateTime.now();
 
         assertThat(inTx(() -> runRepository.markRunning(runId, now))).isEqualTo(1);
-        assertThat(inTx(() -> runRepository.markReviewRequired(runId, "{}", now))).isEqualTo(1);
+        assertThat(inTx(() -> runRepository.markReviewRequired(runId, "{}", now)))
+                .isEqualTo(1);
 
         runRepository.saveAndFlush(queued());
         assertThat(runRepository.count()).isEqualTo(2);
@@ -74,7 +75,8 @@ class RagEvaluationRunStateTransitionIntegrationTest extends BaseIntegrationTest
         LocalDateTime now = LocalDateTime.now();
 
         assertThat(inTx(() -> runRepository.touchHeartbeat(runId, now))).isZero();
-        assertThat(inTx(() -> runRepository.markReviewRequired(runId, "{}", now))).isZero();
+        assertThat(inTx(() -> runRepository.markReviewRequired(runId, "{}", now)))
+                .isZero();
         assertThat(inTx(() -> runRepository.markRunning(runId, now))).isEqualTo(1);
         assertThat(inTx(() -> runRepository.markRunning(runId, now))).isZero();
         assertThat(inTx(() -> runRepository.touchHeartbeat(runId, now))).isEqualTo(1);
@@ -91,15 +93,17 @@ class RagEvaluationRunStateTransitionIntegrationTest extends BaseIntegrationTest
         String staleId = runningRunWithHeartbeat(LocalDateTime.now().minusMinutes(11));
 
         LocalDateTime threshold = LocalDateTime.now().minusMinutes(10);
-        assertThat(inTx(() -> runRepository.failStale(threshold, STALE, LocalDateTime.now()))).isEqualTo(1);
-        assertThat(inTx(() -> runRepository.failStale(threshold, STALE, LocalDateTime.now()))).isZero();
+        assertThat(inTx(() -> runRepository.failStale(threshold, STALE, LocalDateTime.now())))
+                .isEqualTo(1);
+        assertThat(inTx(() -> runRepository.failStale(threshold, STALE, LocalDateTime.now())))
+                .isZero();
 
         RagEvaluationRunEntity stale = runRepository.findById(staleId).orElseThrow();
         assertThat(stale.getStatus()).isEqualTo(RagEvaluationStatus.FAILED);
         assertThat(stale.getActiveSlot()).isNull();
         assertThat(stale.getFatalError()).isEqualTo(STALE);
         assertThat(runRepository.findById(reviewedId).orElseThrow().getStatus())
-            .isEqualTo(RagEvaluationStatus.REVIEW_REQUIRED);
+                .isEqualTo(RagEvaluationStatus.REVIEW_REQUIRED);
     }
 
     @Test
@@ -107,8 +111,8 @@ class RagEvaluationRunStateTransitionIntegrationTest extends BaseIntegrationTest
     void recentHeartbeatIsNotStale() {
         String runId = runningRunWithHeartbeat(LocalDateTime.now().minusMinutes(1));
 
-        int changed = inTx(
-                () -> runRepository.failStale(LocalDateTime.now().minusMinutes(10), STALE, LocalDateTime.now()));
+        int changed =
+                inTx(() -> runRepository.failStale(LocalDateTime.now().minusMinutes(10), STALE, LocalDateTime.now()));
 
         assertThat(changed).isZero();
         assertThat(runRepository.findById(runId).orElseThrow().getStatus()).isEqualTo(RagEvaluationStatus.RUNNING);
@@ -120,9 +124,12 @@ class RagEvaluationRunStateTransitionIntegrationTest extends BaseIntegrationTest
         String runId = runningRunWithHeartbeat(LocalDateTime.now().minusMinutes(30));
         inTx(() -> runRepository.failStale(LocalDateTime.now().minusMinutes(10), STALE, LocalDateTime.now()));
 
-        assertThat(inTx(() -> runRepository.touchHeartbeat(runId, LocalDateTime.now()))).isZero();
-        assertThat(inTx(() -> runRepository.markReviewRequired(runId, "{}", LocalDateTime.now()))).isZero();
-        assertThat(inTx(() -> runRepository.markFailed(runId, "late", LocalDateTime.now()))).isZero();
+        assertThat(inTx(() -> runRepository.touchHeartbeat(runId, LocalDateTime.now())))
+                .isZero();
+        assertThat(inTx(() -> runRepository.markReviewRequired(runId, "{}", LocalDateTime.now())))
+                .isZero();
+        assertThat(inTx(() -> runRepository.markFailed(runId, "late", LocalDateTime.now())))
+                .isZero();
 
         RagEvaluationRunEntity run = runRepository.findById(runId).orElseThrow();
         assertThat(run.getStatus()).isEqualTo(RagEvaluationStatus.FAILED);
@@ -138,10 +145,10 @@ class RagEvaluationRunStateTransitionIntegrationTest extends BaseIntegrationTest
 
     private void backdateHeartbeat(String runId, LocalDateTime heartbeatAt) {
         inTx(() -> entityManager
-            .createNativeQuery("UPDATE tb_rag_evaluation_run SET heartbeat_at = ?1 WHERE run_id = ?2")
-            .setParameter(1, heartbeatAt)
-            .setParameter(2, runId)
-            .executeUpdate());
+                .createNativeQuery("UPDATE tb_rag_evaluation_run SET heartbeat_at = ?1 WHERE run_id = ?2")
+                .setParameter(1, heartbeatAt)
+                .setParameter(2, runId)
+                .executeUpdate());
     }
 
     private int inTx(IntSupplier action) {
@@ -149,8 +156,15 @@ class RagEvaluationRunStateTransitionIntegrationTest extends BaseIntegrationTest
     }
 
     private static RagEvaluationRunEntity queued() {
-        return RagEvaluationRunEntity.queued(UUID.randomUUID().toString(), "rag-mobile-v1.1", RagEvaluationSplit.DEV,
-                UUID.randomUUID().toString(), LocalDateTime.now().plusHours(24), "test", "v1", "test", "{}");
+        return RagEvaluationRunEntity.queued(
+                UUID.randomUUID().toString(),
+                "rag-mobile-v1.1",
+                RagEvaluationSplit.DEV,
+                UUID.randomUUID().toString(),
+                LocalDateTime.now().plusHours(24),
+                "test",
+                "v1",
+                "test",
+                "{}");
     }
-
 }

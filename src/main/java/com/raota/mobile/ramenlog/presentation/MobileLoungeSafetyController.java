@@ -35,13 +35,13 @@ public class MobileLoungeSafetyController {
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping("/members/{memberId:[0-9]+}/block")
+    @PutMapping("/members/{memberId}/block")
     public ResponseEntity<Void> block(@LoginUser Long userId, @PathVariable Long memberId) {
         blocks.block(userId, memberId);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/members/{memberId:[0-9]+}/block")
+    @DeleteMapping("/members/{memberId}/block")
     public ResponseEntity<Void> unblock(@LoginUser Long userId, @PathVariable Long memberId) {
         blocks.unblock(userId, memberId);
         return ResponseEntity.noContent().build();
@@ -51,5 +51,4 @@ public class MobileLoungeSafetyController {
     public MobileApiResponse<List<MobileBlockedMemberResult>> blocked(@LoginUser Long userId) {
         return MobileApiResponse.success(blocks.blocked(userId));
     }
-
 }

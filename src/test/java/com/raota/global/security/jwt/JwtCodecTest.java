@@ -29,8 +29,8 @@ class JwtCodecTest {
 
     @Test
     void 다른_키로_서명된_토큰은_거부한다() {
-        String token = new JwtCodec("raota-mobile-test", "different-signing-secret-0123456789abcdef").issue("42",
-                Duration.ofMinutes(30), Map.of());
+        String token = new JwtCodec("raota-mobile-test", "different-signing-secret-0123456789abcdef")
+                .issue("42", Duration.ofMinutes(30), Map.of());
 
         assertThatThrownBy(() -> codec.verifySubject(token)).isInstanceOf(InvalidJwtTokenException.class);
     }
@@ -46,7 +46,6 @@ class JwtCodecTest {
     void 비어_있거나_해석되지_않은_placeholder가_남은_서명_키는_거부한다() {
         assertThatThrownBy(() -> new JwtCodec("raota-mobile-test", " ")).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> new JwtCodec("raota-mobile-test", "${APP_MOBILE_AUTH_ACCESS_TOKEN_SECRET}"))
-            .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(IllegalArgumentException.class);
     }
-
 }

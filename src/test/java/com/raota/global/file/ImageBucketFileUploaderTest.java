@@ -18,42 +18,50 @@ class ImageBucketFileUploaderTest {
 
     private final JsonMapper mapper = JsonMapper.builder().build();
 
-    private final ImageBucketFileUploader uploader = new ImageBucketFileUploader(new PresignedPostSigner(
-            "https://ns.compat.objectstorage.ap-chuncheon-1.oraclecloud.com", "raota", "ap-chuncheon-1", "AKID",
-            "SECRET", mapper, Clock.fixed(Instant.parse("2026-10-19T05:00:00Z"), ZoneOffset.UTC)), null);
+    private final ImageBucketFileUploader uploader = new ImageBucketFileUploader(
+            new PresignedPostSigner(
+                    "https://ns.compat.objectstorage.ap-chuncheon-1.oraclecloud.com",
+                    "raota",
+                    "ap-chuncheon-1",
+                    "AKID",
+                    "SECRET",
+                    mapper,
+                    Clock.fixed(Instant.parse("2026-10-19T05:00:00Z"), ZoneOffset.UTC)),
+            null);
 
     @Test
     void 사진_티켓은_10MB_이하와_서명한_형식과_키만_허용하는_POST_조건을_준다() {
         PresignedUrlResponse ticket = uploader.getPresignedUrl("v2/ramen-logs", ".jpg", "image/jpeg");
 
         assertThat(ticket.uploadUrl())
-            .isEqualTo("https://ns.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/raota");
+                .isEqualTo("https://ns.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/raota");
         String key = (String) ticket.uploadParams().get("key");
         assertThat(key).startsWith("v2/ramen-logs/").endsWith(".jpg");
         assertThat(ticket.imgUrl()).isEqualTo("https://images.raota.net/" + key);
-        assertThat(ticket.uploadParams()).containsEntry("Content-Type", "image/jpeg")
-            .containsEntry("x-amz-algorithm", "AWS4-HMAC-SHA256")
-            .containsEntry("x-amz-credential", "AKID/20261019/ap-chuncheon-1/s3/aws4_request")
-            .containsKey("x-amz-signature");
+        assertThat(ticket.uploadParams())
+                .containsEntry("Content-Type", "image/jpeg")
+                .containsEntry("x-amz-algorithm", "AWS4-HMAC-SHA256")
+                .containsEntry("x-amz-credential", "AKID/20261019/ap-chuncheon-1/s3/aws4_request")
+                .containsKey("x-amz-signature");
 
         JsonNode policy = mapper.readTree(Base64.getDecoder()
-            .decode(((String) ticket.uploadParams().get("policy")).getBytes(StandardCharsets.UTF_8)));
+                .decode(((String) ticket.uploadParams().get("policy")).getBytes(StandardCharsets.UTF_8)));
         assertThat(policy.get("expiration").asString()).isEqualTo("2026-10-19T05:05:00Z");
-        assertThat(policy.get("conditions").toString()).contains("{\"bucket\":\"raota\"}")
-            .contains("{\"key\":\"" + key + "\"}")
-            .contains("{\"Content-Type\":\"image/jpeg\"}")
-            .contains("[\"content-length-range\",1," + ImageBucketFileUploader.MAX_IMAGE_BYTES + "]");
+        assertThat(policy.get("conditions").toString())
+                .contains("{\"bucket\":\"raota\"}")
+                .contains("{\"key\":\"" + key + "\"}")
+                .contains("{\"Content-Type\":\"image/jpeg\"}")
+                .contains("[\"content-length-range\",1," + ImageBucketFileUploader.MAX_IMAGE_BYTES + "]");
     }
 
     @Test
     void 형식을_주지_않으면_확장자로_정하고_이미지가_아니거나_어긋나면_거절한다() {
-        assertThat(uploader.getPresignedUrl("community", "webp", null).uploadParams()).containsEntry("Content-Type",
-                "image/webp");
+        assertThat(uploader.getPresignedUrl("community", "webp", null).uploadParams())
+                .containsEntry("Content-Type", "image/webp");
 
         assertThatThrownBy(() -> uploader.getPresignedUrl("community", "html", null))
-            .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> uploader.getPresignedUrl("community", "png", "text/html"))
-            .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(IllegalArgumentException.class);
     }
-
 }

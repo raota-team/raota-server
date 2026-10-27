@@ -1,12 +1,12 @@
 package com.raota.web.community.application.service;
 
+import com.raota.web.account.domain.member.model.MemberProfile;
+import com.raota.web.account.domain.member.repository.MemberRepository;
 import com.raota.web.community.application.command.CreateCommentCommand;
 import com.raota.web.community.application.command.UpdateCommentCommand;
 import com.raota.web.community.domain.model.Comment;
 import com.raota.web.community.domain.repository.CommentRepository;
 import com.raota.web.community.domain.repository.PostRepository;
-import com.raota.web.account.domain.member.model.MemberProfile;
-import com.raota.web.account.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,12 +27,13 @@ public class CommentService {
 
         commentRepository.validateReplyTarget(command.parentCommentId());
 
-        Comment comment = Comment.create(command.postId(), command.authorId(), command.parentCommentId(),
-                command.content());
+        Comment comment =
+                Comment.create(command.postId(), command.authorId(), command.parentCommentId(), command.content());
         Comment savedComment = commentRepository.save(comment);
 
-        MemberProfile author = memberRepository.findById(command.authorId())
-            .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        MemberProfile author = memberRepository
+                .findById(command.authorId())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         author.increaseCommentCount();
 
         return savedComment.getId();
@@ -45,9 +46,8 @@ public class CommentService {
     public void deleteComment(Long commentId, Long authorId) {
         commentRepository.softDelete(commentId, authorId);
 
-        MemberProfile author = memberRepository.findById(authorId)
-            .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        MemberProfile author =
+                memberRepository.findById(authorId).orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         author.decreaseCommentCount();
     }
-
 }

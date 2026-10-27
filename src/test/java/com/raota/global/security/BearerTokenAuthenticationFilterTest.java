@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import jakarta.servlet.FilterChain;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,8 +17,6 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.util.List;
-
 class BearerTokenAuthenticationFilterTest {
 
     private final BearerTokenAuthenticator mobile = mock(BearerTokenAuthenticator.class);
@@ -26,8 +25,8 @@ class BearerTokenAuthenticationFilterTest {
 
     private final DelegatingAuthenticationEntryPoint entryPoint = mock(DelegatingAuthenticationEntryPoint.class);
 
-    private final BearerTokenAuthenticationFilter filter = new BearerTokenAuthenticationFilter(List.of(mobile, web),
-            entryPoint);
+    private final BearerTokenAuthenticationFilter filter =
+            new BearerTokenAuthenticationFilter(List.of(mobile, web), entryPoint);
 
     private final MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v2/probe");
 
@@ -106,5 +105,4 @@ class BearerTokenAuthenticationFilterTest {
         verify(chain).doFilter(request, response);
         verify(mobile, never()).supports(request);
     }
-
 }

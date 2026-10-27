@@ -84,21 +84,29 @@ class MobileShopAiSummaryAdminIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
+        mvc = MockMvcBuilders.webAppContextSetup(context)
+                .apply(springSecurity())
+                .build();
         redis.delete("lock:v2:shop-ai-summary");
         insertShop(SUMMARIZED, true, null);
         insertShop(NO_REVIEWS, true, null);
         insertShop(ALREADY, true, "2026-09-01 00:00:00");
         insertShop(HIDDEN, false, null);
-        when(reviewSummaries.summarizeReviews(forShop(SUMMARIZED))).thenReturn(summary(3,
-                new SummaryDetail("진한 국물", "국물이 진하다는 리뷰가 많습니다."), new SummaryDetail("좌석 부족", "좌석이 적어 기다린다는 리뷰가 있습니다."),
-                new SummaryDetail("추천 메뉴 정보 부족", "추천 메뉴를 판단할 수 있는 리뷰 데이터가 충분하지 않습니다.")));
+        when(reviewSummaries.summarizeReviews(forShop(SUMMARIZED)))
+                .thenReturn(summary(
+                        3,
+                        new SummaryDetail("진한 국물", "국물이 진하다는 리뷰가 많습니다."),
+                        new SummaryDetail("좌석 부족", "좌석이 적어 기다린다는 리뷰가 있습니다."),
+                        new SummaryDetail("추천 메뉴 정보 부족", "추천 메뉴를 판단할 수 있는 리뷰 데이터가 충분하지 않습니다.")));
         when(reviewSummaries.summarizeReviews(forShop(NO_REVIEWS)))
-            .thenReturn(summary(0, new SummaryDetail("리뷰 데이터 부족", "없음"), new SummaryDetail("리뷰 데이터 부족", "없음"),
-                    new SummaryDetail("추천 메뉴 정보 부족", "없음")));
+                .thenReturn(summary(
+                        0,
+                        new SummaryDetail("리뷰 데이터 부족", "없음"),
+                        new SummaryDetail("리뷰 데이터 부족", "없음"),
+                        new SummaryDetail("추천 메뉴 정보 부족", "없음")));
         when(reviewSummaries.summarizeReviews(forShop(HIDDEN))).thenThrow(new EntityNotFoundException("v1 매장 없음"));
         when(reviewSummaries.summarizeReviews(forShop(V1_ONLY)))
-            .thenReturn(summary(2, new SummaryDetail("깔끔함", "깔끔하다는 리뷰가 있습니다."), null, null));
+                .thenReturn(summary(2, new SummaryDetail("깔끔함", "깔끔하다는 리뷰가 있습니다."), null, null));
     }
 
     private static ReviewSummaryQuery forShop(long shopId) {
@@ -113,9 +121,10 @@ class MobileShopAiSummaryAdminIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void 근거_리뷰가_있으면_요약과_키워드를_v2_매장에_저장하고_대체_문구만_뺀다() throws Exception {
-        summarize(SUMMARIZED).andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.shopId").value(SUMMARIZED))
-            .andExpect(jsonPath("$.data.outcome").value("SAVED"));
+        summarize(SUMMARIZED)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.shopId").value(SUMMARIZED))
+                .andExpect(jsonPath("$.data.outcome").value("SAVED"));
 
         Map<String, Object> row = jdbc.queryForMap(
                 "SELECT ai_review_summary, ai_summary_keywords, ai_summary_generated_at FROM tb_v2_shop WHERE id = ?",
@@ -124,8 +133,8 @@ class MobileShopAiSummaryAdminIntegrationTest extends BaseIntegrationTest {
         assertThat(row.get("ai_summary_keywords").toString()).isEqualTo("[\"진한 국물\", \"좌석 부족\"]");
         assertThat(row.get("ai_summary_generated_at")).isNotNull();
         mvc.perform(get("/api/v2/shops/{id}", SUMMARIZED))
-            .andExpect(jsonPath("$.data.aiReviewSummary").value(row.get("ai_review_summary")))
-            .andExpect(jsonPath("$.data.aiSummaryKeywords[0]").value("진한 국물"));
+                .andExpect(jsonPath("$.data.aiReviewSummary").value(row.get("ai_review_summary")))
+                .andExpect(jsonPath("$.data.aiSummaryKeywords[0]").value("진한 국물"));
     }
 
     @Test
@@ -134,9 +143,11 @@ class MobileShopAiSummaryAdminIntegrationTest extends BaseIntegrationTest {
         summarize(HIDDEN).andExpect(jsonPath("$.data.outcome").value("NO_SOURCE_SHOP"));
         summarize(V1_ONLY).andExpect(jsonPath("$.data.outcome").value("NO_V2_SHOP"));
         assertThat(jdbc.queryForObject(
-                "SELECT COUNT(*) FROM tb_v2_shop WHERE id IN (?, ?) AND ai_summary_generated_at IS NOT NULL",
-                Integer.class, NO_REVIEWS, HIDDEN))
-            .isZero();
+                        "SELECT COUNT(*) FROM tb_v2_shop WHERE id IN (?, ?) AND ai_summary_generated_at IS NOT NULL",
+                        Integer.class,
+                        NO_REVIEWS,
+                        HIDDEN))
+                .isZero();
     }
 
     @Test
@@ -145,68 +156,74 @@ class MobileShopAiSummaryAdminIntegrationTest extends BaseIntegrationTest {
         summarizeMissing(0).andExpect(status().isBadRequest());
         redis.delete("lock:v2:shop-ai-summary");
 
-        summarizeMissing(SUMMARIZED).andExpect(status().isAccepted())
-            .andExpect(jsonPath("$.data.nextAfterId").value(greaterThanOrEqualTo(Math.toIntExact(NO_REVIEWS))));
+        summarizeMissing(SUMMARIZED)
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.data.nextAfterId").value(greaterThanOrEqualTo(Math.toIntExact(NO_REVIEWS))));
         awaitBulkFinished();
         assertThat(summarizedIds()).isEmpty();
 
-        summarizeMissing(0).andExpect(status().isAccepted())
-            .andExpect(jsonPath("$.data.queued").value(greaterThanOrEqualTo(2)))
-            .andExpect(jsonPath("$.data.remaining").value(0));
+        summarizeMissing(0)
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.data.queued").value(greaterThanOrEqualTo(2)))
+                .andExpect(jsonPath("$.data.remaining").value(0));
         awaitBulkFinished();
         assertThat(summarizedIds()).containsExactly(SUMMARIZED);
-        assertThat(jdbc.queryForObject("SELECT ai_summary_generated_at FROM tb_v2_shop WHERE id = ?", String.class,
-                ALREADY))
-            .startsWith("2026-09-01");
+        assertThat(jdbc.queryForObject(
+                        "SELECT ai_summary_generated_at FROM tb_v2_shop WHERE id = ?", String.class, ALREADY))
+                .startsWith("2026-09-01");
     }
 
     private void awaitBulkFinished() {
         await().atMost(Duration.ofSeconds(10))
-            .until(() -> !Boolean.TRUE.equals(redis.hasKey("lock:v2:shop-ai-summary")));
+                .until(() -> !Boolean.TRUE.equals(redis.hasKey("lock:v2:shop-ai-summary")));
     }
 
     private List<Long> summarizedIds() {
-        return jdbc.queryForList("SELECT id FROM tb_v2_shop WHERE id BETWEEN ? AND ? AND ai_review_summary IS NOT NULL",
-                Long.class, SUMMARIZED, V1_ONLY);
+        return jdbc.queryForList(
+                "SELECT id FROM tb_v2_shop WHERE id BETWEEN ? AND ? AND ai_review_summary IS NOT NULL",
+                Long.class,
+                SUMMARIZED,
+                V1_ONLY);
     }
 
     @Test
     void 웹_관리자만_호출할_수_있고_일반_회원과_앱_토큰은_거절한다() throws Exception {
         mvc.perform(post("/admin/api/v2/shops/{shopId}/ai-summary", SUMMARIZED)).andExpect(status().isUnauthorized());
-        mvc.perform(post("/admin/api/v2/shops/{shopId}/ai-summary", SUMMARIZED).header(HttpHeaders.AUTHORIZATION,
-                "Bearer " + webToken(MemberRole.USER)))
-            .andExpect(status().isForbidden());
+        mvc.perform(post("/admin/api/v2/shops/{shopId}/ai-summary", SUMMARIZED)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + webToken(MemberRole.USER)))
+                .andExpect(status().isForbidden());
         MobileUser user = MobileUser.onboarding("summary-" + UUID.randomUUID() + "@example.com");
         user.completeOnboarding(Nickname.of("S" + UUID.randomUUID().toString().substring(0, 8)), Instant.now());
         Long mobileUser = mobileUsers.saveAndFlush(user).getId();
         jdbc.update("UPDATE tb_v2_user SET role = 'ADMIN' WHERE id = ?", mobileUser);
         try {
-            mvc.perform(post("/admin/api/v2/shops/{shopId}/ai-summary", SUMMARIZED).header(HttpHeaders.AUTHORIZATION,
-                    "Bearer " + mobileTokens.issue(mobileUser)))
-                .andExpect(status().isUnauthorized());
-        }
-        finally {
+            mvc.perform(post("/admin/api/v2/shops/{shopId}/ai-summary", SUMMARIZED)
+                            .header(HttpHeaders.AUTHORIZATION, "Bearer " + mobileTokens.issue(mobileUser)))
+                    .andExpect(status().isUnauthorized());
+        } finally {
             mobileUsers.deleteById(mobileUser);
         }
     }
 
     private ResultActions summarize(long shopId) throws Exception {
-        return mvc.perform(post("/admin/api/v2/shops/{shopId}/ai-summary", shopId).header(HttpHeaders.AUTHORIZATION,
-                "Bearer " + webToken(MemberRole.ADMIN)));
+        return mvc.perform(post("/admin/api/v2/shops/{shopId}/ai-summary", shopId)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + webToken(MemberRole.ADMIN)));
     }
 
     private ResultActions summarizeMissing(long afterId) throws Exception {
-        return mvc.perform(post("/admin/api/v2/shops/ai-summary").param("afterId", String.valueOf(afterId))
-            .header(HttpHeaders.AUTHORIZATION, "Bearer " + webToken(MemberRole.ADMIN)));
+        return mvc.perform(post("/admin/api/v2/shops/ai-summary")
+                .param("afterId", String.valueOf(afterId))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + webToken(MemberRole.ADMIN)));
     }
 
     private String webToken(MemberRole role) {
-        MemberProfile member = members.saveAndFlush(MemberProfile.builder().nickname("요약 관리자").role(role).build());
+        MemberProfile member = members.saveAndFlush(
+                MemberProfile.builder().nickname("요약 관리자").role(role).build());
         return webTokens.createAccessToken(member.getId());
     }
 
-    private static ReviewSummaryResponse summary(int reviewCount, SummaryDetail pros, SummaryDetail cons,
-            SummaryDetail menu) {
+    private static ReviewSummaryResponse summary(
+            int reviewCount, SummaryDetail pros, SummaryDetail cons, SummaryDetail menu) {
         return new ReviewSummaryResponse(null, reviewCount, new AiSummary(pros, cons, menu), List.of());
     }
 
@@ -218,5 +235,4 @@ class MobileShopAiSummaryAdminIntegrationTest extends BaseIntegrationTest {
                     '2026-09-01 00:00:00', '2026-09-01 00:00:00')
                 """, id, generatedAt, published);
     }
-
 }

@@ -2,8 +2,8 @@ package com.raota.web.account.application.auth;
 
 import com.raota.web.account.domain.auth.model.AuthProvider;
 import java.util.Map;
-import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -45,5 +45,4 @@ public class OAuth2UserInfoFactory {
         Object value = source.get(key);
         return value == null ? null : String.valueOf(value);
     }
-
 }

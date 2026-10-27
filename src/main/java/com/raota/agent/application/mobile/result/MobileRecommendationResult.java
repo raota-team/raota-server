@@ -1,6 +1,6 @@
 package com.raota.agent.application.mobile.result;
 
-import com.raota.mobile.shop.application.result.MobileShopSummary;
+import com.raota.mobile.shop.application.result.MobileShopSummaryResult;
 import java.util.List;
 import java.util.Map;
 
@@ -9,6 +9,8 @@ import java.util.Map;
  * 기록의 ID이며, 기록을 남기지 못했으면 {@code null}이다. {@code reasons}는 매장 ID마다 LLM이 쓴 추천 이유이고, 이유를 만들지
  * 못한 매장은 빠진다(전부 실패하면 빈 객체). 남은 식권 수는 {@code GET /ai/recommendations/today}가 알려 준다.
  */
-public record MobileRecommendationResult(String recommendationId, List<MobileShopSummary> shops,
-        List<String> appliedConditions, Map<String, String> reasons) {
-}
+public record MobileRecommendationResult(
+        String recommendationId,
+        List<MobileShopSummaryResult> shops,
+        List<String> appliedConditions,
+        Map<String, String> reasons) {}

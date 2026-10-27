@@ -19,11 +19,11 @@ public class MemberProvisioningService {
     @Transactional
     public MemberProfile createOAuthMember(String nickname, String profileImageUrl) {
         return memberRepository.save(MemberProfile.builder()
-            .nickname(nickname)
-            .imageUrl(profileImageUrl)
-            .backgroundImageUrl(null)
-            .stats(MemberActivityStats.init())
-            .build());
+                .nickname(nickname)
+                .imageUrl(profileImageUrl)
+                .backgroundImageUrl(null)
+                .stats(MemberActivityStats.init())
+                .build());
     }
 
     @Transactional(readOnly = true)
@@ -38,8 +38,9 @@ public class MemberProvisioningService {
 
     @Transactional(readOnly = true)
     public MemberProfile getActiveRequired(Long memberId) {
-        return memberRepository.findByIdAndDeletedAtIsNull(memberId)
-            .orElseThrow(() -> new WithdrawnMemberException(MemberLifecycleService.WITHDRAWN_MEMBER_MESSAGE));
+        return memberRepository
+                .findByIdAndDeletedAtIsNull(memberId)
+                .orElseThrow(() -> new WithdrawnMemberException(MemberLifecycleService.WITHDRAWN_MEMBER_MESSAGE));
     }
 
     @Transactional(readOnly = true)
@@ -51,5 +52,4 @@ public class MemberProvisioningService {
     public void deleteById(Long memberId) {
         memberRepository.deleteById(memberId);
     }
-
 }

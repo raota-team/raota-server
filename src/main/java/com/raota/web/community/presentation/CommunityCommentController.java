@@ -1,15 +1,15 @@
 package com.raota.web.community.presentation;
 
-import com.raota.web.community.application.service.CommentQueryService;
-import com.raota.web.community.application.service.CommentService;
+import com.raota.global.presentation.common.ApiResponse;
+import com.raota.global.presentation.common.PageResponse;
+import com.raota.web.account.infrastructure.auth.LoginMember;
 import com.raota.web.community.application.result.CommentItemResult;
 import com.raota.web.community.application.result.CommentThreadResult;
-import com.raota.web.account.infrastructure.auth.LoginMember;
+import com.raota.web.community.application.service.CommentQueryService;
+import com.raota.web.community.application.service.CommentService;
 import com.raota.web.community.presentation.contract.CommunityCommentApi;
 import com.raota.web.community.presentation.request.CommunityCommentCreateRequest;
 import com.raota.web.community.presentation.request.CommunityCommentUpdateRequest;
-import com.raota.global.presentation.common.ApiResponse;
-import com.raota.global.presentation.common.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -33,24 +33,26 @@ public class CommunityCommentController implements CommunityCommentApi {
 
     @Override
     @PostMapping("/posts/{postId}/comments")
-    public ResponseEntity<ApiResponse<CommentItemResult>> createComment(@PathVariable Long postId,
-            @RequestBody CommunityCommentCreateRequest request, @LoginMember Long memberId) {
+    public ResponseEntity<ApiResponse<CommentItemResult>> createComment(
+            @PathVariable Long postId, @RequestBody CommunityCommentCreateRequest request, @LoginMember Long memberId) {
         Long commentId = commentService.createComment(request.toCommand(postId, memberId));
         return ResponseEntity.ok(ApiResponse.success(commentQueryService.getComment(commentId)));
     }
 
     @Override
     @GetMapping("/posts/{postId}/comments")
-    public ResponseEntity<ApiResponse<PageResponse<CommentThreadResult>>> getComments(@PathVariable Long postId,
-            Pageable pageable) {
-        return ResponseEntity
-            .ok(ApiResponse.success(PageResponse.from(commentQueryService.getCommentThreads(postId, pageable))));
+    public ResponseEntity<ApiResponse<PageResponse<CommentThreadResult>>> getComments(
+            @PathVariable Long postId, Pageable pageable) {
+        return ResponseEntity.ok(
+                ApiResponse.success(PageResponse.from(commentQueryService.getCommentThreads(postId, pageable))));
     }
 
     @Override
     @PutMapping("/comments/{commentId}")
-    public ResponseEntity<ApiResponse<CommentItemResult>> updateComment(@PathVariable Long commentId,
-            @RequestBody CommunityCommentUpdateRequest request, @LoginMember Long memberId) {
+    public ResponseEntity<ApiResponse<CommentItemResult>> updateComment(
+            @PathVariable Long commentId,
+            @RequestBody CommunityCommentUpdateRequest request,
+            @LoginMember Long memberId) {
         commentService.updateComment(request.toCommand(commentId, memberId));
         return ResponseEntity.ok(ApiResponse.success(commentQueryService.getComment(commentId)));
     }
@@ -61,5 +63,4 @@ public class CommunityCommentController implements CommunityCommentApi {
         commentService.deleteComment(commentId, memberId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
-
 }

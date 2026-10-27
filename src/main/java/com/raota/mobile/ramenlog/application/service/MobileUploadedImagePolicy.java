@@ -14,5 +14,4 @@ public class MobileUploadedImagePolicy {
     public boolean isOwnImage(String url) {
         return url.startsWith(properties.imageBaseUrl());
     }
-
 }

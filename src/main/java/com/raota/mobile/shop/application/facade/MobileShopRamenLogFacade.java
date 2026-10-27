@@ -22,8 +22,8 @@ public class MobileShopRamenLogFacade {
 
     public MobileShopRef findPublishedShopRef(Long shopId) {
         return shops.findByIdAndPublishedTrueAndDeletedAtIsNull(shopId)
-            .map(this::ref)
-            .orElseThrow(() -> new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "매장을 찾을 수 없습니다."));
+                .map(this::ref)
+                .orElseThrow(() -> new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "매장을 찾을 수 없습니다."));
     }
 
     /** 이미 작성된 기록은 매장의 공개 상태와 관계없이 해당 매장 이름을 표시한다. */
@@ -86,7 +86,5 @@ public class MobileShopRamenLogFacade {
         return new MobileShopRef(shop.getId(), shop.getName(), shop.getBranchName(), shop.getRegion());
     }
 
-    public record MobileShopRef(Long id, String name, String branchName, String region) {
-    }
-
+    public record MobileShopRef(Long id, String name, String branchName, String region) {}
 }

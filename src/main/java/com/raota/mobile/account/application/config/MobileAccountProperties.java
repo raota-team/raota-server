@@ -14,15 +14,17 @@ import org.springframework.validation.annotation.Validated;
  */
 @ConfigurationProperties("app.mobile.account")
 @Validated
-public record MobileAccountProperties(@NotNull @DefaultValue("30d") Duration withdrawalGracePeriod,
-        @NotNull @Pattern(
-                regexp = "[0-9]{4}-[0-9]{2}-[0-9]{2}") @DefaultValue("2026-11-03") String requiredTermsVersion,
-        @NotNull @Pattern(
-                regexp = "[0-9]{4}-[0-9]{2}-[0-9]{2}") @DefaultValue("2026-11-03") String requiredPrivacyVersion) {
+public record MobileAccountProperties(
+        @NotNull @DefaultValue("30d") Duration withdrawalGracePeriod,
+
+        @NotNull @Pattern(regexp = "[0-9]{4}-[0-9]{2}-[0-9]{2}") @DefaultValue("2026-11-03")
+        String requiredTermsVersion,
+
+        @NotNull @Pattern(regexp = "[0-9]{4}-[0-9]{2}-[0-9]{2}") @DefaultValue("2026-11-03")
+        String requiredPrivacyVersion) {
 
     @AssertTrue(message = "탈퇴 유예 기간은 양수여야 합니다.")
     public boolean isWithdrawalGracePeriodPositive() {
         return withdrawalGracePeriod != null && withdrawalGracePeriod.compareTo(Duration.ZERO) > 0;
     }
-
 }

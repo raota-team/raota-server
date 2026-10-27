@@ -46,8 +46,15 @@ public class MobileShopBusinessHour {
     @Column(name = "is_closed", nullable = false)
     private boolean closed;
 
-    public static MobileShopBusinessHour of(Long shopId, int dayOfWeek, boolean closed, LocalTime opensAt,
-            LocalTime closesAt, LocalTime breakStart, LocalTime breakEnd, LocalTime lastOrderAt) {
+    public static MobileShopBusinessHour of(
+            Long shopId,
+            int dayOfWeek,
+            boolean closed,
+            LocalTime opensAt,
+            LocalTime closesAt,
+            LocalTime breakStart,
+            LocalTime breakEnd,
+            LocalTime lastOrderAt) {
         MobileShopBusinessHour hour = new MobileShopBusinessHour();
         hour.shopId = shopId;
         hour.dayOfWeek = (byte) dayOfWeek;
@@ -59,5 +66,4 @@ public class MobileShopBusinessHour {
         hour.lastOrderAt = lastOrderAt;
         return hour;
     }
-
 }

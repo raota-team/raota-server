@@ -12,7 +12,6 @@ interface JpaPostLikeEntityRepository extends JpaRepository<PostLikeEntity, Long
     Optional<PostLikeEntity> findByPostIdAndMemberId(Long postId, Long memberId);
 
     long countByPostId(Long postId);
-
 }
 
 @Repository
@@ -30,7 +29,8 @@ public class JpaPostLikeRepository implements PostLikeRepository {
             return false;
         }
 
-        jpaRepository.save(PostLikeEntity.builder().postId(postId).memberId(memberId).build());
+        jpaRepository.save(
+                PostLikeEntity.builder().postId(postId).memberId(memberId).build());
         return true;
     }
 
@@ -38,5 +38,4 @@ public class JpaPostLikeRepository implements PostLikeRepository {
     public long countByPostId(Long postId) {
         return jpaRepository.countByPostId(postId);
     }
-
 }

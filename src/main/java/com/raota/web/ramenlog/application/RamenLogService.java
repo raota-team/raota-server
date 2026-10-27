@@ -1,21 +1,21 @@
 package com.raota.web.ramenlog.application;
 
+import com.raota.global.cache.CacheInvalidationPublisher;
+import com.raota.global.file.FileUploader;
+import com.raota.web.account.application.member.MemberActivityVisibilityService;
 import com.raota.web.account.domain.member.model.MemberProfile;
 import com.raota.web.account.domain.member.repository.MemberRepository;
-import com.raota.web.account.application.member.MemberActivityVisibilityService;
-import com.raota.web.ramenshop.domain.model.RamenShop;
-import com.raota.web.ramenshop.domain.repository.RamenShopRepository;
 import com.raota.web.ramenlog.domain.model.RamenLog;
 import com.raota.web.ramenlog.domain.model.RamenLogLike;
 import com.raota.web.ramenlog.domain.repository.RamenLogLikeRepository;
 import com.raota.web.ramenlog.domain.repository.RamenLogRepository;
-import com.raota.global.cache.CacheInvalidationPublisher;
-import com.raota.global.file.FileUploader;
 import com.raota.web.ramenlog.presentation.api.request.RamenLogSort;
 import com.raota.web.ramenlog.presentation.api.request.RamenLogUpsertRequest;
 import com.raota.web.ramenlog.presentation.api.response.RamenLogLikeResponse;
 import com.raota.web.ramenlog.presentation.api.response.RamenLogResponse;
 import com.raota.web.ramenlog.presentation.api.response.RamenLogShopResponse;
+import com.raota.web.ramenshop.domain.model.RamenShop;
+import com.raota.web.ramenshop.domain.repository.RamenShopRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.Predicate;
 import java.util.ArrayList;
@@ -50,11 +50,12 @@ public class RamenLogService {
 
     private final MemberActivityVisibilityService memberActivityVisibilityService;
 
-    public Page<RamenLogResponse> getPublicLogs(Long viewerId, RamenLogSort sort, Long shopId, String keyword,
-            Pageable pageable) {
+    public Page<RamenLogResponse> getPublicLogs(
+            Long viewerId, RamenLogSort sort, Long shopId, String keyword, Pageable pageable) {
         Specification<RamenLog> specification = filter(true, null, shopId, keyword);
-        return ramenLogRepository.findAll(specification, pageRequest(pageable, sort))
-            .map(log -> toResponse(log, viewerId));
+        return ramenLogRepository
+                .findAll(specification, pageRequest(pageable, sort))
+                .map(log -> toResponse(log, viewerId));
     }
 
     public RamenLogResponse getLog(Long logId, Long viewerId) {
@@ -66,28 +67,30 @@ public class RamenLogService {
         return toResponse(log, viewerId);
     }
 
-    public Page<RamenLogResponse> getMemberLogs(Long targetMemberId, Long viewerId, boolean includePrivate, Long shopId,
-            Pageable pageable) {
+    public Page<RamenLogResponse> getMemberLogs(
+            Long targetMemberId, Long viewerId, boolean includePrivate, Long shopId, Pageable pageable) {
         memberActivityVisibilityService.requireLogsVisible(targetMemberId, viewerId);
         requireMember(targetMemberId);
         Specification<RamenLog> specification = filter(includePrivate ? null : true, targetMemberId, shopId, null);
-        return ramenLogRepository.findAll(specification, pageRequest(pageable, RamenLogSort.LATEST))
-            .map(log -> toResponse(log, viewerId));
+        return ramenLogRepository
+                .findAll(specification, pageRequest(pageable, RamenLogSort.LATEST))
+                .map(log -> toResponse(log, viewerId));
     }
 
     public List<RamenLogShopResponse> getMemberLogShops(Long targetMemberId, Long viewerId, boolean includePrivate) {
         memberActivityVisibilityService.requireLogsVisible(targetMemberId, viewerId);
         requireMember(targetMemberId);
-        List<RamenLog> logs = ramenLogRepository
-            .findAll(filter(includePrivate ? null : true, targetMemberId, null, null));
+        List<RamenLog> logs =
+                ramenLogRepository.findAll(filter(includePrivate ? null : true, targetMemberId, null, null));
         return logs.stream()
-            .collect(java.util.stream.Collectors.groupingBy(RamenLog::getRamenShop,
-                    java.util.stream.Collectors.counting()))
-            .entrySet()
-            .stream()
-            .map(entry -> new RamenLogShopResponse(entry.getKey().getId(), entry.getKey().getName(), entry.getValue()))
-            .sorted(java.util.Comparator.comparing(RamenLogShopResponse::name))
-            .toList();
+                .collect(java.util.stream.Collectors.groupingBy(
+                        RamenLog::getRamenShop, java.util.stream.Collectors.counting()))
+                .entrySet()
+                .stream()
+                .map(entry -> new RamenLogShopResponse(
+                        entry.getKey().getId(), entry.getKey().getName(), entry.getValue()))
+                .sorted(java.util.Comparator.comparing(RamenLogShopResponse::name))
+                .toList();
     }
 
     @Transactional
@@ -95,24 +98,24 @@ public class RamenLogService {
         MemberProfile member = requireMember(memberId);
         RamenShop shop = requireShop(request.shopId());
         RamenLogUpsertRequest.TasteNotesRequest notes = request.normalizedTasteNotes();
-        boolean firstLogAtShop = ramenLogRepository.countByAuthorIdAndRamenShopIdAndIsDeletedFalse(memberId,
-                shop.getId()) == 0;
+        boolean firstLogAtShop =
+                ramenLogRepository.countByAuthorIdAndRamenShopIdAndIsDeletedFalse(memberId, shop.getId()) == 0;
 
         RamenLog log = RamenLog.builder()
-            .author(member)
-            .ramenShop(shop)
-            .menuName(request.menuName().trim())
-            .ramenType(request.ramenType().trim())
-            .imageUrl(request.imageUrl().trim())
-            .visitedAt(request.visitedAt())
-            .note(normalizeNote(request.note()))
-            .brothNotes(safe(notes.broth()))
-            .noodleNotes(safe(notes.noodle()))
-            .seasoningNotes(safe(notes.seasoning()))
-            .toppingNotes(safe(notes.topping()))
-            .revisit(request.revisit())
-            .isPublic(request.isPublic())
-            .build();
+                .author(member)
+                .ramenShop(shop)
+                .menuName(request.menuName().trim())
+                .ramenType(request.ramenType().trim())
+                .imageUrl(request.imageUrl().trim())
+                .visitedAt(request.visitedAt())
+                .note(normalizeNote(request.note()))
+                .brothNotes(safe(notes.broth()))
+                .noodleNotes(safe(notes.noodle()))
+                .seasoningNotes(safe(notes.seasoning()))
+                .toppingNotes(safe(notes.topping()))
+                .revisit(request.revisit())
+                .isPublic(request.isPublic())
+                .build();
 
         RamenLog saved = ramenLogRepository.save(log);
         if (firstLogAtShop) {
@@ -134,10 +137,10 @@ public class RamenLogService {
         MemberProfile member = log.getAuthor();
 
         if (shopChanged) {
-            long previousShopLogs = ramenLogRepository.countByAuthorIdAndRamenShopIdAndIsDeletedFalse(memberId,
-                    previousShop.getId());
-            long nextShopLogs = ramenLogRepository.countByAuthorIdAndRamenShopIdAndIsDeletedFalse(memberId,
-                    shop.getId());
+            long previousShopLogs =
+                    ramenLogRepository.countByAuthorIdAndRamenShopIdAndIsDeletedFalse(memberId, previousShop.getId());
+            long nextShopLogs =
+                    ramenLogRepository.countByAuthorIdAndRamenShopIdAndIsDeletedFalse(memberId, shop.getId());
             if (previousShopLogs == 1) {
                 member.decreaseVisitedRestaurantCount();
             }
@@ -148,9 +151,19 @@ public class RamenLogService {
             shop.increaseVisitCount();
         }
 
-        log.update(shop, request.menuName().trim(), request.ramenType().trim(), request.imageUrl().trim(),
-                normalizeNote(request.note()), safe(notes.broth()), safe(notes.noodle()), safe(notes.seasoning()),
-                safe(notes.topping()), request.revisit(), request.visitedAt(), request.isPublic());
+        log.update(
+                shop,
+                request.menuName().trim(),
+                request.ramenType().trim(),
+                request.imageUrl().trim(),
+                normalizeNote(request.note()),
+                safe(notes.broth()),
+                safe(notes.noodle()),
+                safe(notes.seasoning()),
+                safe(notes.topping()),
+                request.revisit(),
+                request.visitedAt(),
+                request.isPublic());
         if (shopChanged) {
             invalidateShop(previousShop.getId());
             invalidateShop(shop.getId());
@@ -163,8 +176,8 @@ public class RamenLogService {
         RamenLog log = getOwnedLog(logId, memberId);
         MemberProfile member = log.getAuthor();
         RamenShop shop = log.getRamenShop();
-        long currentShopLogs = ramenLogRepository.countByAuthorIdAndRamenShopIdAndIsDeletedFalse(memberId,
-                shop.getId());
+        long currentShopLogs =
+                ramenLogRepository.countByAuthorIdAndRamenShopIdAndIsDeletedFalse(memberId, shop.getId());
         ramenLogLikeRepository.deleteAllByRamenLogId(logId);
         log.delete();
         if (currentShopLogs == 1) {
@@ -183,15 +196,19 @@ public class RamenLogService {
             throw new EntityNotFoundException("라멘로그를 찾을 수 없습니다.");
         }
 
-        return ramenLogLikeRepository.findByRamenLogIdAndMemberId(logId, memberId).map(like -> {
-            ramenLogLikeRepository.delete(like);
-            log.decreaseLikeCount();
-            return new RamenLogLikeResponse(false, log.getLikeCount());
-        }).orElseGet(() -> {
-            ramenLogLikeRepository.save(RamenLogLike.builder().ramenLog(log).member(member).build());
-            log.increaseLikeCount();
-            return new RamenLogLikeResponse(true, log.getLikeCount());
-        });
+        return ramenLogLikeRepository
+                .findByRamenLogIdAndMemberId(logId, memberId)
+                .map(like -> {
+                    ramenLogLikeRepository.delete(like);
+                    log.decreaseLikeCount();
+                    return new RamenLogLikeResponse(false, log.getLikeCount());
+                })
+                .orElseGet(() -> {
+                    ramenLogLikeRepository.save(
+                            RamenLogLike.builder().ramenLog(log).member(member).build());
+                    log.increaseLikeCount();
+                    return new RamenLogLikeResponse(true, log.getLikeCount());
+                });
     }
 
     private RamenLogResponse toResponse(RamenLog log, Long viewerId) {
@@ -207,8 +224,8 @@ public class RamenLogService {
             if (isPublic != null) {
                 predicates.add(criteriaBuilder.equal(root.get("isPublic"), isPublic));
                 if (isPublic) {
-                    predicates
-                        .add(criteriaBuilder.isTrue(root.get("author").get("activityVisibility").get("logsPublic")));
+                    predicates.add(criteriaBuilder.isTrue(
+                            root.get("author").get("activityVisibility").get("logsPublic")));
                 }
             }
             if (memberId != null) {
@@ -220,7 +237,8 @@ public class RamenLogService {
             if (keyword != null && !keyword.isBlank()) {
                 String pattern = "%" + keyword.trim().toLowerCase() + "%";
                 predicates.add(criteriaBuilder.or(
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("ramenShop").get("name")), pattern),
+                        criteriaBuilder.like(
+                                criteriaBuilder.lower(root.get("ramenShop").get("name")), pattern),
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("menuName")), pattern),
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("ramenType")), pattern),
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("note")), pattern)));
@@ -237,8 +255,9 @@ public class RamenLogService {
     }
 
     private RamenLog getActiveLog(Long logId) {
-        return ramenLogRepository.findByIdAndIsDeletedFalse(logId)
-            .orElseThrow(() -> new EntityNotFoundException("라멘로그를 찾을 수 없습니다."));
+        return ramenLogRepository
+                .findByIdAndIsDeletedFalse(logId)
+                .orElseThrow(() -> new EntityNotFoundException("라멘로그를 찾을 수 없습니다."));
     }
 
     private RamenLog getOwnedLog(Long logId, Long memberId) {
@@ -250,8 +269,9 @@ public class RamenLogService {
     }
 
     private MemberProfile requireMember(Long memberId) {
-        return memberRepository.findByIdAndDeletedAtIsNull(memberId)
-            .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
+        return memberRepository
+                .findByIdAndDeletedAtIsNull(memberId)
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
     }
 
     private RamenShop requireShop(Long shopId) {
@@ -259,13 +279,14 @@ public class RamenLogService {
     }
 
     private static List<String> safe(List<String> values) {
-        return values == null ? List.of()
+        return values == null
+                ? List.of()
                 : values.stream()
-                    .filter(Objects::nonNull)
-                    .map(String::trim)
-                    .filter(value -> !value.isBlank())
-                    .distinct()
-                    .toList();
+                        .filter(Objects::nonNull)
+                        .map(String::trim)
+                        .filter(value -> !value.isBlank())
+                        .distinct()
+                        .toList();
     }
 
     private static String normalizeNote(String note) {
@@ -276,5 +297,4 @@ public class RamenLogService {
         cacheInvalidationPublisher.publish("ramenShopDetail", String.valueOf(shopId));
         cacheInvalidationPublisher.publishAll("ramenShopList");
     }
-
 }

@@ -39,8 +39,8 @@ public interface MobileRamenLogCommentRepository extends JpaRepository<MobileRam
                      or (comment.createdAt = :afterCreatedAt and comment.id > :afterId))
             order by comment.createdAt asc, comment.id asc
             """)
-    List<MobileRamenLogComment> findPage(Long logId, Long viewerId, Instant afterCreatedAt, Long afterId,
-            Pageable limit);
+    List<MobileRamenLogComment> findPage(
+            Long logId, Long viewerId, Instant afterCreatedAt, Long afterId, Pageable limit);
 
     @Query("""
             select comment.ramenLogId as logId, count(comment) as comments
@@ -67,7 +67,5 @@ public interface MobileRamenLogCommentRepository extends JpaRepository<MobileRam
         Long getLogId();
 
         Long getComments();
-
     }
-
 }

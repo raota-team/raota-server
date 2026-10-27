@@ -6,5 +6,4 @@ public interface AppleTokenClient {
     String exchange(String authorizationCode, String expectedSubject);
 
     void revoke(String refreshToken);
-
 }

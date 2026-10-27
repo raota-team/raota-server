@@ -36,7 +36,8 @@ class CursorTest {
 
     @Test
     void 인코딩한_커서에는_패딩이나_URL에_안전하지_않은_문자가_없다() {
-        String encoded = Cursor.of(Instant.parse("2026-09-23T02:00:00.123456Z"), 42).encode();
+        String encoded =
+                Cursor.of(Instant.parse("2026-09-23T02:00:00.123456Z"), 42).encode();
 
         assertThat(encoded).doesNotContain("+", "/", "=");
     }
@@ -102,5 +103,4 @@ class CursorTest {
             assertThat(exception.getMessage()).isEqualTo("커서가 올바르지 않습니다.");
         });
     }
-
 }

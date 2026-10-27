@@ -29,11 +29,11 @@ public class WebBearerTokenAuthenticator implements BearerTokenAuthenticator {
     @Override
     public Authentication authenticate(String token) {
         Long memberId = jwtTokenProvider.getMemberId(token);
-        MemberRole role = memberProvisioningService.findActiveMemberRole(memberId)
-            .orElseThrow(() -> new JwtAuthenticationException(MemberLifecycleService.WITHDRAWN_MEMBER_MESSAGE,
-                    new IllegalStateException("inactive member")));
+        MemberRole role = memberProvisioningService
+                .findActiveMemberRole(memberId)
+                .orElseThrow(() -> new JwtAuthenticationException(
+                        MemberLifecycleService.WITHDRAWN_MEMBER_MESSAGE, new IllegalStateException("inactive member")));
         AuthenticatedMember member = AuthenticatedMember.of(memberId, role);
         return new UsernamePasswordAuthenticationToken(member, null, member.authorities());
     }
-
 }

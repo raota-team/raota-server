@@ -10,5 +10,4 @@ public interface DailyCurationRepository {
     Optional<DailyCuration> findLatest();
 
     DailyCuration save(DailyCuration curation);
-
 }

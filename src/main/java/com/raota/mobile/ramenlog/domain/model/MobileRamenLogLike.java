@@ -30,7 +30,5 @@ public class MobileRamenLogLike {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    public record Key(Long userId, Long ramenLogId) implements Serializable {
-    }
-
+    public record Key(Long userId, Long ramenLogId) implements Serializable {}
 }
