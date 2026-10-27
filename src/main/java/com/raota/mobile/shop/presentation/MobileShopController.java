@@ -48,7 +48,7 @@ public class MobileShopController {
             .success(shops.all(userId, sort, query, region, ramenType, openNow, latitude, longitude));
     }
 
-    @GetMapping("/{shopId:[0-9]+}")
+    @GetMapping("/{shopId}")
     public MobileApiResponse<MobileShopDetail> detail(@LoginUser(required = false) Long userId,
             @PathVariable Long shopId) {
         return MobileApiResponse.success(shops.detail(userId, shopId));

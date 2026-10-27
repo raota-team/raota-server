@@ -18,13 +18,13 @@ public class MobileShopBookmarkController {
 
     private final MobileShopBookmarkService bookmarks;
 
-    @PutMapping("/{shopId:[0-9]+}/bookmark")
+    @PutMapping("/{shopId}/bookmark")
     public ResponseEntity<Void> add(@PathVariable Long shopId, @LoginUser Long userId) {
         bookmarks.add(userId, shopId);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/{shopId:[0-9]+}/bookmark")
+    @DeleteMapping("/{shopId}/bookmark")
     public ResponseEntity<Void> remove(@PathVariable Long shopId, @LoginUser Long userId) {
         bookmarks.remove(userId, shopId);
         return ResponseEntity.noContent().build();
