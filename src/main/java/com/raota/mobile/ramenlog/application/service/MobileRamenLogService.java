@@ -208,7 +208,7 @@ public class MobileRamenLogService {
                         .map(MobileRamenLogImage::getUrl)
                         .toList();
         boolean liked = viewerId != null && likes.existsByUserIdAndRamenLogId(viewerId, log.getId());
-        return MobileRamenLogResultAssembler.detail(
+        return MobileRamenLogResultAssembler.toDetail(
                 log, author, shop, imageUrls, liked, comments.preview(log.getId(), viewerId), viewerId);
     }
 

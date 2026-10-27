@@ -41,7 +41,7 @@ public class MobileShopAgentFacade {
      */
     public List<Long> recommendationCandidates(
             String ramenType, String region, BigDecimal latitude, BigDecimal longitude, int limit) {
-        return shops.recommendationCandidates(ramenType, region, latitude, longitude, limit);
+        return shops.findCandidateIds(ramenType, region, latitude, longitude, limit);
     }
 
     /** 순위대로 받은 매장 ID 중 추천해도 되는 매장을 최대 {@code limit}개 요약한다. 좌표가 오면 거리를 채운다. */
@@ -50,12 +50,12 @@ public class MobileShopAgentFacade {
         if (rankedShopIds.isEmpty()) {
             return List.of();
         }
-        return shops.recommendable(viewerId, rankedShopIds, latitude, longitude, limit);
+        return shops.summarizeRecommendable(viewerId, rankedShopIds, latitude, longitude, limit);
     }
 
     /** 라멘 종류(앱 종류 값 중 하나), 없으면 태그 키워드로 추천해도 되는 매장 중 조회수 1위를 고른다. */
     public Optional<MobileShopSummaryResult> mostPopular(Long viewerId, String ramenType, String tagKeyword) {
-        return shops.mostPopular(viewerId, ramenType, tagKeyword);
+        return shops.findMostViewedSummary(viewerId, ramenType, tagKeyword);
     }
 
     /** 추천 성과 집계용으로 이 회원들이 {@code [from, to)} 사이에 만든 북마크다. 해제한 북마크는 빠진다. */

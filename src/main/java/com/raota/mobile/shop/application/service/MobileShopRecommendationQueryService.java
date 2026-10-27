@@ -29,13 +29,13 @@ public class MobileShopRecommendationQueryService {
      * 반경은 없다.
      */
     @Transactional(readOnly = true)
-    public List<Long> recommendationCandidates(
+    public List<Long> findCandidateIds(
             String ramenType, String region, BigDecimal latitude, BigDecimal longitude, int limit) {
         List<Long> ids = shops.findRecommendableIds(ramenType);
-        Map<Long, MobileShop> byId = assembler.byId(ids);
+        Map<Long, MobileShop> shopsById = assembler.findShopsById(ids);
         List<MobileShop> candidates = ids.stream()
-                .map(byId::get)
-                .filter(shop -> shop != null && inRegion(shop, region))
+                .map(shopsById::get)
+                .filter(shop -> shop != null && isInRegion(shop, region))
                 .toList();
         if (latitude == null) {
             return candidates.stream().limit(limit).map(MobileShop::getId).toList();
@@ -55,13 +55,13 @@ public class MobileShopRecommendationQueryService {
      * 따른다. 좌표가 오면 거리를 채운다.
      */
     @Transactional(readOnly = true)
-    public List<MobileShopSummaryResult> recommendable(
+    public List<MobileShopSummaryResult> summarizeRecommendable(
             Long userId, List<Long> rankedIds, BigDecimal latitude, BigDecimal longitude, int limit) {
-        Map<Long, MobileShop> byId = assembler.byId(rankedIds);
+        Map<Long, MobileShop> shopsById = assembler.findShopsById(rankedIds);
         List<MobileShop> picked = new ArrayList<>(limit);
         Map<Long, BigDecimal> distances = new HashMap<>();
         for (Long id : rankedIds) {
-            MobileShop shop = byId.get(id);
+            MobileShop shop = shopsById.get(id);
             if (shop == null || !shop.isRecommendable()) {
                 continue;
             }
@@ -76,7 +76,7 @@ public class MobileShopRecommendationQueryService {
                 break;
             }
         }
-        return assembler.load(userId, picked, distances);
+        return assembler.loadAndSummarize(userId, picked, distances);
     }
 
     /**
@@ -84,13 +84,16 @@ public class MobileShopRecommendationQueryService {
      * 조회수가 가장 많은 매장을 고른다. 조회수가 같으면 ID가 큰 매장이다. 공개 API라 DB에서 1건만 읽는다.
      */
     @Transactional(readOnly = true)
-    public Optional<MobileShopSummaryResult> mostPopular(Long userId, String ramenType, String tagKeyword) {
+    public Optional<MobileShopSummaryResult> findMostViewedSummary(Long userId, String ramenType, String tagKeyword) {
         return shops.findMostViewedRecommendableId(ramenType, tagKeyword)
                 .flatMap(shops::findById)
-                .map(shop -> assembler.load(userId, List.of(shop), Map.of()).getFirst());
+                .map(shop -> assembler
+                        .loadAndSummarize(userId, List.of(shop), Map.of())
+                        .getFirst());
     }
 
-    private static boolean inRegion(MobileShop shop, String region) {
+    /** 지역(구·시)이 같거나 주소에 그 지역이 들어가면 같은 지역이다. 매장 목록 SQL은 {@code region} 컬럼만 본다. */
+    private static boolean isInRegion(MobileShop shop, String region) {
         if (region == null) {
             return true;
         }

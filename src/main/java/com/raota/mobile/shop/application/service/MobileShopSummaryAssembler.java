@@ -44,31 +44,35 @@ class MobileShopSummaryAssembler {
 
     private final MobileShopOpenStatus openStatus;
 
-    /** 영업시간과 북마크 여부까지 읽어 받은 순서대로 요약한다. 거리가 없는 매장은 {@code distances}에 넣지 않는다. */
-    List<MobileShopSummaryResult> load(Long userId, List<MobileShop> ordered, Map<Long, BigDecimal> distances) {
-        List<Long> ids = ordered.stream().map(MobileShop::getId).toList();
-        return summarize(ordered, hoursByShop(ids), bookmarks.bookmarkedShopIds(userId, ids), distances);
+    /**
+     * 영업시간과 이 회원의 북마크 여부까지 새로 읽어 받은 순서대로 요약한다. 거리가 없는 매장은 {@code distances}에 넣지 않는다.
+     */
+    List<MobileShopSummaryResult> loadAndSummarize(
+            Long userId, List<MobileShop> orderedShops, Map<Long, BigDecimal> distances) {
+        List<Long> ids = orderedShops.stream().map(MobileShop::getId).toList();
+        return summarize(orderedShops, findHoursByShopId(ids), bookmarks.bookmarkedShopIds(userId, ids), distances);
     }
 
-    /** 받은 순서대로 요약한다. 첫 사진만 여기서 읽는다. */
+    /** 이미 읽은 영업시간·북마크 여부로 받은 순서대로 요약한다. 첫 사진만 여기서 읽는다. */
     List<MobileShopSummaryResult> summarize(
-            List<MobileShop> ordered,
-            Map<Long, List<Hours>> hoursByShop,
-            Set<Long> bookmarkedIds,
+            List<MobileShop> orderedShops,
+            Map<Long, List<Hours>> hoursByShopId,
+            Set<Long> bookmarkedShopIds,
             Map<Long, BigDecimal> distances) {
-        Map<Long, String> firstImages =
-                firstImages(ordered.stream().map(MobileShop::getId).toList());
-        return ordered.stream()
-                .map(shop -> summary(
+        Map<Long, String> firstImageUrls =
+                findFirstImageUrls(orderedShops.stream().map(MobileShop::getId).toList());
+        return orderedShops.stream()
+                .map(shop -> toSummary(
                         shop,
-                        firstImages.get(shop.getId()),
-                        hoursByShop.getOrDefault(shop.getId(), List.of()),
+                        firstImageUrls.get(shop.getId()),
+                        hoursByShopId.getOrDefault(shop.getId(), List.of()),
                         distances.get(shop.getId()),
-                        bookmarkedIds.contains(shop.getId())))
+                        bookmarkedShopIds.contains(shop.getId())))
                 .toList();
     }
 
-    MobileShopSummaryResult summary(
+    /** 매장 하나를 요약으로 바꾼다. 아무것도 읽지 않는다. */
+    MobileShopSummaryResult toSummary(
             MobileShop shop, String imageUrl, List<Hours> shopHours, BigDecimal distance, boolean bookmarked) {
         return new MobileShopSummaryResult(
                 shop.getId().toString(),
@@ -87,28 +91,29 @@ class MobileShopSummaryAssembler {
                 bookmarked,
                 shop.getBusinessStatus(),
                 openStatus.isOpen(shop.getHoursVerifiedAt(), shopHours),
-                roundedMeters(distance));
+                roundToMeters(distance));
     }
 
-    Map<Long, MobileShop> byId(List<Long> ids) {
+    Map<Long, MobileShop> findShopsById(List<Long> ids) {
         if (ids.isEmpty()) {
             return Map.of();
         }
         return shops.findAllById(ids).stream().collect(Collectors.toMap(MobileShop::getId, Function.identity()));
     }
 
-    Map<Long, List<Hours>> hoursByShop(List<Long> ids) {
-        Map<Long, List<Hours>> byShop = new HashMap<>();
+    Map<Long, List<Hours>> findHoursByShopId(List<Long> ids) {
+        Map<Long, List<Hours>> byShopId = new HashMap<>();
         if (!ids.isEmpty()) {
             for (MobileShopBusinessHour hour : hours.findByShopIdInOrderByDayOfWeekAsc(ids)) {
-                byShop.computeIfAbsent(hour.getShopId(), ignored -> new ArrayList<>())
-                        .add(toHours(hour));
+                byShopId.computeIfAbsent(hour.getShopId(), ignored -> new ArrayList<>())
+                        .add(toOpenStatusHours(hour));
             }
         }
-        return byShop;
+        return byShopId;
     }
 
-    static Hours toHours(MobileShopBusinessHour hour) {
+    /** 영업 중 판단({@link MobileShopOpenStatus})에 넘기는 형태로 바꾼다. */
+    static Hours toOpenStatusHours(MobileShopBusinessHour hour) {
         return new Hours(
                 hour.getDayOfWeek(),
                 hour.getOpensAt(),
@@ -118,7 +123,7 @@ class MobileShopSummaryAssembler {
                 hour.isClosed());
     }
 
-    private Map<Long, String> firstImages(List<Long> ids) {
+    private Map<Long, String> findFirstImageUrls(List<Long> ids) {
         Map<Long, String> first = new HashMap<>();
         if (!ids.isEmpty()) {
             for (MobileShopImage image : images.findByShopIdInOrderBySortOrderAscIdAsc(ids)) {
@@ -128,7 +133,7 @@ class MobileShopSummaryAssembler {
         return first;
     }
 
-    private static Integer roundedMeters(BigDecimal distance) {
+    private static Integer roundToMeters(BigDecimal distance) {
         if (distance == null) {
             return null;
         }

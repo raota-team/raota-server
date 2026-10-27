@@ -26,6 +26,6 @@ public class MobileShopBookmarkedController {
             @LoginUser Long userId,
             @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "20") @Min(1) @Max(CursorPage.MAX_SIZE) int size) {
-        return MobileApiResponse.success(shops.bookmarked(userId, cursor, size));
+        return MobileApiResponse.success(shops.listBookmarked(userId, cursor, size));
     }
 }

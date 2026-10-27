@@ -16,7 +16,8 @@ final class MobileRamenLogResultAssembler {
 
     private MobileRamenLogResultAssembler() {}
 
-    static MobileRamenLogDetailResult detail(
+    /** 기록 상세 화면용이다. 댓글 첫 페이지를 함께 담는다. */
+    static MobileRamenLogDetailResult toDetail(
             MobileRamenLog log,
             MobileAuthor author,
             MobileShopRef shop,
@@ -26,8 +27,8 @@ final class MobileRamenLogResultAssembler {
             Long viewerId) {
         return new MobileRamenLogDetailResult(
                 log.getId().toString(),
-                author(author),
-                shop(shop),
+                toAuthor(author),
+                toShop(shop),
                 log.getMenuName(),
                 log.getRamenType(),
                 log.getVisitedAt(),
@@ -36,7 +37,7 @@ final class MobileRamenLogResultAssembler {
                 log.getTasteNoteCodes(),
                 log.getRevisitIntention(),
                 log.getVisibility(),
-                scores(log),
+                toScores(log),
                 log.getLikeCount(),
                 log.getCommentCount(),
                 liked,
@@ -47,7 +48,8 @@ final class MobileRamenLogResultAssembler {
                 comments.nextCursor());
     }
 
-    static MobileRamenLogSummaryResult summary(
+    /** 피드·내 기록 목록의 카드용이다. */
+    static MobileRamenLogSummaryResult toSummary(
             MobileRamenLog log,
             MobileAuthor author,
             MobileShopRef shop,
@@ -56,8 +58,8 @@ final class MobileRamenLogResultAssembler {
             Long viewerId) {
         return new MobileRamenLogSummaryResult(
                 log.getId().toString(),
-                author(author),
-                shop(shop),
+                toAuthor(author),
+                toShop(shop),
                 log.getMenuName(),
                 log.getRamenType(),
                 log.getVisitedAt(),
@@ -66,7 +68,7 @@ final class MobileRamenLogResultAssembler {
                 log.getTasteNoteCodes(),
                 log.getRevisitIntention(),
                 log.getVisibility(),
-                scores(log),
+                toScores(log),
                 log.getLikeCount(),
                 log.getCommentCount(),
                 liked,
@@ -74,36 +76,38 @@ final class MobileRamenLogResultAssembler {
                 log.getCreatedAt());
     }
 
-    static MobileRamenLogSummaryItemResult summaryItem(MobileRamenLog log, MobileShopRef shop) {
+    /** 취향 결산에 쓰는 가벼운 기록 항목이다(작성자·사진·본문 없음). */
+    static MobileRamenLogSummaryItemResult toSummaryItem(MobileRamenLog log, MobileShopRef shop) {
         return new MobileRamenLogSummaryItemResult(
                 log.getId().toString(),
                 log.getVisitedAt(),
                 new MobileRamenLogSummaryItemResult.Shop(shop.id().toString(), shop.name(), shop.branchName()),
                 log.getMenuName(),
                 log.getRamenType(),
-                scores(log));
+                toScores(log));
     }
 
-    static MobileRamenLogCommentResult comment(MobileRamenLogComment comment, MobileAuthor author, Long viewerId) {
+    static MobileRamenLogCommentResult toComment(MobileRamenLogComment comment, MobileAuthor author, Long viewerId) {
         return new MobileRamenLogCommentResult(
                 comment.getId().toString(),
                 comment.getRamenLogId().toString(),
-                author(author),
+                toAuthor(author),
                 comment.getContent(),
                 comment.getCreatedAt(),
                 comment.getUserId().equals(viewerId));
     }
 
-    private static MobileRamenLogDetailResult.Author author(MobileAuthor author) {
+    private static MobileRamenLogDetailResult.Author toAuthor(MobileAuthor author) {
         return new MobileRamenLogDetailResult.Author(
                 author.id().toString(), author.nickname(), author.avatarUrl(), author.logCount());
     }
 
-    private static MobileRamenLogDetailResult.Shop shop(MobileShopRef shop) {
+    private static MobileRamenLogDetailResult.Shop toShop(MobileShopRef shop) {
         return new MobileRamenLogDetailResult.Shop(shop.id().toString(), shop.name(), shop.branchName(), shop.region());
     }
 
-    private static MobileRamenLogDetailResult.Scores scores(MobileRamenLog log) {
+    /** 점수가 없는 기록(v1에서 옮긴 기록)은 {@code null}이다. */
+    private static MobileRamenLogDetailResult.Scores toScores(MobileRamenLog log) {
         if (log.getSatisfactionScore() == null) {
             return null;
         }

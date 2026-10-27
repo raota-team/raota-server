@@ -118,7 +118,7 @@ public class MobileRamenLogQueryService {
         }
         Map<Long, MobileShopRef> shopRefs = shopRefs(newest);
         return newest.stream()
-                .map(log -> MobileRamenLogResultAssembler.summaryItem(log, requiredShop(shopRefs, log.getShopId())))
+                .map(log -> MobileRamenLogResultAssembler.toSummaryItem(log, requiredShop(shopRefs, log.getShopId())))
                 .toList();
     }
 
@@ -140,7 +140,7 @@ public class MobileRamenLogQueryService {
         }
         Set<Long> liked = likedLogIds(viewerId, ids);
         List<MobileRamenLogSummaryResult> items = page.items().stream()
-                .map(log -> MobileRamenLogResultAssembler.summary(
+                .map(log -> MobileRamenLogResultAssembler.toSummary(
                         log,
                         authors.get(log.getUserId()),
                         requiredShop(shopRefs, log.getShopId()),
