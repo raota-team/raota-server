@@ -2,7 +2,7 @@ package com.raota.mobile.account.infrastructure.external;
 
 import com.raota.mobile.account.application.command.SocialCredential;
 import com.raota.mobile.account.application.port.SocialTokenVerifier;
-import com.raota.mobile.account.application.result.SocialIdentity;
+import com.raota.mobile.account.application.result.SocialIdentityResult;
 import com.raota.mobile.account.domain.model.OAuthProvider;
 import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
@@ -32,7 +32,7 @@ public class KakaoAccessTokenVerifier implements SocialTokenVerifier {
     }
 
     @Override
-    public SocialIdentity verify(SocialCredential credential) {
+    public SocialIdentityResult verify(SocialCredential credential) {
         String token = credential.accessToken();
         if (token == null || token.isBlank()) {
             throw new MobileException(MobileErrorCode.VALIDATION_ERROR, "Kakao 액세스 토큰이 필요합니다.");
@@ -60,7 +60,7 @@ public class KakaoAccessTokenVerifier implements SocialTokenVerifier {
                     || profile.get("id").isNull()) {
                 throw invalidCredential();
             }
-            return new SocialIdentity(
+            return new SocialIdentityResult(
                     provider(), profile.get("id").asString(), verifiedEmail(profile.get("kakao_account")));
         } catch (RestClientResponseException exception) {
             if (exception.getStatusCode().is4xxClientError()) {

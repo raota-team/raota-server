@@ -1,7 +1,7 @@
 package com.raota.mobile.shop.application.service;
 
 import com.raota.mobile.shop.application.port.MobileShopBookmarkPort;
-import com.raota.mobile.shop.application.result.MobileShopSummary;
+import com.raota.mobile.shop.application.result.MobileShopSummaryResult;
 import com.raota.mobile.shop.domain.model.MobileShop;
 import com.raota.mobile.shop.domain.model.MobileShopBusinessHour;
 import com.raota.mobile.shop.domain.model.MobileShopImage;
@@ -44,13 +44,13 @@ class MobileShopSummaries {
     private final MobileShopOpenStatus openStatus;
 
     /** 영업시간과 북마크 여부까지 읽어 받은 순서대로 요약한다. 거리가 없는 매장은 {@code distances}에 넣지 않는다. */
-    List<MobileShopSummary> load(Long userId, List<MobileShop> ordered, Map<Long, BigDecimal> distances) {
+    List<MobileShopSummaryResult> load(Long userId, List<MobileShop> ordered, Map<Long, BigDecimal> distances) {
         List<Long> ids = ordered.stream().map(MobileShop::getId).toList();
         return summarize(ordered, hoursByShop(ids), bookmarks.bookmarkedShopIds(userId, ids), distances);
     }
 
     /** 받은 순서대로 요약한다. 첫 사진만 여기서 읽는다. */
-    List<MobileShopSummary> summarize(
+    List<MobileShopSummaryResult> summarize(
             List<MobileShop> ordered,
             Map<Long, List<Hours>> hoursByShop,
             Set<Long> bookmarkedIds,
@@ -67,9 +67,9 @@ class MobileShopSummaries {
                 .toList();
     }
 
-    MobileShopSummary summary(
+    MobileShopSummaryResult summary(
             MobileShop shop, String imageUrl, List<Hours> shopHours, BigDecimal distance, boolean bookmarked) {
-        return new MobileShopSummary(
+        return new MobileShopSummaryResult(
                 shop.getId().toString(),
                 shop.getName(),
                 shop.getBranchName(),

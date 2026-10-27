@@ -3,9 +3,9 @@ package com.raota.mobile.ramenlog.application.service;
 import com.raota.mobile.account.application.facade.MobileAccountRamenLogFacade.MobileAuthor;
 import com.raota.mobile.common.cursor.CursorPage;
 import com.raota.mobile.ramenlog.application.result.MobileRamenLogCommentResult;
-import com.raota.mobile.ramenlog.application.result.MobileRamenLogDetail;
-import com.raota.mobile.ramenlog.application.result.MobileRamenLogSummary;
-import com.raota.mobile.ramenlog.application.result.MobileRamenLogSummaryItem;
+import com.raota.mobile.ramenlog.application.result.MobileRamenLogDetailResult;
+import com.raota.mobile.ramenlog.application.result.MobileRamenLogSummaryItemResult;
+import com.raota.mobile.ramenlog.application.result.MobileRamenLogSummaryResult;
 import com.raota.mobile.ramenlog.domain.model.MobileRamenLog;
 import com.raota.mobile.ramenlog.domain.model.MobileRamenLogComment;
 import com.raota.mobile.shop.application.facade.MobileShopRamenLogFacade.MobileShopRef;
@@ -16,7 +16,7 @@ final class MobileRamenLogViews {
 
     private MobileRamenLogViews() {}
 
-    static MobileRamenLogDetail detail(
+    static MobileRamenLogDetailResult detail(
             MobileRamenLog log,
             MobileAuthor author,
             MobileShopRef shop,
@@ -24,7 +24,7 @@ final class MobileRamenLogViews {
             boolean liked,
             CursorPage<MobileRamenLogCommentResult> comments,
             Long viewerId) {
-        return new MobileRamenLogDetail(
+        return new MobileRamenLogDetailResult(
                 log.getId().toString(),
                 author(author),
                 shop(shop),
@@ -47,14 +47,14 @@ final class MobileRamenLogViews {
                 comments.nextCursor());
     }
 
-    static MobileRamenLogSummary summary(
+    static MobileRamenLogSummaryResult summary(
             MobileRamenLog log,
             MobileAuthor author,
             MobileShopRef shop,
             List<String> imageUrls,
             boolean liked,
             Long viewerId) {
-        return new MobileRamenLogSummary(
+        return new MobileRamenLogSummaryResult(
                 log.getId().toString(),
                 author(author),
                 shop(shop),
@@ -74,11 +74,11 @@ final class MobileRamenLogViews {
                 log.getCreatedAt());
     }
 
-    static MobileRamenLogSummaryItem summaryItem(MobileRamenLog log, MobileShopRef shop) {
-        return new MobileRamenLogSummaryItem(
+    static MobileRamenLogSummaryItemResult summaryItem(MobileRamenLog log, MobileShopRef shop) {
+        return new MobileRamenLogSummaryItemResult(
                 log.getId().toString(),
                 log.getVisitedAt(),
-                new MobileRamenLogSummaryItem.Shop(shop.id().toString(), shop.name(), shop.branchName()),
+                new MobileRamenLogSummaryItemResult.Shop(shop.id().toString(), shop.name(), shop.branchName()),
                 log.getMenuName(),
                 log.getRamenType(),
                 scores(log));
@@ -94,20 +94,20 @@ final class MobileRamenLogViews {
                 comment.getUserId().equals(viewerId));
     }
 
-    private static MobileRamenLogDetail.Author author(MobileAuthor author) {
-        return new MobileRamenLogDetail.Author(
+    private static MobileRamenLogDetailResult.Author author(MobileAuthor author) {
+        return new MobileRamenLogDetailResult.Author(
                 author.id().toString(), author.nickname(), author.avatarUrl(), author.logCount());
     }
 
-    private static MobileRamenLogDetail.Shop shop(MobileShopRef shop) {
-        return new MobileRamenLogDetail.Shop(shop.id().toString(), shop.name(), shop.branchName(), shop.region());
+    private static MobileRamenLogDetailResult.Shop shop(MobileShopRef shop) {
+        return new MobileRamenLogDetailResult.Shop(shop.id().toString(), shop.name(), shop.branchName(), shop.region());
     }
 
-    private static MobileRamenLogDetail.Scores scores(MobileRamenLog log) {
+    private static MobileRamenLogDetailResult.Scores scores(MobileRamenLog log) {
         if (log.getSatisfactionScore() == null) {
             return null;
         }
-        return new MobileRamenLogDetail.Scores(
+        return new MobileRamenLogDetailResult.Scores(
                 log.getSatisfactionScore(),
                 log.getBrothDensityScore(),
                 log.getNoodleFirmnessScore(),

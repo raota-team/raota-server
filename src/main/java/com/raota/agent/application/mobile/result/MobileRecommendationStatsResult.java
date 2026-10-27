@@ -7,7 +7,7 @@ import java.util.List;
  * 관리자 "AI 추천 성과"다. 기간은 한국 날짜(양 끝 포함)이고, 찜·기록은 추천 뒤 {@code attributionDays}일 안에 같은 회원이 그
  * 매장에 남긴 것만 센다.
  */
-public record MobileRecommendationStats(
+public record MobileRecommendationStatsResult(
         LocalDate from,
         LocalDate to,
         int attributionDays,

@@ -9,7 +9,7 @@ import com.raota.mobile.account.application.port.SocialTokenVerifier;
 import com.raota.mobile.account.application.result.MobileLoginResult;
 import com.raota.mobile.account.application.result.MobileMemberResult;
 import com.raota.mobile.account.application.result.MobileTokenResult;
-import com.raota.mobile.account.application.result.SocialIdentity;
+import com.raota.mobile.account.application.result.SocialIdentityResult;
 import com.raota.mobile.account.domain.model.MobileUser;
 import com.raota.mobile.account.domain.model.MobileUserOAuthAccount;
 import com.raota.mobile.account.domain.model.MobileUserStatus;
@@ -73,7 +73,7 @@ public class MobileAuthService {
 
     public MobileLoginResult login(SocialLoginCommand command) {
         SocialTokenVerifier verifier = verifierFor(command.provider());
-        SocialIdentity identity = verifier.verify(command.credential());
+        SocialIdentityResult identity = verifier.verify(command.credential());
         String encryptedAppleToken = null;
         if (identity.provider() == OAuthProvider.APPLE) {
             accounts.findByProviderAndProviderSubject(identity.provider(), identity.subject())
@@ -116,7 +116,8 @@ public class MobileAuthService {
         throw new MobileException(MobileErrorCode.VALIDATION_ERROR, "지원하지 않는 로그인 제공자입니다.");
     }
 
-    private Optional<LoginMember> existingMember(SocialIdentity identity, Instant now, String encryptedAppleToken) {
+    private Optional<LoginMember> existingMember(
+            SocialIdentityResult identity, Instant now, String encryptedAppleToken) {
         return accountTransaction.execute(status -> accounts.findByProviderAndProviderSubject(
                         identity.provider(), identity.subject())
                 .map(account -> {
@@ -130,7 +131,7 @@ public class MobileAuthService {
                 }));
     }
 
-    private LoginMember createOrReadMember(SocialIdentity identity, Instant now, String encryptedAppleToken) {
+    private LoginMember createOrReadMember(SocialIdentityResult identity, Instant now, String encryptedAppleToken) {
         try {
             return accountTransaction.execute(status -> {
                 MobileUser user = users.saveAndFlush(MobileUser.onboarding(identity.email()));

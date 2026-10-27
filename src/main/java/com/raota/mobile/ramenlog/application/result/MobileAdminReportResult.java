@@ -6,7 +6,7 @@ import com.raota.mobile.ramenlog.domain.model.ReportTargetType;
 import java.time.Instant;
 
 /** 관리자 신고 목록의 한 건과 대상 미리보기다. */
-public record MobileAdminReport(
+public record MobileAdminReportResult(
         String id,
         ReportStatus status,
         ReportReason reason,

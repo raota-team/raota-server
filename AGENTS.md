@@ -38,6 +38,7 @@ MySQL 8 + Flyway, Redis, Spring Security(OAuth2 + JWT), Spring AI(Oracle Vector 
 - `tb_v2_shop` ID는 v1 매장 ID와 같다(V29 복사). 관리자가 새로 만드는 v2 매장은 V36부터 10,000,000번대에서 시작해 이후 v1 매장 ID와 겹치지 않는다. AI 추천은 v1 RAG 색인의 매장 ID를 v2 매장으로 읽으므로 이 간격을 줄이지 않는다.
 - 앱 업로드 사진(`v2/` 아래 객체)은 `global.file.cleanup`의 `OrphanImageCleanupScheduler`가 매일 05:10(KST) 정리한다. `StoredImageReferences`를 제공한 접두어(`mobile.ramenlog`: `v2/ramen-logs/`, `mobile.account`: `v2/profiles/`)만 보고, 마지막 수정 뒤 `app.file.orphan-cleanup.retention`(기본 7일)이 지났으며 그 기여자가 참조한다고 답하지 않은 객체를 지운다. 이 접두어의 사진 주소를 새 테이블·컬럼에 저장하게 되면 해당 기여자의 참조 쿼리에 같이 넣는다. 넣지 않으면 그 사진은 7일 뒤 지워진다.
 - v2 응답 JSON: ID 필드는 `String`, 시각은 `Instant`(UTC ISO-8601, 끝에 `Z`), 날짜는 `LocalDate`(`YYYY-MM-DD`). v2 응답에 `LocalDateTime`은 쓰지 않는다(운영 JVM이 `Asia/Seoul`이라 KST 표시 없는 값이 나간다). null 필드는 생략하지 않는다. 전역 Jackson·JVM 타임존 설정은 v1에 영향을 주므로 바꾸지 않는다.
+- v2 DTO 이름: 서비스·포트가 돌려주는 타입은 `application/result`에 두고 `~Result`로 끝낸다(컨트롤러가 그대로 응답 JSON으로 내보낸다). 요청 바인딩은 `presentation/request`의 `~Request`다. `~Response`는 API 응답 모양이 결과와 달라 컨트롤러에서 옮겨 담아야 할 때만 `presentation/response`에 만든다. 클래스 이름을 바꿔도 JSON 필드는 바뀌지 않는다.
 - v2 코드(`com.raota.mobile`, 테스트 포함)에서는 삼항 연산자(`a ? b : c`)를 쓰지 않는다. `if` 문, `switch` 식 또는 작은 메서드로 쓴다. Checkstyle `AvoidInlineConditionals`(`config/checkstyle/checkstyle.xml`)가 `mobile` 패키지만 검사한다.
 
 ## API 접근 정책 (fail-closed)

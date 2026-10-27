@@ -6,7 +6,7 @@ import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
 import com.raota.mobile.ramenlog.application.command.MobileCreateRamenLogCommand;
 import com.raota.mobile.ramenlog.application.command.MobileUpdateRamenLogCommand;
-import com.raota.mobile.ramenlog.application.result.MobileRamenLogDetail;
+import com.raota.mobile.ramenlog.application.result.MobileRamenLogDetailResult;
 import com.raota.mobile.ramenlog.domain.model.MobileRamenLog;
 import com.raota.mobile.ramenlog.domain.model.MobileRamenLogImage;
 import com.raota.mobile.ramenlog.domain.model.MobileTasteNote;
@@ -80,7 +80,7 @@ public class MobileRamenLogService {
         this.createTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
 
-    public MobileRamenLogDetail create(Long userId, String key, MobileCreateRamenLogCommand command) {
+    public MobileRamenLogDetailResult create(Long userId, String key, MobileCreateRamenLogCommand command) {
         MobileRamenLog previous =
                 logs.findByUserIdAndIdempotencyKey(userId, key).orElse(null);
         if (previous != null) {
@@ -126,7 +126,7 @@ public class MobileRamenLogService {
     }
 
     @Transactional(readOnly = true)
-    public MobileRamenLogDetail detail(Long logId, Long viewerId) {
+    public MobileRamenLogDetailResult detail(Long logId, Long viewerId) {
         MobileRamenLog log = existing(logId);
         MobileAuthor author = author(log.getUserId());
         if (!log.visibleTo(viewerId) || !author.active()) {
@@ -136,7 +136,7 @@ public class MobileRamenLogService {
     }
 
     @Transactional
-    public MobileRamenLogDetail update(Long logId, Long userId, MobileUpdateRamenLogCommand command) {
+    public MobileRamenLogDetailResult update(Long logId, Long userId, MobileUpdateRamenLogCommand command) {
         MobileRamenLog log = existingForUpdate(logId);
         requireAuthor(log, userId);
         if (command.visitedAt() != null) {
@@ -193,12 +193,12 @@ public class MobileRamenLogService {
         }
     }
 
-    private MobileRamenLogDetail ownDetail(Long logId, Long userId) {
+    private MobileRamenLogDetailResult ownDetail(Long logId, Long userId) {
         MobileRamenLog log = logs.findById(logId).orElseThrow(this::notFound);
         return response(log, author(log.getUserId()), userId);
     }
 
-    private MobileRamenLogDetail response(MobileRamenLog log, MobileAuthor author, Long viewerId) {
+    private MobileRamenLogDetailResult response(MobileRamenLog log, MobileAuthor author, Long viewerId) {
         MobileShopRef shop = shops.findShopRefs(List.of(log.getShopId())).get(log.getShopId());
         if (shop == null) {
             throw new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "매장을 찾을 수 없습니다.");

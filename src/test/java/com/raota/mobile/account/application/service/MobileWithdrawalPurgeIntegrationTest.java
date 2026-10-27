@@ -12,7 +12,7 @@ import com.raota.mobile.account.application.command.SocialLoginCommand;
 import com.raota.mobile.account.application.port.AppleTokenClient;
 import com.raota.mobile.account.application.port.ProviderTokenCipher;
 import com.raota.mobile.account.application.port.RefreshTokenStore;
-import com.raota.mobile.account.application.result.SocialIdentity;
+import com.raota.mobile.account.application.result.SocialIdentityResult;
 import com.raota.mobile.account.domain.model.ConsentType;
 import com.raota.mobile.account.domain.model.MobileUser;
 import com.raota.mobile.account.domain.model.MobileUserConsent;
@@ -86,7 +86,7 @@ class MobileWithdrawalPurgeIntegrationTest extends BaseIntegrationTest {
         subject = UUID.randomUUID().toString();
         when(kakaoVerifier.provider()).thenReturn(OAuthProvider.KAKAO);
         when(kakaoVerifier.verify(any(SocialCredential.class)))
-                .thenAnswer(invocation -> new SocialIdentity(OAuthProvider.KAKAO, subject, "new@example.com"));
+                .thenAnswer(invocation -> new SocialIdentityResult(OAuthProvider.KAKAO, subject, "new@example.com"));
     }
 
     @AfterEach

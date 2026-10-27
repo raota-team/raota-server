@@ -1,7 +1,7 @@
 package com.raota.mobile.shop.application.facade;
 
 import com.raota.mobile.shop.application.port.MobileShopBookmarkPort;
-import com.raota.mobile.shop.application.result.MobileShopSummary;
+import com.raota.mobile.shop.application.result.MobileShopSummaryResult;
 import com.raota.mobile.shop.application.service.MobileShopRecommendationQueryService;
 import com.raota.mobile.shop.domain.model.MobileShop;
 import com.raota.mobile.shop.domain.model.MobileShopServicePerk;
@@ -45,7 +45,7 @@ public class MobileShopAgentFacade {
     }
 
     /** 순위대로 받은 매장 ID 중 추천해도 되는 매장을 최대 {@code limit}개 요약한다. 좌표가 오면 거리를 채운다. */
-    public List<MobileShopSummary> recommendable(
+    public List<MobileShopSummaryResult> recommendable(
             Long viewerId, List<Long> rankedShopIds, BigDecimal latitude, BigDecimal longitude, int limit) {
         if (rankedShopIds.isEmpty()) {
             return List.of();
@@ -54,7 +54,7 @@ public class MobileShopAgentFacade {
     }
 
     /** 라멘 종류(앱 종류 값 중 하나), 없으면 태그 키워드로 추천해도 되는 매장 중 조회수 1위를 고른다. */
-    public Optional<MobileShopSummary> mostPopular(Long viewerId, String ramenType, String tagKeyword) {
+    public Optional<MobileShopSummaryResult> mostPopular(Long viewerId, String ramenType, String tagKeyword) {
         return shops.mostPopular(viewerId, ramenType, tagKeyword);
     }
 

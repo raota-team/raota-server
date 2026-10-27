@@ -9,8 +9,8 @@ import com.raota.mobile.shop.application.port.MobileShopBookmarkPort.SavedShop;
 import com.raota.mobile.shop.application.port.MobileShopSearchPort;
 import com.raota.mobile.shop.application.port.MobileShopSearchPort.RankedShop;
 import com.raota.mobile.shop.application.query.MobileShopSearchCondition;
-import com.raota.mobile.shop.application.result.MobileShopDetail;
-import com.raota.mobile.shop.application.result.MobileShopSummary;
+import com.raota.mobile.shop.application.result.MobileShopDetailResult;
+import com.raota.mobile.shop.application.result.MobileShopSummaryResult;
 import com.raota.mobile.shop.domain.model.MobileShop;
 import com.raota.mobile.shop.domain.model.MobileShopBusinessHour;
 import com.raota.mobile.shop.domain.model.MobileShopImage;
@@ -51,7 +51,7 @@ public class MobileShopQueryService {
     private final MobileShopSummaries summaries;
 
     @Transactional(readOnly = true)
-    public CursorPage<MobileShopSummary> list(
+    public CursorPage<MobileShopSummaryResult> list(
             Long userId, MobileShopSearchCondition condition, String rawCursor, int size) {
         Cursor cursor = Cursor.parse(rawCursor).orElse(null);
         // 확인된 영업시간은 요일·휴식에 따라 달라져 SQL 정렬 이후 일괄 계산한다.
@@ -71,7 +71,7 @@ public class MobileShopQueryService {
      * 공개 매장이 수백 곳이라 한 번에 보낸다.
      */
     @Transactional(readOnly = true)
-    public List<MobileShopSummary> all(Long userId, MobileShopSearchCondition condition) {
+    public List<MobileShopSummaryResult> all(Long userId, MobileShopSearchCondition condition) {
         Ranked ranked = rank(condition, null, null);
         return summarize(userId, ranked.rows(), ranked);
     }
@@ -99,7 +99,7 @@ public class MobileShopQueryService {
         return new Ranked(rows, byId, byHours);
     }
 
-    private List<MobileShopSummary> summarize(Long userId, List<RankedShop> rows, Ranked ranked) {
+    private List<MobileShopSummaryResult> summarize(Long userId, List<RankedShop> rows, Ranked ranked) {
         List<Long> ids = rows.stream().map(RankedShop::id).toList();
         Map<Long, BigDecimal> distances = new HashMap<>();
         for (RankedShop row : rows) {
@@ -118,7 +118,7 @@ public class MobileShopQueryService {
 
     /** 상세를 열면 조회수를 원자적으로 하나 올린다. */
     @Transactional
-    public MobileShopDetail detail(Long userId, Long shopId) {
+    public MobileShopDetailResult detail(Long userId, Long shopId) {
         MobileShop shop = shops.findByIdAndPublishedTrueAndDeletedAtIsNull(shopId)
                 .orElseThrow(() -> new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "매장을 찾을 수 없습니다."));
         List<MobileShopImage> shopImages = images.findByShopIdInOrderBySortOrderAscIdAsc(List.of(shopId));
@@ -127,26 +127,26 @@ public class MobileShopQueryService {
         if (!shopImages.isEmpty()) {
             imageUrl = shopImages.getFirst().getUrl();
         }
-        MobileShopSummary summary = summaries.summary(
+        MobileShopSummaryResult summary = summaries.summary(
                 shop,
                 imageUrl,
                 shopHours.stream().map(MobileShopSummaries::toHours).toList(),
                 null,
                 bookmarks.bookmarkedShopIds(userId, List.of(shopId)).contains(shopId));
-        MobileShopDetail detail =
-                MobileShopDetail.of(summary, shop, shopImages, shopHours, perks.findByShopIdOrderByIdAsc(shopId));
+        MobileShopDetailResult detail =
+                MobileShopDetailResult.of(summary, shop, shopImages, shopHours, perks.findByShopIdOrderByIdAsc(shopId));
         shops.incrementViewCount(shopId);
         return detail;
     }
 
     /** 북마크한 매장은 모두 저장된 상태라 북마크 여부를 다시 읽지 않는다. */
     @Transactional(readOnly = true)
-    public CursorPage<MobileShopSummary> bookmarked(Long userId, String rawCursor, int size) {
+    public CursorPage<MobileShopSummaryResult> bookmarked(Long userId, String rawCursor, int size) {
         List<SavedShop> saved = bookmarks.saved(userId, Cursor.parse(rawCursor).orElse(null), size + 1);
         CursorPage<SavedShop> page = CursorPage.of(saved, size, SavedShop::position);
         List<Long> ids = page.items().stream().map(SavedShop::shopId).toList();
         Map<Long, MobileShop> byId = summaries.byId(ids);
-        List<MobileShopSummary> items = summaries.summarize(
+        List<MobileShopSummaryResult> items = summaries.summarize(
                 ids.stream().map(byId::get).toList(), summaries.hoursByShop(ids), Set.copyOf(ids), Map.of());
         return new CursorPage<>(items, page.nextCursor(), page.hasNext());
     }

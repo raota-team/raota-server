@@ -2,8 +2,8 @@ package com.raota.mobile.ramenlog.presentation.admin;
 
 import com.raota.mobile.common.page.OffsetPage;
 import com.raota.mobile.common.presentation.response.MobileApiResponse;
-import com.raota.mobile.ramenlog.application.result.MobileAdminReport;
 import com.raota.mobile.ramenlog.application.result.MobileAdminReportResolutionResult;
+import com.raota.mobile.ramenlog.application.result.MobileAdminReportResult;
 import com.raota.mobile.ramenlog.application.service.MobileContentReportAdminService;
 import com.raota.mobile.ramenlog.domain.model.ReportStatus;
 import com.raota.mobile.ramenlog.presentation.admin.request.MobileResolveReportRequest;
@@ -31,7 +31,7 @@ public class MobileContentReportAdminController {
     private final MobileContentReportAdminService reports;
 
     @GetMapping
-    public MobileApiResponse<OffsetPage<MobileAdminReport>> list(
+    public MobileApiResponse<OffsetPage<MobileAdminReportResult>> list(
             @RequestParam(defaultValue = "OPEN") ReportStatus status,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(OffsetPage.MAX_SIZE) int size) {

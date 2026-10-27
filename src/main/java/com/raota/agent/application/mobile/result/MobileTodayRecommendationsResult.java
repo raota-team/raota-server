@@ -1,6 +1,6 @@
 package com.raota.agent.application.mobile.result;
 
-import com.raota.mobile.shop.application.result.MobileShopSummary;
+import com.raota.mobile.shop.application.result.MobileShopSummaryResult;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +14,7 @@ public record MobileTodayRecommendationsResult(int dailyLimit, int remaining, Li
     public record Ticket(
             String recommendationId,
             Instant createdAt,
-            List<MobileShopSummary> shops,
+            List<MobileShopSummaryResult> shops,
             List<String> appliedConditions,
             Map<String, String> reasons) {}
 }

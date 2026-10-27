@@ -3,8 +3,8 @@ package com.raota.mobile.shop.presentation;
 import com.raota.mobile.common.cursor.CursorPage;
 import com.raota.mobile.common.presentation.LoginUser;
 import com.raota.mobile.common.presentation.response.MobileApiResponse;
-import com.raota.mobile.shop.application.result.MobileShopDetail;
-import com.raota.mobile.shop.application.result.MobileShopSummary;
+import com.raota.mobile.shop.application.result.MobileShopDetailResult;
+import com.raota.mobile.shop.application.result.MobileShopSummaryResult;
 import com.raota.mobile.shop.application.service.MobileShopQueryService;
 import com.raota.mobile.shop.presentation.request.MobileShopSearchRequest;
 import jakarta.validation.constraints.Max;
@@ -27,7 +27,7 @@ public class MobileShopController {
     private final MobileShopQueryService shops;
 
     @GetMapping
-    public MobileApiResponse<CursorPage<MobileShopSummary>> list(
+    public MobileApiResponse<CursorPage<MobileShopSummaryResult>> list(
             @LoginUser(required = false) Long userId,
             @ModelAttribute MobileShopSearchRequest search,
             @RequestParam(required = false) String cursor,
@@ -37,13 +37,13 @@ public class MobileShopController {
 
     /** 지도 탭의 핀과 목록. 조건은 목록과 같고 페이지 없이 맞는 매장을 모두 준다. */
     @GetMapping("/map")
-    public MobileApiResponse<List<MobileShopSummary>> map(
+    public MobileApiResponse<List<MobileShopSummaryResult>> map(
             @LoginUser(required = false) Long userId, @ModelAttribute MobileShopSearchRequest search) {
         return MobileApiResponse.success(shops.all(userId, search.toCondition()));
     }
 
     @GetMapping("/{shopId}")
-    public MobileApiResponse<MobileShopDetail> detail(
+    public MobileApiResponse<MobileShopDetailResult> detail(
             @LoginUser(required = false) Long userId, @PathVariable Long shopId) {
         return MobileApiResponse.success(shops.detail(userId, shopId));
     }

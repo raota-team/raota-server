@@ -2,7 +2,7 @@ package com.raota.mobile.account.infrastructure.external;
 
 import com.raota.mobile.account.application.command.SocialCredential;
 import com.raota.mobile.account.application.port.SocialTokenVerifier;
-import com.raota.mobile.account.application.result.SocialIdentity;
+import com.raota.mobile.account.application.result.SocialIdentityResult;
 import com.raota.mobile.account.domain.model.OAuthProvider;
 import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
@@ -56,7 +56,7 @@ public class AppleIdentityTokenVerifier implements SocialTokenVerifier {
     }
 
     @Override
-    public SocialIdentity verify(SocialCredential credential) {
+    public SocialIdentityResult verify(SocialCredential credential) {
         if (credential.idToken() == null
                 || credential.idToken().isBlank()
                 || credential.nonce() == null
@@ -73,7 +73,7 @@ public class AppleIdentityTokenVerifier implements SocialTokenVerifier {
             if (Boolean.TRUE.equals(emailVerified) || "true".equals(emailVerified)) {
                 email = jwt.getClaimAsString("email");
             }
-            return new SocialIdentity(provider(), jwt.getSubject(), email);
+            return new SocialIdentityResult(provider(), jwt.getSubject(), email);
         } catch (JwtException exception) {
             throw invalidCredential();
         }

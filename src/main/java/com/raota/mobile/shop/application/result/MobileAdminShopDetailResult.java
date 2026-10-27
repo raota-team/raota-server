@@ -8,7 +8,7 @@ import java.time.Instant;
 import java.util.List;
 
 /** 관리자 매장 상세다. 편집 필드는 수정 요청 본문과 같은 이름이고, AI 요약과 집계는 읽기 전용이다. */
-public record MobileAdminShopDetail(
+public record MobileAdminShopDetailResult(
         String id,
         String name,
         String branchName,

@@ -6,8 +6,8 @@ import com.raota.mobile.common.page.OffsetPage;
 import com.raota.mobile.shop.application.command.MobileAdminBusinessHourCommand;
 import com.raota.mobile.shop.application.command.MobileAdminServicePerkCommand;
 import com.raota.mobile.shop.application.command.MobileAdminShopCommand;
-import com.raota.mobile.shop.application.result.MobileAdminShopDetail;
-import com.raota.mobile.shop.application.result.MobileAdminShopRow;
+import com.raota.mobile.shop.application.result.MobileAdminShopDetailResult;
+import com.raota.mobile.shop.application.result.MobileAdminShopRowResult;
 import com.raota.mobile.shop.application.result.MobileShopBusinessHourResult;
 import com.raota.mobile.shop.domain.model.MobileShop;
 import com.raota.mobile.shop.domain.model.MobileShopBusinessHour;
@@ -54,7 +54,7 @@ public class MobileShopAdminService {
     private final Clock clock;
 
     @Transactional(readOnly = true)
-    public OffsetPage<MobileAdminShopRow> list(String keyword, Boolean published, int page, int size) {
+    public OffsetPage<MobileAdminShopRowResult> list(String keyword, Boolean published, int page, int size) {
         var found = shops.findLiveForAdmin(
                 blankToNull(keyword), published, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id")));
         List<Long> ids = found.getContent().stream().map(MobileShop::getId).toList();
@@ -66,12 +66,12 @@ public class MobileShopAdminService {
     }
 
     @Transactional(readOnly = true)
-    public MobileAdminShopDetail detail(Long shopId) {
+    public MobileAdminShopDetailResult detail(Long shopId) {
         return detail(live(shopId));
     }
 
     @Transactional
-    public MobileAdminShopDetail create(MobileAdminShopCommand command) {
+    public MobileAdminShopDetailResult create(MobileAdminShopCommand command) {
         validate(command.profile());
         MobileShop shop = shops.saveAndFlush(MobileShop.create(command.profile(), now()));
         saveImages(shop.getId(), command.imageUrls(), Map.of());
@@ -79,7 +79,7 @@ public class MobileShopAdminService {
     }
 
     @Transactional
-    public MobileAdminShopDetail update(Long shopId, MobileAdminShopCommand command) {
+    public MobileAdminShopDetailResult update(Long shopId, MobileAdminShopCommand command) {
         validate(command.profile());
         MobileShop shop = liveForUpdate(shopId);
         shop.update(command.profile(), now());
@@ -94,7 +94,8 @@ public class MobileShopAdminService {
 
     /** 저장하면 영업시간을 지금 확인한 것으로 기록한다. 빈 목록이면 영업시간 정보를 지운다. */
     @Transactional
-    public MobileAdminShopDetail replaceBusinessHours(Long shopId, List<MobileAdminBusinessHourCommand> commands) {
+    public MobileAdminShopDetailResult replaceBusinessHours(
+            Long shopId, List<MobileAdminBusinessHourCommand> commands) {
         validateHours(commands);
         MobileShop shop = liveForUpdate(shopId);
         hours.deleteByShopId(shopId);
@@ -114,7 +115,7 @@ public class MobileShopAdminService {
     }
 
     @Transactional
-    public MobileAdminShopDetail replaceServicePerks(Long shopId, List<MobileAdminServicePerkCommand> commands) {
+    public MobileAdminShopDetailResult replaceServicePerks(Long shopId, List<MobileAdminServicePerkCommand> commands) {
         validatePerks(commands);
         MobileShop shop = liveForUpdate(shopId);
         Instant now = now();
@@ -127,7 +128,7 @@ public class MobileShopAdminService {
     }
 
     @Transactional
-    public MobileAdminShopDetail changeVisibility(Long shopId, boolean published) {
+    public MobileAdminShopDetailResult changeVisibility(Long shopId, boolean published) {
         MobileShop shop = live(shopId);
         shop.changeVisibility(published, now());
         return detail(shop);
@@ -195,13 +196,13 @@ public class MobileShopAdminService {
         return shops.findLiveForUpdate(shopId).orElseThrow(this::notFound);
     }
 
-    private MobileAdminShopDetail detail(MobileShop shop) {
+    private MobileAdminShopDetailResult detail(MobileShop shop) {
         List<Long> ids = List.of(shop.getId());
         List<String> imageUrls = images.findByShopIdInOrderBySortOrderAscIdAsc(ids).stream()
                 .map(MobileShopImage::getUrl)
                 .toList();
-        List<MobileAdminShopDetail.Hour> shopHours = hours.findByShopIdInOrderByDayOfWeekAsc(ids).stream()
-                .map(hour -> new MobileAdminShopDetail.Hour(
+        List<MobileAdminShopDetailResult.Hour> shopHours = hours.findByShopIdInOrderByDayOfWeekAsc(ids).stream()
+                .map(hour -> new MobileAdminShopDetailResult.Hour(
                         hour.getDayOfWeek(),
                         hour.isClosed(),
                         MobileShopBusinessHourResult.clockTime(hour.getOpensAt()),
@@ -210,15 +211,15 @@ public class MobileShopAdminService {
                         MobileShopBusinessHourResult.clockTime(hour.getBreakEnd()),
                         MobileShopBusinessHourResult.clockTime(hour.getLastOrderAt())))
                 .toList();
-        List<MobileAdminShopDetail.Perk> shopPerks = perks.findByShopIdOrderByIdAsc(shop.getId()).stream()
-                .map(perk -> new MobileAdminShopDetail.Perk(
+        List<MobileAdminShopDetailResult.Perk> shopPerks = perks.findByShopIdOrderByIdAsc(shop.getId()).stream()
+                .map(perk -> new MobileAdminShopDetailResult.Perk(
                         perk.getPerkType(),
                         perk.getStatus(),
                         perk.getPrice(),
                         perk.getConditionText(),
                         perk.getVerifiedAt()))
                 .toList();
-        return new MobileAdminShopDetail(
+        return new MobileAdminShopDetailResult(
                 String.valueOf(shop.getId()),
                 shop.getName(),
                 shop.getBranchName(),
@@ -255,8 +256,8 @@ public class MobileShopAdminService {
                 shop.getUpdatedAt());
     }
 
-    private static MobileAdminShopRow row(MobileShop shop, String thumbnailUrl) {
-        return new MobileAdminShopRow(
+    private static MobileAdminShopRowResult row(MobileShop shop, String thumbnailUrl) {
+        return new MobileAdminShopRowResult(
                 String.valueOf(shop.getId()),
                 shop.getName(),
                 shop.getBranchName(),

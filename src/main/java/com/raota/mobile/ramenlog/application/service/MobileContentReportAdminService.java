@@ -6,10 +6,10 @@ import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
 import com.raota.mobile.common.page.OffsetPage;
 import com.raota.mobile.ramenlog.application.command.MobileReportResolution;
-import com.raota.mobile.ramenlog.application.result.MobileAdminReport;
-import com.raota.mobile.ramenlog.application.result.MobileAdminReport.Person;
-import com.raota.mobile.ramenlog.application.result.MobileAdminReport.Target;
 import com.raota.mobile.ramenlog.application.result.MobileAdminReportResolutionResult;
+import com.raota.mobile.ramenlog.application.result.MobileAdminReportResult;
+import com.raota.mobile.ramenlog.application.result.MobileAdminReportResult.Person;
+import com.raota.mobile.ramenlog.application.result.MobileAdminReportResult.Target;
 import com.raota.mobile.ramenlog.domain.model.MobileContentReport;
 import com.raota.mobile.ramenlog.domain.model.MobileRamenLog;
 import com.raota.mobile.ramenlog.domain.model.MobileRamenLogComment;
@@ -62,7 +62,7 @@ public class MobileContentReportAdminService {
 
     /** 열린 신고는 오래된 것부터(24시간 안 처리), 닫힌 신고는 최근 처리한 것부터다. */
     @Transactional(readOnly = true)
-    public OffsetPage<MobileAdminReport> list(ReportStatus status, int page, int size) {
+    public OffsetPage<MobileAdminReportResult> list(ReportStatus status, int page, int size) {
         Sort sort = Sort.by(Sort.Order.desc("resolvedAt"), Sort.Order.desc("id"));
         if (status == ReportStatus.OPEN) {
             sort = Sort.by(Sort.Order.asc("createdAt"), Sort.Order.asc("id"));
@@ -144,7 +144,7 @@ public class MobileContentReportAdminService {
         return counts;
     }
 
-    private MobileAdminReport view(MobileContentReport report, Previews previews) {
+    private MobileAdminReportResult view(MobileContentReport report, Previews previews) {
         Long targetId = report.getTargetId();
         Target target = switch (report.getTargetType()) {
             case RAMEN_LOG -> logTarget(targetId, previews);
@@ -154,7 +154,7 @@ public class MobileContentReportAdminService {
             case RAMEN_LOG -> previews.openLogReports().getOrDefault(targetId, 0);
             case RAMEN_LOG_COMMENT -> previews.openCommentReports().getOrDefault(targetId, 0);
         };
-        return new MobileAdminReport(
+        return new MobileAdminReportResult(
                 String.valueOf(report.getId()),
                 report.getStatus(),
                 report.getReason(),

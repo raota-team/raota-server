@@ -3,8 +3,8 @@ package com.raota.mobile.ramenlog.presentation;
 import com.raota.mobile.common.cursor.CursorPage;
 import com.raota.mobile.common.presentation.LoginUser;
 import com.raota.mobile.common.presentation.response.MobileApiResponse;
-import com.raota.mobile.ramenlog.application.result.MobileRamenLogSummary;
-import com.raota.mobile.ramenlog.application.result.MobileRamenLogSummaryItem;
+import com.raota.mobile.ramenlog.application.result.MobileRamenLogSummaryItemResult;
+import com.raota.mobile.ramenlog.application.result.MobileRamenLogSummaryResult;
 import com.raota.mobile.ramenlog.application.service.MobileRamenLogQueryService;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -23,7 +23,7 @@ public class MobileMyRamenLogController {
     private final MobileRamenLogQueryService logs;
 
     @GetMapping
-    public MobileApiResponse<CursorPage<MobileRamenLogSummary>> list(
+    public MobileApiResponse<CursorPage<MobileRamenLogSummaryResult>> list(
             @LoginUser Long userId,
             @RequestParam(required = false) String ramenType,
             @RequestParam(required = false) String cursor,
@@ -32,7 +32,7 @@ public class MobileMyRamenLogController {
     }
 
     @GetMapping("/summary")
-    public MobileApiResponse<List<MobileRamenLogSummaryItem>> summary(@LoginUser Long userId) {
+    public MobileApiResponse<List<MobileRamenLogSummaryItemResult>> summary(@LoginUser Long userId) {
         return MobileApiResponse.success(logs.summary(userId));
     }
 }

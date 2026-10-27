@@ -4,8 +4,8 @@ import com.raota.mobile.common.cursor.CursorPage;
 import com.raota.mobile.common.presentation.LoginUser;
 import com.raota.mobile.common.presentation.response.MobileApiResponse;
 import com.raota.mobile.ramenlog.application.query.MobileRamenLogSort;
-import com.raota.mobile.ramenlog.application.result.MobileRamenLogDetail;
-import com.raota.mobile.ramenlog.application.result.MobileRamenLogSummary;
+import com.raota.mobile.ramenlog.application.result.MobileRamenLogDetailResult;
+import com.raota.mobile.ramenlog.application.result.MobileRamenLogSummaryResult;
 import com.raota.mobile.ramenlog.application.service.MobileRamenLogQueryService;
 import com.raota.mobile.ramenlog.application.service.MobileRamenLogService;
 import com.raota.mobile.ramenlog.presentation.request.MobileCreateRamenLogRequest;
@@ -40,7 +40,7 @@ public class MobileRamenLogController {
     private final MobileRamenLogQueryService queries;
 
     @GetMapping
-    public MobileApiResponse<CursorPage<MobileRamenLogSummary>> feed(
+    public MobileApiResponse<CursorPage<MobileRamenLogSummaryResult>> feed(
             @LoginUser(required = false) Long userId,
             @RequestParam(defaultValue = "LATEST") MobileRamenLogSort sort,
             @RequestParam(required = false) String ramenType,
@@ -51,7 +51,7 @@ public class MobileRamenLogController {
     }
 
     @PostMapping
-    public ResponseEntity<MobileApiResponse<MobileRamenLogDetail>> create(
+    public ResponseEntity<MobileApiResponse<MobileRamenLogDetailResult>> create(
             @LoginUser Long userId,
             @RequestHeader("Idempotency-Key") @NotBlank @Size(max = 64) @Pattern(regexp = "[A-Za-z0-9_-]+") String key,
             @Valid @RequestBody MobileCreateRamenLogRequest request) {
@@ -60,13 +60,13 @@ public class MobileRamenLogController {
     }
 
     @GetMapping("/{logId}")
-    public MobileApiResponse<MobileRamenLogDetail> detail(
+    public MobileApiResponse<MobileRamenLogDetailResult> detail(
             @LoginUser(required = false) Long userId, @PathVariable Long logId) {
         return MobileApiResponse.success(logs.detail(logId, userId));
     }
 
     @PatchMapping("/{logId}")
-    public MobileApiResponse<MobileRamenLogDetail> update(
+    public MobileApiResponse<MobileRamenLogDetailResult> update(
             @LoginUser Long userId, @PathVariable Long logId, @Valid @RequestBody MobileUpdateRamenLogRequest request) {
         return MobileApiResponse.success(logs.update(logId, userId, request.toCommand()));
     }

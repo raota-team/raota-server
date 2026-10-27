@@ -19,7 +19,7 @@ import com.raota.mobile.account.application.command.SocialCredential;
 import com.raota.mobile.account.application.port.AppleTokenClient;
 import com.raota.mobile.account.application.port.ProviderTokenCipher;
 import com.raota.mobile.account.application.port.RefreshTokenStore;
-import com.raota.mobile.account.application.result.SocialIdentity;
+import com.raota.mobile.account.application.result.SocialIdentityResult;
 import com.raota.mobile.account.application.service.MobileMemberService;
 import com.raota.mobile.account.domain.model.MobileUserStatus;
 import com.raota.mobile.account.domain.model.OAuthProvider;
@@ -125,11 +125,11 @@ class MobileAuthIntegrationTest extends BaseIntegrationTest {
         when(googleVerifier.provider()).thenReturn(OAuthProvider.GOOGLE);
         when(appleVerifier.provider()).thenReturn(OAuthProvider.APPLE);
         when(kakaoVerifier.verify(any(SocialCredential.class)))
-                .thenAnswer(invocation -> new SocialIdentity(OAuthProvider.KAKAO, subject, email));
+                .thenAnswer(invocation -> new SocialIdentityResult(OAuthProvider.KAKAO, subject, email));
         when(googleVerifier.verify(any(SocialCredential.class)))
-                .thenAnswer(invocation -> new SocialIdentity(OAuthProvider.GOOGLE, subject, email));
+                .thenAnswer(invocation -> new SocialIdentityResult(OAuthProvider.GOOGLE, subject, email));
         when(appleVerifier.verify(any(SocialCredential.class)))
-                .thenAnswer(invocation -> new SocialIdentity(OAuthProvider.APPLE, subject, email));
+                .thenAnswer(invocation -> new SocialIdentityResult(OAuthProvider.APPLE, subject, email));
         when(appleTokens.exchange(any(String.class), any(String.class))).thenReturn("apple-refresh");
     }
 
@@ -181,7 +181,7 @@ class MobileAuthIntegrationTest extends BaseIntegrationTest {
             if (!verified.await(10, TimeUnit.SECONDS)) {
                 throw new AssertionError("두 로그인 요청이 모두 검증기에 도착해야 합니다.");
             }
-            return new SocialIdentity(OAuthProvider.KAKAO, subject, email);
+            return new SocialIdentityResult(OAuthProvider.KAKAO, subject, email);
         });
 
         try (var executor = Executors.newFixedThreadPool(2)) {
@@ -296,7 +296,7 @@ class MobileAuthIntegrationTest extends BaseIntegrationTest {
             if (credential.idToken() == null || credential.idToken().isBlank()) {
                 throw new MobileException(MobileErrorCode.VALIDATION_ERROR, "Google ID 토큰이 필요합니다.");
             }
-            return new SocialIdentity(OAuthProvider.GOOGLE, subject, email);
+            return new SocialIdentityResult(OAuthProvider.GOOGLE, subject, email);
         });
         mvc.perform(post("/api/v2/auth/oauth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -333,7 +333,7 @@ class MobileAuthIntegrationTest extends BaseIntegrationTest {
             if (!"raw-nonce".equals(credential.nonce()) || !"valid".equals(credential.idToken())) {
                 throw new MobileException(MobileErrorCode.OAUTH_CREDENTIAL_INVALID, "소셜 로그인 정보를 확인할 수 없습니다.");
             }
-            return new SocialIdentity(OAuthProvider.APPLE, subject, email);
+            return new SocialIdentityResult(OAuthProvider.APPLE, subject, email);
         });
         for (Map<String, String> body : List.of(
                 Map.of("provider", "APPLE", "idToken", "valid", "nonce", "wrong-nonce", "authorizationCode", "code"),

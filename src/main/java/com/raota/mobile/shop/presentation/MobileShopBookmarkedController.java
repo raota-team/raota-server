@@ -3,7 +3,7 @@ package com.raota.mobile.shop.presentation;
 import com.raota.mobile.common.cursor.CursorPage;
 import com.raota.mobile.common.presentation.LoginUser;
 import com.raota.mobile.common.presentation.response.MobileApiResponse;
-import com.raota.mobile.shop.application.result.MobileShopSummary;
+import com.raota.mobile.shop.application.result.MobileShopSummaryResult;
 import com.raota.mobile.shop.application.service.MobileShopQueryService;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -22,7 +22,7 @@ public class MobileShopBookmarkedController {
     private final MobileShopQueryService shops;
 
     @GetMapping
-    public MobileApiResponse<CursorPage<MobileShopSummary>> bookmarked(
+    public MobileApiResponse<CursorPage<MobileShopSummaryResult>> bookmarked(
             @LoginUser Long userId,
             @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "20") @Min(1) @Max(CursorPage.MAX_SIZE) int size) {

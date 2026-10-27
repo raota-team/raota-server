@@ -1,6 +1,6 @@
 package com.raota.mobile.shop.application.service;
 
-import com.raota.mobile.shop.application.result.MobileShopSummary;
+import com.raota.mobile.shop.application.result.MobileShopSummaryResult;
 import com.raota.mobile.shop.domain.model.MobileShop;
 import com.raota.mobile.shop.domain.repository.MobileShopRepository;
 import java.math.BigDecimal;
@@ -55,7 +55,7 @@ public class MobileShopRecommendationQueryService {
      * 따른다. 좌표가 오면 거리를 채운다.
      */
     @Transactional(readOnly = true)
-    public List<MobileShopSummary> recommendable(
+    public List<MobileShopSummaryResult> recommendable(
             Long userId, List<Long> rankedIds, BigDecimal latitude, BigDecimal longitude, int limit) {
         Map<Long, MobileShop> byId = summaries.byId(rankedIds);
         List<MobileShop> picked = new ArrayList<>(limit);
@@ -84,7 +84,7 @@ public class MobileShopRecommendationQueryService {
      * 조회수가 가장 많은 매장을 고른다. 조회수가 같으면 ID가 큰 매장이다. 공개 API라 DB에서 1건만 읽는다.
      */
     @Transactional(readOnly = true)
-    public Optional<MobileShopSummary> mostPopular(Long userId, String ramenType, String tagKeyword) {
+    public Optional<MobileShopSummaryResult> mostPopular(Long userId, String ramenType, String tagKeyword) {
         return shops.findMostViewedRecommendableId(ramenType, tagKeyword)
                 .flatMap(shops::findById)
                 .map(shop -> summaries.load(userId, List.of(shop), Map.of()).getFirst());

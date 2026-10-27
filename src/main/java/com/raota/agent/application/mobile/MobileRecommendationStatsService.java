@@ -1,7 +1,7 @@
 package com.raota.agent.application.mobile;
 
-import com.raota.agent.application.mobile.result.MobileRecommendationStats;
-import com.raota.agent.application.mobile.result.MobileRecommendationStats.Row;
+import com.raota.agent.application.mobile.result.MobileRecommendationStatsResult;
+import com.raota.agent.application.mobile.result.MobileRecommendationStatsResult.Row;
 import com.raota.agent.domain.recommendation.model.RecommendationImpression;
 import com.raota.agent.domain.recommendation.repository.MobileRecommendationRunRepository;
 import com.raota.mobile.ramenlog.application.facade.MobileRamenLogAgentFacade;
@@ -58,7 +58,7 @@ public class MobileRecommendationStatsService {
     private final Clock clock;
 
     /** {@code from}·{@code to}가 없으면 오늘(KST)까지 최근 30일이다. 거꾸로이거나 92일을 넘으면 거절한다. */
-    public MobileRecommendationStats stats(LocalDate from, LocalDate to) {
+    public MobileRecommendationStatsResult stats(LocalDate from, LocalDate to) {
         LocalDate end = to;
         if (end == null) {
             end = LocalDate.now(clock.withZone(SEOUL));
@@ -107,7 +107,7 @@ public class MobileRecommendationStatsService {
                 .sorted(Map.Entry.comparingByKey())
                 .map(entry -> entry.getValue().row())
                 .toList();
-        return new MobileRecommendationStats(
+        return new MobileRecommendationStatsResult(
                 start, end, ATTRIBUTION_DAYS, overall.row(), byRuns(byVersion), byRuns(bySoup), ranks);
     }
 

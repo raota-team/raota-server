@@ -6,7 +6,7 @@ import java.time.Instant;
 public record MobileRamenLogCommentResult(
         String id,
         String logId,
-        MobileRamenLogDetail.Author author,
+        MobileRamenLogDetailResult.Author author,
         String content,
         Instant createdAt,
         boolean isMine) {}

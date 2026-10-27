@@ -10,7 +10,7 @@ import java.time.Instant;
 import java.util.List;
 
 /** 한 매장 소개의 모든 확인된 정보와 사진·혜택·요일별 영업시간이다. */
-public record MobileShopDetail(
+public record MobileShopDetailResult(
         String id,
         String name,
         String branchName,
@@ -48,13 +48,13 @@ public record MobileShopDetail(
         Instant aiSummaryGeneratedAt) {
 
     /** 카드 요약({@code summary})에 상세에만 있는 매장 정보·사진·영업시간·혜택을 더한다. 사진은 정렬 순서대로다. */
-    public static MobileShopDetail of(
-            MobileShopSummary summary,
+    public static MobileShopDetailResult of(
+            MobileShopSummaryResult summary,
             MobileShop shop,
             List<MobileShopImage> shopImages,
             List<MobileShopBusinessHour> shopHours,
             List<MobileShopServicePerk> shopPerks) {
-        return new MobileShopDetail(
+        return new MobileShopDetailResult(
                 summary.id(),
                 summary.name(),
                 summary.branchName(),

@@ -11,7 +11,7 @@ import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
 import com.raota.mobile.shop.application.facade.MobileShopAgentFacade;
 import com.raota.mobile.shop.application.facade.MobileShopAgentFacade.MobileShopReasonFacts;
-import com.raota.mobile.shop.application.result.MobileShopSummary;
+import com.raota.mobile.shop.application.result.MobileShopSummaryResult;
 import jakarta.annotation.PreDestroy;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -147,7 +147,7 @@ public class MobileRecommendationService {
         List<Long> candidates = shops.recommendationCandidates(
                 command.soupType(), region, command.latitude(), command.longitude(), limit);
         List<Scored> ranked = rank(candidates, similarities(command.similarityQuery(), candidates), located);
-        List<MobileShopSummary> picked = shops.recommendable(
+        List<MobileShopSummaryResult> picked = shops.recommendable(
                 userId,
                 ranked.stream().map(Scored::shopId).toList(),
                 command.latitude(),
@@ -169,7 +169,7 @@ public class MobileRecommendationService {
             List<Long> shopIds = run.items().stream()
                     .map(MobileRecommendationRun.Item::shopId)
                     .toList();
-            List<MobileShopSummary> picked = shops.recommendable(userId, shopIds, null, null, MAX_SHOPS);
+            List<MobileShopSummaryResult> picked = shops.recommendable(userId, shopIds, null, null, MAX_SHOPS);
             Map<String, String> reasons = new LinkedHashMap<>();
             for (MobileRecommendationRun.Item item : run.items()) {
                 if (item.reason() != null) {
@@ -200,7 +200,7 @@ public class MobileRecommendationService {
      * 고른 매장마다 추천 이유(2~3문장)다. 보여주는 매장의 이유만 남기고, LLM 장애·시간 초과·동시 실행 상한이면 빈 결과다.
      */
     private Map<String, String> reasons(
-            MobileRecommendationCommand command, String region, List<MobileShopSummary> picked, long startedAt) {
+            MobileRecommendationCommand command, String region, List<MobileShopSummaryResult> picked, long startedAt) {
         if (picked.isEmpty()) {
             return Map.of();
         }
@@ -244,11 +244,11 @@ public class MobileRecommendationService {
         return conditions.toString().trim();
     }
 
-    private String reasonContext(List<MobileShopSummary> picked) {
+    private String reasonContext(List<MobileShopSummaryResult> picked) {
         Map<Long, MobileShopReasonFacts> facts = shops.reasonFacts(
                 picked.stream().map(shop -> Long.valueOf(shop.id())).toList());
         StringBuilder context = new StringBuilder();
-        for (MobileShopSummary shop : picked) {
+        for (MobileShopSummaryResult shop : picked) {
             context.append("- 매장 ID: ").append(shop.id()).append('\n');
             appendLine(context, "  라멘 종류", String.join(", ", shop.ramenTypes()));
             appendLine(context, "  태그", String.join(", ", shop.tags()));
@@ -288,9 +288,10 @@ public class MobileRecommendationService {
     }
 
     /** 모델이 지어낸 ID나 빈 문장은 버리고, 한 줄로 다듬어 길이를 자른다. */
-    private static Map<String, String> shownReasons(Map<String, String> generated, List<MobileShopSummary> picked) {
+    private static Map<String, String> shownReasons(
+            Map<String, String> generated, List<MobileShopSummaryResult> picked) {
         Map<String, String> shown = new LinkedHashMap<>();
-        for (MobileShopSummary shop : picked) {
+        for (MobileShopSummaryResult shop : picked) {
             String reason = generated.get(shop.id());
             if (reason == null) {
                 continue;
@@ -332,7 +333,7 @@ public class MobileRecommendationService {
     }
 
     private static List<MobileRecommendationRun.Item> shown(
-            List<MobileShopSummary> picked, List<Scored> ranked, Map<String, String> reasons) {
+            List<MobileShopSummaryResult> picked, List<Scored> ranked, Map<String, String> reasons) {
         Map<Long, Double> scores = new HashMap<>();
         for (Scored scored : ranked) {
             scores.put(scored.shopId(), scored.score());
