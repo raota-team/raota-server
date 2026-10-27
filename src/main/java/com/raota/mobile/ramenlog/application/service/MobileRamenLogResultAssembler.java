@@ -11,10 +11,10 @@ import com.raota.mobile.ramenlog.domain.model.MobileRamenLogComment;
 import com.raota.mobile.shop.application.facade.MobileShopRamenLogFacade.MobileShopRef;
 import java.util.List;
 
-/** 저장된 기록의 필드를 앱의 공개 응답 형태로 변환한다. */
-final class MobileRamenLogViews {
+/** 저장된 기록·댓글을 앱 응답용 결과(상세·요약·요약 항목·댓글)로 조립한다. 서비스 안에서만 쓰는 정적 조립기다. */
+final class MobileRamenLogResultAssembler {
 
-    private MobileRamenLogViews() {}
+    private MobileRamenLogResultAssembler() {}
 
     static MobileRamenLogDetailResult detail(
             MobileRamenLog log,

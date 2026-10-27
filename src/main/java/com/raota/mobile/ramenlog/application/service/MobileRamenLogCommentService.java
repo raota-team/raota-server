@@ -190,7 +190,8 @@ public class MobileRamenLogCommentService {
     private CursorPage<MobileRamenLogCommentResult> results(
             CursorPage<MobileRamenLogComment> page, Map<Long, MobileAuthor> authors, Long viewerId) {
         List<MobileRamenLogCommentResult> items = page.items().stream()
-                .map(comment -> MobileRamenLogViews.comment(comment, authors.get(comment.getUserId()), viewerId))
+                .map(comment ->
+                        MobileRamenLogResultAssembler.comment(comment, authors.get(comment.getUserId()), viewerId))
                 .toList();
         return new CursorPage<>(items, page.nextCursor(), page.hasNext());
     }
@@ -200,7 +201,7 @@ public class MobileRamenLogCommentService {
         if (author == null) {
             throw notFound();
         }
-        return MobileRamenLogViews.comment(comment, author, viewerId);
+        return MobileRamenLogResultAssembler.comment(comment, author, viewerId);
     }
 
     private Instant parseInstant(Cursor cursor) {
