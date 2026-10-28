@@ -15,12 +15,15 @@ import com.raota.mobile.shop.application.facade.MobileShopAgentFacade;
 import com.raota.mobile.shop.application.facade.MobileShopAgentFacade.MobileShopReasonFacts;
 import com.raota.mobile.shop.application.result.MobileShopSummaryResult;
 import jakarta.annotation.PreDestroy;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -74,6 +77,9 @@ public class MobileRecommendationService {
 
     /** 모델이 규칙을 어기고 길게 써도 화면이 밀리지 않게 자른다. 프롬프트가 바라는 길이(200자 안팎)보다 조금 넉넉하다. */
     static final int MAX_REASON_LENGTH = 260;
+
+    /** 추천 이유 근거에 거리를 넣는 최대 거리다. 이보다 먼 곳을 "거리 15.4km"로 쓰면 추천의 장점처럼 읽힌다. */
+    static final int MAX_REASON_DISTANCE_METERS = 3_000;
 
     /**
      * 서버 한 대에서 동시에 도는 검색 수 상한이다. 시간 초과로 응답을 끊어도 외부 호출이 끝날 때까지 스레드를 차지한다. 대기열 없이 빈 스레드가
@@ -275,7 +281,7 @@ public class MobileRecommendationService {
         return conditions.toString().trim();
     }
 
-    private String reasonContext(List<MobileShopSummaryResult> picked) {
+    String reasonContext(List<MobileShopSummaryResult> picked) {
         Map<Long, MobileShopReasonFacts> facts = shops.reasonFacts(
                 picked.stream().map(shop -> Long.valueOf(shop.id())).toList());
         StringBuilder context = new StringBuilder();
@@ -291,9 +297,7 @@ public class MobileRecommendationService {
                 appendLine(context, "  가격대", priceRange(fact.priceMin(), fact.priceMax()));
                 appendLine(context, "  서비스", String.join(", ", fact.perks()));
             }
-            if (shop.distanceMeters() != null) {
-                appendLine(context, "  거리", shop.distanceMeters() + "m");
-            }
+            appendLine(context, "  거리", reasonDistance(shop.distanceMeters()));
             if (Boolean.TRUE.equals(shop.isOpen())) {
                 appendLine(context, "  영업", "지금 영업 중");
             }
@@ -302,6 +306,28 @@ public class MobileRecommendationService {
             }
         }
         return context.toString().trim();
+    }
+
+    /** 먼 거리는 장점처럼 읽히므로 {@value #MAX_REASON_DISTANCE_METERS}m보다 멀면 근거에 넣지 않는다. */
+    private static String reasonDistance(Integer meters) {
+        if (meters == null || meters > MAX_REASON_DISTANCE_METERS) {
+            return null;
+        }
+        return distanceLabel(meters);
+    }
+
+    /** 1km 미만은 10m 단위로 반올림하고(383m → 380m), 그 이상은 km 소수 첫째 자리까지 쓴다(15396m → 15.4km, 2000m → 2km). */
+    static String distanceLabel(int meters) {
+        long roundedMeters = Math.round(meters / 10.0) * 10;
+        if (roundedMeters < 1_000) {
+            return roundedMeters + "m";
+        }
+        String km = BigDecimal.valueOf(meters)
+                .movePointLeft(3)
+                .setScale(1, RoundingMode.HALF_UP)
+                .stripTrailingZeros()
+                .toPlainString();
+        return km + "km";
     }
 
     private static String priceRange(Integer min, Integer max) {
@@ -313,9 +339,13 @@ public class MobileRecommendationService {
             if (price == null) {
                 price = max;
             }
-            return price + "원";
+            return won(price) + "원";
         }
-        return min + "~" + max + "원";
+        return won(min) + "~" + won(max) + "원";
+    }
+
+    private static String won(int amount) {
+        return String.format(Locale.ROOT, "%,d", amount);
     }
 
     /** 모델이 지어낸 ID나 빈 문장은 버리고, 한 줄로 다듬어 길이를 자른다. */
