@@ -20,10 +20,13 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // 4xx는 클라이언트 오류라 INFO로 남긴다. 운영 logback은 WARN 이상을 Discord로 보내서, WARN이면 요청 정보가 그대로 전송된다.
+    // IllegalStateException은 서버 상태 오류일 수 있어 WARN을 유지한다.
+
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Void>> handleAccessDenied(
             AccessDeniedException exception, HttpServletRequest request) {
-        log.warn(
+        log.info(
                 "Access denied. method={}, uri={}, message={}",
                 request.getMethod(),
                 request.getRequestURI(),
@@ -34,14 +37,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UploadTicketLimitExceededException.class)
     public ResponseEntity<ApiResponse<Void>> handleUploadTicketLimit(
             UploadTicketLimitExceededException exception, HttpServletRequest request) {
-        log.warn("Upload ticket limit exceeded. uri={}", request.getRequestURI());
+        log.info("Upload ticket limit exceeded. uri={}", request.getRequestURI());
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(ApiResponse.fail(exception.getMessage()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(
             IllegalArgumentException exception, HttpServletRequest request) {
-        log.warn(
+        log.info(
                 "Illegal argument. method={}, uri={}, query={}, message={}",
                 request.getMethod(),
                 request.getRequestURI(),
@@ -67,7 +70,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleEntityNotFound(
             EntityNotFoundException exception, HttpServletRequest request) {
-        log.warn(
+        log.info(
                 "Entity not found. method={}, uri={}, query={}, message={}",
                 request.getMethod(),
                 request.getRequestURI(),
@@ -97,7 +100,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ApiResponse<Void>> handleMethodNotSupported(
             HttpRequestMethodNotSupportedException exception, HttpServletRequest request) {
-        log.warn(
+        log.info(
                 "Method not supported. method={}, uri={}, remoteAddr={}, userAgent={}, supportedMethods={}",
                 request.getMethod(),
                 request.getRequestURI(),
@@ -110,7 +113,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiResponse<Void>> handleMethodArgumentTypeMismatch(
             MethodArgumentTypeMismatchException exception, HttpServletRequest request) {
-        log.warn(
+        log.info(
                 "Method argument type mismatch. method={}, uri={}, query={}, name={}, value={}",
                 request.getMethod(),
                 request.getRequestURI(),
@@ -129,7 +132,7 @@ public class GlobalExceptionHandler {
         Object rejectedValue = exception.getFieldError() == null
                 ? null
                 : exception.getFieldError().getRejectedValue();
-        log.warn(
+        log.info(
                 "Bind exception. method={}, uri={}, query={}, field={}, rejectedValue={}",
                 request.getMethod(),
                 request.getRequestURI(),
@@ -147,7 +150,7 @@ public class GlobalExceptionHandler {
                 ? "unknown"
                 : exception.getBindingResult().getFieldError().getField();
         String message = "잘못된 요청 파라미터입니다: " + fieldName;
-        log.warn(
+        log.info(
                 "Request body validation failed. method={}, uri={}, message={}",
                 request.getMethod(),
                 request.getRequestURI(),

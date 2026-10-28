@@ -47,7 +47,8 @@ public class AuthServiceTest {
                 "test-secret-key-at-least-32-characters-long-for-hs256",
                 3600L,
                 86400L,
-                new AuthProperties.OAuth2("http://localhost:3000/callback", "http://localhost:3000/error"),
+                new AuthProperties.OAuth2(
+                        "http://localhost:3000/callback", "http://localhost:3000/error", java.util.List.of()),
                 new AuthProperties.Cookie("refreshToken", true, "None", "localhost"),
                 new AuthProperties.Cors(java.util.List.of("http://localhost:3000")));
 

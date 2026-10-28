@@ -146,6 +146,8 @@ app:
     oauth2:
       redirect-uri: ${APP_AUTH_OAUTH2_REDIRECT_URI}
       failure-redirect-uri: ${APP_AUTH_OAUTH2_FAILURE_REDIRECT_URI:${APP_AUTH_OAUTH2_REDIRECT_URI}}
+      # 로그인 뒤 access token을 fragment로 실어 보낼 수 있는 출처. CORS 목록(APP_AUTH_ALLOWED_ORIGINS)과 따로 둔다.
+      allowed-redirect-origins: https://www.raota.net,https://raota.net
     cookie:
       refresh-token-name: ${APP_AUTH_REFRESH_TOKEN_COOKIE_NAME:raota_refresh_token}
       secure: ${APP_AUTH_REFRESH_TOKEN_COOKIE_SECURE:true}

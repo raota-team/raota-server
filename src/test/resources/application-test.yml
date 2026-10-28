@@ -73,6 +73,8 @@ app:
     oauth2:
       redirect-uri: http://localhost:3000/auth/callback
       failure-redirect-uri: http://localhost:3000/auth/callback
+      allowed-redirect-origins:
+        - http://localhost:3000
     cookie:
       refresh-token-name: raota_refresh_token
       secure: false

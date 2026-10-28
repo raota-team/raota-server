@@ -86,6 +86,18 @@ class BearerTokenAuthenticationFilterTest {
     }
 
     @Test
+    void Bearer_스킴은_대소문자를_구분하지_않는다() throws Exception {
+        request.addHeader(HttpHeaders.AUTHORIZATION, "bearer  valid-token");
+        when(mobile.supports(request)).thenReturn(true);
+        var authentication = new UsernamePasswordAuthenticationToken("mobile", null, List.of());
+        when(mobile.authenticate("valid-token")).thenReturn(authentication);
+
+        filter.doFilter(request, response, chain);
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isSameAs(authentication);
+    }
+
+    @Test
     void 헤더가_없거나_Bearer가_아니면_검증하지_않는다() throws Exception {
         request.addHeader(HttpHeaders.AUTHORIZATION, "Bear malformed");
 

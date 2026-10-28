@@ -50,4 +50,16 @@ class SecurityConfigTest extends BaseIntegrationTest {
                 .andExpect(header().string("Access-Control-Allow-Origin", "https://www.raota.net"))
                 .andExpect(header().string("Access-Control-Allow-Credentials", "true"));
     }
+
+    @Test
+    void preflightRequestIsRejectedForUnlistedOrigin() throws Exception {
+        // 설정 목록에 없는 개발 포트와 외부 도메인은 허용하지 않는다.
+        for (String origin : new String[] {"http://localhost:5173", "http://127.0.0.1:3000", "https://raota.com"}) {
+            mockMvc.perform(options("/auth/refresh")
+                            .header("Origin", origin)
+                            .header("Access-Control-Request-Method", "POST"))
+                    .andExpect(status().isForbidden())
+                    .andExpect(header().doesNotExist("Access-Control-Allow-Origin"));
+        }
+    }
 }
