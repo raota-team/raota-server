@@ -208,7 +208,7 @@ class MobileRecommendationIntegrationTest extends BaseIntegrationTest {
                         "매장 ID: " + FAR,
                         "매장 ID: " + NEAR,
                         "리뷰 요약: 맑은 간장 국물과 얇은 면",
-                        "가격대: 9000~11000원",
+                        "가격대: 9,000~11,000원",
                         "서비스: 면 추가 무료(1회), 공깃밥 1000원")
                 .doesNotContain("국물 추가");
     }
