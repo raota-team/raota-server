@@ -5,10 +5,13 @@ import com.raota.agent.domain.recommendation.model.RecommendationImpression;
 import com.raota.agent.domain.recommendation.model.ShownRecommendation;
 import com.raota.agent.domain.recommendation.repository.MobileRecommendationRunRepository;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -104,24 +107,76 @@ public class MobileRecommendationRunJdbcRepository implements MobileRecommendati
                     long runId = row.getLong("id");
                     ShownRecommendation shown = runs.get(runId);
                     if (shown == null) {
-                        shown = new ShownRecommendation(
-                                runId,
-                                row.getString("conditions"),
-                                row.getObject("latitude") != null,
-                                row.getTimestamp("created_at").toInstant(),
-                                new ArrayList<>());
+                        shown = shown(row);
                         runs.put(runId, shown);
                     }
-                    shown.items()
-                            .add(new MobileRecommendationRun.Item(
-                                    row.getInt("item_rank"),
-                                    row.getLong("shop_id"),
-                                    row.getDouble("score"),
-                                    row.getString("reason")));
+                    shown.items().add(item(row));
                 },
                 userId,
                 Timestamp.from(since));
         return List.copyOf(runs.values());
+    }
+
+    @Override
+    public List<ShownRecommendation> findShownBefore(Long userId, Instant beforeCreatedAt, Long beforeId, int limit) {
+        List<Object> args = new ArrayList<>();
+        args.add(userId);
+        String older = "";
+        if (beforeCreatedAt != null) {
+            older = "AND (run.created_at < ? OR (run.created_at = ? AND run.id < ?))";
+            Timestamp before = Timestamp.from(beforeCreatedAt);
+            args.add(before);
+            args.add(before);
+            args.add(beforeId);
+        }
+        args.add(limit);
+        // 기록을 먼저 limit개 읽고 항목은 IN으로 한 번에 읽는다. JOIN한 채로 LIMIT을 걸면 항목 줄 수로 잘린다.
+        Map<Long, ShownRecommendation> runs = new LinkedHashMap<>();
+        jdbc.query(
+                """
+                SELECT run.id, run.conditions, run.latitude, run.created_at
+                FROM tb_v2_recommendation_run run
+                WHERE run.user_id = ? %s
+                  AND EXISTS (SELECT 1 FROM tb_v2_recommendation_item item WHERE item.run_id = run.id)
+                ORDER BY run.created_at DESC, run.id DESC
+                LIMIT ?
+                """.formatted(older),
+                row -> {
+                    ShownRecommendation shown = shown(row);
+                    runs.put(shown.id(), shown);
+                },
+                args.toArray());
+        if (runs.isEmpty()) {
+            return List.of();
+        }
+        String runIds = String.join(", ", Collections.nCopies(runs.size(), "?"));
+        jdbc.query(
+                """
+                SELECT item.run_id, item.item_rank, item.shop_id, item.score, item.reason
+                FROM tb_v2_recommendation_item item
+                WHERE item.run_id IN (%s)
+                ORDER BY item.run_id, item.item_rank
+                """.formatted(runIds),
+                row -> {
+                    runs.get(row.getLong("run_id")).items().add(item(row));
+                },
+                runs.keySet().toArray());
+        return List.copyOf(runs.values());
+    }
+
+    /** 항목은 비어 있는 변경 가능한 목록으로 만들고, 호출한 쪽이 보여준 순서대로 채운다. */
+    private static ShownRecommendation shown(ResultSet row) throws SQLException {
+        return new ShownRecommendation(
+                row.getLong("id"),
+                row.getString("conditions"),
+                row.getObject("latitude") != null,
+                row.getTimestamp("created_at").toInstant(),
+                new ArrayList<>());
+    }
+
+    private static MobileRecommendationRun.Item item(ResultSet row) throws SQLException {
+        return new MobileRecommendationRun.Item(
+                row.getInt("item_rank"), row.getLong("shop_id"), row.getDouble("score"), row.getString("reason"));
     }
 
     @Override

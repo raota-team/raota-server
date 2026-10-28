@@ -3,11 +3,15 @@ package com.raota.agent.presentation.mobile;
 import com.raota.agent.application.mobile.MobileRecommendationFeedbackService;
 import com.raota.agent.application.mobile.MobileRecommendationService;
 import com.raota.agent.application.mobile.result.MobileRecommendationResult;
+import com.raota.agent.application.mobile.result.MobileRecommendationTicketResult;
 import com.raota.agent.application.mobile.result.MobileTodayRecommendationsResult;
 import com.raota.agent.presentation.mobile.request.MobileRecommendationRequest;
+import com.raota.mobile.common.cursor.CursorPage;
 import com.raota.mobile.common.presentation.LoginUser;
 import com.raota.mobile.common.presentation.response.MobileApiResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +19,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** 앱 AI 큐레이터의 추천 API다. LLM·검색 비용 때문에 로그인한 회원만 쓸 수 있고, 하루에 뽑을 수 있는 식권 수가 정해져 있다. */
@@ -37,6 +42,15 @@ public class MobileRecommendationController {
     @GetMapping("/recommendations/today")
     public MobileApiResponse<MobileTodayRecommendationsResult> today(@LoginUser Long userId) {
         return MobileApiResponse.success(recommendations.today(userId));
+    }
+
+    /** 오늘 것을 포함해 지금까지 뽑은 식권(최신순)이다. 앱이 날짜별로 묶어 지난 식권으로 보여준다. */
+    @GetMapping("/recommendations")
+    public MobileApiResponse<CursorPage<MobileRecommendationTicketResult>> history(
+            @LoginUser Long userId,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(CursorPage.MAX_SIZE) int size) {
+        return MobileApiResponse.success(recommendations.history(userId, cursor, size));
     }
 
     /** 추천 결과에서 매장을 연 것을 남긴다. 처음 연 시각만 남고, 같은 매장을 다시 열어도 204다. */
