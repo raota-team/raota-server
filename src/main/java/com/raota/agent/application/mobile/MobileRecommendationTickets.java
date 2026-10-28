@@ -2,10 +2,15 @@ package com.raota.agent.application.mobile;
 
 import com.raota.agent.domain.recommendation.model.ShownRecommendation;
 import com.raota.agent.domain.recommendation.repository.MobileRecommendationRunRepository;
+import com.raota.mobile.common.cursor.Cursor;
+import com.raota.mobile.common.cursor.CursorPage;
+import com.raota.mobile.common.error.MobileErrorCode;
+import com.raota.mobile.common.error.MobileException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -47,7 +52,30 @@ class MobileRecommendationTickets {
         return runs.findShownSince(userId, startOfToday());
     }
 
+    /** 오늘 것을 포함해 지금까지 뽑은 식권, 최신순이다. 커서는 마지막 식권의 뽑은 시각과 ID다. */
+    CursorPage<ShownRecommendation> history(Long userId, String rawCursor, int size) {
+        Instant beforeCreatedAt = null;
+        Long beforeId = null;
+        Cursor cursor = Cursor.parse(rawCursor).orElse(null);
+        if (cursor != null) {
+            beforeCreatedAt = parseInstant(cursor);
+            beforeId = cursor.id();
+        }
+        return CursorPage.of(
+                runs.findShownBefore(userId, beforeCreatedAt, beforeId, size + 1),
+                size,
+                run -> Cursor.of(run.createdAt(), run.id()));
+    }
+
     private Instant startOfToday() {
         return LocalDate.now(clock.withZone(SEOUL)).atStartOfDay(SEOUL).toInstant();
+    }
+
+    private static Instant parseInstant(Cursor cursor) {
+        try {
+            return Instant.parse(cursor.sortValue());
+        } catch (DateTimeParseException exception) {
+            throw new MobileException(MobileErrorCode.VALIDATION_ERROR, "커서가 올바르지 않습니다.");
+        }
     }
 }

@@ -3,10 +3,12 @@ package com.raota.agent.application.mobile;
 import com.raota.agent.application.mobile.command.MobileRecommendationCommand;
 import com.raota.agent.application.mobile.port.MobileRecommendationReasonPort;
 import com.raota.agent.application.mobile.result.MobileRecommendationResult;
+import com.raota.agent.application.mobile.result.MobileRecommendationTicketResult;
 import com.raota.agent.application.mobile.result.MobileTodayRecommendationsResult;
 import com.raota.agent.application.ramenshop.port.RamenShopSearchDocumentPort;
 import com.raota.agent.domain.recommendation.model.MobileRecommendationRun;
 import com.raota.agent.domain.recommendation.model.ShownRecommendation;
+import com.raota.mobile.common.cursor.CursorPage;
 import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
 import com.raota.mobile.shop.application.facade.MobileShopAgentFacade;
@@ -164,36 +166,65 @@ public class MobileRecommendationService {
     /** 오늘 뽑은 식권과 남은 장수다. 식권마다 그때 보여준 순서대로, 지금도 추천해도 되는 매장만 다시 요약한다. */
     public MobileTodayRecommendationsResult today(Long userId) {
         List<ShownRecommendation> shown = tickets.today(userId);
-        List<MobileTodayRecommendationsResult.Ticket> today = new ArrayList<>(shown.size());
-        for (ShownRecommendation run : shown) {
-            List<Long> shopIds = run.items().stream()
-                    .map(MobileRecommendationRun.Item::shopId)
-                    .toList();
-            List<MobileShopSummaryResult> picked = shops.recommendable(userId, shopIds, null, null, MAX_SHOPS);
-            Map<String, String> reasons = new LinkedHashMap<>();
-            for (MobileRecommendationRun.Item item : run.items()) {
-                if (item.reason() != null) {
-                    reasons.put(String.valueOf(item.shopId()), item.reason());
-                }
-            }
-            Map<String, String> conditions = mapper.readValue(run.conditionsJson(), new TypeReference<>() {});
-            MobileRecommendationCommand asked = new MobileRecommendationCommand(
-                    conditions.get("soup"),
-                    conditions.get("mood"),
-                    conditions.get("priority"),
-                    conditions.get("text"),
-                    null,
-                    null,
-                    conditions.get("region"));
-            today.add(new MobileTodayRecommendationsResult.Ticket(
-                    String.valueOf(run.id()),
-                    run.createdAt(),
-                    picked,
-                    appliedConditions(asked.preferenceLabels(), trimToNull(asked.region()), run.located()),
-                    reasons));
-        }
         return new MobileTodayRecommendationsResult(
-                tickets.dailyLimit(), Math.max(0, tickets.dailyLimit() - shown.size()), today);
+                tickets.dailyLimit(), Math.max(0, tickets.dailyLimit() - shown.size()), toTickets(userId, shown));
+    }
+
+    /**
+     * 오늘 것을 포함해 지금까지 뽑은 식권을 최신순으로 읽는다. 매장이 모두 걸러진 식권도 빼지 않고 빈 매장 목록으로 돌려준다. 빼면 뽑은 날짜와 장수가
+     * 실제와 달라진다.
+     */
+    public CursorPage<MobileRecommendationTicketResult> history(Long userId, String cursor, int size) {
+        CursorPage<ShownRecommendation> page = tickets.history(userId, cursor, size);
+        return new CursorPage<>(toTickets(userId, page.items()), page.nextCursor(), page.hasNext());
+    }
+
+    /** 여러 식권의 매장을 한 번에 다시 요약한 뒤, 식권마다 그때 보여준 순서대로 지금도 추천해도 되는 매장만 최대 {@value #MAX_SHOPS}곳 남긴다. */
+    private List<MobileRecommendationTicketResult> toTickets(Long userId, List<ShownRecommendation> shown) {
+        List<Long> shopIds = shown.stream()
+                .flatMap(run -> run.items().stream())
+                .map(MobileRecommendationRun.Item::shopId)
+                .distinct()
+                .toList();
+        Map<Long, MobileShopSummaryResult> recommendable = new HashMap<>();
+        for (MobileShopSummaryResult shop : shops.recommendable(userId, shopIds, null, null, shopIds.size())) {
+            recommendable.put(Long.valueOf(shop.id()), shop);
+        }
+        List<MobileRecommendationTicketResult> result = new ArrayList<>(shown.size());
+        for (ShownRecommendation run : shown) {
+            result.add(toTicket(run, recommendable));
+        }
+        return result;
+    }
+
+    private MobileRecommendationTicketResult toTicket(
+            ShownRecommendation run, Map<Long, MobileShopSummaryResult> recommendable) {
+        List<MobileShopSummaryResult> picked = new ArrayList<>();
+        Map<String, String> reasons = new LinkedHashMap<>();
+        for (MobileRecommendationRun.Item item : run.items()) {
+            MobileShopSummaryResult shop = recommendable.get(item.shopId());
+            if (shop != null && picked.size() < MAX_SHOPS) {
+                picked.add(shop);
+            }
+            if (item.reason() != null) {
+                reasons.put(String.valueOf(item.shopId()), item.reason());
+            }
+        }
+        Map<String, String> conditions = mapper.readValue(run.conditionsJson(), new TypeReference<>() {});
+        MobileRecommendationCommand asked = new MobileRecommendationCommand(
+                conditions.get("soup"),
+                conditions.get("mood"),
+                conditions.get("priority"),
+                conditions.get("text"),
+                null,
+                null,
+                conditions.get("region"));
+        return new MobileRecommendationTicketResult(
+                String.valueOf(run.id()),
+                run.createdAt(),
+                picked,
+                appliedConditions(asked.preferenceLabels(), trimToNull(asked.region()), run.located()),
+                reasons);
     }
 
     /**
