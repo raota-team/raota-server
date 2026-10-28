@@ -64,7 +64,7 @@ class JwtTokenProviderTest {
                 ACCESS_TOKEN_SECRET,
                 accessTokenExpirySeconds,
                 1209600,
-                new AuthProperties.OAuth2("/oauth2", "/oauth2/failure"),
+                new AuthProperties.OAuth2("/oauth2", "/oauth2/failure", List.of()),
                 new AuthProperties.Cookie("refreshToken", false, "Lax", null),
                 new AuthProperties.Cors(List.of()));
         return new JwtTokenProvider(authProperties);

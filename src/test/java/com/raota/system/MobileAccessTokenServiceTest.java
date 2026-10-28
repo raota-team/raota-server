@@ -30,7 +30,7 @@ class MobileAccessTokenServiceTest {
                 "test-raota-access-token-secret-key-1234567890",
                 1800,
                 1209600,
-                new AuthProperties.OAuth2("/oauth2", "/oauth2/failure"),
+                new AuthProperties.OAuth2("/oauth2", "/oauth2/failure", List.of()),
                 new AuthProperties.Cookie("refreshToken", false, "Lax", null),
                 new AuthProperties.Cors(List.of()));
         String webToken = new JwtTokenProvider(v1Properties).createAccessToken(42L);

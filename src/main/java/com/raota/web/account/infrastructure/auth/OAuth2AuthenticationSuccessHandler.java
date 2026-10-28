@@ -6,15 +6,11 @@ import com.raota.web.account.application.auth.OAuth2UserInfo;
 import com.raota.web.account.application.auth.OAuth2UserInfoFactory;
 import com.raota.web.account.infrastructure.auth.repository.HttpCookieOAuth2AuthorizationRequestRepository;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -34,6 +30,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
 
+    private final OAuth2RedirectTargetResolver redirectTargetResolver;
+
     private final AuthProperties authProperties;
 
     @Override
@@ -42,7 +40,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             throws IOException, ServletException {
         OAuth2AuthenticationToken oauth2Authentication = (OAuth2AuthenticationToken) authentication;
         OAuth2User principal = oauth2Authentication.getPrincipal();
-        String targetUri = getTargetUriFromCookie(request);
+        String targetUri =
+                redirectTargetResolver.resolve(request, authProperties.oauth2().redirectUri());
 
         String registrationId = oauth2Authentication.getAuthorizedClientRegistrationId();
         try {
@@ -69,22 +68,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         }
     }
 
-    private String getTargetUriFromCookie(HttpServletRequest request) {
-        String targetUri = Arrays.stream(request.getCookies() != null ? request.getCookies() : new Cookie[0])
-                .filter(cookie -> HttpCookieOAuth2AuthorizationRequestRepository.REDIRECT_URI_PARAM_COOKIE_NAME.equals(
-                        cookie.getName()))
-                .map(Cookie::getValue)
-                .findFirst()
-                .orElse(authProperties.oauth2().redirectUri());
-        String targetOrigin = getOrigin(targetUri);
-        boolean isAllowed = authProperties.cors().allowedOrigins().stream()
-                .anyMatch(allowedOrigin -> allowedOrigin.equalsIgnoreCase(targetOrigin));
-
-        if (isAllowed) return targetUri;
-
-        return authProperties.oauth2().redirectUri();
-    }
-
     private String buildSuccessRedirectUri(String targetUri, OAuth2LoginResult loginResult, String registrationId) {
         return targetUri + "#accessToken=" + encode(loginResult.accessToken()) + "&tokenType=Bearer" + "&expiresIn="
                 + loginResult.accessTokenExpiresIn() + "&memberId=" + loginResult.memberId() + "&newMember="
@@ -97,22 +80,5 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     private String encode(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
-    }
-
-    private String getOrigin(String url) {
-        try {
-            URI uri = new URI(url);
-            String scheme = uri.getScheme();
-            String host = uri.getHost();
-            int port = uri.getPort();
-
-            StringBuilder origin = new StringBuilder();
-            origin.append(scheme).append("://").append(host);
-            if (port != -1) origin.append(":").append(port);
-
-            return origin.toString();
-        } catch (URISyntaxException e) {
-            return "";
-        }
     }
 }

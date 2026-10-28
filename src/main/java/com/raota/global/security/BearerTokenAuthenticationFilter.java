@@ -18,6 +18,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @RequiredArgsConstructor
 public class BearerTokenAuthenticationFilter extends OncePerRequestFilter {
 
+    // RFC 6750: 인증 스킴 이름은 대소문자를 구분하지 않는다.
+    private static final String BEARER_PREFIX = "Bearer ";
+
     private final List<BearerTokenAuthenticator> authenticators;
 
     private final DelegatingAuthenticationEntryPoint entryPoint;
@@ -31,7 +34,8 @@ public class BearerTokenAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+        if (authorizationHeader == null
+                || !authorizationHeader.regionMatches(true, 0, BEARER_PREFIX, 0, BEARER_PREFIX.length())) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -42,7 +46,9 @@ public class BearerTokenAuthenticationFilter extends OncePerRequestFilter {
                     .findFirst()
                     .orElseThrow(() -> new BearerTokenAuthenticationException("유효하지 않은 액세스 토큰입니다.", null));
             SecurityContextHolder.getContext()
-                    .setAuthentication(authenticator.authenticate(authorizationHeader.substring(7)));
+                    .setAuthentication(authenticator.authenticate(authorizationHeader
+                            .substring(BEARER_PREFIX.length())
+                            .trim()));
         } catch (AuthenticationException exception) {
             SecurityContextHolder.clearContext();
             entryPoint.commence(request, response, exception);

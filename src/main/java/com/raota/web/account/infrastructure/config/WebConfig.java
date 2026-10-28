@@ -27,13 +27,8 @@ public class WebConfig implements WebMvcConfigurer {
     @Bean
     CorsConfigurationSource corsConfigurationSource(AuthProperties authProperties) {
         CorsConfiguration configuration = new CorsConfiguration();
-        List<String> allowedOriginPatterns = new ArrayList<>(List.of(
-                "https://*.raota.net",
-                "https://raota.net",
-                "http://localhost:*",
-                "https://localhost:*",
-                "http://127.0.0.1:*",
-                "https://127.0.0.1:*"));
+        // 개발용 출처(localhost 등)는 코드에 두지 않고 프로필별 app.auth.cors.allowed-origins로만 연다.
+        List<String> allowedOriginPatterns = new ArrayList<>(List.of("https://*.raota.net", "https://raota.net"));
         allowedOriginPatterns.addAll(authProperties.cors().allowedOrigins());
         configuration.setAllowedOriginPatterns(
                 allowedOriginPatterns.stream().distinct().toList());

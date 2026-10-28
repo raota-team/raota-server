@@ -1,5 +1,6 @@
 package com.raota.web.account.infrastructure.auth;
 
+import com.raota.web.account.infrastructure.auth.repository.HttpCookieOAuth2AuthorizationRequestRepository;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -17,22 +18,17 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
 
     private final AuthProperties authProperties;
 
-    private final com.raota.web.account.infrastructure.auth.repository.HttpCookieOAuth2AuthorizationRequestRepository
-            httpCookieOAuth2AuthorizationRequestRepository; // 추가
+    private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
+
+    private final OAuth2RedirectTargetResolver redirectTargetResolver;
 
     @Override
     public void onAuthenticationFailure(
             HttpServletRequest request, HttpServletResponse response, AuthenticationException exception)
             throws IOException, ServletException {
-        // 임시 쿠키 삭제 전 타겟 URI 획득
-        String targetUri = java.util.Arrays.stream(
-                        request.getCookies() != null ? request.getCookies() : new jakarta.servlet.http.Cookie[0])
-                .filter(cookie -> com.raota.web.account.infrastructure.auth.repository
-                        .HttpCookieOAuth2AuthorizationRequestRepository.REDIRECT_URI_PARAM_COOKIE_NAME
-                        .equals(cookie.getName()))
-                .map(jakarta.servlet.http.Cookie::getValue)
-                .findFirst()
-                .orElse(authProperties.oauth2().failureRedirectUri());
+        // 임시 쿠키를 지우기 전에 돌아갈 주소를 고른다.
+        String targetUri =
+                redirectTargetResolver.resolve(request, authProperties.oauth2().failureRedirectUri());
 
         httpCookieOAuth2AuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
 

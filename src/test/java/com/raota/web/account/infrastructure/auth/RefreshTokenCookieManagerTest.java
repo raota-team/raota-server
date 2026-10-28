@@ -48,7 +48,8 @@ class RefreshTokenCookieManagerTest {
                 "access-token-secret",
                 1800,
                 1209600,
-                new AuthProperties.OAuth2("http://localhost:3000/auth/callback", "http://localhost:3000/auth/callback"),
+                new AuthProperties.OAuth2(
+                        "http://localhost:3000/auth/callback", "http://localhost:3000/auth/callback", List.of()),
                 new AuthProperties.Cookie("raota_refresh_token", true, "None", ".raota.net"),
                 new AuthProperties.Cors(List.of("http://localhost:3000")));
     }
