@@ -23,9 +23,9 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class MobileUploadTicketService {
 
-    private final FileUploader uploader;
+    private final FileUploader fileUploader;
 
-    private final UploadTicketRateLimiter rateLimiter;
+    private final UploadTicketRateLimiter uploadTicketRateLimiter;
 
     public MobileUploadTicketsResult issue(Long userId, MobileUploadTicketCommand command) {
         if (command.purpose() == MobileUploadTicketCommand.Purpose.PROFILE
@@ -42,14 +42,14 @@ public class MobileUploadTicketService {
             }
         }
         // 형식 검사를 통과한 요청만 센다.
-        if (!rateLimiter.tryAcquire("v2", userId, command.files().size())) {
+        if (!uploadTicketRateLimiter.tryAcquire("v2", userId, command.files().size())) {
             throw new MobileException(
                     MobileErrorCode.RATE_LIMITED,
                     "사진은 1시간에 " + UploadTicketRateLimiter.FILES_PER_HOUR + "장까지 올릴 수 있습니다.");
         }
         List<MobileUploadTicketsResult.Upload> uploads = command.files().stream()
                 .map(file -> upload(
-                        uploader.getPresignedUrl(folder.directory(), "." + extension(file), file.contentType()),
+                        fileUploader.getPresignedUrl(folder.directory(), "." + extension(file), file.contentType()),
                         file.contentType()))
                 .toList();
         return new MobileUploadTicketsResult(uploads);

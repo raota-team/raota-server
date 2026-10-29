@@ -17,7 +17,7 @@ public class MobileProfileStoredImages implements StoredImageReferences {
 
     private static final int BATCH_SIZE = 500;
 
-    private final NamedParameterJdbcTemplate namedJdbc;
+    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     @Override
     public String prefix() {
@@ -30,7 +30,7 @@ public class MobileProfileStoredImages implements StoredImageReferences {
         Set<String> referenced = new HashSet<>();
         for (int start = 0; start < urlList.size(); start += BATCH_SIZE) {
             List<String> batch = urlList.subList(start, Math.min(start + BATCH_SIZE, urlList.size()));
-            referenced.addAll(namedJdbc.queryForList(
+            referenced.addAll(namedParameterJdbcTemplate.queryForList(
                     "SELECT DISTINCT avatar_url FROM tb_v2_user WHERE avatar_url IN (:urls)",
                     Map.of("urls", batch),
                     String.class));
