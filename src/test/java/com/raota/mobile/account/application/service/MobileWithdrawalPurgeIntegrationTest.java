@@ -4,12 +4,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.raota.mobile.account.application.command.SocialCredential;
 import com.raota.mobile.account.application.command.SocialLoginCommand;
 import com.raota.mobile.account.application.port.AppleTokenClient;
+import com.raota.mobile.account.application.port.AppleTokenRevocationRejectedException;
 import com.raota.mobile.account.application.port.ProviderTokenCipher;
 import com.raota.mobile.account.application.port.RefreshTokenStore;
 import com.raota.mobile.account.application.result.SocialIdentityResult;
@@ -169,6 +171,54 @@ class MobileWithdrawalPurgeIntegrationTest extends BaseIntegrationTest {
         assertThat(users.findById(succeeded).orElseThrow().getStatus()).isEqualTo(MobileUserStatus.WITHDRAWN);
         assertThat(accounts.findAllByUserId(succeeded)).isEmpty();
         assertThat(consentCount(succeeded)).isZero();
+    }
+
+    @Test
+    void Apple_장애가_삭제_예정일부터_7일을_넘기면_폐기_없이_익명화한다() {
+        Long userId = appleUser(cipher.encrypt("unavailable-refresh"));
+        doThrow(new IllegalStateException("provider unavailable"))
+                .when(appleTokens)
+                .revoke("unavailable-refresh");
+        Instant purgeScheduledAt = REQUESTED_AT.plus(Duration.ofDays(30));
+
+        assertThat(purges.purgeExpired(purgeScheduledAt.plus(Duration.ofDays(6))))
+                .isZero();
+        assertThat(users.findById(userId).orElseThrow().getStatus()).isEqualTo(MobileUserStatus.WITHDRAW_PENDING);
+
+        assertThat(purges.purgeExpired(purgeScheduledAt.plus(Duration.ofDays(7))))
+                .isEqualTo(1);
+        assertThat(users.findById(userId).orElseThrow().getStatus()).isEqualTo(MobileUserStatus.WITHDRAWN);
+        assertThat(accounts.findAllByUserId(userId)).isEmpty();
+    }
+
+    @Test
+    void Apple이_폐기를_거절하면_다시_시도하지_않고_바로_익명화한다() {
+        Long userId = appleUser(cipher.encrypt("already-invalid"));
+        doThrow(new AppleTokenRevocationRejectedException("invalid_request", null))
+                .when(appleTokens)
+                .revoke("already-invalid");
+
+        assertThat(purges.purgeExpired(REQUESTED_AT.plus(Duration.ofDays(30)))).isEqualTo(1);
+        assertThat(users.findById(userId).orElseThrow().getStatus()).isEqualTo(MobileUserStatus.WITHDRAWN);
+        assertThat(accounts.findAllByUserId(userId)).isEmpty();
+    }
+
+    @Test
+    void 저장된_Apple_토큰을_복호화할_수_없으면_폐기_없이_바로_익명화한다() {
+        // 암호화 키가 바뀌면 다시 시도해도 복호화되지 않는다.
+        Long userId = appleUser("v1:not-a-valid-ciphertext");
+
+        assertThat(purges.purgeExpired(REQUESTED_AT.plus(Duration.ofDays(30)))).isEqualTo(1);
+        verify(appleTokens, never()).revoke(any());
+        assertThat(users.findById(userId).orElseThrow().getStatus()).isEqualTo(MobileUserStatus.WITHDRAWN);
+    }
+
+    private Long appleUser(String encryptedRefreshToken) {
+        Long userId = createUser(OAuthProvider.APPLE, subject, false, REQUESTED_AT);
+        MobileUserOAuthAccount account = accounts.findAllByUserId(userId).getFirst();
+        account.storeAppleRefreshToken(encryptedRefreshToken);
+        accounts.saveAndFlush(account);
+        return userId;
     }
 
     @Test

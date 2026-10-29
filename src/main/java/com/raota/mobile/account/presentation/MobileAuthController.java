@@ -31,12 +31,12 @@ public class MobileAuthController {
     }
 
     @PostMapping("/token/reissue")
-    public MobileApiResponse<MobileTokenResult> reissue(@RequestBody RefreshTokenRequest request) {
+    public MobileApiResponse<MobileTokenResult> reissue(@Valid @RequestBody RefreshTokenRequest request) {
         return MobileApiResponse.success(authService.reissue(request.refreshToken()));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestBody RefreshTokenRequest request, @LoginUser Long userId) {
+    public ResponseEntity<Void> logout(@Valid @RequestBody RefreshTokenRequest request, @LoginUser Long userId) {
         authService.logout(request.refreshToken(), userId);
         return ResponseEntity.noContent().build();
     }

@@ -250,6 +250,29 @@ class MobileAuthIntegrationTest extends BaseIntegrationTest {
         assertThat(reissue(tokenB).get("refreshToken").asString()).isNotEqualTo(tokenB);
     }
 
+    @Test
+    void 리프레시_토큰_필드가_없거나_비면_로그아웃과_재발급은_400이고_토큰을_남긴다() throws Exception {
+        JsonNode login = login("KAKAO", "accessToken");
+        String refreshToken = login.get("refreshToken").asString();
+        // 필드 이름이 틀린 요청이 아무것도 폐기하지 않고 204로 끝나면 앱은 로그아웃된 줄 알지만 토큰은 14일간 살아 있다.
+        for (String body : List.of("{\"token\":\"" + refreshToken + "\"}", "{\"refreshToken\":\" \"}", "{}")) {
+            mvc.perform(post("/api/v2/auth/logout")
+                            .header(
+                                    HttpHeaders.AUTHORIZATION,
+                                    "Bearer " + login.get("accessToken").asString())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+            mvc.perform(post("/api/v2/auth/token/reissue")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+        }
+        assertThat(reissue(refreshToken).get("accessToken").asString()).isNotBlank();
+    }
+
     @ParameterizedTest
     @EnumSource(
             value = MobileUserStatus.class,

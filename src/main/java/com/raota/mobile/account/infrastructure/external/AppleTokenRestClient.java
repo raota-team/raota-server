@@ -7,6 +7,7 @@ import com.nimbusds.jose.crypto.ECDSASigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.raota.mobile.account.application.port.AppleTokenClient;
+import com.raota.mobile.account.application.port.AppleTokenRevocationRejectedException;
 import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
 import java.security.AlgorithmParameters;
@@ -138,12 +139,20 @@ public class AppleTokenRestClient implements AppleTokenClient {
         MultiValueMap<String, String> form = credentials();
         form.add("token", refreshToken);
         form.add("token_type_hint", "refresh_token");
-        client.post()
-                .uri(settings.revokeUri())
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .body(form)
-                .retrieve()
-                .toBodilessEntity();
+        try {
+            client.post()
+                    .uri(settings.revokeUri())
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(form)
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RestClientResponseException exception) {
+            if (exception.getStatusCode().is4xxClientError()) {
+                throw new AppleTokenRevocationRejectedException(
+                        "Apple이 토큰 폐기를 거절했습니다: " + exception.getStatusCode(), exception);
+            }
+            throw exception;
+        }
     }
 
     private MultiValueMap<String, String> credentials() {
