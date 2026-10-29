@@ -33,15 +33,15 @@ class MobileRamenLogVisibility {
     }
 
     private MobileRamenLog check(Optional<MobileRamenLog> found, Long viewerId) {
-        MobileRamenLog log = found.orElseThrow(MobileRamenLogVisibility::notFound);
-        if (log.getDeletedAt() != null || !log.visibleTo(viewerId)) {
+        MobileRamenLog ramenLog = found.orElseThrow(MobileRamenLogVisibility::notFound);
+        if (ramenLog.getDeletedAt() != null || !ramenLog.visibleTo(viewerId)) {
             throw notFound();
         }
-        MobileAuthor author = accounts.authors(List.of(log.getUserId())).get(log.getUserId());
+        MobileAuthor author = accounts.authors(List.of(ramenLog.getUserId())).get(ramenLog.getUserId());
         if (author == null || !author.active()) {
             throw notFound();
         }
-        return log;
+        return ramenLog;
     }
 
     private static MobileException notFound() {

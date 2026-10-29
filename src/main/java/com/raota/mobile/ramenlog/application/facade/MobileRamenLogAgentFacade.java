@@ -22,7 +22,8 @@ public class MobileRamenLogAgentFacade {
             return List.of();
         }
         return logs.findLiveCreatedBetween(userIds, from, to).stream()
-                .map(log -> new MobileRamenLogActivity(log.getUserId(), log.getShopId(), log.getCreatedAt()))
+                .map(ramenLog ->
+                        new MobileRamenLogActivity(ramenLog.getUserId(), ramenLog.getShopId(), ramenLog.getCreatedAt()))
                 .toList();
     }
 

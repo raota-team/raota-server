@@ -90,21 +90,21 @@ public class MobileRamenLog {
 
     public static MobileRamenLog create(
             Long userId, Long shopId, MobileRamenLogDraft draft, String idempotencyKey, Instant now) {
-        MobileRamenLog log = new MobileRamenLog();
-        log.userId = userId;
-        log.shopId = shopId;
-        log.visitedAt = draft.visitedAt();
-        log.menuName = draft.menuName().trim();
-        log.ramenType = draft.ramenType();
-        log.applyScores(draft.scores());
-        log.revisitIntention = draft.revisitIntention();
-        log.note = draft.note();
-        log.tasteNoteCodes = List.copyOf(draft.tasteNoteCodes());
-        log.visibility = draft.visibility();
-        log.idempotencyKey = idempotencyKey;
-        log.createdAt = now;
-        log.updatedAt = now;
-        return log;
+        MobileRamenLog ramenLog = new MobileRamenLog();
+        ramenLog.userId = userId;
+        ramenLog.shopId = shopId;
+        ramenLog.visitedAt = draft.visitedAt();
+        ramenLog.menuName = draft.menuName().trim();
+        ramenLog.ramenType = draft.ramenType();
+        ramenLog.applyScores(draft.scores());
+        ramenLog.revisitIntention = draft.revisitIntention();
+        ramenLog.note = draft.note();
+        ramenLog.tasteNoteCodes = List.copyOf(draft.tasteNoteCodes());
+        ramenLog.visibility = draft.visibility();
+        ramenLog.idempotencyKey = idempotencyKey;
+        ramenLog.createdAt = now;
+        ramenLog.updatedAt = now;
+        return ramenLog;
     }
 
     public void edit(MobileRamenLogEdit edit, Instant now) {

@@ -77,12 +77,12 @@ public class MobileRamenLogService {
         try {
             // UNIQUE 충돌은 이 트랜잭션만 되돌린 뒤 별도 읽기로 먼저 커밋된 기록을 조회한다.
             id = requiresNewTransaction().execute(status -> {
-                MobileRamenLog log = ramenLogRepository.saveAndFlush(
+                MobileRamenLog ramenLog = ramenLogRepository.saveAndFlush(
                         MobileRamenLog.create(userId, shopId, command.toDraft(), key, now));
-                saveImages(log.getId(), command.imageUrls());
+                saveImages(ramenLog.getId(), command.imageUrls());
                 accountFacade.incrementLogCount(userId);
-                shopFacade.recordLogAdded(shopId, log.satisfaction());
-                return log.getId();
+                shopFacade.recordLogAdded(shopId, ramenLog.satisfaction());
+                return ramenLog.getId();
             });
         } catch (DataIntegrityViolationException exception) {
             MobileRamenLog replayed = ramenLogRepository
@@ -96,25 +96,25 @@ public class MobileRamenLogService {
 
     @Transactional(readOnly = true)
     public MobileRamenLogDetailResult detail(Long logId, Long viewerId) {
-        MobileRamenLog log = existing(logId);
-        MobileAuthor author = author(log.getUserId());
-        if (!log.visibleTo(viewerId) || !author.active()) {
+        MobileRamenLog ramenLog = existing(logId);
+        MobileAuthor author = author(ramenLog.getUserId());
+        if (!ramenLog.visibleTo(viewerId) || !author.active()) {
             throw new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "기록을 찾을 수 없습니다.");
         }
-        return response(log, author, viewerId);
+        return response(ramenLog, author, viewerId);
     }
 
     @Transactional
     public MobileRamenLogDetailResult update(Long logId, Long userId, MobileUpdateRamenLogCommand command) {
-        MobileRamenLog log = existingForUpdate(logId);
-        requireAuthor(log, userId);
+        MobileRamenLog ramenLog = existingForUpdate(logId);
+        requireAuthor(ramenLog, userId);
         validateContent(command.visitedAt(), command.ramenType(), command.tasteNoteCodes());
         if (command.imageUrls() != null) {
             validateImageUrls(command.imageUrls(), attachedImageUrls(logId));
         }
-        Integer before = log.satisfaction();
-        log.edit(command.toEdit(), now());
-        shopFacade.recordSatisfactionChanged(log.getShopId(), before, log.satisfaction());
+        Integer before = ramenLog.satisfaction();
+        ramenLog.edit(command.toEdit(), now());
+        shopFacade.recordSatisfactionChanged(ramenLog.getShopId(), before, ramenLog.satisfaction());
         if (command.imageUrls() != null) {
             imageRepository.deleteByRamenLogId(logId);
             imageRepository.flush();
@@ -125,76 +125,77 @@ public class MobileRamenLogService {
 
     @Transactional
     public void delete(Long logId, Long userId) {
-        MobileRamenLog log = existingForUpdate(logId);
-        requireAuthor(log, userId);
-        remove(log);
+        MobileRamenLog ramenLog = existingForUpdate(logId);
+        requireAuthor(ramenLog, userId);
+        remove(ramenLog);
     }
 
     /** 관리자가 신고된 기록을 지운다. 이미 지워진 기록이면 아무것도 하지 않는다. 작성자가 지울 때와 같이 회원·매장 집계를 줄인다. */
     @Transactional
     public void removeByModerator(Long logId) {
-        MobileRamenLog log = ramenLogRepository
+        MobileRamenLog ramenLog = ramenLogRepository
                 .findByIdForUpdate(logId)
                 .orElseThrow(() -> new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "기록을 찾을 수 없습니다."));
-        if (log.getDeletedAt() == null) {
-            remove(log);
+        if (ramenLog.getDeletedAt() == null) {
+            remove(ramenLog);
         }
     }
 
-    private void remove(MobileRamenLog log) {
-        log.softDelete(now());
-        accountFacade.decrementLogCount(log.getUserId());
-        shopFacade.recordLogRemoved(log.getShopId(), log.satisfaction());
+    private void remove(MobileRamenLog ramenLog) {
+        ramenLog.softDelete(now());
+        accountFacade.decrementLogCount(ramenLog.getUserId());
+        shopFacade.recordLogRemoved(ramenLog.getShopId(), ramenLog.satisfaction());
     }
 
     /**
      * 삭제한 기록의 키로 다시 오면 삭제된 기록을 돌려줄 수도, 새로 만들 수도 없다. 키는 UNIQUE로 남아 있으므로 409로 알린다.
      */
-    private void rejectDeletedReplay(MobileRamenLog log) {
-        if (log.getDeletedAt() != null) {
+    private void rejectDeletedReplay(MobileRamenLog ramenLog) {
+        if (ramenLog.getDeletedAt() != null) {
             throw new MobileException(MobileErrorCode.CONFLICT, "이미 삭제된 기록의 요청입니다.");
         }
     }
 
     private MobileRamenLogDetailResult ownDetail(Long logId, Long userId) {
-        MobileRamenLog log = ramenLogRepository
+        MobileRamenLog ramenLog = ramenLogRepository
                 .findById(logId)
                 .orElseThrow(() -> new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "기록을 찾을 수 없습니다."));
-        return response(log, author(log.getUserId()), userId);
+        return response(ramenLog, author(ramenLog.getUserId()), userId);
     }
 
-    private MobileRamenLogDetailResult response(MobileRamenLog log, MobileAuthor author, Long viewerId) {
-        MobileShopRef shop = shopFacade.findShopRefs(List.of(log.getShopId())).get(log.getShopId());
+    private MobileRamenLogDetailResult response(MobileRamenLog ramenLog, MobileAuthor author, Long viewerId) {
+        MobileShopRef shop =
+                shopFacade.findShopRefs(List.of(ramenLog.getShopId())).get(ramenLog.getShopId());
         if (shop == null) {
             throw new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "매장을 찾을 수 없습니다.");
         }
         List<String> imageUrls =
-                imageRepository.findByRamenLogIdInOrderByRamenLogIdAscSortOrderAsc(List.of(log.getId())).stream()
+                imageRepository.findByRamenLogIdInOrderByRamenLogIdAscSortOrderAsc(List.of(ramenLog.getId())).stream()
                         .map(MobileRamenLogImage::getUrl)
                         .toList();
-        boolean liked = viewerId != null && likeRepository.existsByUserIdAndRamenLogId(viewerId, log.getId());
+        boolean liked = viewerId != null && likeRepository.existsByUserIdAndRamenLogId(viewerId, ramenLog.getId());
         return MobileRamenLogResultAssembler.toDetail(
-                log, author, shop, imageUrls, liked, commentService.preview(log.getId(), viewerId), viewerId);
+                ramenLog, author, shop, imageUrls, liked, commentService.preview(ramenLog.getId(), viewerId), viewerId);
     }
 
     private MobileRamenLog existingForUpdate(Long id) {
-        MobileRamenLog log = ramenLogRepository
+        MobileRamenLog ramenLog = ramenLogRepository
                 .findByIdForUpdate(id)
                 .orElseThrow(() -> new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "기록을 찾을 수 없습니다."));
-        if (log.getDeletedAt() != null) {
+        if (ramenLog.getDeletedAt() != null) {
             throw new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "기록을 찾을 수 없습니다.");
         }
-        return log;
+        return ramenLog;
     }
 
     private MobileRamenLog existing(Long id) {
-        MobileRamenLog log = ramenLogRepository
+        MobileRamenLog ramenLog = ramenLogRepository
                 .findById(id)
                 .orElseThrow(() -> new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "기록을 찾을 수 없습니다."));
-        if (log.getDeletedAt() != null) {
+        if (ramenLog.getDeletedAt() != null) {
             throw new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "기록을 찾을 수 없습니다.");
         }
-        return log;
+        return ramenLog;
     }
 
     private MobileAuthor author(Long userId) {
@@ -205,8 +206,8 @@ public class MobileRamenLogService {
         return author;
     }
 
-    private void requireAuthor(MobileRamenLog log, Long userId) {
-        if (!log.getUserId().equals(userId)) {
+    private void requireAuthor(MobileRamenLog ramenLog, Long userId) {
+        if (!ramenLog.getUserId().equals(userId)) {
             throw new MobileException(MobileErrorCode.FORBIDDEN, "작성자만 기록을 변경할 수 있습니다.");
         }
     }

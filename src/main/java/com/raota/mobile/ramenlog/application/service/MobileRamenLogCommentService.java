@@ -92,10 +92,10 @@ public class MobileRamenLogCommentService {
         try {
             // UNIQUE 충돌은 이 트랜잭션만 되돌린 뒤 별도 읽기로 먼저 커밋된 댓글을 조회한다.
             id = createTransaction.execute(status -> {
-                MobileRamenLog log = visibility.visibleForUpdate(logId, userId);
+                MobileRamenLog ramenLog = visibility.visibleForUpdate(logId, userId);
                 MobileRamenLogComment comment =
                         comments.saveAndFlush(MobileRamenLogComment.create(logId, userId, content, key, now));
-                log.addComment();
+                ramenLog.addComment();
                 return comment.getId();
             });
         } catch (DataIntegrityViolationException exception) {
@@ -114,7 +114,7 @@ public class MobileRamenLogCommentService {
     public void delete(Long commentId, Long userId) {
         // 댓글 엔티티는 잠금 조회로 처음 읽어야 한다. 먼저 엔티티를 읽어 두면 잠금 조회가 그 낡은 인스턴스를 돌려줘 동시 삭제를 막지 못한다.
         Long logId = comments.findRamenLogIdById(commentId).orElseThrow(this::notFound);
-        MobileRamenLog log = visibility.visibleForUpdate(logId, userId);
+        MobileRamenLog ramenLog = visibility.visibleForUpdate(logId, userId);
         MobileRamenLogComment comment = comments.findByIdForUpdate(commentId)
                 .filter(found -> found.getDeletedAt() == null)
                 .orElseThrow(this::notFound);
@@ -122,18 +122,18 @@ public class MobileRamenLogCommentService {
             throw new MobileException(MobileErrorCode.FORBIDDEN, "작성자만 댓글을 삭제할 수 있습니다.");
         }
         comment.softDelete(Instant.now(clock).truncatedTo(ChronoUnit.MICROS));
-        log.removeComment();
+        ramenLog.removeComment();
     }
 
     /** 관리자가 신고된 댓글을 지운다. 기록 공개 범위와 작성자를 보지 않고, 이미 지워진 댓글이면 아무것도 하지 않는다. 잠금 순서는 삭제와 같다. */
     @Transactional
     public void removeByModerator(Long commentId) {
         Long logId = comments.findRamenLogIdById(commentId).orElseThrow(this::notFound);
-        MobileRamenLog log = logs.findByIdForUpdate(logId).orElseThrow(this::notFound);
+        MobileRamenLog ramenLog = logs.findByIdForUpdate(logId).orElseThrow(this::notFound);
         MobileRamenLogComment comment = comments.findByIdForUpdate(commentId).orElseThrow(this::notFound);
         if (comment.getDeletedAt() == null) {
             comment.softDelete(Instant.now(clock).truncatedTo(ChronoUnit.MICROS));
-            log.removeComment();
+            ramenLog.removeComment();
         }
     }
 

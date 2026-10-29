@@ -127,7 +127,7 @@ public class MobileContentReportAdminService {
         }
         Set<Long> userIds = new HashSet<>();
         page.forEach(report -> userIds.add(report.getReporterId()));
-        logById.values().forEach(log -> userIds.add(log.getUserId()));
+        logById.values().forEach(ramenLog -> userIds.add(ramenLog.getUserId()));
         commentById.values().forEach(comment -> userIds.add(comment.getUserId()));
         return new Previews(
                 logById,
@@ -173,19 +173,19 @@ public class MobileContentReportAdminService {
     }
 
     private Target toLogTarget(Long logId, Previews previews) {
-        MobileRamenLog log = previews.logs().get(logId);
-        if (log == null) {
+        MobileRamenLog ramenLog = previews.logs().get(logId);
+        if (ramenLog == null) {
             return toMissingTarget(ReportTargetType.RAMEN_LOG, logId, logId);
         }
         return new Target(
                 ReportTargetType.RAMEN_LOG,
                 String.valueOf(logId),
                 String.valueOf(logId),
-                toPerson(log.getUserId(), previews.authors()),
-                log.getNote(),
-                log.getMenuName(),
+                toPerson(ramenLog.getUserId(), previews.authors()),
+                ramenLog.getNote(),
+                ramenLog.getMenuName(),
                 previews.firstImages().get(logId),
-                log.getDeletedAt() != null);
+                ramenLog.getDeletedAt() != null);
     }
 
     private Target toCommentTarget(Long commentId, Previews previews) {

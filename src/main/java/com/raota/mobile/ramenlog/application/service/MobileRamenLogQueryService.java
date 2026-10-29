@@ -70,7 +70,7 @@ public class MobileRamenLogQueryService {
         List<MobileRamenLog> fetched =
                 logs.findMine(userId, ramenType, afterDate, afterId, PageRequest.of(0, size + 1));
         CursorPage<MobileRamenLog> page =
-                CursorPage.of(fetched, size, log -> Cursor.of(log.getVisitedAt(), log.getId()));
+                CursorPage.of(fetched, size, ramenLog -> Cursor.of(ramenLog.getVisitedAt(), ramenLog.getId()));
         return summaries(page, accounts.authors(List.of(userId)), userId);
     }
 
@@ -92,10 +92,10 @@ public class MobileRamenLogQueryService {
                     .filter(id -> !authors.containsKey(id))
                     .collect(Collectors.toSet());
             authors.putAll(accounts.authors(unknown));
-            for (MobileRamenLog log : batch) {
-                MobileAuthor author = authors.get(log.getUserId());
+            for (MobileRamenLog ramenLog : batch) {
+                MobileAuthor author = authors.get(ramenLog.getUserId());
                 if (author != null && author.active()) {
-                    visible.add(log);
+                    visible.add(ramenLog);
                 }
             }
             if (visible.size() > size || batch.size() <= size) {
@@ -106,7 +106,7 @@ public class MobileRamenLogQueryService {
                 return summaries(new CursorPage<>(visible, after.encode(), true), authors, viewerId);
             }
         }
-        CursorPage<MobileRamenLog> page = CursorPage.of(visible, size, log -> feedCursor(sort, log));
+        CursorPage<MobileRamenLog> page = CursorPage.of(visible, size, ramenLog -> feedCursor(sort, ramenLog));
         return summaries(page, authors, viewerId);
     }
 
@@ -118,7 +118,8 @@ public class MobileRamenLogQueryService {
         }
         Map<Long, MobileShopRef> shopRefs = shopRefs(newest);
         return newest.stream()
-                .map(log -> MobileRamenLogResultAssembler.toSummaryItem(log, requiredShop(shopRefs, log.getShopId())))
+                .map(ramenLog -> MobileRamenLogResultAssembler.toSummaryItem(
+                        ramenLog, requiredShop(shopRefs, ramenLog.getShopId())))
                 .toList();
     }
 
@@ -140,12 +141,12 @@ public class MobileRamenLogQueryService {
         }
         Set<Long> liked = likedLogIds(viewerId, ids);
         List<MobileRamenLogSummaryResult> items = page.items().stream()
-                .map(log -> MobileRamenLogResultAssembler.toSummary(
-                        log,
-                        authors.get(log.getUserId()),
-                        requiredShop(shopRefs, log.getShopId()),
-                        urls.getOrDefault(log.getId(), List.of()),
-                        liked.contains(log.getId()),
+                .map(ramenLog -> MobileRamenLogResultAssembler.toSummary(
+                        ramenLog,
+                        authors.get(ramenLog.getUserId()),
+                        requiredShop(shopRefs, ramenLog.getShopId()),
+                        urls.getOrDefault(ramenLog.getId(), List.of()),
+                        liked.contains(ramenLog.getId()),
                         viewerId))
                 .toList();
         return new CursorPage<>(items, page.nextCursor(), page.hasNext());
@@ -178,10 +179,10 @@ public class MobileRamenLogQueryService {
         };
     }
 
-    private Cursor feedCursor(MobileRamenLogSort sort, MobileRamenLog log) {
+    private Cursor feedCursor(MobileRamenLogSort sort, MobileRamenLog ramenLog) {
         return switch (sort) {
-            case LATEST -> Cursor.of(log.getCreatedAt(), log.getId());
-            case LIKES -> Cursor.of(log.getLikeCount(), log.getId());
+            case LATEST -> Cursor.of(ramenLog.getCreatedAt(), ramenLog.getId());
+            case LIKES -> Cursor.of(ramenLog.getLikeCount(), ramenLog.getId());
         };
     }
 

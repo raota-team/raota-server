@@ -23,19 +23,19 @@ public class MobileRamenLogLikeService {
 
     @Transactional
     public MobileRamenLogLikeResult like(Long logId, Long userId) {
-        MobileRamenLog log = visibility.visibleForUpdate(logId, userId);
+        MobileRamenLog ramenLog = visibility.visibleForUpdate(logId, userId);
         if (likes.insertIfAbsent(userId, logId, Instant.now(clock).truncatedTo(ChronoUnit.MICROS)) == 1) {
-            log.addLike();
+            ramenLog.addLike();
         }
-        return new MobileRamenLogLikeResult(true, log.getLikeCount());
+        return new MobileRamenLogLikeResult(true, ramenLog.getLikeCount());
     }
 
     @Transactional
     public MobileRamenLogLikeResult unlike(Long logId, Long userId) {
-        MobileRamenLog log = visibility.visibleForUpdate(logId, userId);
+        MobileRamenLog ramenLog = visibility.visibleForUpdate(logId, userId);
         if (likes.deleteLike(userId, logId) == 1) {
-            log.removeLike();
+            ramenLog.removeLike();
         }
-        return new MobileRamenLogLikeResult(false, log.getLikeCount());
+        return new MobileRamenLogLikeResult(false, ramenLog.getLikeCount());
     }
 }

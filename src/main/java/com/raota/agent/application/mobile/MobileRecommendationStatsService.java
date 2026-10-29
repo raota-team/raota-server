@@ -85,7 +85,7 @@ public class MobileRecommendationStatsService {
                         .toList());
         Map<String, List<Instant>> written =
                 byUserShop(logs.logsCreatedBetween(userIds, fromInstant, activityEnd).stream()
-                        .map(log -> new Activity(log.userId(), log.shopId(), log.createdAt()))
+                        .map(ramenLog -> new Activity(ramenLog.userId(), ramenLog.shopId(), ramenLog.createdAt()))
                         .toList());
 
         Tally overall = new Tally(OVERALL);

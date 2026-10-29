@@ -18,7 +18,7 @@ final class MobileRamenLogResultAssembler {
 
     /** 기록 상세 화면용이다. 댓글 첫 페이지를 함께 담는다. */
     static MobileRamenLogDetailResult toDetail(
-            MobileRamenLog log,
+            MobileRamenLog ramenLog,
             MobileAuthor author,
             MobileShopRef shop,
             List<String> imageUrls,
@@ -26,65 +26,65 @@ final class MobileRamenLogResultAssembler {
             CursorPage<MobileRamenLogCommentResult> comments,
             Long viewerId) {
         return new MobileRamenLogDetailResult(
-                log.getId().toString(),
+                ramenLog.getId().toString(),
                 toAuthor(author),
                 toShop(shop),
-                log.getMenuName(),
-                log.getRamenType(),
-                log.getVisitedAt(),
+                ramenLog.getMenuName(),
+                ramenLog.getRamenType(),
+                ramenLog.getVisitedAt(),
                 imageUrls,
-                log.getNote(),
-                log.getTasteNoteCodes(),
-                log.getRevisitIntention(),
-                log.getVisibility(),
-                toScores(log),
-                log.getLikeCount(),
-                log.getCommentCount(),
+                ramenLog.getNote(),
+                ramenLog.getTasteNoteCodes(),
+                ramenLog.getRevisitIntention(),
+                ramenLog.getVisibility(),
+                toScores(ramenLog),
+                ramenLog.getLikeCount(),
+                ramenLog.getCommentCount(),
                 liked,
-                log.getUserId().equals(viewerId),
-                log.getCreatedAt(),
-                log.getUpdatedAt(),
+                ramenLog.getUserId().equals(viewerId),
+                ramenLog.getCreatedAt(),
+                ramenLog.getUpdatedAt(),
                 comments.items(),
                 comments.nextCursor());
     }
 
     /** 피드·내 기록 목록의 카드용이다. */
     static MobileRamenLogSummaryResult toSummary(
-            MobileRamenLog log,
+            MobileRamenLog ramenLog,
             MobileAuthor author,
             MobileShopRef shop,
             List<String> imageUrls,
             boolean liked,
             Long viewerId) {
         return new MobileRamenLogSummaryResult(
-                log.getId().toString(),
+                ramenLog.getId().toString(),
                 toAuthor(author),
                 toShop(shop),
-                log.getMenuName(),
-                log.getRamenType(),
-                log.getVisitedAt(),
+                ramenLog.getMenuName(),
+                ramenLog.getRamenType(),
+                ramenLog.getVisitedAt(),
                 imageUrls,
-                log.getNote(),
-                log.getTasteNoteCodes(),
-                log.getRevisitIntention(),
-                log.getVisibility(),
-                toScores(log),
-                log.getLikeCount(),
-                log.getCommentCount(),
+                ramenLog.getNote(),
+                ramenLog.getTasteNoteCodes(),
+                ramenLog.getRevisitIntention(),
+                ramenLog.getVisibility(),
+                toScores(ramenLog),
+                ramenLog.getLikeCount(),
+                ramenLog.getCommentCount(),
                 liked,
-                log.getUserId().equals(viewerId),
-                log.getCreatedAt());
+                ramenLog.getUserId().equals(viewerId),
+                ramenLog.getCreatedAt());
     }
 
     /** 취향 결산에 쓰는 가벼운 기록 항목이다(작성자·사진·본문 없음). */
-    static MobileRamenLogSummaryItemResult toSummaryItem(MobileRamenLog log, MobileShopRef shop) {
+    static MobileRamenLogSummaryItemResult toSummaryItem(MobileRamenLog ramenLog, MobileShopRef shop) {
         return new MobileRamenLogSummaryItemResult(
-                log.getId().toString(),
-                log.getVisitedAt(),
+                ramenLog.getId().toString(),
+                ramenLog.getVisitedAt(),
                 new MobileRamenLogSummaryItemResult.Shop(shop.id().toString(), shop.name(), shop.branchName()),
-                log.getMenuName(),
-                log.getRamenType(),
-                toScores(log));
+                ramenLog.getMenuName(),
+                ramenLog.getRamenType(),
+                toScores(ramenLog));
     }
 
     static MobileRamenLogCommentResult toComment(MobileRamenLogComment comment, MobileAuthor author, Long viewerId) {
@@ -107,15 +107,15 @@ final class MobileRamenLogResultAssembler {
     }
 
     /** 점수가 없는 기록(v1에서 옮긴 기록)은 {@code null}이다. */
-    private static MobileRamenLogDetailResult.Scores toScores(MobileRamenLog log) {
-        if (log.getSatisfactionScore() == null) {
+    private static MobileRamenLogDetailResult.Scores toScores(MobileRamenLog ramenLog) {
+        if (ramenLog.getSatisfactionScore() == null) {
             return null;
         }
         return new MobileRamenLogDetailResult.Scores(
-                log.getSatisfactionScore(),
-                log.getBrothDensityScore(),
-                log.getNoodleFirmnessScore(),
-                log.getToppingScore(),
-                log.getRevisitIntention().score());
+                ramenLog.getSatisfactionScore(),
+                ramenLog.getBrothDensityScore(),
+                ramenLog.getNoodleFirmnessScore(),
+                ramenLog.getToppingScore(),
+                ramenLog.getRevisitIntention().score());
     }
 }
