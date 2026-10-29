@@ -91,6 +91,7 @@ public class MobileRamenLogService {
         validateVisitedAt(command.visitedAt());
         validateRamenType(command.ramenType());
         validateTasteCodes(command.tasteNoteCodes());
+        rejectDuplicateImageUrls(command.imageUrls());
         validateImageUrls(command.imageUrls());
         shops.findPublishedShopRef(shopId);
         Instant now = now();
@@ -149,6 +150,7 @@ public class MobileRamenLogService {
             validateTasteCodes(command.tasteNoteCodes());
         }
         if (command.imageUrls() != null) {
+            rejectDuplicateImageUrls(command.imageUrls());
             validateAddedImageUrls(logId, command.imageUrls());
         }
         Integer before = log.satisfaction();
@@ -276,9 +278,15 @@ public class MobileRamenLogService {
 
     private void validateImageUrls(List<String> urls) {
         for (String url : urls) {
-            if (!imagePolicy.isOwnImage(url)) {
+            if (!imagePolicy.isRamenLogImage(url)) {
                 throw invalid();
             }
+        }
+    }
+
+    private void rejectDuplicateImageUrls(List<String> urls) {
+        if (new HashSet<>(urls).size() != urls.size()) {
+            throw invalid();
         }
     }
 

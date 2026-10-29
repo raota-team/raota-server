@@ -1,6 +1,7 @@
 package com.raota.mobile.account.infrastructure.persistence;
 
 import com.raota.global.file.cleanup.StoredImageReferences;
+import com.raota.mobile.common.upload.MobileImageFolder;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -21,7 +22,7 @@ public class MobileProfileStoredImages implements StoredImageReferences {
 
     @Override
     public String prefix() {
-        return "v2/profiles/";
+        return MobileImageFolder.PROFILE.prefix();
     }
 
     @Override

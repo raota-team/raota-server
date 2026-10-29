@@ -1,6 +1,7 @@
 package com.raota.mobile.ramenlog.infrastructure.persistence;
 
 import com.raota.global.file.cleanup.StoredImageReferences;
+import com.raota.mobile.common.upload.MobileImageFolder;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -21,7 +22,7 @@ public class MobileRamenLogStoredImages implements StoredImageReferences {
 
     @Override
     public String prefix() {
-        return "v2/ramen-logs/";
+        return MobileImageFolder.RAMEN_LOG.prefix();
     }
 
     @Override

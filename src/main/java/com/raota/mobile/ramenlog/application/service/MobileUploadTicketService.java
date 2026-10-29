@@ -5,10 +5,12 @@ import com.raota.global.file.UploadTicketRateLimiter;
 import com.raota.global.presentation.file.response.PresignedUrlResponse;
 import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
+import com.raota.mobile.common.upload.MobileImageFolder;
 import com.raota.mobile.ramenlog.application.command.MobileUploadTicketCommand;
 import com.raota.mobile.ramenlog.application.result.MobileUploadTicketsResult;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,12 +32,12 @@ public class MobileUploadTicketService {
                 && command.files().size() != 1) {
             throw new MobileException(MobileErrorCode.VALIDATION_ERROR, "프로필 사진은 한 장만 업로드할 수 있습니다.");
         }
-        String directory = switch (command.purpose()) {
-            case PROFILE -> "v2/profiles";
-            case RAMEN_LOG -> "v2/ramen-logs";
+        MobileImageFolder folder = switch (command.purpose()) {
+            case PROFILE -> MobileImageFolder.PROFILE;
+            case RAMEN_LOG -> MobileImageFolder.RAMEN_LOG;
         };
         for (MobileUploadTicketCommand.File file : command.files()) {
-            if (!validExtension(file.contentType(), file.extension())) {
+            if (!validExtension(file.contentType(), extension(file))) {
                 throw new MobileException(MobileErrorCode.VALIDATION_ERROR, "사진 형식과 확장자를 확인해 주세요.");
             }
         }
@@ -47,7 +49,7 @@ public class MobileUploadTicketService {
         }
         List<MobileUploadTicketsResult.Upload> uploads = command.files().stream()
                 .map(file -> upload(
-                        uploader.getPresignedUrl(directory, "." + file.extension(), file.contentType()),
+                        uploader.getPresignedUrl(folder.directory(), "." + extension(file), file.contentType()),
                         file.contentType()))
                 .toList();
         return new MobileUploadTicketsResult(uploads);
@@ -62,6 +64,11 @@ public class MobileUploadTicketService {
         Map<String, String> fields = new LinkedHashMap<>();
         signed.uploadParams().forEach((name, value) -> fields.put(name, String.valueOf(value)));
         return new MobileUploadTicketsResult.Upload("POST", signed.uploadUrl(), fields, null, signed.imgUrl());
+    }
+
+    /** 아이폰 사진처럼 {@code JPG}로 와도 받고, 저장 키는 소문자로 만든다. */
+    private static String extension(MobileUploadTicketCommand.File file) {
+        return file.extension().toLowerCase(Locale.ROOT);
     }
 
     private boolean validExtension(String contentType, String extension) {
