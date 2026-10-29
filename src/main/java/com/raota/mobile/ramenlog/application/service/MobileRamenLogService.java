@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -33,6 +35,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 /** 작성·수정·삭제와 회원·매장 집계가 함께 커밋되도록 묶는다. */
 @Service
+@RequiredArgsConstructor
 public class MobileRamenLogService {
 
     private static final ZoneId SEOUL = ZoneId.of("Asia/Seoul");
@@ -40,85 +43,51 @@ public class MobileRamenLogService {
     static final Set<String> RAMEN_TYPES =
             Set.of("쇼유", "돈코츠", "이에케", "시오", "미소", "토리파이탄", "니보시", "지로", "츠케멘", "탄탄멘", "마제소바", "아부라소바", "기타");
 
-    private final MobileRamenLogRepository logs;
+    private final MobileRamenLogRepository ramenLogRepository;
 
-    private final MobileRamenLogImageRepository images;
+    private final MobileRamenLogImageRepository imageRepository;
 
-    private final MobileRamenLogLikeRepository likes;
+    private final MobileRamenLogLikeRepository likeRepository;
 
-    private final MobileRamenLogCommentService comments;
+    private final MobileRamenLogCommentService commentService;
 
-    private final MobileShopRamenLogFacade shops;
+    private final MobileShopRamenLogFacade shopFacade;
 
-    private final MobileAccountRamenLogFacade accounts;
+    private final MobileAccountRamenLogFacade accountFacade;
 
-    private final MobileUploadedImagePolicy imagePolicy;
+    private final MobileUploadedImagePolicy uploadedImagePolicy;
 
     private final Clock clock;
 
-    private final TransactionTemplate createTransaction;
-
-    public MobileRamenLogService(
-            MobileRamenLogRepository logs,
-            MobileRamenLogImageRepository images,
-            MobileRamenLogLikeRepository likes,
-            MobileRamenLogCommentService comments,
-            MobileShopRamenLogFacade shops,
-            MobileAccountRamenLogFacade accounts,
-            MobileUploadedImagePolicy imagePolicy,
-            Clock clock,
-            PlatformTransactionManager transactionManager) {
-        this.logs = logs;
-        this.images = images;
-        this.likes = likes;
-        this.comments = comments;
-        this.shops = shops;
-        this.accounts = accounts;
-        this.imagePolicy = imagePolicy;
-        this.clock = clock;
-        this.createTransaction = new TransactionTemplate(transactionManager);
-        this.createTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-    }
+    private final PlatformTransactionManager transactionManager;
 
     public MobileRamenLogDetailResult create(Long userId, String key, MobileCreateRamenLogCommand command) {
         MobileRamenLog previous =
-                logs.findByUserIdAndIdempotencyKey(userId, key).orElse(null);
+                ramenLogRepository.findByUserIdAndIdempotencyKey(userId, key).orElse(null);
         if (previous != null) {
             rejectDeletedReplay(previous);
             return ownDetail(previous.getId(), userId);
         }
         Long shopId = parseId(command.shopId());
-        validateVisitedAt(command.visitedAt());
-        validateRamenType(command.ramenType());
-        validateTasteCodes(command.tasteNoteCodes());
-        validateImageUrls(command.imageUrls());
-        shops.findPublishedShopRef(shopId);
+        validateContent(command.visitedAt(), command.ramenType(), command.tasteNoteCodes());
+        validateImageUrls(command.imageUrls(), Set.of());
+        shopFacade.findPublishedShopRef(shopId);
         Instant now = now();
         Long id;
         try {
             // UNIQUE 충돌은 이 트랜잭션만 되돌린 뒤 별도 읽기로 먼저 커밋된 기록을 조회한다.
-            id = createTransaction.execute(status -> {
-                MobileRamenLog log = logs.saveAndFlush(MobileRamenLog.create(
-                        userId,
-                        shopId,
-                        command.visitedAt(),
-                        command.menuName(),
-                        command.ramenType(),
-                        command.scores(),
-                        command.revisitIntention(),
-                        command.note(),
-                        command.tasteNoteCodes(),
-                        command.visibility(),
-                        key,
-                        now));
+            id = requiresNewTransaction().execute(status -> {
+                MobileRamenLog log = ramenLogRepository.saveAndFlush(
+                        MobileRamenLog.create(userId, shopId, command.toDraft(), key, now));
                 saveImages(log.getId(), command.imageUrls());
-                accounts.incrementLogCount(userId);
-                shops.recordLogAdded(shopId, log.satisfaction());
+                accountFacade.incrementLogCount(userId);
+                shopFacade.recordLogAdded(shopId, log.satisfaction());
                 return log.getId();
             });
         } catch (DataIntegrityViolationException exception) {
-            MobileRamenLog replayed =
-                    logs.findByUserIdAndIdempotencyKey(userId, key).orElseThrow(() -> exception);
+            MobileRamenLog replayed = ramenLogRepository
+                    .findByUserIdAndIdempotencyKey(userId, key)
+                    .orElseThrow(() -> exception);
             rejectDeletedReplay(replayed);
             id = replayed.getId();
         }
@@ -130,7 +99,7 @@ public class MobileRamenLogService {
         MobileRamenLog log = existing(logId);
         MobileAuthor author = author(log.getUserId());
         if (!log.visibleTo(viewerId) || !author.active()) {
-            throw notFound();
+            throw new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "기록을 찾을 수 없습니다.");
         }
         return response(log, author, viewerId);
     }
@@ -139,24 +108,16 @@ public class MobileRamenLogService {
     public MobileRamenLogDetailResult update(Long logId, Long userId, MobileUpdateRamenLogCommand command) {
         MobileRamenLog log = existingForUpdate(logId);
         requireAuthor(log, userId);
-        if (command.visitedAt() != null) {
-            validateVisitedAt(command.visitedAt());
-        }
-        if (command.ramenType() != null) {
-            validateRamenType(command.ramenType());
-        }
-        if (command.tasteNoteCodes() != null) {
-            validateTasteCodes(command.tasteNoteCodes());
-        }
+        validateContent(command.visitedAt(), command.ramenType(), command.tasteNoteCodes());
         if (command.imageUrls() != null) {
-            validateAddedImageUrls(logId, command.imageUrls());
+            validateImageUrls(command.imageUrls(), attachedImageUrls(logId));
         }
         Integer before = log.satisfaction();
         log.edit(command.toEdit(), now());
-        shops.recordSatisfactionChanged(log.getShopId(), before, log.satisfaction());
+        shopFacade.recordSatisfactionChanged(log.getShopId(), before, log.satisfaction());
         if (command.imageUrls() != null) {
-            images.deleteByRamenLogId(logId);
-            images.flush();
+            imageRepository.deleteByRamenLogId(logId);
+            imageRepository.flush();
             saveImages(logId, command.imageUrls());
         }
         return ownDetail(logId, userId);
@@ -172,7 +133,9 @@ public class MobileRamenLogService {
     /** 관리자가 신고된 기록을 지운다. 이미 지워진 기록이면 아무것도 하지 않는다. 작성자가 지울 때와 같이 회원·매장 집계를 줄인다. */
     @Transactional
     public void removeByModerator(Long logId) {
-        MobileRamenLog log = logs.findByIdForUpdate(logId).orElseThrow(this::notFound);
+        MobileRamenLog log = ramenLogRepository
+                .findByIdForUpdate(logId)
+                .orElseThrow(() -> new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "기록을 찾을 수 없습니다."));
         if (log.getDeletedAt() == null) {
             remove(log);
         }
@@ -180,8 +143,8 @@ public class MobileRamenLogService {
 
     private void remove(MobileRamenLog log) {
         log.softDelete(now());
-        accounts.decrementLogCount(log.getUserId());
-        shops.recordLogRemoved(log.getShopId(), log.satisfaction());
+        accountFacade.decrementLogCount(log.getUserId());
+        shopFacade.recordLogRemoved(log.getShopId(), log.satisfaction());
     }
 
     /**
@@ -194,44 +157,50 @@ public class MobileRamenLogService {
     }
 
     private MobileRamenLogDetailResult ownDetail(Long logId, Long userId) {
-        MobileRamenLog log = logs.findById(logId).orElseThrow(this::notFound);
+        MobileRamenLog log = ramenLogRepository
+                .findById(logId)
+                .orElseThrow(() -> new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "기록을 찾을 수 없습니다."));
         return response(log, author(log.getUserId()), userId);
     }
 
     private MobileRamenLogDetailResult response(MobileRamenLog log, MobileAuthor author, Long viewerId) {
-        MobileShopRef shop = shops.findShopRefs(List.of(log.getShopId())).get(log.getShopId());
+        MobileShopRef shop = shopFacade.findShopRefs(List.of(log.getShopId())).get(log.getShopId());
         if (shop == null) {
             throw new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "매장을 찾을 수 없습니다.");
         }
         List<String> imageUrls =
-                images.findByRamenLogIdInOrderByRamenLogIdAscSortOrderAsc(List.of(log.getId())).stream()
+                imageRepository.findByRamenLogIdInOrderByRamenLogIdAscSortOrderAsc(List.of(log.getId())).stream()
                         .map(MobileRamenLogImage::getUrl)
                         .toList();
-        boolean liked = viewerId != null && likes.existsByUserIdAndRamenLogId(viewerId, log.getId());
+        boolean liked = viewerId != null && likeRepository.existsByUserIdAndRamenLogId(viewerId, log.getId());
         return MobileRamenLogResultAssembler.toDetail(
-                log, author, shop, imageUrls, liked, comments.preview(log.getId(), viewerId), viewerId);
+                log, author, shop, imageUrls, liked, commentService.preview(log.getId(), viewerId), viewerId);
     }
 
     private MobileRamenLog existingForUpdate(Long id) {
-        MobileRamenLog log = logs.findByIdForUpdate(id).orElseThrow(this::notFound);
+        MobileRamenLog log = ramenLogRepository
+                .findByIdForUpdate(id)
+                .orElseThrow(() -> new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "기록을 찾을 수 없습니다."));
         if (log.getDeletedAt() != null) {
-            throw notFound();
+            throw new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "기록을 찾을 수 없습니다.");
         }
         return log;
     }
 
     private MobileRamenLog existing(Long id) {
-        MobileRamenLog log = logs.findById(id).orElseThrow(this::notFound);
+        MobileRamenLog log = ramenLogRepository
+                .findById(id)
+                .orElseThrow(() -> new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "기록을 찾을 수 없습니다."));
         if (log.getDeletedAt() != null) {
-            throw notFound();
+            throw new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "기록을 찾을 수 없습니다.");
         }
         return log;
     }
 
     private MobileAuthor author(Long userId) {
-        MobileAuthor author = accounts.authors(List.of(userId)).get(userId);
+        MobileAuthor author = accountFacade.authors(List.of(userId)).get(userId);
         if (author == null) {
-            throw notFound();
+            throw new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "기록을 찾을 수 없습니다.");
         }
         return author;
     }
@@ -250,52 +219,47 @@ public class MobileRamenLogService {
         for (int index = 0; index < urls.size(); index++) {
             ordered.add(MobileRamenLogImage.of(logId, urls.get(index), index));
         }
-        images.saveAllAndFlush(ordered);
+        imageRepository.saveAllAndFlush(ordered);
     }
 
-    private void validateVisitedAt(LocalDate visitedAt) {
-        if (visitedAt.isAfter(LocalDate.now(clock.withZone(SEOUL)))) {
-            throw invalid();
+    /** 작성은 모든 항목을, 부분 수정은 보낸 항목(null이 아닌 것)만 검사한다. */
+    private void validateContent(LocalDate visitedAt, String ramenType, List<String> tasteNoteCodes) {
+        boolean futureVisit = visitedAt != null && visitedAt.isAfter(LocalDate.now(clock.withZone(SEOUL)));
+        boolean unknownRamenType = ramenType != null && !RAMEN_TYPES.contains(ramenType);
+        boolean invalidTasteCodes = tasteNoteCodes != null && !isValidTasteCodes(tasteNoteCodes);
+        if (futureVisit || unknownRamenType || invalidTasteCodes) {
+            throw new MobileException(MobileErrorCode.VALIDATION_ERROR, "라멘 기록 입력값을 확인해 주세요.");
         }
     }
 
-    private void validateRamenType(String ramenType) {
-        if (!RAMEN_TYPES.contains(ramenType)) {
-            throw invalid();
+    private static boolean isValidTasteCodes(List<String> codes) {
+        return new HashSet<>(codes).size() == codes.size() && codes.stream().allMatch(MobileTasteNote::isCode);
+    }
+
+    /**
+     * 같은 주소를 두 번 붙일 수 없고, 새로 붙이는 주소는 앱이 발급한 기록 사진 주소여야 한다. 이미 붙어 있던 사진({@code attached}, 웹에서
+     * 복사한 기록의 외부 주소 포함)은 그대로 둘 수 있다.
+     */
+    private void validateImageUrls(List<String> urls, Set<String> attached) {
+        boolean duplicated = new HashSet<>(urls).size() != urls.size();
+        boolean notUploaded =
+                urls.stream().anyMatch(url -> !attached.contains(url) && !uploadedImagePolicy.isRamenLogImage(url));
+        if (duplicated || notUploaded) {
+            throw new MobileException(MobileErrorCode.VALIDATION_ERROR, "라멘 기록 입력값을 확인해 주세요.");
         }
     }
 
-    private void validateTasteCodes(List<String> codes) {
-        Set<String> distinct = new HashSet<>();
-        for (String code : codes) {
-            if (!distinct.add(code) || !MobileTasteNote.isCode(code)) {
-                throw invalid();
-            }
-        }
-    }
-
-    private void validateImageUrls(List<String> urls) {
-        for (String url : urls) {
-            if (!imagePolicy.isOwnImage(url)) {
-                throw invalid();
-            }
-        }
-    }
-
-    /** 이미 붙어 있던 사진(v1에서 복사한 기록의 외부 주소 포함)은 그대로 둘 수 있고, 새로 붙이는 주소만 업로드 정책으로 검사한다. */
-    private void validateAddedImageUrls(Long logId, List<String> urls) {
-        Set<String> attached = new HashSet<>();
-        for (MobileRamenLogImage image : images.findByRamenLogIdInOrderByRamenLogIdAscSortOrderAsc(List.of(logId))) {
-            attached.add(image.getUrl());
-        }
-        validateImageUrls(urls.stream().filter(url -> !attached.contains(url)).toList());
+    private Set<String> attachedImageUrls(Long logId) {
+        return imageRepository.findByRamenLogIdInOrderByRamenLogIdAscSortOrderAsc(List.of(logId)).stream()
+                .map(MobileRamenLogImage::getUrl)
+                .collect(Collectors.toSet());
     }
 
     private Long parseId(String value) {
         try {
             return Long.valueOf(value);
         } catch (NumberFormatException exception) {
-            throw invalid();
+            throw new MobileException(MobileErrorCode.VALIDATION_ERROR, "라멘 기록 입력값을 확인해 주세요.");
         }
     }
 
@@ -303,11 +267,10 @@ public class MobileRamenLogService {
         return Instant.now(clock).truncatedTo(ChronoUnit.MICROS);
     }
 
-    private MobileException invalid() {
-        return new MobileException(MobileErrorCode.VALIDATION_ERROR, "라멘 기록 입력값을 확인해 주세요.");
-    }
-
-    private MobileException notFound() {
-        return new MobileException(MobileErrorCode.RESOURCE_NOT_FOUND, "기록을 찾을 수 없습니다.");
+    /** 작성을 바깥과 별도 트랜잭션으로 커밋한다. 멱등키 UNIQUE 충돌이 나도 이 트랜잭션만 되돌리고 먼저 커밋된 기록을 다시 읽을 수 있다. */
+    private TransactionTemplate requiresNewTransaction() {
+        TransactionTemplate template = new TransactionTemplate(transactionManager);
+        template.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        return template;
     }
 }

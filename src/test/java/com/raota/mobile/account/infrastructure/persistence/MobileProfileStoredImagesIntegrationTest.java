@@ -10,6 +10,7 @@ import com.raota.support.BaseIntegrationTest;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,8 +59,8 @@ class MobileProfileStoredImagesIntegrationTest extends BaseIntegrationTest {
         assertThat(contributors).contains(references);
         assertThat(references.prefix()).isEqualTo("v2/profiles/");
 
-        assertThat(references.referencedUrls(List.of(
-                        BASE + "active.png", BASE + "withdrawing.png", BASE + "replaced.png", BASE + "active.png")))
+        assertThat(references.referencedUrls(
+                        Set.of(BASE + "active.png", BASE + "withdrawing.png", BASE + "replaced.png")))
                 .containsExactlyInAnyOrder(BASE + "active.png", BASE + "withdrawing.png");
     }
 }

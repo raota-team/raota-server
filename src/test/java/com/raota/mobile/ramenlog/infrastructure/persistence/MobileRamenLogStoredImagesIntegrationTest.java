@@ -8,8 +8,9 @@ import com.raota.mobile.account.domain.model.Nickname;
 import com.raota.mobile.account.domain.repository.MobileUserRepository;
 import com.raota.support.BaseIntegrationTest;
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -78,14 +79,13 @@ class MobileRamenLogStoredImagesIntegrationTest extends BaseIntegrationTest {
         assertThat(contributors).contains(references);
         assertThat(references.prefix()).isEqualTo("v2/ramen-logs/");
 
-        assertThat(references.referencedUrls(
-                        List.of(BASE + "live.jpg", BASE + "deleted.jpg", BASE + "orphan.jpg", BASE + "live.jpg")))
+        assertThat(references.referencedUrls(Set.of(BASE + "live.jpg", BASE + "deleted.jpg", BASE + "orphan.jpg")))
                 .containsExactlyInAnyOrder(BASE + "live.jpg", BASE + "deleted.jpg");
     }
 
     @Test
     void 주소가_많으면_나눠서_조회해도_참조를_모두_찾는다() {
-        List<String> urls = new ArrayList<>();
+        Set<String> urls = new HashSet<>();
         for (int index = 0; index < 1200; index++) {
             urls.add(BASE + "orphan-" + index + ".jpg");
         }

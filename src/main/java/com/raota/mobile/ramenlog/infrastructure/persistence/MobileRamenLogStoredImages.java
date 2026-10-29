@@ -1,7 +1,7 @@
 package com.raota.mobile.ramenlog.infrastructure.persistence;
 
 import com.raota.global.file.cleanup.StoredImageReferences;
-import java.util.Collection;
+import com.raota.mobile.common.upload.MobileImageFolder;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -17,20 +17,20 @@ public class MobileRamenLogStoredImages implements StoredImageReferences {
 
     private static final int BATCH_SIZE = 500;
 
-    private final NamedParameterJdbcTemplate namedJdbc;
+    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     @Override
     public String prefix() {
-        return "v2/ramen-logs/";
+        return MobileImageFolder.RAMEN_LOG.prefix();
     }
 
     @Override
-    public Set<String> referencedUrls(Collection<String> urls) {
-        List<String> distinct = List.copyOf(new HashSet<>(urls));
+    public Set<String> referencedUrls(Set<String> urls) {
+        List<String> urlList = List.copyOf(urls);
         Set<String> referenced = new HashSet<>();
-        for (int start = 0; start < distinct.size(); start += BATCH_SIZE) {
-            List<String> batch = distinct.subList(start, Math.min(start + BATCH_SIZE, distinct.size()));
-            referenced.addAll(namedJdbc.queryForList(
+        for (int start = 0; start < urlList.size(); start += BATCH_SIZE) {
+            List<String> batch = urlList.subList(start, Math.min(start + BATCH_SIZE, urlList.size()));
+            referenced.addAll(namedParameterJdbcTemplate.queryForList(
                     "SELECT DISTINCT url FROM tb_v2_ramen_log_image WHERE url IN (:urls)",
                     Map.of("urls", batch),
                     String.class));

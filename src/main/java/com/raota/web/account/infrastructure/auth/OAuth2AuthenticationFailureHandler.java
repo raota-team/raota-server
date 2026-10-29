@@ -40,6 +40,9 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
     private String resolveProvider(HttpServletRequest request) {
         String uri = request.getRequestURI();
         int lastSlashIndex = uri.lastIndexOf('/');
-        return lastSlashIndex >= 0 ? uri.substring(lastSlashIndex + 1) : "unknown";
+        if (lastSlashIndex < 0) {
+            return "unknown";
+        }
+        return uri.substring(lastSlashIndex + 1);
     }
 }

@@ -89,6 +89,16 @@ class MobileUploadTicketIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
+    void 확장자는_대소문자를_구분하지_않고_저장_키는_소문자로_만든다() throws Exception {
+        JsonNode ramen = ticket("""
+                {"purpose":"RAMEN_LOG","files":[{"contentType":"image/jpeg","extension":"JPG"}]}
+                """);
+        assertThat(ramen.get(0).get("imageUrl").asString())
+                .startsWith("https://mock.cdn.com/v2/ramen-logs/")
+                .endsWith(".jpg");
+    }
+
+    @Test
     void 장수와_사진_형식이_올바르지_않으면_400이다() throws Exception {
         for (String request : new String[] {"""
                 {"purpose":"RAMEN_LOG","files":[{"contentType":"image/png","extension":"png"},

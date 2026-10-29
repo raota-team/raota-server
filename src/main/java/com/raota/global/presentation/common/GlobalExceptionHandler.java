@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BindException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -126,12 +127,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BindException.class)
     public ResponseEntity<ApiResponse<Void>> handleBindException(BindException exception, HttpServletRequest request) {
-        String fieldName = exception.getFieldError() == null
-                ? "unknown"
-                : exception.getFieldError().getField();
-        Object rejectedValue = exception.getFieldError() == null
-                ? null
-                : exception.getFieldError().getRejectedValue();
+        String fieldName = "unknown";
+        Object rejectedValue = null;
+        FieldError fieldError = exception.getFieldError();
+        if (fieldError != null) {
+            fieldName = fieldError.getField();
+            rejectedValue = fieldError.getRejectedValue();
+        }
         log.info(
                 "Bind exception. method={}, uri={}, query={}, field={}, rejectedValue={}",
                 request.getMethod(),
@@ -146,9 +148,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValid(
             MethodArgumentNotValidException exception, HttpServletRequest request) {
-        String fieldName = exception.getBindingResult().getFieldError() == null
-                ? "unknown"
-                : exception.getBindingResult().getFieldError().getField();
+        String fieldName = "unknown";
+        FieldError fieldError = exception.getBindingResult().getFieldError();
+        if (fieldError != null) {
+            fieldName = fieldError.getField();
+        }
         String message = "잘못된 요청 파라미터입니다: " + fieldName;
         log.info(
                 "Request body validation failed. method={}, uri={}, message={}",

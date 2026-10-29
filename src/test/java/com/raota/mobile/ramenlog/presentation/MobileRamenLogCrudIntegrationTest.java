@@ -116,6 +116,12 @@ class MobileRamenLogCrudIntegrationTest extends BaseIntegrationTest {
                                 "[\"" + IMAGE + "\"]",
                                 "[\"" + IMAGE + "\",\"" + IMAGE + "\",\"" + IMAGE + "\",\"" + IMAGE + "\"]"),
                 valid().replace(IMAGE, "https://elsewhere.example/photo.png"),
+                // 프로필 폴더 사진은 기록 사진 정리 대상이 아니라서, 프로필을 바꾸면 7일 뒤 지워진다.
+                valid().replace(IMAGE, "https://mock.cdn.com/v2/profiles/photo.png"),
+                valid().replace(IMAGE, "https://mock.cdn.com/v2/ramen-logs/../profiles/photo.png"),
+                valid().replace(IMAGE, "https://mock.cdn.com/v2/ramen-logs/nested/photo.png"),
+                valid().replace(IMAGE, "https://mock.cdn.com/v2/ramen-logs/photo.png?x=1"),
+                valid().replace("[\"" + IMAGE + "\"]", "[\"" + IMAGE + "\",\"" + IMAGE + "\"]"),
                 valid().replace("\"ramenType\":\"이에케\"", "\"ramenType\":\"우동\""),
                 valid().replace("[\"BROTH_01\"]", "[\"BROTH_01\",\"BROTH_01\"]"),
                 valid().replace("\"shopId\":\"" + SHOP + "\"", "\"shopId\":\"" + HIDDEN_SHOP + "\""))) {
@@ -309,6 +315,7 @@ class MobileRamenLogCrudIntegrationTest extends BaseIntegrationTest {
                 "{\"note\":\"" + "x".repeat(501) + "\"}",
                 "{\"imageUrls\":[\" \"]}",
                 "{\"tasteNoteCodes\":[\"BROTH_01\",\"BROTH_01\"]}",
+                "{\"imageUrls\":[\"" + IMAGE + "\",\"" + IMAGE + "\"]}",
                 "{\"scores\":{\"satisfaction\":null,\"brothDensity\":2,\"noodleFirmness\":4,\"topping\":3}}")) {
             mvc.perform(patch("/api/v2/ramen-logs/{logId}", id)
                             .header(HttpHeaders.AUTHORIZATION, auth(owner))

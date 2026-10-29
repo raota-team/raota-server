@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -17,18 +18,22 @@ public class OrphanImageCleaner {
 
     static final String ALLOWED_ROOT = "v2/";
 
-    private final ImageObjectStore store;
+    private final ImageObjectStore imageObjectStore;
 
-    private final List<StoredImageReferences> references;
+    private final List<StoredImageReferences> storedImageReferences;
 
     private final Duration retention;
 
     private final int maxDeletes;
 
+    // 스프링 빈이 아니라 정리할 때마다 만드는 객체라서, 받은 기여자 목록을 복사해 두려고 생성자를 직접 쓴다.
     public OrphanImageCleaner(
-            ImageObjectStore store, List<StoredImageReferences> references, Duration retention, int maxDeletes) {
-        this.store = store;
-        this.references = List.copyOf(references);
+            ImageObjectStore imageObjectStore,
+            List<StoredImageReferences> storedImageReferences,
+            Duration retention,
+            int maxDeletes) {
+        this.imageObjectStore = imageObjectStore;
+        this.storedImageReferences = List.copyOf(storedImageReferences);
         this.retention = retention;
         this.maxDeletes = maxDeletes;
     }
@@ -37,7 +42,7 @@ public class OrphanImageCleaner {
         Instant cutoff = now.minus(retention);
         int remaining = maxDeletes;
         List<PrefixResult> results = new ArrayList<>();
-        for (StoredImageReferences contributor : references) {
+        for (StoredImageReferences contributor : storedImageReferences) {
             PrefixResult result = cleanPrefix(contributor, cutoff, remaining);
             remaining -= result.deleted() + result.failed();
             results.add(result);
@@ -53,7 +58,7 @@ public class OrphanImageCleaner {
         }
         List<StoredImage> candidates;
         try {
-            candidates = store.listOlderThan(prefix, cutoff).stream()
+            candidates = imageObjectStore.listOlderThan(prefix, cutoff).stream()
                     .filter(image -> isCandidate(image, prefix, cutoff))
                     .toList();
         } catch (RuntimeException exception) {
@@ -66,7 +71,7 @@ public class OrphanImageCleaner {
         Set<String> referenced;
         try {
             referenced = Set.copyOf(contributor.referencedUrls(
-                    candidates.stream().map(StoredImage::url).toList()));
+                    candidates.stream().map(StoredImage::url).collect(Collectors.toSet())));
         } catch (RuntimeException exception) {
             log.warn("고아 사진 정리: 참조 확인 실패로 건너뜀 prefix={}", prefix, exception);
             return PrefixResult.skipped(prefix, Status.REFERENCE_CHECK_FAILED, candidates.size());
@@ -81,7 +86,7 @@ public class OrphanImageCleaner {
                 break;
             }
             try {
-                store.delete(orphan.key());
+                imageObjectStore.delete(orphan.key());
                 deleted++;
             } catch (RuntimeException exception) {
                 failed++;
