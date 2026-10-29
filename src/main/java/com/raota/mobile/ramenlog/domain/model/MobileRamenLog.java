@@ -89,29 +89,18 @@ public class MobileRamenLog {
     private Instant deletedAt;
 
     public static MobileRamenLog create(
-            Long userId,
-            Long shopId,
-            LocalDate visitedAt,
-            String menuName,
-            String ramenType,
-            MobileRamenLogScores scores,
-            RevisitIntention revisitIntention,
-            String note,
-            List<String> tasteNoteCodes,
-            LogVisibility visibility,
-            String idempotencyKey,
-            Instant now) {
+            Long userId, Long shopId, MobileRamenLogDraft draft, String idempotencyKey, Instant now) {
         MobileRamenLog log = new MobileRamenLog();
         log.userId = userId;
         log.shopId = shopId;
-        log.visitedAt = visitedAt;
-        log.menuName = menuName.trim();
-        log.ramenType = ramenType;
-        log.applyScores(scores);
-        log.revisitIntention = revisitIntention;
-        log.note = note;
-        log.tasteNoteCodes = List.copyOf(tasteNoteCodes);
-        log.visibility = visibility;
+        log.visitedAt = draft.visitedAt();
+        log.menuName = draft.menuName().trim();
+        log.ramenType = draft.ramenType();
+        log.applyScores(draft.scores());
+        log.revisitIntention = draft.revisitIntention();
+        log.note = draft.note();
+        log.tasteNoteCodes = List.copyOf(draft.tasteNoteCodes());
+        log.visibility = draft.visibility();
         log.idempotencyKey = idempotencyKey;
         log.createdAt = now;
         log.updatedAt = now;
