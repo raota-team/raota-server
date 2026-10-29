@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -60,7 +61,7 @@ public class MobileContentReportAdminService {
 
     private final Clock clock;
 
-    /** 열린 신고는 오래된 것부터(24시간 안 처리), 닫힌 신고는 최근 처리한 것부터다. */
+    /** 열린 신고는 오래된 것부터(24시간 안 처리), 닫힌 신고는 최근 처리한 것부터. */
     @Transactional(readOnly = true)
     public OffsetPage<MobileAdminReportResult> list(ReportStatus status, int page, int size) {
         Sort sort = Sort.by(Sort.Order.desc("resolvedAt"), Sort.Order.desc("id"));
@@ -96,21 +97,25 @@ public class MobileContentReportAdminService {
         return new MobileAdminReportResolutionResult(closed);
     }
 
+    // 신고 대상 종류(ReportTargetType)가 추가되면 여기서 빌드가 실패해야 한다.
+    // 일반 switch 문은 새 종류는 아무것도 지우지 않고 신고만 "처리 완료"로 닫힌다.
     private void removeTarget(MobileContentReport report) {
-        switch (report.getTargetType()) {
-            case RAMEN_LOG -> ramenLogs.removeByModerator(report.getTargetId());
-            case RAMEN_LOG_COMMENT -> ramenLogComments.removeByModerator(report.getTargetId());
-        }
+        Consumer<Long> remove = switch (report.getTargetType()) {
+            case RAMEN_LOG -> ramenLogs::removeByModerator;
+            case RAMEN_LOG_COMMENT -> ramenLogComments::removeByModerator;
+        };
+        remove.accept(report.getTargetId());
     }
 
     private Previews previews(List<MobileContentReport> page) {
         Set<Long> logIds = new HashSet<>();
         Set<Long> commentIds = new HashSet<>();
         for (MobileContentReport report : page) {
-            switch (report.getTargetType()) {
-                case RAMEN_LOG -> logIds.add(report.getTargetId());
-                case RAMEN_LOG_COMMENT -> commentIds.add(report.getTargetId());
-            }
+            Set<Long> targetIds = switch (report.getTargetType()) {
+                case RAMEN_LOG -> logIds;
+                case RAMEN_LOG_COMMENT -> commentIds;
+            };
+            targetIds.add(report.getTargetId());
         }
         Map<Long, MobileRamenLogComment> commentById = comments.findAllById(commentIds).stream()
                 .collect(Collectors.toMap(MobileRamenLogComment::getId, Function.identity()));
@@ -146,13 +151,14 @@ public class MobileContentReportAdminService {
 
     private MobileAdminReportResult view(MobileContentReport report, Previews previews) {
         Long targetId = report.getTargetId();
-        Target target = switch (report.getTargetType()) {
-            case RAMEN_LOG -> logTarget(targetId, previews);
-            case RAMEN_LOG_COMMENT -> commentTarget(targetId, previews);
-        };
-        int openCount = switch (report.getTargetType()) {
-            case RAMEN_LOG -> previews.openLogReports().getOrDefault(targetId, 0);
-            case RAMEN_LOG_COMMENT -> previews.openCommentReports().getOrDefault(targetId, 0);
+        TargetPreview preview = switch (report.getTargetType()) {
+            case RAMEN_LOG ->
+                new TargetPreview(
+                        logTarget(targetId, previews), previews.openLogReports().getOrDefault(targetId, 0));
+            case RAMEN_LOG_COMMENT ->
+                new TargetPreview(
+                        commentTarget(targetId, previews),
+                        previews.openCommentReports().getOrDefault(targetId, 0));
         };
         return new MobileAdminReportResult(
                 String.valueOf(report.getId()),
@@ -161,8 +167,8 @@ public class MobileContentReportAdminService {
                 person(report.getReporterId(), previews.authors()),
                 report.getCreatedAt(),
                 report.getResolvedAt(),
-                openCount,
-                target);
+                preview.openCount(),
+                preview.target());
     }
 
     private Target logTarget(Long logId, Previews previews) {
@@ -226,4 +232,6 @@ public class MobileContentReportAdminService {
             Map<Long, MobileAuthor> authors,
             Map<Long, Integer> openLogReports,
             Map<Long, Integer> openCommentReports) {}
+
+    private record TargetPreview(Target target, int openCount) {}
 }
