@@ -28,19 +28,19 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class MobileContentReportAdminController {
 
-    private final MobileContentReportAdminService reports;
+    private final MobileContentReportAdminService contentReportAdminService;
 
     @GetMapping
     public MobileApiResponse<OffsetPage<MobileAdminReportResult>> list(
             @RequestParam(defaultValue = "OPEN") ReportStatus status,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(OffsetPage.MAX_SIZE) int size) {
-        return MobileApiResponse.success(reports.list(status, page, size));
+        return MobileApiResponse.success(contentReportAdminService.listReports(status, page, size));
     }
 
     @PostMapping("/{reportId}/resolve")
     public MobileApiResponse<MobileAdminReportResolutionResult> resolve(
             @PathVariable Long reportId, @RequestBody @Valid MobileResolveReportRequest request) {
-        return MobileApiResponse.success(reports.resolve(reportId, request.action()));
+        return MobileApiResponse.success(contentReportAdminService.resolveReport(reportId, request.action()));
     }
 }

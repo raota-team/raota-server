@@ -38,7 +38,7 @@ public interface MobileContentReportRepository extends JpaRepository<MobileConte
     @Query("""
             update MobileContentReport report set report.status = :status, report.resolvedAt = :resolvedAt
             where report.targetType = :targetType and report.targetId = :targetId
-                and report.status = com.raota.mobile.ramenlog.domain.model.ReportStatus.OPEN
+                and report.status = ReportStatus.OPEN
             """)
     int closeOpen(ReportTargetType targetType, Long targetId, ReportStatus status, Instant resolvedAt);
 
