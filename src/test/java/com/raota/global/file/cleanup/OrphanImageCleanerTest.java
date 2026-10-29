@@ -8,7 +8,6 @@ import com.raota.global.file.cleanup.OrphanImageCleaner.Status;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -59,7 +58,7 @@ class OrphanImageCleanerTest {
             }
 
             @Override
-            public Set<String> referencedUrls(Collection<String> urls) {
+            public Set<String> referencedUrls(Set<String> urls) {
                 throw new IllegalStateException("DB down");
             }
         };
@@ -158,7 +157,7 @@ class OrphanImageCleanerTest {
             }
 
             @Override
-            public Set<String> referencedUrls(Collection<String> urls) {
+            public Set<String> referencedUrls(Set<String> urls) {
                 Set<String> referenced = new HashSet<>(urls);
                 referenced.retainAll(Set.of(referencedUrls));
                 return referenced;

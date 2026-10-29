@@ -1,6 +1,5 @@
 package com.raota.global.file.cleanup;
 
-import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -13,8 +12,8 @@ public interface StoredImageReferences {
     String prefix();
 
     /**
-     * 주어진 CDN 주소 중 DB가 참조하는 것. 지운 기록처럼 아직 행이 남아 있으면 참조로 본다. 확인할 수 없으면 예외를 던진다(그 접두어는
-     * 건너뛴다).
+     * 주어진 CDN 주소(중복 없음) 중 DB가 참조하는 것. 지운 기록처럼 아직 행이 남아 있으면 참조로 본다. 확인할 수 없으면 예외를
+     * 던진다(그 접두어는 건너뛴다).
      */
-    Set<String> referencedUrls(Collection<String> urls);
+    Set<String> referencedUrls(Set<String> urls);
 }

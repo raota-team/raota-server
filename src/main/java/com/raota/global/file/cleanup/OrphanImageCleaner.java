@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -66,7 +67,7 @@ public class OrphanImageCleaner {
         Set<String> referenced;
         try {
             referenced = Set.copyOf(contributor.referencedUrls(
-                    candidates.stream().map(StoredImage::url).toList()));
+                    candidates.stream().map(StoredImage::url).collect(Collectors.toSet())));
         } catch (RuntimeException exception) {
             log.warn("고아 사진 정리: 참조 확인 실패로 건너뜀 prefix={}", prefix, exception);
             return PrefixResult.skipped(prefix, Status.REFERENCE_CHECK_FAILED, candidates.size());

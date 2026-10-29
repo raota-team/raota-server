@@ -2,7 +2,6 @@ package com.raota.mobile.account.infrastructure.persistence;
 
 import com.raota.global.file.cleanup.StoredImageReferences;
 import com.raota.mobile.common.upload.MobileImageFolder;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -26,11 +25,11 @@ public class MobileProfileStoredImages implements StoredImageReferences {
     }
 
     @Override
-    public Set<String> referencedUrls(Collection<String> urls) {
-        List<String> distinct = List.copyOf(new HashSet<>(urls));
+    public Set<String> referencedUrls(Set<String> urls) {
+        List<String> urlList = List.copyOf(urls);
         Set<String> referenced = new HashSet<>();
-        for (int start = 0; start < distinct.size(); start += BATCH_SIZE) {
-            List<String> batch = distinct.subList(start, Math.min(start + BATCH_SIZE, distinct.size()));
+        for (int start = 0; start < urlList.size(); start += BATCH_SIZE) {
+            List<String> batch = urlList.subList(start, Math.min(start + BATCH_SIZE, urlList.size()));
             referenced.addAll(namedJdbc.queryForList(
                     "SELECT DISTINCT avatar_url FROM tb_v2_user WHERE avatar_url IN (:urls)",
                     Map.of("urls", batch),
