@@ -205,7 +205,6 @@ class MobileWithdrawalPurgeIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void 저장된_Apple_토큰을_복호화할_수_없으면_폐기_없이_바로_익명화한다() {
-        // 암호화 키가 바뀌면 다시 시도해도 복호화되지 않는다.
         Long userId = appleUser("v1:not-a-valid-ciphertext");
 
         assertThat(purges.purgeExpired(REQUESTED_AT.plus(Duration.ofDays(30)))).isEqualTo(1);
