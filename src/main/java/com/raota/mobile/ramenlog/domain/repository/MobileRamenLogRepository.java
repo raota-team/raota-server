@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -28,6 +29,20 @@ public interface MobileRamenLogRepository extends JpaRepository<MobileRamenLog, 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select log from MobileRamenLog log where log.id = :id")
     Optional<MobileRamenLog> findByIdForUpdate(Long id);
+
+    /** 관리자 목록. 인자가 null이면 그 조건을 보지 않는다. {@code keyword}는 메뉴명·메모 부분 일치, {@code deleted}는 삭제 여부다. */
+    @Query("""
+            select log from MobileRamenLog log
+            where (:visibility is null or log.visibility = :visibility)
+                and (:deleted is null or (:deleted = true and log.deletedAt is not null)
+                     or (:deleted = false and log.deletedAt is null))
+                and (:keyword is null or log.menuName like concat('%', :keyword, '%')
+                     or log.note like concat('%', :keyword, '%'))
+                and (:userId is null or log.userId = :userId)
+                and (:shopId is null or log.shopId = :shopId)
+            """)
+    Page<MobileRamenLog> findForAdmin(
+            LogVisibility visibility, Boolean deleted, String keyword, Long userId, Long shopId, Pageable pageable);
 
     /** {@code ramenType}이 null이면 종류를 보지 않는다. 비공개 기록도 포함한다. */
     @Query("""
