@@ -21,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import tools.jackson.databind.ObjectMapper;
@@ -136,5 +137,28 @@ class DailyCurationServiceTest {
         verify(aiService).getRecommendation(anyString());
         verify(dailyCurationRepository).save(any());
         verify(valueOperations).set(anyString(), eq("json-string"));
+    }
+
+    @Test
+    @DisplayName("오늘의 큐레이션 생성 - 다른 서버가 먼저 저장했으면 저장된 큐레이션을 캐시한다")
+    void generateDailyCuration_DuplicateDateKey() throws Exception {
+        given(dailyCurationRepository.findByDateKey(anyInt())).willReturn(Optional.empty(), Optional.of(mockCuration));
+        given(weatherClient.getWeatherOutlook()).willReturn("비가 옵니다.");
+        given(aiService.getRecommendation(anyString()))
+                .willReturn(AiRamenRecommendationResponse.builder()
+                        .ramenTypeName("돈코츠라멘")
+                        .title("추천")
+                        .reason("이유")
+                        .build());
+        given(ramenTypeRepository.findAll()).willReturn(List.of(mockRamenType));
+        given(dailyCurationRepository.save(any()))
+                .willThrow(new DataIntegrityViolationException("Duplicate entry for uk_daily_curation_date_key"));
+        given(redisTemplate.opsForValue()).willReturn(valueOperations);
+        given(redisObjectMapper.writeValueAsString(mockCuration)).willReturn("saved-by-other-server");
+
+        DailyCuration result = dailyCurationService.generateDailyCuration();
+
+        assertThat(result).isSameAs(mockCuration);
+        verify(valueOperations).set(anyString(), eq("saved-by-other-server"));
     }
 }
