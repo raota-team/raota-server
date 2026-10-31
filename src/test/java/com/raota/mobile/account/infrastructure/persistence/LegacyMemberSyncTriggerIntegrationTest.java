@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-/** 웹(v1) 회원 가입이 DB 트리거(V45)로 같은 ID의 앱(v2) 회원과 소셜 계정으로 복사된다. */
+/** 웹(v1) 회원 가입이 DB 트리거(V45, V46)로 같은 ID의 앱(v2) 회원과 소셜 계정으로 복사된다. */
 class LegacyMemberSyncTriggerIntegrationTest extends BaseIntegrationTest {
 
     private static final long MEMBER = 900009101L;
@@ -51,18 +51,26 @@ class LegacyMemberSyncTriggerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void 가입_미완료로_만든_뒤_닉네임을_정해_가입을_마치면_앱_회원도_ACTIVE가_된다() {
-        insertMember(MEMBER, "kakao user!", false);
+    void 가입을_마치기_전_닉네임은_복사하지_않고_가입을_마치면_띄어쓰기를_밑줄로_바꿔_ACTIVE가_된다() {
+        insertMember(MEMBER, "윤영채", false);
         assertThat(v2User(MEMBER).get("status")).isEqualTo("ONBOARDING");
         assertThat(v2User(MEMBER).get("nickname")).isNull();
 
         jdbc.update(
                 "UPDATE tb_member_profile SET nickname = ?, is_registration_completed = 1 WHERE id = ?",
-                "새닉네임",
+                " 라멘오니 윤영채 ",
                 MEMBER);
 
         assertThat(v2User(MEMBER).get("status")).isEqualTo("ACTIVE");
-        assertThat(v2User(MEMBER).get("nickname")).isEqualTo("새닉네임");
+        assertThat(v2User(MEMBER).get("nickname")).isEqualTo("라멘오니_윤영채");
+    }
+
+    @Test
+    void 자음이나_특수문자가_있는_닉네임은_그대로_옮긴다() {
+        insertMember(MEMBER, "라ㄹ랜ㄷ?", true);
+
+        assertThat(v2User(MEMBER).get("status")).isEqualTo("ACTIVE");
+        assertThat(v2User(MEMBER).get("nickname")).isEqualTo("라ㄹ랜ㄷ?");
     }
 
     @Test
