@@ -10,9 +10,9 @@ import java.time.LocalDate;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import tools.jackson.databind.ObjectMapper;
 
@@ -53,14 +53,10 @@ public class DailyCurationService {
         return latest;
     }
 
-    /**
-     * AI를 통해 오늘의 추천 정보를 생성한다. (배치용)
-     */
-    @Transactional
+    /** 오늘 큐레이션이 없으면 날씨와 LLM으로 만들어 저장하고 캐시한다. 다른 서버가 먼저 저장했으면 그 큐레이션을 캐시한다. */
     public DailyCuration generateDailyCuration() {
         int currentDateKey = calculateDateKey();
 
-        // 이미 오늘 데이터가 있다면 중복 생성 방지
         Optional<DailyCuration> existing = dailyCurationRepository.findByDateKey(currentDateKey);
         if (existing.isPresent()) {
             cacheCuration(existing.get());
@@ -80,10 +76,19 @@ public class DailyCurationService {
                 .reason(defaultIfBlank(aiResponse.reason(), "오늘 날씨와 잘 어울리는 라멘입니다."))
                 .build();
 
-        DailyCuration saved = dailyCurationRepository.save(curation);
+        DailyCuration saved = saveOrFindExisting(curation);
 
         cacheCuration(saved);
         return saved;
+    }
+
+    private DailyCuration saveOrFindExisting(DailyCuration curation) {
+        try {
+            return dailyCurationRepository.save(curation);
+        } catch (DataIntegrityViolationException exception) {
+            log.info("오늘의 큐레이션: 다른 서버가 먼저 저장해 저장된 큐레이션을 쓴다. dateKey={}", curation.getDateKey());
+            return dailyCurationRepository.findByDateKey(curation.getDateKey()).orElseThrow(() -> exception);
+        }
     }
 
     private void cacheCuration(DailyCuration curation) {
