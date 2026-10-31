@@ -57,7 +57,6 @@ public class DailyCurationService {
     public DailyCuration generateDailyCuration() {
         int currentDateKey = calculateDateKey();
 
-        // 이미 오늘 데이터가 있다면 중복 생성 방지
         Optional<DailyCuration> existing = dailyCurationRepository.findByDateKey(currentDateKey);
         if (existing.isPresent()) {
             cacheCuration(existing.get());

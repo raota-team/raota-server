@@ -17,7 +17,7 @@ public class DailyRecommendationScheduler {
 
     static final String LOCK_KEY = "lock:daily-curation";
 
-    /** 실행이 끝나도 풀지 않고 TTL로만 놓는다. 시계가 조금 늦은 서버가 같은 날 다시 만들지 않는다. */
+    /** 실행이 끝나도 풀지 않아 1시간 동안 다시 실행되지 않는다. */
     private static final Duration LOCK_TTL = Duration.ofHours(1);
 
     private final DailyCurationService dailyCurationService;
