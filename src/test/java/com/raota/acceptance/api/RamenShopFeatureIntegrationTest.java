@@ -3,7 +3,6 @@ package com.raota.acceptance.api;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
 
 import com.raota.support.BaseIntegrationTest;
 import com.raota.web.account.domain.member.model.MemberProfile;
@@ -19,9 +18,7 @@ import com.raota.web.ramenshop.domain.model.RamenShop;
 import com.raota.web.ramenshop.domain.repository.MenuVoteRepository;
 import com.raota.web.ramenshop.domain.repository.RamenShopRepository;
 import io.restassured.RestAssured;
-import io.restassured.http.ContentType;
 import java.time.LocalTime;
-import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -147,21 +144,5 @@ class RamenShopFeatureIntegrationTest extends BaseIntegrationTest {
                 .then()
                 .statusCode(HttpStatus.OK.value())
                 .body("data.is_bookmarked", is(true));
-    }
-
-    @Test
-    @DisplayName("라멘집 인증샷을 업로드하면 업로드된 파일 정보를 반환한다.")
-    void upload_proof_picture_success() {
-        Map<String, String> request =
-                Map.of("imageUrl", "https://example.com/test.jpg", "description", "맛있는 라멘 인증!", "menuName", "맛있는 라멘");
-
-        given().header("Authorization", "Bearer " + accessToken)
-                .contentType(ContentType.JSON)
-                .body(request)
-                .when()
-                .post("/ramen-shops/{shopId}/photos", savedShop.getId())
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("data.image_url", notNullValue());
     }
 }

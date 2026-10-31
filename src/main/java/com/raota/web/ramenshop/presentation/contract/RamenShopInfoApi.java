@@ -23,7 +23,7 @@ public interface RamenShopInfoApi {
     ResponseEntity<ApiResponse<RamenShopBasicInfoResponse>> getShopDetailInfo(
             @Parameter(description = "가게 ID", required = true) Long shopId, Long memberId);
 
-    @Operation(summary = "가게 메뉴 옵션 조회", description = "라멘로그 작성 시 선택할 수 있는 가게의 일반 메뉴와 이벤트 메뉴 이름을 조회합니다.")
+    @Operation(summary = "가게 메뉴 옵션 조회", description = "라멘로그 수정 시 선택할 수 있는 가게의 일반 메뉴와 이벤트 메뉴 이름을 조회합니다.")
     @ApiResponses({@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "성공")})
     ResponseEntity<ApiResponse<RamenShopMenuOptionsResponse>> getShopMenuOptions(
             @Parameter(description = "가게 ID", required = true) Long shopId);

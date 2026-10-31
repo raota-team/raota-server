@@ -55,13 +55,6 @@ public class RamenLogController {
         return ResponseEntity.ok(ApiResponse.success(ramenLogService.getLog(logId, memberId)));
     }
 
-    @Operation(summary = "라멘로그 작성")
-    @PostMapping("/ramen-logs")
-    public ResponseEntity<ApiResponse<RamenLogResponse>> create(
-            @Valid @RequestBody RamenLogUpsertRequest request, @LoginMember Long memberId) {
-        return ResponseEntity.ok(ApiResponse.success(ramenLogService.create(request, memberId)));
-    }
-
     @Operation(summary = "라멘로그 수정")
     @PatchMapping("/ramen-logs/{logId}")
     public ResponseEntity<ApiResponse<RamenLogResponse>> update(

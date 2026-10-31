@@ -7,6 +7,7 @@ import com.raota.support.BaseIntegrationTest;
 import com.raota.web.account.domain.member.model.MemberProfile;
 import com.raota.web.account.domain.member.repository.MemberRepository;
 import com.raota.web.account.infrastructure.auth.JwtTokenProvider;
+import com.raota.web.ramenlog.domain.model.RamenLog;
 import com.raota.web.ramenlog.domain.repository.RamenLogLikeRepository;
 import com.raota.web.ramenlog.domain.repository.RamenLogRepository;
 import com.raota.web.ramenshop.domain.model.Address;
@@ -14,6 +15,7 @@ import com.raota.web.ramenshop.domain.model.RamenShop;
 import com.raota.web.ramenshop.domain.repository.RamenShopRepository;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -68,20 +70,7 @@ class RamenLogIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void ramenLogCrudVisibilityAndLikeFlow() {
-        Long logId = given().header("Authorization", "Bearer " + accessToken)
-                .contentType(ContentType.JSON)
-                .body(payload(true))
-                .when()
-                .post("/ramen-logs")
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .body("data.menuName", equalTo("특제 돈코츠"))
-                .body("data.visitedAt", equalTo("2026-07-01"))
-                .body("data.public", equalTo(true))
-                .body("data.mine", equalTo(true))
-                .extract()
-                .jsonPath()
-                .getLong("data.id");
+        Long logId = savePublicLog();
 
         given().when()
                 .get("/ramen-logs?size=8&sort=LATEST")
@@ -126,15 +115,7 @@ class RamenLogIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void privateLogCategoryHidesOtherwisePublicLogs() {
-        Long logId = given().header("Authorization", "Bearer " + accessToken)
-                .contentType(ContentType.JSON)
-                .body(payload(true))
-                .post("/ramen-logs")
-                .then()
-                .statusCode(HttpStatus.OK.value())
-                .extract()
-                .jsonPath()
-                .getLong("data.id");
+        Long logId = savePublicLog();
 
         given().header("Authorization", "Bearer " + accessToken)
                 .contentType(ContentType.JSON)
@@ -159,12 +140,7 @@ class RamenLogIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void publicFeedIncludesLogsFromDeletedMembers() {
-        given().header("Authorization", "Bearer " + accessToken)
-                .contentType(ContentType.JSON)
-                .body(payload(true))
-                .post("/ramen-logs")
-                .then()
-                .statusCode(HttpStatus.OK.value());
+        savePublicLog();
 
         member.softDelete(LocalDateTime.now());
         memberRepository.saveAndFlush(member);
@@ -173,6 +149,20 @@ class RamenLogIntegrationTest extends BaseIntegrationTest {
                 .then()
                 .statusCode(HttpStatus.OK.value())
                 .body("data.items.size()", equalTo(1));
+    }
+
+    // 웹은 새 기록을 만들지 않으므로 기존 웹 기록은 저장소로 바로 만든다.
+    private Long savePublicLog() {
+        return ramenLogRepository
+                .save(RamenLog.builder()
+                        .author(member)
+                        .ramenShop(shop)
+                        .menuName("특제 돈코츠")
+                        .ramenType("돈코츠")
+                        .imageUrl("proof/ramen-log.webp")
+                        .visitedAt(LocalDate.of(2026, 7, 1))
+                        .build())
+                .getId();
     }
 
     private Map<String, Object> payload(boolean isPublic) {
