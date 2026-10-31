@@ -1,6 +1,7 @@
 package com.raota.mobile.ramenlog.presentation.admin;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
@@ -29,7 +30,9 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-/** 관리자 웹의 라운지 신고 처리: 대상 미리보기, 같은 대상 신고 일괄 종료, 삭제 시 집계, 중복 처리 거절을 확인한다. */
+/**
+ * 관리자 웹의 라운지 신고 처리: 대상 미리보기와 비공개·삭제 대상 가림, 같은 대상 신고 일괄 종료, 삭제 시 집계, 비공개 기록 삭제·중복 처리 거절을 확인한다.
+ */
 class MobileContentReportAdminIntegrationTest extends BaseIntegrationTest {
 
     private static final String BASE = "/admin/api/v2/reports";
@@ -126,11 +129,13 @@ class MobileContentReportAdminIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.data.items[0].target.menuName").value("특제 쇼유"))
                 .andExpect(jsonPath("$.data.items[0].target.imageUrl").value("https://images.raota.net/log.jpg"))
                 .andExpect(jsonPath("$.data.items[0].target.deleted").value(false))
+                .andExpect(jsonPath("$.data.items[0].target.hidden").value(false))
                 .andExpect(jsonPath("$.data.items[1].id").value(String.valueOf(COMMENT_REPORT)))
                 .andExpect(jsonPath("$.data.items[1].openReportCount").value(1))
                 .andExpect(jsonPath("$.data.items[1].target.ramenLogId").value(String.valueOf(LOG)))
                 .andExpect(jsonPath("$.data.items[1].target.text").value("욕설 댓글"))
                 .andExpect(jsonPath("$.data.items[1].target.author.nickname").value(startsWith("댓글러")))
+                .andExpect(jsonPath("$.data.items[1].target.hidden").value(false))
                 .andExpect(jsonPath("$.data.page.totalElements").value(3));
     }
 
@@ -158,7 +163,51 @@ class MobileContentReportAdminIntegrationTest extends BaseIntegrationTest {
         mvc.perform(get(BASE).param("status", "RESOLVED").with(ADMIN))
                 .andExpect(jsonPath("$.data.items.length()").value(2))
                 .andExpect(jsonPath("$.data.items[0].target.deleted").value(true))
+                .andExpect(jsonPath("$.data.items[0].target.hidden").value(true))
+                .andExpect(jsonPath("$.data.items[0].target.text").value(nullValue()))
+                .andExpect(jsonPath("$.data.items[0].target.menuName").value(nullValue()))
+                .andExpect(jsonPath("$.data.items[0].target.imageUrl").value(nullValue()))
+                .andExpect(jsonPath("$.data.items[0].target.author.nickname").value(startsWith("작성자")))
                 .andExpect(jsonPath("$.data.items[0].resolvedAt").isNotEmpty());
+        mvc.perform(get(BASE).with(ADMIN))
+                .andExpect(jsonPath("$.data.items.length()").value(1))
+                .andExpect(jsonPath("$.data.items[0].id").value(String.valueOf(COMMENT_REPORT)))
+                .andExpect(jsonPath("$.data.items[0].target.deleted").value(false))
+                .andExpect(jsonPath("$.data.items[0].target.hidden").value(true))
+                .andExpect(jsonPath("$.data.items[0].target.text").value(nullValue()));
+    }
+
+    @Test
+    void 비공개로_바뀐_기록과_그_댓글은_미리보기를_가리고_기록_삭제는_거절하며_기각은_받는다() throws Exception {
+        jdbc.update("UPDATE tb_v2_ramen_log SET visibility = 'PRIVATE' WHERE id = ?", LOG);
+
+        mvc.perform(get(BASE).with(ADMIN))
+                .andExpect(jsonPath("$.data.items[0].id").value(String.valueOf(LOG_REPORT_FIRST)))
+                .andExpect(jsonPath("$.data.items[0].target.hidden").value(true))
+                .andExpect(jsonPath("$.data.items[0].target.deleted").value(false))
+                .andExpect(jsonPath("$.data.items[0].target.text").value(nullValue()))
+                .andExpect(jsonPath("$.data.items[0].target.menuName").value(nullValue()))
+                .andExpect(jsonPath("$.data.items[0].target.imageUrl").value(nullValue()))
+                .andExpect(jsonPath("$.data.items[0].target.author.nickname").value(startsWith("작성자")))
+                .andExpect(jsonPath("$.data.items[0].openReportCount").value(2))
+                .andExpect(jsonPath("$.data.items[1].id").value(String.valueOf(COMMENT_REPORT)))
+                .andExpect(jsonPath("$.data.items[1].target.hidden").value(true))
+                .andExpect(jsonPath("$.data.items[1].target.deleted").value(false))
+                .andExpect(jsonPath("$.data.items[1].target.text").value(nullValue()))
+                .andExpect(jsonPath("$.data.items[1].target.ramenLogId").value(String.valueOf(LOG)));
+
+        resolve(LOG_REPORT_FIRST, "DELETE_CONTENT")
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("FORBIDDEN"));
+        assertThat(jdbc.queryForObject(
+                        "SELECT deleted_at IS NULL FROM tb_v2_ramen_log WHERE id = ?", Boolean.class, LOG))
+                .isTrue();
+        assertThat(statuses()).containsOnly("OPEN");
+
+        resolve(LOG_REPORT_FIRST, "DISMISS")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.closedReportCount").value(2));
+        assertThat(statuses()).containsExactly("DISMISSED", "DISMISSED", "OPEN");
     }
 
     @Test

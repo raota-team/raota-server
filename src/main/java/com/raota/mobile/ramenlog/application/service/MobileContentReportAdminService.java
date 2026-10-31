@@ -10,6 +10,7 @@ import com.raota.mobile.ramenlog.application.result.MobileAdminReportResolutionR
 import com.raota.mobile.ramenlog.application.result.MobileAdminReportResult;
 import com.raota.mobile.ramenlog.application.result.MobileAdminReportResult.Person;
 import com.raota.mobile.ramenlog.application.result.MobileAdminReportResult.Target;
+import com.raota.mobile.ramenlog.domain.model.LogVisibility;
 import com.raota.mobile.ramenlog.domain.model.MobileContentReport;
 import com.raota.mobile.ramenlog.domain.model.MobileRamenLog;
 import com.raota.mobile.ramenlog.domain.model.MobileRamenLogComment;
@@ -101,10 +102,22 @@ public class MobileContentReportAdminService {
 
     private void removeTarget(MobileContentReport report) {
         Consumer<Long> remove = switch (report.getTargetType()) {
-            case RAMEN_LOG -> ramenLogService::removeByModerator;
+            case RAMEN_LOG -> this::removeRamenLog;
             case RAMEN_LOG_COMMENT -> commentService::removeByModerator;
         };
         remove.accept(report.getTargetId());
+    }
+
+    private void removeRamenLog(Long logId) {
+        // 잠근 채로 공개 범위를 봐야 작성자가 그 사이 비공개로 바꾼 기록을 지우지 않는다.
+        boolean hidden = ramenLogRepository
+                .findByIdForUpdate(logId)
+                .map(ramenLog -> ramenLog.getVisibility() != LogVisibility.PUBLIC)
+                .orElse(false);
+        if (hidden) {
+            throw MobileRamenLogAdminService.privateLogNotDeletable();
+        }
+        ramenLogService.removeByModerator(logId);
     }
 
     private Previews findPreviews(List<MobileContentReport> page) {
@@ -119,15 +132,32 @@ public class MobileContentReportAdminService {
         }
         Map<Long, MobileRamenLogComment> commentById = commentRepository.findAllById(commentIds).stream()
                 .collect(Collectors.toMap(MobileRamenLogComment::getId, Function.identity()));
-        Map<Long, MobileRamenLog> logById = ramenLogRepository.findAllById(logIds).stream()
+        // 댓글 미리보기도 달린 기록의 지금 상태로 가리므로 부모 기록을 함께 읽는다.
+        Set<Long> readLogIds = new HashSet<>(logIds);
+        commentById.values().forEach(comment -> readLogIds.add(comment.getRamenLogId()));
+        Map<Long, MobileRamenLog> logById = ramenLogRepository.findAllById(readLogIds).stream()
                 .collect(Collectors.toMap(MobileRamenLog::getId, Function.identity()));
+        Set<Long> shownLogIds = new HashSet<>();
+        for (Long logId : logIds) {
+            if (!isHiddenLog(logById.get(logId))) {
+                shownLogIds.add(logId);
+            }
+        }
         Map<Long, String> firstImage = new HashMap<>();
-        for (MobileRamenLogImage image : imageRepository.findByRamenLogIdInOrderByRamenLogIdAscSortOrderAsc(logIds)) {
-            firstImage.putIfAbsent(image.getRamenLogId(), image.getUrl());
+        if (!shownLogIds.isEmpty()) {
+            for (MobileRamenLogImage image :
+                    imageRepository.findByRamenLogIdInOrderByRamenLogIdAscSortOrderAsc(shownLogIds)) {
+                firstImage.putIfAbsent(image.getRamenLogId(), image.getUrl());
+            }
         }
         Set<Long> userIds = new HashSet<>();
         page.forEach(report -> userIds.add(report.getReporterId()));
-        logById.values().forEach(ramenLog -> userIds.add(ramenLog.getUserId()));
+        for (Long logId : logIds) {
+            MobileRamenLog ramenLog = logById.get(logId);
+            if (ramenLog != null) {
+                userIds.add(ramenLog.getUserId());
+            }
+        }
         commentById.values().forEach(comment -> userIds.add(comment.getUserId()));
         return new Previews(
                 logById,
@@ -177,15 +207,30 @@ public class MobileContentReportAdminService {
         if (ramenLog == null) {
             return toMissingTarget(ReportTargetType.RAMEN_LOG, logId, logId);
         }
+        Person author = toPerson(ramenLog.getUserId(), previews.authors());
+        boolean deleted = ramenLog.getDeletedAt() != null;
+        if (isHiddenLog(ramenLog)) {
+            return new Target(
+                    ReportTargetType.RAMEN_LOG,
+                    String.valueOf(logId),
+                    String.valueOf(logId),
+                    author,
+                    null,
+                    null,
+                    null,
+                    deleted,
+                    true);
+        }
         return new Target(
                 ReportTargetType.RAMEN_LOG,
                 String.valueOf(logId),
                 String.valueOf(logId),
-                toPerson(ramenLog.getUserId(), previews.authors()),
+                author,
                 ramenLog.getNote(),
                 ramenLog.getMenuName(),
                 previews.firstImages().get(logId),
-                ramenLog.getDeletedAt() != null);
+                deleted,
+                false);
     }
 
     private Target toCommentTarget(Long commentId, Previews previews) {
@@ -193,15 +238,27 @@ public class MobileContentReportAdminService {
         if (comment == null) {
             return toMissingTarget(ReportTargetType.RAMEN_LOG_COMMENT, commentId, null);
         }
+        boolean deleted = comment.getDeletedAt() != null;
+        boolean hidden = deleted || isHiddenLog(previews.logs().get(comment.getRamenLogId()));
+        String text = null;
+        if (!hidden) {
+            text = comment.getContent();
+        }
         return new Target(
                 ReportTargetType.RAMEN_LOG_COMMENT,
                 String.valueOf(commentId),
                 String.valueOf(comment.getRamenLogId()),
                 toPerson(comment.getUserId(), previews.authors()),
-                comment.getContent(),
+                text,
                 null,
                 null,
-                comment.getDeletedAt() != null);
+                deleted,
+                hidden);
+    }
+
+    /** 기록 행이 없거나 삭제됐거나 지금 공개가 아니면 관리자에게 내용을 보여 주지 않는다. */
+    private static boolean isHiddenLog(MobileRamenLog ramenLog) {
+        return ramenLog == null || ramenLog.getDeletedAt() != null || ramenLog.getVisibility() != LogVisibility.PUBLIC;
     }
 
     /** 대상 행이 없으면(정상 흐름에서는 탈퇴 정리 때 신고도 함께 지워진다) 지워진 대상으로 보여 준다. */
@@ -210,7 +267,7 @@ public class MobileContentReportAdminService {
         if (ramenLogId != null) {
             logId = String.valueOf(ramenLogId);
         }
-        return new Target(type, String.valueOf(targetId), logId, null, null, null, null, true);
+        return new Target(type, String.valueOf(targetId), logId, null, null, null, null, true, true);
     }
 
     private static Person toPerson(Long userId, Map<Long, MobileAuthor> authors) {

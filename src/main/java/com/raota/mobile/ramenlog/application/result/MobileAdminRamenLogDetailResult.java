@@ -8,24 +8,25 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
-/** 관리자 기록 상세다. 목록 항목의 모든 필드에 사진·맛 노트·재방문 의사·점수를 더한다. */
+/**
+ * 관리자 기록 상세다. 목록 항목의 필드에 사진·맛 노트·재방문 의사·점수를 더한다. 비공개 기록은 목록과 같이 가리고 더한 필드도 모두 null이다.
+ */
 public record MobileAdminRamenLogDetailResult(
         String id,
+        LogVisibility visibility,
+        Instant createdAt,
         Author author,
         Shop shop,
         String menuName,
         String ramenType,
         LocalDate visitedAt,
-        LogVisibility visibility,
         String note,
         String thumbnailUrl,
-        int imageCount,
-        int likeCount,
-        int commentCount,
-        int openReportCount,
-        Instant createdAt,
+        Integer imageCount,
+        Integer likeCount,
+        Integer commentCount,
+        Integer openReportCount,
         Instant updatedAt,
-        Instant deletedAt,
         List<String> imageUrls,
         List<TasteNote> tasteNotes,
         RevisitIntention revisitIntention,

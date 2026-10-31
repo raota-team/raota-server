@@ -1,6 +1,7 @@
 package com.raota.mobile.ramenlog.presentation.admin;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
@@ -23,12 +24,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-/** 관리자 웹의 앱 기록 관리: 비공개·삭제 기록 조회와 필터, 운영자 삭제 시 신고 종료·집계 감소·중복 삭제 거절을 확인한다. */
+/**
+ * 관리자 웹의 앱 기록 관리: 비공개 기록 가림과 공개 기록만 찾는 검색, 삭제 기록 제외, 회원별 개수, 공개 기록만 운영자 삭제하는 것을 확인한다.
+ */
 class MobileRamenLogAdminIntegrationTest extends BaseIntegrationTest {
 
     private static final String BASE = "/admin/api/v2/ramen-logs";
@@ -49,7 +53,23 @@ class MobileRamenLogAdminIntegrationTest extends BaseIntegrationTest {
 
     private static final long REPORT_SECOND = 900006832L;
 
-    private static final long REPORT_PUBLIC = 900006833L;
+    private static final long REPORT_PRIVATE = 900006833L;
+
+    private static final List<String> ROW_HIDDEN_FIELDS = List.of(
+            "shop",
+            "menuName",
+            "ramenType",
+            "visitedAt",
+            "note",
+            "thumbnailUrl",
+            "imageCount",
+            "likeCount",
+            "commentCount",
+            "openReportCount",
+            "updatedAt");
+
+    private static final List<String> DETAIL_HIDDEN_FIELDS =
+            List.of("imageUrls", "tasteNotes", "revisitIntention", "scores");
 
     @Autowired
     private WebApplicationContext context;
@@ -95,16 +115,17 @@ class MobileRamenLogAdminIntegrationTest extends BaseIntegrationTest {
                 VALUES (?, ?, ?, '2026-09-04', '미소 라멘', '미소', '옮겨 온 기록', '[]', 'PRIVATE',
                     '2026-09-04 00:00:00', '2026-09-04 00:00:00')
                 """, LOG_OTHER, other, SHOP);
-        image(LOG_PRIVATE, "https://images.raota.net/second.jpg", 1);
-        image(LOG_PRIVATE, "https://images.raota.net/first.jpg", 0);
-        report(REPORT_FIRST, firstReporter, LOG_PRIVATE);
-        report(REPORT_SECOND, secondReporter, LOG_PRIVATE);
-        report(REPORT_PUBLIC, firstReporter, LOG_PUBLIC);
+        image(LOG_PUBLIC, "https://images.raota.net/second.jpg", 1);
+        image(LOG_PUBLIC, "https://images.raota.net/first.jpg", 0);
+        image(LOG_PRIVATE, "https://images.raota.net/private.jpg", 0);
+        report(REPORT_FIRST, firstReporter, LOG_PUBLIC);
+        report(REPORT_SECOND, secondReporter, LOG_PUBLIC);
+        report(REPORT_PRIVATE, firstReporter, LOG_PRIVATE);
     }
 
     @AfterEach
     void cleanUp() {
-        jdbc.update("DELETE FROM tb_v2_content_report WHERE id BETWEEN ? AND ?", REPORT_FIRST, REPORT_PUBLIC);
+        jdbc.update("DELETE FROM tb_v2_content_report WHERE id BETWEEN ? AND ?", REPORT_FIRST, REPORT_PRIVATE);
         jdbc.update("DELETE FROM tb_v2_ramen_log_image WHERE ramen_log_id BETWEEN ? AND ?", LOG_PUBLIC, LOG_OTHER);
         jdbc.update("DELETE FROM tb_v2_ramen_log WHERE id BETWEEN ? AND ?", LOG_PUBLIC, LOG_OTHER);
         jdbc.update("DELETE FROM tb_v2_shop WHERE id = ?", SHOP);
@@ -112,67 +133,72 @@ class MobileRamenLogAdminIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void 다른_회원의_비공개_기록까지_최근_작성순으로_보여주고_필터로_거른다() throws Exception {
-        mvc.perform(list())
+    void 목록은_삭제된_기록을_빼고_비공개_기록은_작성자와_작성일만_보여준다() throws Exception {
+        ResultActions all = mvc.perform(byAuthor())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items.length()").value(3))
-                .andExpect(jsonPath("$.data.items[0].id").value(String.valueOf(LOG_OTHER)))
+                .andExpect(jsonPath("$.data.items.length()").value(2))
+                .andExpect(jsonPath("$.data.page.totalElements").value(2))
+                .andExpect(jsonPath("$.data.items[0].id").value(String.valueOf(LOG_PRIVATE)))
                 .andExpect(jsonPath("$.data.items[0].visibility").value("PRIVATE"))
-                .andExpect(jsonPath("$.data.items[0].thumbnailUrl").isEmpty())
-                .andExpect(jsonPath("$.data.items[0].imageCount").value(0))
-                .andExpect(jsonPath("$.data.items[1].id").value(String.valueOf(LOG_PRIVATE)))
-                .andExpect(jsonPath("$.data.items[1].author.id").value(String.valueOf(author)))
-                .andExpect(jsonPath("$.data.items[1].author.nickname").value(startsWith("작성자")))
+                .andExpect(jsonPath("$.data.items[0].createdAt").isNotEmpty())
+                .andExpect(jsonPath("$.data.items[0].author.id").value(String.valueOf(author)))
+                .andExpect(jsonPath("$.data.items[0].author.nickname").value(startsWith("작성자")))
+                .andExpect(jsonPath("$.data.items[0].deletedAt").doesNotExist())
+                .andExpect(jsonPath("$.data.items[1].id").value(String.valueOf(LOG_PUBLIC)))
+                .andExpect(jsonPath("$.data.items[1].visibility").value("PUBLIC"))
                 .andExpect(jsonPath("$.data.items[1].shop.id").value(String.valueOf(SHOP)))
                 .andExpect(jsonPath("$.data.items[1].shop.name").value("기록관리 매장"))
                 .andExpect(jsonPath("$.data.items[1].shop.branchName").value("본점"))
-                .andExpect(jsonPath("$.data.items[1].menuName").value("돈코츠"))
+                .andExpect(jsonPath("$.data.items[1].menuName").value("특제 쇼유"))
+                .andExpect(jsonPath("$.data.items[1].ramenType").value("쇼유"))
                 .andExpect(jsonPath("$.data.items[1].visitedAt").value("2026-09-01"))
-                .andExpect(jsonPath("$.data.items[1].note").value("진한 비밀 메모"))
+                .andExpect(jsonPath("$.data.items[1].note").value("맑은 국물"))
                 .andExpect(jsonPath("$.data.items[1].thumbnailUrl").value("https://images.raota.net/first.jpg"))
                 .andExpect(jsonPath("$.data.items[1].imageCount").value(2))
+                .andExpect(jsonPath("$.data.items[1].likeCount").value(0))
+                .andExpect(jsonPath("$.data.items[1].commentCount").value(0))
                 .andExpect(jsonPath("$.data.items[1].openReportCount").value(2))
-                .andExpect(jsonPath("$.data.items[1].deletedAt").isEmpty())
-                .andExpect(jsonPath("$.data.items[2].id").value(String.valueOf(LOG_PUBLIC)))
-                .andExpect(jsonPath("$.data.items[2].openReportCount").value(1))
-                .andExpect(jsonPath("$.data.page.totalElements").value(3));
+                .andExpect(jsonPath("$.data.items[1].updatedAt").isNotEmpty());
+        expectHidden(all, "$.data.items[0]", ROW_HIDDEN_FIELDS);
 
-        mvc.perform(list().param("visibility", "PRIVATE"))
-                .andExpect(jsonPath("$.data.items.length()").value(2))
-                .andExpect(jsonPath("$.data.items[0].id").value(String.valueOf(LOG_OTHER)))
-                .andExpect(jsonPath("$.data.items[1].id").value(String.valueOf(LOG_PRIVATE)));
-        mvc.perform(list().param("state", "DELETED"))
-                .andExpect(jsonPath("$.data.items.length()").value(1))
-                .andExpect(jsonPath("$.data.items[0].id").value(String.valueOf(LOG_DELETED)))
-                .andExpect(jsonPath("$.data.items[0].deletedAt").isNotEmpty());
-        mvc.perform(list().param("state", "ALL"))
-                .andExpect(jsonPath("$.data.page.totalElements").value(4));
-        mvc.perform(list().param("keyword", "  비밀 "))
+        mvc.perform(byAuthor().param("visibility", "PRIVATE"))
                 .andExpect(jsonPath("$.data.items.length()").value(1))
                 .andExpect(jsonPath("$.data.items[0].id").value(String.valueOf(LOG_PRIVATE)));
-        mvc.perform(list().param("keyword", "미소"))
-                .andExpect(jsonPath("$.data.items.length()").value(1))
-                .andExpect(jsonPath("$.data.items[0].id").value(String.valueOf(LOG_OTHER)));
         mvc.perform(get(BASE).param("userId", String.valueOf(other)).with(ADMIN))
                 .andExpect(jsonPath("$.data.items.length()").value(1))
                 .andExpect(jsonPath("$.data.items[0].id").value(String.valueOf(LOG_OTHER)));
-        mvc.perform(list().param("size", "2"))
-                .andExpect(jsonPath("$.data.items.length()").value(2))
+        mvc.perform(byAuthor().param("size", "1"))
+                .andExpect(jsonPath("$.data.items.length()").value(1))
                 .andExpect(jsonPath("$.data.page.totalPages").value(2))
                 .andExpect(jsonPath("$.data.page.hasNext").value(true));
-        mvc.perform(list().param("keyword", "가".repeat(101))).andExpect(status().isBadRequest());
+        mvc.perform(byAuthor().param("keyword", "가".repeat(101))).andExpect(status().isBadRequest());
     }
 
     @Test
-    void 상세는_삭제된_기록과_비공개_기록도_보여준다() throws Exception {
-        mvc.perform(get(BASE + "/" + LOG_DELETED).with(ADMIN))
+    void 키워드와_매장_검색은_공개_기록만_찾는다() throws Exception {
+        mvc.perform(byAuthor().param("keyword", "  비밀 "))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.id").value(String.valueOf(LOG_DELETED)))
-                .andExpect(jsonPath("$.data.deletedAt").isNotEmpty());
-        mvc.perform(get(BASE + "/" + LOG_PRIVATE).with(ADMIN))
+                .andExpect(jsonPath("$.data.items.length()").value(0));
+        mvc.perform(byAuthor().param("keyword", "지운"))
+                .andExpect(jsonPath("$.data.items.length()").value(0));
+        mvc.perform(byAuthor().param("keyword", "맑은"))
+                .andExpect(jsonPath("$.data.items.length()").value(1))
+                .andExpect(jsonPath("$.data.items[0].id").value(String.valueOf(LOG_PUBLIC)));
+        mvc.perform(get(BASE).param("shopId", String.valueOf(SHOP)).with(ADMIN))
+                .andExpect(jsonPath("$.data.items.length()").value(1))
+                .andExpect(jsonPath("$.data.items[0].id").value(String.valueOf(LOG_PUBLIC)));
+        mvc.perform(get(BASE)
+                        .param("shopId", String.valueOf(SHOP))
+                        .param("visibility", "PRIVATE")
+                        .with(ADMIN))
+                .andExpect(jsonPath("$.data.items.length()").value(0));
+    }
+
+    @Test
+    void 상세는_공개_기록만_내용을_보여주고_삭제된_기록은_없는_기록으로_본다() throws Exception {
+        mvc.perform(get(BASE + "/" + LOG_PUBLIC).with(ADMIN))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.visibility").value("PRIVATE"))
-                .andExpect(jsonPath("$.data.author.nickname").value(startsWith("작성자")))
+                .andExpect(jsonPath("$.data.visibility").value("PUBLIC"))
                 .andExpect(jsonPath("$.data.shop.name").value("기록관리 매장"))
                 .andExpect(jsonPath("$.data.openReportCount").value(2))
                 .andExpect(jsonPath("$.data.imageCount").value(2))
@@ -190,43 +216,90 @@ class MobileRamenLogAdminIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.data.scores.brothDensity").value(5))
                 .andExpect(jsonPath("$.data.scores.noodleFirmness").value(3))
                 .andExpect(jsonPath("$.data.scores.topping").value(2));
-        mvc.perform(get(BASE + "/" + LOG_OTHER).with(ADMIN))
+        ResultActions hidden = mvc.perform(get(BASE + "/" + LOG_PRIVATE).with(ADMIN))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.scores").isEmpty())
-                .andExpect(jsonPath("$.data.revisitIntention").isEmpty())
-                .andExpect(jsonPath("$.data.imageUrls.length()").value(0));
-        mvc.perform(get(BASE + "/900006899").with(ADMIN))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+                .andExpect(jsonPath("$.data.id").value(String.valueOf(LOG_PRIVATE)))
+                .andExpect(jsonPath("$.data.visibility").value("PRIVATE"))
+                .andExpect(jsonPath("$.data.createdAt").isNotEmpty())
+                .andExpect(jsonPath("$.data.author.nickname").value(startsWith("작성자")));
+        expectHidden(hidden, "$.data", ROW_HIDDEN_FIELDS);
+        expectHidden(hidden, "$.data", DETAIL_HIDDEN_FIELDS);
+        for (long missing : new long[] {LOG_DELETED, 900006899L}) {
+            mvc.perform(get(BASE + "/" + missing).with(ADMIN))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+        }
     }
 
     @Test
-    void 삭제하면_열린_신고를_닫고_작성자와_매장_집계를_줄이며_다시_지우면_거절한다() throws Exception {
-        mvc.perform(delete(BASE + "/" + LOG_PRIVATE).with(ADMIN))
+    void 공개였던_기록을_비공개로_바꾸면_바로_가리고_삭제를_거절한다() throws Exception {
+        jdbc.update("UPDATE tb_v2_ramen_log SET visibility = 'PRIVATE' WHERE id = ?", LOG_PUBLIC);
+
+        ResultActions listed = mvc.perform(byAuthor())
+                .andExpect(jsonPath("$.data.items[1].id").value(String.valueOf(LOG_PUBLIC)))
+                .andExpect(jsonPath("$.data.items[1].visibility").value("PRIVATE"));
+        expectHidden(listed, "$.data.items[1]", ROW_HIDDEN_FIELDS);
+        ResultActions detail = mvc.perform(get(BASE + "/" + LOG_PUBLIC).with(ADMIN));
+        expectHidden(detail, "$.data", ROW_HIDDEN_FIELDS);
+        expectHidden(detail, "$.data", DETAIL_HIDDEN_FIELDS);
+        mvc.perform(get(BASE).param("shopId", String.valueOf(SHOP)).with(ADMIN))
+                .andExpect(jsonPath("$.data.items.length()").value(0));
+        mvc.perform(delete(BASE + "/" + LOG_PUBLIC).with(ADMIN))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("FORBIDDEN"));
+        assertThat(jdbc.queryForObject(
+                        "SELECT deleted_at IS NULL FROM tb_v2_ramen_log WHERE id = ?", Boolean.class, LOG_PUBLIC))
+                .isTrue();
+    }
+
+    @Test
+    void 공개_기록을_삭제하면_열린_신고를_닫고_집계를_줄이며_비공개와_삭제된_기록은_거절한다() throws Exception {
+        mvc.perform(delete(BASE + "/" + LOG_PUBLIC).with(ADMIN))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.closedReportCount").value(2));
 
         assertThat(jdbc.queryForObject(
-                        "SELECT deleted_at IS NOT NULL FROM tb_v2_ramen_log WHERE id = ?", Boolean.class, LOG_PRIVATE))
+                        "SELECT deleted_at IS NOT NULL FROM tb_v2_ramen_log WHERE id = ?", Boolean.class, LOG_PUBLIC))
                 .isTrue();
         assertThat(jdbc.queryForObject("SELECT log_count FROM tb_v2_user WHERE id = ?", Integer.class, author))
                 .isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT log_count FROM tb_v2_shop WHERE id = ?", Integer.class, SHOP))
                 .isEqualTo(2);
-        assertThat(jdbc.queryForList(
-                        "SELECT status FROM tb_v2_content_report WHERE id BETWEEN ? AND ? ORDER BY id",
-                        String.class,
-                        REPORT_FIRST,
-                        REPORT_PUBLIC))
-                .containsExactly("RESOLVED", "RESOLVED", "OPEN");
+        assertThat(reportStatuses()).containsExactly("RESOLVED", "RESOLVED", "OPEN");
 
+        for (long gone : new long[] {LOG_PUBLIC, LOG_DELETED, 900006899L}) {
+            mvc.perform(delete(BASE + "/" + gone).with(ADMIN))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.error.code").value("RESOURCE_NOT_FOUND"));
+        }
         mvc.perform(delete(BASE + "/" + LOG_PRIVATE).with(ADMIN))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.error.code").value("CONFLICT"));
-        mvc.perform(delete(BASE + "/" + LOG_DELETED).with(ADMIN)).andExpect(status().isConflict());
-        mvc.perform(delete(BASE + "/900006899").with(ADMIN)).andExpect(status().isNotFound());
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error.code").value("FORBIDDEN"));
+        assertThat(jdbc.queryForObject(
+                        "SELECT deleted_at IS NULL FROM tb_v2_ramen_log WHERE id = ?", Boolean.class, LOG_PRIVATE))
+                .isTrue();
         assertThat(jdbc.queryForObject("SELECT log_count FROM tb_v2_user WHERE id = ?", Integer.class, author))
                 .isEqualTo(1);
+        assertThat(reportStatuses()).containsExactly("RESOLVED", "RESOLVED", "OPEN");
+    }
+
+    @Test
+    void 회원별_공개_비공개_기록_수는_삭제된_기록을_빼고_센다() throws Exception {
+        mvc.perform(counts(author))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.userId").value(String.valueOf(author)))
+                .andExpect(jsonPath("$.data.publicCount").value(1))
+                .andExpect(jsonPath("$.data.privateCount").value(1));
+        mvc.perform(counts(other))
+                .andExpect(jsonPath("$.data.publicCount").value(0))
+                .andExpect(jsonPath("$.data.privateCount").value(1));
+        mvc.perform(counts(900006898L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.publicCount").value(0))
+                .andExpect(jsonPath("$.data.privateCount").value(0));
+        mvc.perform(get(BASE + "/counts").with(ADMIN))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
     }
 
     @Test
@@ -234,15 +307,37 @@ class MobileRamenLogAdminIntegrationTest extends BaseIntegrationTest {
         RequestPostProcessor member = user("member").roles("USER");
         mvc.perform(get(BASE)).andExpect(status().isUnauthorized());
         mvc.perform(get(BASE).with(member)).andExpect(status().isForbidden());
-        mvc.perform(get(BASE + "/" + LOG_PRIVATE).with(member)).andExpect(status().isForbidden());
-        mvc.perform(delete(BASE + "/" + LOG_PRIVATE).with(member)).andExpect(status().isForbidden());
+        mvc.perform(get(BASE + "/" + LOG_PUBLIC).with(member)).andExpect(status().isForbidden());
+        mvc.perform(get(BASE + "/counts")
+                        .param("userId", String.valueOf(author))
+                        .with(member))
+                .andExpect(status().isForbidden());
+        mvc.perform(delete(BASE + "/" + LOG_PUBLIC).with(member)).andExpect(status().isForbidden());
         assertThat(jdbc.queryForObject(
-                        "SELECT deleted_at IS NULL FROM tb_v2_ramen_log WHERE id = ?", Boolean.class, LOG_PRIVATE))
+                        "SELECT deleted_at IS NULL FROM tb_v2_ramen_log WHERE id = ?", Boolean.class, LOG_PUBLIC))
                 .isTrue();
     }
 
-    private MockHttpServletRequestBuilder list() {
-        return get(BASE).param("shopId", String.valueOf(SHOP)).with(ADMIN);
+    private MockHttpServletRequestBuilder byAuthor() {
+        return get(BASE).param("userId", String.valueOf(author)).with(ADMIN);
+    }
+
+    private MockHttpServletRequestBuilder counts(Long userId) {
+        return get(BASE + "/counts").param("userId", String.valueOf(userId)).with(ADMIN);
+    }
+
+    private static void expectHidden(ResultActions actions, String path, List<String> fields) throws Exception {
+        for (String field : fields) {
+            actions.andExpect(jsonPath(path + "." + field).value(nullValue()));
+        }
+    }
+
+    private List<String> reportStatuses() {
+        return jdbc.queryForList(
+                "SELECT status FROM tb_v2_content_report WHERE id BETWEEN ? AND ? ORDER BY id",
+                String.class,
+                REPORT_FIRST,
+                REPORT_PRIVATE);
     }
 
     private void scoredLog(
