@@ -5,5 +5,6 @@ public interface AppleTokenClient {
 
     String exchange(String authorizationCode, String expectedSubject);
 
+    /** 4xx 거절은 {@link AppleTokenRevocationRejectedException}, 5xx·연결 실패는 그 밖의 런타임 예외를 던진다. */
     void revoke(String refreshToken);
 }

@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withBadRequest;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
@@ -14,6 +15,7 @@ import com.nimbusds.jose.crypto.ECDSAVerifier;
 import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import com.raota.mobile.account.application.port.AppleTokenRevocationRejectedException;
 import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
 import java.net.URLDecoder;
@@ -150,6 +152,13 @@ class AppleTokenRestClientTest {
         assertThatThrownBy(() -> client.exchange("code", "apple-subject"))
                 .isInstanceOf(RestClientResponseException.class);
         assertThatThrownBy(() -> client.revoke("token")).isInstanceOf(RestClientResponseException.class);
+        server.verify();
+    }
+
+    @Test
+    void 토큰_폐기를_Apple이_4xx로_거절하면_다시_시도할_수_없는_실패로_알린다() {
+        server.expect(requestTo("https://apple.example/revoke")).andRespond(withBadRequest());
+        assertThatThrownBy(() -> client.revoke("token")).isInstanceOf(AppleTokenRevocationRejectedException.class);
         server.verify();
     }
 
