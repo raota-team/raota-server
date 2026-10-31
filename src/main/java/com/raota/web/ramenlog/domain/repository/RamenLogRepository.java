@@ -1,7 +1,6 @@
 package com.raota.web.ramenlog.domain.repository;
 
 import com.raota.web.ramenlog.domain.model.RamenLog;
-import com.raota.web.ramenlog.presentation.api.response.ProofPictureInfoResponse;
 import com.raota.web.ramenlog.presentation.api.response.RamenShopProofPictureResponse;
 import java.util.Collection;
 import java.util.List;
@@ -28,21 +27,6 @@ public interface RamenLogRepository extends JpaRepository<RamenLog, Long>, JpaSp
     void deleteAllByAuthorId(Long memberId);
 
     long countByAuthorIdAndRamenShopIdAndIsDeletedFalse(Long memberId, Long shopId);
-
-    @Query(value = """
-            select new com.raota.web.ramenlog.presentation.api.response.ProofPictureInfoResponse(
-                p.id,
-                true,
-                p.imageUrl
-            )
-            from RamenLog p
-            where p.author.id = :memberId and p.isDeleted = false
-            order by p.visitedAt desc, p.createdAt desc
-            """, countQuery = """
-            select count(p) from RamenLog p
-            where p.author.id = :memberId and p.isDeleted = false
-            """)
-    Page<ProofPictureInfoResponse> findMemberUploadPhoto(@Param("memberId") Long memberId, Pageable pageable);
 
     @Query(value = """
             select new com.raota.web.ramenlog.presentation.api.response.RamenShopProofPictureResponse(

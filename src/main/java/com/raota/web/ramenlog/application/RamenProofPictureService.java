@@ -5,13 +5,10 @@ import com.raota.global.file.FileUploader;
 import com.raota.web.account.domain.member.model.MemberProfile;
 import com.raota.web.account.domain.member.repository.MemberRepository;
 import com.raota.web.ramenlog.domain.model.RamenLog;
-import com.raota.web.ramenlog.domain.model.RevisitIntention;
 import com.raota.web.ramenlog.domain.repository.RamenLogRepository;
-import com.raota.web.ramenlog.presentation.api.response.ProofPictureInfoResponse;
 import com.raota.web.ramenlog.presentation.api.response.RamenShopProofPictureResponse;
 import com.raota.web.ramenshop.domain.model.RamenShop;
 import com.raota.web.ramenshop.domain.repository.RamenShopRepository;
-import java.time.LocalDate;
 import java.util.Objects;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -32,43 +29,6 @@ public class RamenProofPictureService {
     private final FileUploader fileUploader;
 
     private final CacheInvalidationPublisher cacheInvalidationPublisher;
-
-    @Transactional
-    public ProofPictureInfoResponse addProofPicture(
-            Long shopId, String imageUrl, String description, String menuName, Long memberId) {
-        MemberProfile member =
-                memberRepository.findById(memberId).orElseThrow(() -> new IllegalArgumentException("없는 유저 입니다."));
-        RamenShop ramenShop =
-                ramenShopRepository.findById(shopId).orElseThrow(() -> new IllegalArgumentException("없는 라멘집 입니다."));
-
-        // 이 가게에 처음 방문하는 것인지 확인 (아직 삭제되지 않은 사진이 0개인 경우)
-        long currentPhotosInShop = ramenLogRepository.countByAuthorIdAndRamenShopIdAndIsDeletedFalse(memberId, shopId);
-        if (currentPhotosInShop == 0) {
-            member.increaseVisitedRestaurantCount();
-        }
-
-        RamenLog picture = RamenLog.builder()
-                .ramenShop(ramenShop)
-                .author(member)
-                .imageUrl(imageUrl)
-                .imageName(menuName + "_" + member.getNickname())
-                .note(description)
-                .menuName(menuName)
-                .ramenType("기타")
-                .visitedAt(LocalDate.now())
-                .revisit(RevisitIntention.SOMETIMES)
-                .isPublic(true)
-                .build();
-
-        RamenLog saved = ramenLogRepository.save(picture);
-
-        member.increasePhotoCount();
-        ramenShop.increaseVisitCount();
-        cacheInvalidationPublisher.publish("ramenShopDetail", String.valueOf(shopId));
-        cacheInvalidationPublisher.publishAll("ramenShopList");
-
-        return new ProofPictureInfoResponse(saved.getId(), true, saved.getImageUrl());
-    }
 
     public Page<RamenShopProofPictureResponse> findProofPicture(Long shopId, Pageable pageable) {
         return ramenLogRepository.searchPictures(shopId, pageable);

@@ -2,9 +2,7 @@ package com.raota.web.ramenlog.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
 
 import com.raota.global.cache.CacheInvalidationPublisher;
 import com.raota.global.file.FileUploader;
@@ -18,7 +16,6 @@ import com.raota.web.ramenlog.domain.repository.RamenLogLikeRepository;
 import com.raota.web.ramenlog.domain.repository.RamenLogRepository;
 import com.raota.web.ramenlog.presentation.api.request.RamenLogUpsertRequest;
 import com.raota.web.ramenlog.presentation.api.response.RamenLogLikeResponse;
-import com.raota.web.ramenlog.presentation.api.response.RamenLogResponse;
 import com.raota.web.ramenshop.domain.model.Address;
 import com.raota.web.ramenshop.domain.model.RamenShop;
 import com.raota.web.ramenshop.domain.repository.RamenShopRepository;
@@ -27,7 +24,6 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -59,29 +55,6 @@ class RamenLogServiceTest {
 
     @InjectMocks
     private RamenLogService ramenLogService;
-
-    @Test
-    void createsRamenLogFromFrontendPayload() {
-        MemberProfile member = member(1L);
-        RamenShop shop = shop(10L);
-        given(memberRepository.findByIdAndDeletedAtIsNull(1L)).willReturn(Optional.of(member));
-        given(ramenShopRepository.findById(10L)).willReturn(Optional.of(shop));
-        given(ramenLogRepository.countByAuthorIdAndRamenShopIdAndIsDeletedFalse(1L, 10L))
-                .willReturn(0L);
-        given(ramenLogRepository.save(any(RamenLog.class))).willAnswer(invocation -> invocation.getArgument(0));
-        given(fileUploader.getAccessibleUrl(any())).willAnswer(invocation -> invocation.getArgument(0));
-
-        RamenLogResponse response = ramenLogService.create(request(true), 1L);
-
-        ArgumentCaptor<RamenLog> captor = ArgumentCaptor.forClass(RamenLog.class);
-        verify(ramenLogRepository).save(captor.capture());
-        RamenLog saved = captor.getValue();
-        assertThat(saved.getMenuName()).isEqualTo("특제 돈코츠");
-        assertThat(saved.getVisitedAt()).isEqualTo(LocalDate.of(2026, 7, 1));
-        assertThat(saved.getBrothNotes()).containsExactly("진해요");
-        assertThat(response.mine()).isTrue();
-        assertThat(response.isPublic()).isTrue();
-    }
 
     @Test
     void togglesLikeOnAndOff() {

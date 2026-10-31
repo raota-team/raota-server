@@ -4,6 +4,7 @@
 MySQL 8 + Flyway, Redis, Spring Security(OAuth2 + JWT), Spring AI(Oracle Vector Store).
 
 현재 목표: 웹 v1(`com.raota.web`)과 별개로 모바일 앱 기준 v2 도메인(`com.raota.mobile`)을 새로 구축한다.
+웹(v1)은 라멘로그를 새로 만들지 않는다(앱에서만 기록). 기존 웹 기록의 조회·수정·삭제·공감만 남긴다.
 
 ## 명령
 

@@ -94,40 +94,6 @@ public class RamenLogService {
     }
 
     @Transactional
-    public RamenLogResponse create(RamenLogUpsertRequest request, Long memberId) {
-        MemberProfile member = requireMember(memberId);
-        RamenShop shop = requireShop(request.shopId());
-        RamenLogUpsertRequest.TasteNotesRequest notes = request.normalizedTasteNotes();
-        boolean firstLogAtShop =
-                ramenLogRepository.countByAuthorIdAndRamenShopIdAndIsDeletedFalse(memberId, shop.getId()) == 0;
-
-        RamenLog log = RamenLog.builder()
-                .author(member)
-                .ramenShop(shop)
-                .menuName(request.menuName().trim())
-                .ramenType(request.ramenType().trim())
-                .imageUrl(request.imageUrl().trim())
-                .visitedAt(request.visitedAt())
-                .note(normalizeNote(request.note()))
-                .brothNotes(safe(notes.broth()))
-                .noodleNotes(safe(notes.noodle()))
-                .seasoningNotes(safe(notes.seasoning()))
-                .toppingNotes(safe(notes.topping()))
-                .revisit(request.revisit())
-                .isPublic(request.isPublic())
-                .build();
-
-        RamenLog saved = ramenLogRepository.save(log);
-        if (firstLogAtShop) {
-            member.increaseVisitedRestaurantCount();
-        }
-        member.increasePhotoCount();
-        shop.increaseVisitCount();
-        invalidateShop(shop.getId());
-        return toResponse(saved, memberId);
-    }
-
-    @Transactional
     public RamenLogResponse update(Long logId, RamenLogUpsertRequest request, Long memberId) {
         RamenLog log = getOwnedLog(logId, memberId);
         RamenShop previousShop = log.getRamenShop();
