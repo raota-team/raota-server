@@ -75,18 +75,31 @@ public class MobileRamenLogQueryService {
     }
 
     /**
-     * 공개 기록을 정렬 기준의 커서로 읽는다. 로그인한 회원이 차단한 작성자와 신고한 기록은 쿼리에서 빼고, 활성 회원이 아닌 작성자(탈퇴 유예·정지)의
-     * 기록은 건너뛴 뒤 걸러낸 만큼 다음 묶음을 더 읽어 페이지를 채운다. 묶음 상한에 닿으면 요청 크기보다 짧은 페이지와 마지막으로 읽은 위치의 커서를
-     * 돌려준다.
+     * 공개 기록을 정렬 기준의 커서로 읽는다. {@code authorId}가 오면 그 회원의 공개 기록만이고, 그 회원이 없거나 활성 회원이 아니면 빈 페이지다. 로그인한
+     * 회원이 차단한 작성자와 신고한 기록은 쿼리에서 빼고, 활성 회원이 아닌 작성자(탈퇴 유예·정지)의 기록은 건너뛴 뒤 걸러낸 만큼 다음 묶음을 더 읽어 페이지를
+     * 채운다. 묶음 상한에 닿으면 요청 크기보다 짧은 페이지와 마지막으로 읽은 위치의 커서를 돌려준다.
      */
     @Transactional(readOnly = true)
     public CursorPage<MobileRamenLogSummaryResult> feed(
-            Long viewerId, MobileRamenLogSort sort, String ramenType, Long shopId, String rawCursor, int size) {
+            Long viewerId,
+            MobileRamenLogSort sort,
+            String ramenType,
+            Long shopId,
+            Long authorId,
+            String rawCursor,
+            int size) {
         Cursor after = Cursor.parse(rawCursor).orElse(null);
         List<MobileRamenLog> visible = new ArrayList<>();
         Map<Long, MobileAuthor> authors = new HashMap<>();
+        if (authorId != null) {
+            authors.putAll(accounts.authors(List.of(authorId)));
+            MobileAuthor author = authors.get(authorId);
+            if (author == null || !author.active()) {
+                return new CursorPage<>(List.of(), null, false);
+            }
+        }
         for (int batches = 1; ; batches++) {
-            List<MobileRamenLog> batch = feedBatch(sort, ramenType, shopId, viewerId, after, size + 1);
+            List<MobileRamenLog> batch = feedBatch(sort, ramenType, shopId, authorId, viewerId, after, size + 1);
             Set<Long> unknown = batch.stream()
                     .map(MobileRamenLog::getUserId)
                     .filter(id -> !authors.containsKey(id))
@@ -161,21 +174,43 @@ public class MobileRamenLogQueryService {
     }
 
     private List<MobileRamenLog> feedBatch(
-            MobileRamenLogSort sort, String ramenType, Long shopId, Long viewerId, Cursor after, int limit) {
+            MobileRamenLogSort sort,
+            String ramenType,
+            Long shopId,
+            Long authorId,
+            Long viewerId,
+            Cursor after,
+            int limit) {
         PageRequest page = PageRequest.of(0, limit);
         if (after == null) {
             return switch (sort) {
-                case LATEST -> logs.findLatest(LogVisibility.PUBLIC, ramenType, shopId, viewerId, null, null, page);
-                case LIKES -> logs.findMostLiked(LogVisibility.PUBLIC, ramenType, shopId, viewerId, null, null, page);
+                case LATEST ->
+                    logs.findLatest(LogVisibility.PUBLIC, ramenType, shopId, authorId, viewerId, null, null, page);
+                case LIKES ->
+                    logs.findMostLiked(LogVisibility.PUBLIC, ramenType, shopId, authorId, viewerId, null, null, page);
             };
         }
         return switch (sort) {
             case LATEST ->
                 logs.findLatest(
-                        LogVisibility.PUBLIC, ramenType, shopId, viewerId, parseInstant(after), after.id(), page);
+                        LogVisibility.PUBLIC,
+                        ramenType,
+                        shopId,
+                        authorId,
+                        viewerId,
+                        parseInstant(after),
+                        after.id(),
+                        page);
             case LIKES ->
                 logs.findMostLiked(
-                        LogVisibility.PUBLIC, ramenType, shopId, viewerId, parseLikes(after), after.id(), page);
+                        LogVisibility.PUBLIC,
+                        ramenType,
+                        shopId,
+                        authorId,
+                        viewerId,
+                        parseLikes(after),
+                        after.id(),
+                        page);
         };
     }
 

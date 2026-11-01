@@ -69,12 +69,15 @@ public interface MobileRamenLogRepository extends JpaRepository<MobileRamenLog, 
             """)
     List<MobileRamenLog> findMine(Long userId, String ramenType, LocalDate afterDate, Long afterId, Pageable limit);
 
-    /** 로그인한 회원에게는 그 회원이 차단한 작성자의 기록과 그 회원이 신고한 기록을 빼고 보여준다. */
+    /**
+     * 로그인한 회원에게는 그 회원이 차단한 작성자의 기록과 그 회원이 신고한 기록을 빼고 보여준다. {@code authorId}가 null이 아니면 그 회원의 기록만이다.
+     */
     @Query("""
             select log from MobileRamenLog log
             where log.visibility = :visibility and log.deletedAt is null
                 and (:ramenType is null or log.ramenType = :ramenType)
                 and (:shopId is null or log.shopId = :shopId)
+                and (:authorId is null or log.userId = :authorId)
                 and (:viewerId is null or (
                     log.userId not in (
                         select block.blockedId from MobileUserBlock block where block.blockerId = :viewerId)
@@ -90,6 +93,7 @@ public interface MobileRamenLogRepository extends JpaRepository<MobileRamenLog, 
             LogVisibility visibility,
             String ramenType,
             Long shopId,
+            Long authorId,
             Long viewerId,
             Instant afterCreatedAt,
             Long afterId,
@@ -101,6 +105,7 @@ public interface MobileRamenLogRepository extends JpaRepository<MobileRamenLog, 
             where log.visibility = :visibility and log.deletedAt is null
                 and (:ramenType is null or log.ramenType = :ramenType)
                 and (:shopId is null or log.shopId = :shopId)
+                and (:authorId is null or log.userId = :authorId)
                 and (:viewerId is null or (
                     log.userId not in (
                         select block.blockedId from MobileUserBlock block where block.blockerId = :viewerId)
@@ -116,6 +121,7 @@ public interface MobileRamenLogRepository extends JpaRepository<MobileRamenLog, 
             LogVisibility visibility,
             String ramenType,
             Long shopId,
+            Long authorId,
             Long viewerId,
             Integer afterLikes,
             Long afterId,

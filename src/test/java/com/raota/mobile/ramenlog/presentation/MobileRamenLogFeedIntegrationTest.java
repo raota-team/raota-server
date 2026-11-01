@@ -36,6 +36,8 @@ class MobileRamenLogFeedIntegrationTest extends BaseIntegrationTest {
 
     private static final long SHOP = 900006301L;
 
+    private static final long OTHER_SHOP = 900006302L;
+
     private static final long LOG = 900006310L;
 
     private static final Instant BASE = Instant.parse("2026-09-01T00:00:00Z");
@@ -74,12 +76,14 @@ class MobileRamenLogFeedIntegrationTest extends BaseIntegrationTest {
                 .addFilters(requestIdFilter)
                 .apply(springSecurity())
                 .build();
-        jdbc.update("""
-                INSERT INTO tb_v2_shop (id, name, branch_name, address, region, ramen_types, tags, business_status,
-                    ai_summary_keywords, is_published, created_at, updated_at)
-                VALUES (?, '피드 매장', '본점', '서울', '서울', '[]', '[]', 'OPERATIONAL', '[]', TRUE,
-                    '2026-09-01 00:00:00', '2026-09-01 00:00:00')
-                """, SHOP);
+        for (long shopId : List.of(SHOP, OTHER_SHOP)) {
+            jdbc.update("""
+                    INSERT INTO tb_v2_shop (id, name, branch_name, address, region, ramen_types, tags, business_status,
+                        ai_summary_keywords, is_published, created_at, updated_at)
+                    VALUES (?, '피드 매장', '본점', '서울', '서울', '[]', '[]', 'OPERATIONAL', '[]', TRUE,
+                        '2026-09-01 00:00:00', '2026-09-01 00:00:00')
+                    """, shopId);
+        }
         author = active();
         viewer = active();
         admin = active();
@@ -94,8 +98,8 @@ class MobileRamenLogFeedIntegrationTest extends BaseIntegrationTest {
     @AfterEach
     void cleanUp() {
         jdbc.update("DELETE FROM tb_v2_ramen_log_like WHERE ramen_log_id BETWEEN ? AND ?", LOG, LOG + 99);
-        jdbc.update("DELETE FROM tb_v2_ramen_log WHERE shop_id = ?", SHOP);
-        jdbc.update("DELETE FROM tb_v2_shop WHERE id = ?", SHOP);
+        jdbc.update("DELETE FROM tb_v2_ramen_log WHERE shop_id IN (?, ?)", SHOP, OTHER_SHOP);
+        jdbc.update("DELETE FROM tb_v2_shop WHERE id IN (?, ?)", SHOP, OTHER_SHOP);
         for (Long userId : List.of(author, withdrawing, viewer, admin)) {
             users.deleteById(userId);
         }
@@ -227,6 +231,81 @@ class MobileRamenLogFeedIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
     }
 
+    @Test
+    void 작성자로_거르면_그_회원의_공개_기록만_최신순으로_이어_읽고_매장과_함께_거를_수_있다() throws Exception {
+        insertLog(LOG + 51, author, SHOP, "쇼유", "PUBLIC", 0, 1, false);
+        insertLog(LOG + 52, author, OTHER_SHOP, "쇼유", "PUBLIC", 0, 2, false);
+        insertLog(LOG + 53, author, SHOP, "쇼유", "PRIVATE", 0, 3, false);
+        insertLog(LOG + 54, author, SHOP, "쇼유", "PUBLIC", 0, 4, true);
+        insertLog(LOG + 55, viewer, SHOP, "쇼유", "PUBLIC", 0, 5, false);
+        insertLog(LOG + 56, author, OTHER_SHOP, "쇼유", "PUBLIC", 0, 6, false);
+        insertLog(LOG + 57, author, SHOP, "쇼유", "PUBLIC", 0, 7, false);
+
+        JsonNode first = feed(get("/api/v2/ramen-logs")
+                .param("authorId", String.valueOf(author))
+                .param("size", "2"));
+        assertThat(ids(first)).containsExactly(LOG + 57, LOG + 56);
+        assertThat(first.get("hasNext").asBoolean()).isTrue();
+        assertThat(first.get("items").get(0).get("author").get("id").asString()).isEqualTo(String.valueOf(author));
+
+        JsonNode second = feed(get("/api/v2/ramen-logs")
+                .param("authorId", String.valueOf(author))
+                .param("size", "2")
+                .param("cursor", first.get("nextCursor").asString()));
+        assertThat(ids(second)).containsExactly(LOG + 52, LOG + 51);
+        assertThat(second.get("hasNext").asBoolean()).isFalse();
+        assertThat(second.get("nextCursor").isNull()).isTrue();
+
+        JsonNode own = feed(get("/api/v2/ramen-logs")
+                .param("authorId", String.valueOf(author))
+                .header(HttpHeaders.AUTHORIZATION, auth(author)));
+        assertThat(ids(own)).containsExactly(LOG + 57, LOG + 56, LOG + 52, LOG + 51);
+
+        JsonNode byViewer = feed(get("/api/v2/ramen-logs")
+                .param("authorId", String.valueOf(author))
+                .param("shopId", String.valueOf(SHOP))
+                .header(HttpHeaders.AUTHORIZATION, auth(viewer)));
+        assertThat(ids(byViewer)).containsExactly(LOG + 57, LOG + 51);
+    }
+
+    @Test
+    void 작성자로_거른_공감순도_공감_수와_ID_역순으로_이어진다() throws Exception {
+        insertLog(LOG + 61, author, SHOP, "쇼유", "PUBLIC", 3, 1, false);
+        insertLog(LOG + 62, author, OTHER_SHOP, "쇼유", "PUBLIC", 8, 2, false);
+        insertLog(LOG + 63, viewer, SHOP, "쇼유", "PUBLIC", 9, 3, false);
+        insertLog(LOG + 64, author, SHOP, "쇼유", "PUBLIC", 3, 4, false);
+
+        JsonNode first = feed(get("/api/v2/ramen-logs")
+                .param("authorId", String.valueOf(author))
+                .param("sort", "LIKES")
+                .param("size", "2"));
+        assertThat(ids(first)).containsExactly(LOG + 62, LOG + 64);
+        JsonNode second = feed(get("/api/v2/ramen-logs")
+                .param("authorId", String.valueOf(author))
+                .param("sort", "LIKES")
+                .param("size", "2")
+                .param("cursor", first.get("nextCursor").asString()));
+        assertThat(ids(second)).containsExactly(LOG + 61);
+        assertThat(second.get("hasNext").asBoolean()).isFalse();
+    }
+
+    @Test
+    void 없거나_탈퇴_중인_작성자는_빈_페이지이고_숫자가_아닌_작성자는_400이다() throws Exception {
+        insertLog(LOG + 71, withdrawing, SHOP, "쇼유", "PUBLIC", 0, 1, false);
+        insertLog(LOG + 72, withdrawing, SHOP, "쇼유", "PUBLIC", 0, 2, false);
+
+        for (String authorId : List.of(String.valueOf(withdrawing), "999999999999")) {
+            JsonNode page =
+                    feed(get("/api/v2/ramen-logs").param("authorId", authorId).param("size", "1"));
+            assertThat(ids(page)).isEmpty();
+            assertThat(page.get("hasNext").asBoolean()).isFalse();
+            assertThat(page.get("nextCursor").isNull()).isTrue();
+        }
+        mvc.perform(get("/api/v2/ramen-logs").param("authorId", "abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+    }
+
     private JsonNode feed(MockHttpServletRequestBuilder request) throws Exception {
         return mapper.readTree(mvc.perform(request)
                         .andExpect(status().isOk())
@@ -244,6 +323,18 @@ class MobileRamenLogFeedIntegrationTest extends BaseIntegrationTest {
 
     private void insertLog(
             long id, Long userId, String ramenType, String visibility, int likes, int minute, boolean deleted) {
+        insertLog(id, userId, SHOP, ramenType, visibility, likes, minute, deleted);
+    }
+
+    private void insertLog(
+            long id,
+            Long userId,
+            long shopId,
+            String ramenType,
+            String visibility,
+            int likes,
+            int minute,
+            boolean deleted) {
         Timestamp createdAt = Timestamp.from(BASE.plus(Duration.ofMinutes(minute)));
         Timestamp deletedAt = null;
         if (deleted) {
@@ -255,7 +346,7 @@ class MobileRamenLogFeedIntegrationTest extends BaseIntegrationTest {
                     revisit_intention, note, taste_note_codes, visibility, like_count, created_at, updated_at,
                     deleted_at)
                 VALUES (?, ?, ?, '2026-09-01', '라멘', ?, 4, 3, 3, 3, 'OFTEN', '', '[]', ?, ?, ?, ?, ?)
-                """, id, userId, SHOP, ramenType, visibility, likes, createdAt, createdAt, deletedAt);
+                """, id, userId, shopId, ramenType, visibility, likes, createdAt, createdAt, deletedAt);
     }
 
     private Long active() {
