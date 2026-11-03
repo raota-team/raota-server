@@ -6,6 +6,7 @@ import jakarta.persistence.LockModeType;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -13,6 +14,17 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 public interface MobileUserRepository extends JpaRepository<MobileUser, Long> {
+
+    /** 관리자 목록. 인자가 null이면 그 조건을 보지 않는다. {@code keyword}는 닉네임·이메일 부분 일치(대소문자 무시)이고 {@code userId}는 정확히 일치한다. */
+    @Query("""
+            select user from MobileUser user
+            where (:status is null or user.status = :status)
+                and (:keyword is null
+                     or lower(user.nickname) like lower(concat('%', :keyword, '%'))
+                     or lower(user.email) like lower(concat('%', :keyword, '%'))
+                     or (:userId is not null and user.id = :userId))
+            """)
+    Page<MobileUser> findForAdmin(String keyword, Long userId, MobileUserStatus status, Pageable pageable);
 
     @Modifying
     @Query("update MobileUser user set user.logCount = user.logCount + 1 where user.id = :id")

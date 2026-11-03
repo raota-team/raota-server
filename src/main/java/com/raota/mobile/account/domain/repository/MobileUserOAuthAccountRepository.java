@@ -2,6 +2,7 @@ package com.raota.mobile.account.domain.repository;
 
 import com.raota.mobile.account.domain.model.MobileUserOAuthAccount;
 import com.raota.mobile.account.domain.model.OAuthProvider;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,6 +14,8 @@ public interface MobileUserOAuthAccountRepository extends JpaRepository<MobileUs
     Optional<MobileUserOAuthAccount> findByProviderAndProviderSubject(OAuthProvider provider, String providerSubject);
 
     List<MobileUserOAuthAccount> findAllByUserId(Long userId);
+
+    List<MobileUserOAuthAccount> findAllByUserIdIn(Collection<Long> userIds);
 
     @Modifying
     @Query("delete from MobileUserOAuthAccount account where account.userId = :userId")
