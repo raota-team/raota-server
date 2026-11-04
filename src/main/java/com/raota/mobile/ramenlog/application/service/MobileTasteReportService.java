@@ -1,7 +1,10 @@
 package com.raota.mobile.ramenlog.application.service;
 
+import com.raota.mobile.account.application.facade.MobileAccountRamenLogFacade;
+import com.raota.mobile.account.application.facade.MobileAccountRamenLogFacade.MobileAuthor;
 import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
+import com.raota.mobile.notification.application.facade.MobilePushFacade;
 import com.raota.mobile.ramenlog.application.result.MobileCurrentTasteReportResult;
 import com.raota.mobile.ramenlog.application.result.MobileCurrentTasteReportResult.Upcoming;
 import com.raota.mobile.ramenlog.application.result.MobileDrawnTasteReportResult;
@@ -18,6 +21,7 @@ import com.raota.mobile.shop.application.facade.MobileShopRamenLogFacade.MobileS
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -60,6 +64,10 @@ public class MobileTasteReportService {
 
     private final MobileShopRamenLogFacade shops;
 
+    private final MobileAccountRamenLogFacade accounts;
+
+    private final MobilePushFacade push;
+
     private final Clock clock;
 
     private final TransactionTemplate newTransaction;
@@ -68,11 +76,15 @@ public class MobileTasteReportService {
             MobileTasteReportRepository reports,
             MobileRamenLogRepository logs,
             MobileShopRamenLogFacade shops,
+            MobileAccountRamenLogFacade accounts,
+            MobilePushFacade push,
             Clock clock,
             PlatformTransactionManager transactionManager) {
         this.reports = reports;
         this.logs = logs;
         this.shops = shops;
+        this.accounts = accounts;
+        this.push = push;
         this.clock = clock;
         this.newTransaction = new TransactionTemplate(transactionManager);
         this.newTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
@@ -133,6 +145,30 @@ public class MobileTasteReportService {
             }
         }
         return drawn;
+    }
+
+    /** 지난달 말일 기준으로 새로 뽑았고 아직 안 연 리포트의 활성 회원에게 한 번만 보낸다. 빠진 뽑기를 먼저 채운다. */
+    public int notifyMonthly(LocalDate today) {
+        drawMonthlyForAll(today);
+        LocalDate monthEnd = lastDayOfPreviousMonth(today);
+        List<MobileTasteReport> pending =
+                reports.findByKindAndCutoffDateAndNotifiedAtIsNullAndSeenAtIsNull(TasteReportKind.MONTHLY, monthEnd);
+        if (pending.isEmpty()) {
+            return 0;
+        }
+        // 보내기 전에 표시해, 발송 중에 실패하거나 다시 실행돼도 같은 알림을 두 번 보내지 않는다.
+        newTransaction.executeWithoutResult(status -> reports.markNotified(
+                pending.stream().map(MobileTasteReport::getId).toList(), now()));
+        Map<Long, MobileAuthor> members = accounts.authors(
+                pending.stream().map(MobileTasteReport::getUserId).toList());
+        List<Long> recipients = new ArrayList<>();
+        for (MobileAuthor member : members.values()) {
+            if (member.active()) {
+                recipients.add(member.id());
+            }
+        }
+        YearMonth month = YearMonth.from(monthEnd);
+        return push.send(recipients, locale -> MobileTasteReportPushMessages.monthly(locale, month));
     }
 
     private Optional<MobileTasteReport> drawFirst(Long userId, LocalDate today) {

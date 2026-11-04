@@ -1,6 +1,11 @@
 package com.raota.mobile.ramenlog.presentation;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -13,6 +18,8 @@ import com.raota.mobile.account.domain.model.MobileUser;
 import com.raota.mobile.account.domain.model.Nickname;
 import com.raota.mobile.account.domain.repository.MobileUserRepository;
 import com.raota.mobile.account.infrastructure.auth.MobileAccessTokenService;
+import com.raota.mobile.notification.application.port.PushSender;
+import com.raota.mobile.notification.application.port.PushSender.PushDelivery;
 import com.raota.mobile.ramenlog.application.service.MobileTasteReportService;
 import com.raota.support.BaseIntegrationTest;
 import java.time.Instant;
@@ -21,14 +28,17 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -41,6 +51,9 @@ class MobileTasteReportIntegrationTest extends BaseIntegrationTest {
     private static final long SHOP = 900015701L;
 
     private static final long OTHER_SHOP = 900015702L;
+
+    @MockitoBean
+    private PushSender pushSender;
 
     @Autowired
     private WebApplicationContext context;
@@ -85,6 +98,7 @@ class MobileTasteReportIntegrationTest extends BaseIntegrationTest {
                 "INSERT INTO tb_v2_shop_image (shop_id, url, source, sort_order) VALUES (?, ?, 'ADMIN', 0)",
                 SHOP,
                 "https://images.raota.net/first.jpg");
+        given(pushSender.send(any())).willReturn(Set.of());
     }
 
     @AfterEach
@@ -100,6 +114,7 @@ class MobileTasteReportIntegrationTest extends BaseIntegrationTest {
         }
         jdbc.update("DELETE FROM tb_v2_shop_image WHERE shop_id IN (?, ?)", SHOP, OTHER_SHOP);
         jdbc.update("DELETE FROM tb_v2_shop WHERE id IN (?, ?)", SHOP, OTHER_SHOP);
+        reset(pushSender);
     }
 
     @Test
@@ -306,6 +321,50 @@ class MobileTasteReportIntegrationTest extends BaseIntegrationTest {
         seen(member, "999999999").andExpect(status().isNotFound());
     }
 
+    @Test
+    void 매달_알림은_새로_뽑았고_안_본_활성_회원의_기기에_그_언어로_한_번만_보낸다() throws Exception {
+        Long japanese = active();
+        Long alreadySeen = active();
+        Long leaving = active();
+        for (Long member : List.of(japanese, alreadySeen, leaving)) {
+            insertReport(member, "2025-09-30");
+            for (String date : List.of("2025-10-01", "2025-10-02", "2025-10-03")) {
+                create(member, SHOP, date, "쇼유", "라멘", 4);
+            }
+        }
+        registerToken(japanese, "ExponentPushToken[japanese]", "ja-JP,en;q=0.5");
+        registerToken(alreadySeen, "ExponentPushToken[seen]", "en-US");
+        registerToken(leaving, "ExponentPushToken[leaving]", "ko-KR");
+        reports.drawMonthlyForAll(LocalDate.of(2025, 11, 1));
+        String seenReport = jdbc.queryForObject(
+                "SELECT CAST(id AS CHAR) FROM tb_v2_taste_report WHERE user_id = ? AND cutoff_date = '2025-10-31'",
+                String.class,
+                alreadySeen);
+        seen(alreadySeen, seenReport).andExpect(status().isOk());
+        jdbc.update("UPDATE tb_v2_user SET status = 'WITHDRAW_PENDING' WHERE id = ?", leaving);
+        given(pushSender.send(any())).willReturn(Set.of("ExponentPushToken[japanese]"));
+
+        reports.notifyMonthly(LocalDate.of(2025, 11, 1));
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<PushDelivery>> sent = ArgumentCaptor.forClass(List.class);
+        verify(pushSender).send(sent.capture());
+        assertThat(sent.getValue())
+                .containsExactly(new PushDelivery(
+                        "ExponentPushToken[japanese]",
+                        "10月のレポートが届きました",
+                        "今月の一杯を積み上げてみませんか？",
+                        Map.of("path", "/taste")));
+        // Expo가 등록되지 않은 기기라고 답한 토큰은 지운다.
+        assertThat(jdbc.queryForObject(
+                        "SELECT COUNT(*) FROM tb_v2_push_token WHERE user_id = ?", Integer.class, japanese))
+                .isZero();
+
+        reset(pushSender);
+        reports.notifyMonthly(LocalDate.of(2025, 11, 1));
+        verify(pushSender, never()).send(any());
+    }
+
     private String drawFirst(Long member) throws Exception {
         create(member, SHOP, "2025-09-01", "쇼유", "라멘", 4);
         create(member, SHOP, "2025-09-02", "쇼유", "라멘", 4);
@@ -350,6 +409,15 @@ class MobileTasteReportIntegrationTest extends BaseIntegrationTest {
     private ResultActions seen(Long member, String reportId) throws Exception {
         return mvc.perform(post("/api/v2/members/me/taste-reports/{reportId}/seen", reportId)
                 .header(HttpHeaders.AUTHORIZATION, auth(member)));
+    }
+
+    private void registerToken(Long member, String token, String acceptLanguage) throws Exception {
+        mvc.perform(post("/api/v2/members/me/push-tokens")
+                        .header(HttpHeaders.AUTHORIZATION, auth(member))
+                        .header(HttpHeaders.ACCEPT_LANGUAGE, acceptLanguage)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\":\"%s\",\"platform\":\"IOS\"}".formatted(token)))
+                .andExpect(status().isNoContent());
     }
 
     private JsonNode data(ResultActions result) throws Exception {
