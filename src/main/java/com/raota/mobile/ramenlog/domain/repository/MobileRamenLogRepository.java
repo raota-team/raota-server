@@ -152,6 +152,22 @@ public interface MobileRamenLogRepository extends JpaRepository<MobileRamenLog, 
     @Query("delete from MobileRamenLog log where log.userId = :userId")
     void deleteForUser(Long userId);
 
+    /** 비공개 기록도 포함한다. */
+    @Query("""
+            select log from MobileRamenLog log
+            where log.userId = :userId and log.deletedAt is null and log.visitedAt <= :cutoff
+            """)
+    List<MobileRamenLog> findLiveVisitedUpTo(Long userId, LocalDate cutoff);
+
+    long countByUserIdAndDeletedAtIsNull(Long userId);
+
+    long countByUserIdAndDeletedAtIsNullAndVisitedAtAfter(Long userId, LocalDate after);
+
+    long countByUserIdAndDeletedAtIsNullAndVisitedAtAfterAndVisitedAtLessThanEqual(
+            Long userId, LocalDate after, LocalDate until);
+
+    boolean existsByUserIdAndDeletedAtIsNullAndVisitedAtLessThanEqual(Long userId, LocalDate cutoff);
+
     /** 매장별 삭제되지 않은 기록 수와 만족도 합계다. */
     interface ShopLogTotals {
 

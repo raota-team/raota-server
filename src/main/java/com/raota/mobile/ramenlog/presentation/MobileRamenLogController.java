@@ -4,6 +4,7 @@ import com.raota.mobile.common.cursor.CursorPage;
 import com.raota.mobile.common.presentation.LoginUser;
 import com.raota.mobile.common.presentation.response.MobileApiResponse;
 import com.raota.mobile.ramenlog.application.query.MobileRamenLogSort;
+import com.raota.mobile.ramenlog.application.result.MobileCreatedRamenLogResult;
 import com.raota.mobile.ramenlog.application.result.MobileRamenLogDetailResult;
 import com.raota.mobile.ramenlog.application.result.MobileRamenLogSummaryResult;
 import com.raota.mobile.ramenlog.application.service.MobileRamenLogQueryService;
@@ -51,7 +52,7 @@ public class MobileRamenLogController {
     }
 
     @PostMapping
-    public ResponseEntity<MobileApiResponse<MobileRamenLogDetailResult>> create(
+    public ResponseEntity<MobileApiResponse<MobileCreatedRamenLogResult>> create(
             @LoginUser Long userId,
             @RequestHeader("Idempotency-Key") @NotBlank @Size(max = 64) @Pattern(regexp = "[A-Za-z0-9_-]+") String key,
             @Valid @RequestBody MobileCreateRamenLogRequest request) {

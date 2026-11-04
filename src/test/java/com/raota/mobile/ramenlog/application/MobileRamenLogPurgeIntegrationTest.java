@@ -108,10 +108,23 @@ class MobileRamenLogPurgeIntegrationTest extends BaseIntegrationTest {
                 INSERT INTO tb_v2_user_block (blocker_id, blocked_id, created_at)
                 VALUES (?, ?, '2026-09-01 00:00:00'), (?, ?, '2026-09-01 00:00:00')
                 """, dueId, otherId, otherId, dueId);
+        for (Long userId : List.of(dueId, otherId)) {
+            jdbc.update("""
+                    INSERT INTO tb_v2_taste_report (user_id, cutoff_date, kind, bowl_count, shop_count, type_counts,
+                        axis_averages, top_shops, recent_log_ids, created_at)
+                    VALUES (?, '2026-08-31', 'FIRST', 1, 1, '{}', '{"scoredCount":0}', '[]', '[]', '2026-09-01 00:00:00')
+                    """, userId);
+            jdbc.update("""
+                    INSERT INTO tb_v2_push_token (user_id, token, platform, language, created_at, updated_at)
+                    VALUES (?, ?, 'IOS', 'KO', '2026-09-01 00:00:00', '2026-09-01 00:00:00')
+                    """, userId, "ExponentPushToken[purge-" + userId + "]");
+        }
     }
 
     @AfterEach
     void cleanUp() {
+        jdbc.update("DELETE FROM tb_v2_taste_report WHERE user_id IN (?, ?)", dueId, otherId);
+        jdbc.update("DELETE FROM tb_v2_push_token WHERE user_id IN (?, ?)", dueId, otherId);
         jdbc.update("DELETE FROM tb_v2_content_report WHERE reporter_id IN (?, ?)", dueId, otherId);
         jdbc.update("DELETE FROM tb_v2_user_block WHERE blocker_id IN (?, ?)", dueId, otherId);
         jdbc.update("DELETE FROM tb_v2_ramen_log_comment WHERE ramen_log_id IN (?, ?)", DUE_LOG, OTHER_LOG);
@@ -134,7 +147,7 @@ class MobileRamenLogPurgeIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void 유예_기한이_지난_회원의_신고와_차단과_공감과_댓글과_사진과_기록만_삭제하고_공감_수와_댓글_수와_활성_기록의_매장_집계를_되돌린다() {
+    void 유예_기한이_지난_회원의_신고와_차단과_공감과_댓글과_사진과_기록과_취향_리포트와_푸시_토큰만_삭제하고_공감_수와_댓글_수와_활성_기록의_매장_집계를_되돌린다() {
         assertThat(purges.purgeExpired(REQUESTED_AT.plus(Duration.ofDays(30)))).isEqualTo(1);
         assertThat(users.findById(dueId).orElseThrow().getStatus()).isEqualTo(MobileUserStatus.WITHDRAWN);
         assertThat(jdbc.queryForObject("SELECT log_count FROM tb_v2_user WHERE id = ?", Integer.class, dueId))
@@ -188,6 +201,11 @@ class MobileRamenLogPurgeIntegrationTest extends BaseIntegrationTest {
                         dueId,
                         otherId))
                 .isZero();
+        for (String table : List.of("tb_v2_taste_report", "tb_v2_push_token")) {
+            assertThat(jdbc.queryForList(
+                            "SELECT user_id FROM " + table + " WHERE user_id IN (?, ?)", Long.class, dueId, otherId))
+                    .containsExactly(otherId);
+        }
     }
 
     private void insertLog(long id, Long userId, Integer satisfaction, boolean deleted) {
