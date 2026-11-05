@@ -7,7 +7,7 @@ import java.util.List;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 
-/** 라멘 기록, 라운지와 업로드 API의 접근 등급을 등록한다. */
+/** 라멘 기록, 라운지, 업로드와 취향 리포트 API의 접근 등급을 등록한다. */
 @Component
 public class MobileRamenLogAccessRules implements AccessRuleContributor {
 
@@ -31,6 +31,9 @@ public class MobileRamenLogAccessRules implements AccessRuleContributor {
                 new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.GET, "/api/v2/members/me/blocks"),
                 new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.GET, "/api/v2/members/me/ramen-logs"),
                 new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.GET, "/api/v2/members/me/ramen-logs/summary"),
+                new AccessRule(AccessLevel.AUTHENTICATED, HttpMethod.GET, "/api/v2/members/me/taste-reports/current"),
+                new AccessRule(
+                        AccessLevel.ACTIVE_MEMBER, HttpMethod.POST, "/api/v2/members/me/taste-reports/{reportId}/seen"),
                 new AccessRule(AccessLevel.PUBLIC, HttpMethod.GET, "/api/v2/taste-note-definitions"));
     }
 }
