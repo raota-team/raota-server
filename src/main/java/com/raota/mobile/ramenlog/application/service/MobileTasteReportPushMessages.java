@@ -6,13 +6,10 @@ import java.time.format.TextStyle;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * 매달 리포트 알림 문구다. 제목은 앱의 "{month} 리포트가 나왔어요" 번역과 같고, 월 이름은 앱({@code formatDate(month: long)})처럼 그 언어의 긴 이름이다. 알림을
- * 누르면 앱이 허용 목록의 {@code /taste}를 연다.
- */
+/** 제목은 앱의 "{month} 리포트가 나왔어요" 번역과 같다. 앱은 로컬 리마인더처럼 {@code data.url}만 읽어 화면을 연다. */
 final class MobileTasteReportPushMessages {
 
-    private static final Map<String, String> TASTE_PATH = Map.of("path", "/taste");
+    private static final Map<String, String> TASTE_LINK = Map.of("url", "raota://taste");
 
     private MobileTasteReportPushMessages() {}
 
@@ -30,6 +27,6 @@ final class MobileTasteReportPushMessages {
     }
 
     private static MobilePushMessage message(String title, String body) {
-        return new MobilePushMessage(title, body, TASTE_PATH);
+        return new MobilePushMessage(title, body, TASTE_LINK);
     }
 }

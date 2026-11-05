@@ -42,7 +42,7 @@ class ExpoPushClientTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$[0].to").value("ExponentPushToken[a]"))
                 .andExpect(jsonPath("$[0].title").value("11월 리포트가 나왔어요"))
-                .andExpect(jsonPath("$[0].data.path").value("/taste"))
+                .andExpect(jsonPath("$[0].data.url").value("raota://taste"))
                 .andRespond(withSuccess("""
                         {"data":[
                           {"status":"ok","id":"ticket-a"},
@@ -80,6 +80,6 @@ class ExpoPushClientTest {
     }
 
     private static PushDelivery delivery(String token) {
-        return new PushDelivery(token, "11월 리포트가 나왔어요", "이번 달 그릇을 쌓아 볼까요?", Map.of("path", "/taste"));
+        return new PushDelivery(token, "11월 리포트가 나왔어요", "이번 달 그릇을 쌓아 볼까요?", Map.of("url", "raota://taste"));
     }
 }

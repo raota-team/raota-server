@@ -354,7 +354,7 @@ class MobileTasteReportIntegrationTest extends BaseIntegrationTest {
                         "ExponentPushToken[japanese]",
                         "10月のレポートが届きました",
                         "今月の一杯を積み上げてみませんか？",
-                        Map.of("path", "/taste")));
+                        Map.of("url", "raota://taste")));
         // Expo가 등록되지 않은 기기라고 답한 토큰은 지운다.
         assertThat(jdbc.queryForObject(
                         "SELECT COUNT(*) FROM tb_v2_push_token WHERE user_id = ?", Integer.class, japanese))
