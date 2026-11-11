@@ -3,6 +3,8 @@ package com.raota.mobile.shop.application.facade;
 import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
 import com.raota.mobile.shop.domain.model.MobileShop;
+import com.raota.mobile.shop.domain.model.MobileShopImage;
+import com.raota.mobile.shop.domain.repository.MobileShopImageRepository;
 import com.raota.mobile.shop.domain.repository.MobileShopRepository;
 import java.util.Collection;
 import java.util.HashMap;
@@ -20,6 +22,8 @@ public class MobileShopRamenLogFacade {
 
     private final MobileShopRepository shops;
 
+    private final MobileShopImageRepository images;
+
     public MobileShopRef findPublishedShopRef(Long shopId) {
         return shops.findByIdAndPublishedTrueAndDeletedAtIsNull(shopId)
                 .map(this::ref)
@@ -32,6 +36,17 @@ public class MobileShopRamenLogFacade {
             return Map.of();
         }
         return refs(shops.findAllById(shopIds));
+    }
+
+    /** 앱 카드의 대표 사진이다. 사진이 없는 매장은 빠진다. */
+    public Map<Long, String> findFirstImageUrls(List<Long> shopIds) {
+        Map<Long, String> first = new HashMap<>();
+        if (!shopIds.isEmpty()) {
+            for (MobileShopImage image : images.findByShopIdInOrderBySortOrderAscIdAsc(shopIds)) {
+                first.putIfAbsent(image.getShopId(), image.getUrl());
+            }
+        }
+        return first;
     }
 
     @Transactional

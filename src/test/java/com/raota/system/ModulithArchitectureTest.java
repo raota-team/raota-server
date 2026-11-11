@@ -48,6 +48,7 @@ class ModulithArchitectureTest {
                         "web.ramenshop",
                         "mobile.account",
                         "mobile.common",
+                        "mobile.notification",
                         "mobile.ramenlog",
                         "mobile.shop"),
                 modules.stream()

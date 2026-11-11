@@ -6,6 +6,7 @@ import com.raota.mobile.common.error.MobileErrorCode;
 import com.raota.mobile.common.error.MobileException;
 import com.raota.mobile.ramenlog.application.command.MobileCreateRamenLogCommand;
 import com.raota.mobile.ramenlog.application.command.MobileUpdateRamenLogCommand;
+import com.raota.mobile.ramenlog.application.result.MobileCreatedRamenLogResult;
 import com.raota.mobile.ramenlog.application.result.MobileRamenLogDetailResult;
 import com.raota.mobile.ramenlog.domain.model.MobileRamenLog;
 import com.raota.mobile.ramenlog.domain.model.MobileRamenLogImage;
@@ -57,16 +58,19 @@ public class MobileRamenLogService {
 
     private final MobileUploadedImagePolicy uploadedImagePolicy;
 
+    private final MobileTasteReportService tasteReports;
+
     private final Clock clock;
 
     private final PlatformTransactionManager transactionManager;
 
-    public MobileRamenLogDetailResult create(Long userId, String key, MobileCreateRamenLogCommand command) {
+    /** 저장한 뒤 첫 취향 리포트를 뽑을 조건이 되면 뽑아서 함께 돌려준다. */
+    public MobileCreatedRamenLogResult create(Long userId, String key, MobileCreateRamenLogCommand command) {
         MobileRamenLog previous =
                 ramenLogRepository.findByUserIdAndIdempotencyKey(userId, key).orElse(null);
         if (previous != null) {
             rejectDeletedReplay(previous);
-            return ownDetail(previous.getId(), userId);
+            return new MobileCreatedRamenLogResult(ownDetail(previous.getId(), userId), null);
         }
         Long shopId = parseId(command.shopId());
         validateContent(command.visitedAt(), command.ramenType(), command.tasteNoteCodes());
@@ -89,9 +93,9 @@ public class MobileRamenLogService {
                     .findByUserIdAndIdempotencyKey(userId, key)
                     .orElseThrow(() -> exception);
             rejectDeletedReplay(replayed);
-            id = replayed.getId();
+            return new MobileCreatedRamenLogResult(ownDetail(replayed.getId(), userId), null);
         }
-        return ownDetail(id, userId);
+        return new MobileCreatedRamenLogResult(ownDetail(id, userId), tasteReports.drawFirstAfterRecord(userId));
     }
 
     @Transactional(readOnly = true)
@@ -113,8 +117,12 @@ public class MobileRamenLogService {
             validateImageUrls(command.imageUrls(), attachedImageUrls(logId));
         }
         Integer before = ramenLog.satisfaction();
+        LocalDate visitedBefore = ramenLog.getVisitedAt();
         ramenLog.edit(command.toEdit(), now());
         shopFacade.recordSatisfactionChanged(ramenLog.getShopId(), before, ramenLog.satisfaction());
+        if (!visitedBefore.equals(ramenLog.getVisitedAt())) {
+            tasteReports.forgetIfNoBowlsLeft(userId);
+        }
         if (command.imageUrls() != null) {
             imageRepository.deleteByRamenLogId(logId);
             imageRepository.flush();
@@ -145,6 +153,7 @@ public class MobileRamenLogService {
         ramenLog.softDelete(now());
         accountFacade.decrementLogCount(ramenLog.getUserId());
         shopFacade.recordLogRemoved(ramenLog.getShopId(), ramenLog.satisfaction());
+        tasteReports.forgetIfNoBowlsLeft(ramenLog.getUserId());
     }
 
     /**
