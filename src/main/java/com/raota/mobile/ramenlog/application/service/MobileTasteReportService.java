@@ -90,12 +90,17 @@ public class MobileTasteReportService {
         this.newTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
 
-    /** 기록 작성이 커밋된 뒤 부른다. 뽑지 않았으면 null이다. */
+    /** 기록 작성이 커밋된 뒤 부른다. 뽑지 않았거나 뽑지 못했으면 null이고, 못 뽑은 리포트는 조회 때 다시 뽑는다. */
     public MobileDrawnTasteReportResult drawFirstAfterRecord(Long userId) {
-        return drawFirst(userId, today())
-                .map(report -> new MobileDrawnTasteReportResult(
-                        String.valueOf(report.getId()), report.getKind(), report.getCutoffDate()))
-                .orElse(null);
+        try {
+            return drawFirst(userId, today())
+                    .map(report -> new MobileDrawnTasteReportResult(
+                            String.valueOf(report.getId()), report.getKind(), report.getCutoffDate()))
+                    .orElse(null);
+        } catch (RuntimeException exception) {
+            log.warn("첫 취향 리포트: 회원 {}의 리포트를 뽑지 못함", userId, exception);
+            return null;
+        }
     }
 
     /** 빠진 뽑기(배치 실패, 배포 중 누락)를 먼저 만든 뒤 가장 최근 리포트를 돌려준다. */

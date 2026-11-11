@@ -191,6 +191,25 @@ class MobileTasteReportIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
+    void 점수가_일부만_있는_기록은_평균에서_빼고_리포트를_뽑는다() throws Exception {
+        Long member = active();
+        create(member, SHOP, "2025-09-01", "쇼유", "라멘", 4);
+        create(member, SHOP, "2025-09-02", "쇼유", "라멘", 2);
+        long partial = insertUnscoredLog(member, OTHER_SHOP, "2025-08-01", "시오");
+        jdbc.update("""
+                UPDATE tb_v2_ramen_log
+                SET satisfaction_score = 5, broth_density_score = 3, noodle_firmness_score = 3, topping_score = 3
+                WHERE id = ?
+                """, partial);
+
+        JsonNode report = current(member).get("report");
+
+        assertThat(report.get("bowlCount").asInt()).isEqualTo(3);
+        assertThat(report.get("axisAverages").get("scoredCount").asInt()).isEqualTo(2);
+        assertThat(report.get("axisAverages").get("satisfaction").asDouble()).isEqualTo(3.0);
+    }
+
+    @Test
     void 조회하면_빠진_매달_리포트를_뽑는다() throws Exception {
         Long member = active();
         insertReport(member, "2025-09-10");

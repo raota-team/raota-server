@@ -52,7 +52,7 @@ public record MobileTasteReportFigures(
         double topping = 0;
         double revisit = 0;
         for (MobileRamenLog log : logs) {
-            if (log.getSatisfactionScore() == null) {
+            if (!isFullyScored(log)) {
                 continue;
             }
             scored++;
@@ -72,6 +72,14 @@ public record MobileTasteReportFigures(
                 noodleFirmness / scored,
                 topping / scored,
                 revisit / scored);
+    }
+
+    private static boolean isFullyScored(MobileRamenLog log) {
+        return log.getSatisfactionScore() != null
+                && log.getBrothDensityScore() != null
+                && log.getNoodleFirmnessScore() != null
+                && log.getToppingScore() != null
+                && log.getRevisitIntention() != null;
     }
 
     private static List<TasteTopShop> topShops(List<MobileRamenLog> latestFirst) {
