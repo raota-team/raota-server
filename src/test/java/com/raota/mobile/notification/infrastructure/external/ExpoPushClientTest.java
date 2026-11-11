@@ -1,6 +1,7 @@
 package com.raota.mobile.notification.infrastructure.external;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.springframework.test.web.client.ExpectedCount.once;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
@@ -10,9 +11,12 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 import com.raota.mobile.notification.application.port.PushSender.PushDelivery;
+import java.net.ServerSocket;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
@@ -32,7 +36,7 @@ class ExpoPushClientTest {
     void setUp() {
         RestClient.Builder builder = RestClient.builder();
         server = MockRestServiceServer.bindTo(builder).build();
-        client = new ExpoPushClient(builder, new ExpoPushProperties("https://expo.example"));
+        client = new ExpoPushClient(builder, "https://expo.example");
     }
 
     @Test
@@ -77,6 +81,24 @@ class ExpoPushClientTest {
 
         assertThat(unregistered).containsExactly("ExponentPushToken[100]");
         server.verify();
+    }
+
+    @Test
+    void 응답이_없으면_읽기_시간_제한_뒤_그_묶음을_건너뛴다() throws Exception {
+        // accept하지 않는 소켓이라 연결은 되지만 응답이 오지 않는다.
+        try (ServerSocket silent = new ServerSocket(0)) {
+            ExpoPushClient slow = new ExpoPushClient(
+                    RestClient.builder(),
+                    new ExpoPushProperties(
+                            "http://localhost:" + silent.getLocalPort(),
+                            Duration.ofSeconds(1),
+                            Duration.ofMillis(200)));
+
+            Set<String> unregistered = assertTimeoutPreemptively(
+                    Duration.ofSeconds(5), () -> slow.send(List.of(delivery("ExponentPushToken[a]"))));
+
+            assertThat(unregistered).isEmpty();
+        }
     }
 
     private static PushDelivery delivery(String token) {

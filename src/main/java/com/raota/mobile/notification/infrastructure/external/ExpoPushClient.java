@@ -1,6 +1,7 @@
 package com.raota.mobile.notification.infrastructure.external;
 
 import com.raota.mobile.notification.application.port.PushSender;
+import java.net.http.HttpClient;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -8,13 +9,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.ClientHttpRequestFactory;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import tools.jackson.databind.JsonNode;
 
-/** 영수증(receipt)은 조회하지 않는다. 발송 뒤에 밝혀지는 미등록 기기는 다음 발송의 티켓에서 걸러진다. */
+/** 영수증(receipt)은 조회하지 않는다. 미등록 기기는 발송 응답의 티켓으로만 걸러 낸다. */
 @Slf4j
 @Component
 public class ExpoPushClient implements PushSender {
@@ -25,8 +29,21 @@ public class ExpoPushClient implements PushSender {
 
     private final RestClient client;
 
+    @Autowired
     public ExpoPushClient(RestClient.Builder builder, ExpoPushProperties properties) {
-        this.client = builder.baseUrl(properties.baseUrl()).build();
+        this(builder.requestFactory(requestFactory(properties)), properties.baseUrl());
+    }
+
+    ExpoPushClient(RestClient.Builder builder, String baseUrl) {
+        this.client = builder.baseUrl(baseUrl).build();
+    }
+
+    private static ClientHttpRequestFactory requestFactory(ExpoPushProperties properties) {
+        JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(HttpClient.newBuilder()
+                .connectTimeout(properties.connectTimeout())
+                .build());
+        factory.setReadTimeout(properties.readTimeout());
+        return factory;
     }
 
     @Override
