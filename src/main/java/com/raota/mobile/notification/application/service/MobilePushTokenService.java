@@ -11,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** 앱은 알림을 켠 기기에서만 토큰을 등록하고, 알림을 끄거나 로그아웃하면 해제한다. 그래서 토큰이 있는 기기가 곧 알림을 받을 기기다. */
+/** 토큰이 있는 기기가 알림을 받는 기기다. 앱은 알림을 끄거나 로그아웃할 때 토큰을 해제한다. */
 @Service
 @RequiredArgsConstructor
 public class MobilePushTokenService {

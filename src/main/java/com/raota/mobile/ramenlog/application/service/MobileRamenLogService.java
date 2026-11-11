@@ -64,7 +64,7 @@ public class MobileRamenLogService {
 
     private final PlatformTransactionManager transactionManager;
 
-    /** 이 기록으로 기록이 처음 3개가 되면 같은 요청 안에서 첫 취향 리포트를 뽑아 함께 돌려준다. */
+    /** 저장한 뒤 첫 취향 리포트를 뽑을 조건이 되면 뽑아서 함께 돌려준다. */
     public MobileCreatedRamenLogResult create(Long userId, String key, MobileCreateRamenLogCommand command) {
         MobileRamenLog previous =
                 ramenLogRepository.findByUserIdAndIdempotencyKey(userId, key).orElse(null);

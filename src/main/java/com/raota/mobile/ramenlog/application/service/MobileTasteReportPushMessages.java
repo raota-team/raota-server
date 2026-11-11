@@ -6,7 +6,7 @@ import java.time.format.TextStyle;
 import java.util.Locale;
 import java.util.Map;
 
-/** 제목은 앱의 "{month} 리포트가 나왔어요" 번역과 같다. 앱은 로컬 리마인더처럼 {@code data.url}만 읽어 화면을 연다. */
+/** 제목과 본문은 앱 번역과 같다. 앱은 {@code data.url}로 화면을 연다. */
 final class MobileTasteReportPushMessages {
 
     private static final Map<String, String> TASTE_LINK = Map.of("url", "raota://taste");

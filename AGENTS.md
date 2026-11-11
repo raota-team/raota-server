@@ -47,14 +47,14 @@ MySQL 8 + Flyway, Redis, Spring Security(OAuth2 + JWT), Spring AI(Oracle Vector 
 ## API 접근 정책 (fail-closed)
 
 보안 필터 체인은 `global.security`에 하나만 두고 각 모듈이 인증기·오류 응답기·접근 규칙을 플러그인으로 제공한다.
-v1 접근 규칙은 `web.account`의 `EndpointAccessPolicy`가 관리한다. v2 규칙은 각 모듈의 `presentation`에서 `AccessRuleContributor`로 제공한다(`mobile.account`의 `MobileAccessRules`, `mobile.shop`의 `MobileShopAccessRules`, `mobile.ramenlog`의 `MobileRamenLogAccessRules`).
+v1 접근 규칙은 `web.account`의 `EndpointAccessPolicy`가 관리한다. v2 규칙은 각 모듈의 `presentation`에서 `AccessRuleContributor`로 제공한다(`mobile.account`의 `MobileAccessRules`, `mobile.shop`의 `MobileShopAccessRules`, `mobile.ramenlog`의 `MobileRamenLogAccessRules`, `mobile.notification`의 `MobileNotificationAccessRules`).
 
 endpoint를 추가하거나 메서드·경로를 바꾸면 함께 처리한다.
 
 1. v1은 `web/account/infrastructure/config/EndpointAccessPolicy`, v2는 해당 모듈의 `presentation`에 있는 `AccessRuleContributor`에 `PUBLIC` / `AUTHENTICATED` / `ACTIVE_MEMBER` / `ADMIN` 중 하나로 등록.
 2. `ApiAccessPolicyInventoryTest`의 endpoint 수 갱신.
 3. PUBLIC 또는 ADMIN 예외를 추가했다면 익명·USER·ADMIN 동작 테스트 추가.
-4. 새 v2 쓰기 API는 원칙적으로 `ACTIVE_MEMBER`로 등록한다. 온보딩 중 이용해야 하는 내 정보 조회·수정, 온보딩, 약관 동의(`PUT /members/me/consents`), 닉네임 중복 확인, 업로드 티켓, 로그아웃만 `AUTHENTICATED`로 등록한다.
+4. 새 v2 쓰기 API는 원칙적으로 `ACTIVE_MEMBER`로 등록한다. 온보딩 중 이용해야 하는 내 정보 조회·수정, 온보딩, 약관 동의(`PUT /members/me/consents`), 닉네임 중복 확인, 업로드 티켓, 로그아웃, 로그아웃 때 부르는 푸시 토큰 해제(`DELETE /members/me/push-tokens/{token}`)만 `AUTHENTICATED`로 등록한다.
 
 ## DB 마이그레이션
 

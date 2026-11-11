@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface MobilePushTokenRepository extends JpaRepository<MobilePushToken, Long> {
 
-    /** 다른 회원이 같은 기기로 로그인하면 토큰이 새 회원에게 옮겨 가, 이전 회원의 알림이 그 기기로 가지 않는다. */
+    /** 이미 있는 토큰이면 회원·플랫폼·언어를 덮어쓴다. 다른 회원이 등록하면 토큰이 그 회원에게 옮겨 간다. */
     @Modifying
     @Query(value = """
             INSERT INTO tb_v2_push_token (user_id, token, platform, language, created_at, updated_at)

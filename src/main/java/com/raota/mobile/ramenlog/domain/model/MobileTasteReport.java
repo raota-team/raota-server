@@ -64,7 +64,7 @@ public class MobileTasteReport {
     @Column(name = "seen_at")
     private Instant seenAt;
 
-    /** 매달 리포트 알림을 보낸(보내려고 꺼낸) 시각이다. 다시 보내지 않는다. */
+    /** 매달 리포트 알림을 보내기 직전에 찍는다. 값이 있으면 다시 보내지 않는다. */
     @Column(name = "notified_at")
     private Instant notifiedAt;
 
